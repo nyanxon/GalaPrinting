@@ -1,0 +1,284 @@
+/* ══════════════════════════════════════════════════════════
+   MY ORDERS PAGE
+   ══════════════════════════════════════════════════════════ */
+
+.mo-page {
+  padding: 40px 0 64px;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.mo-title {
+  font-size: 28px;
+  font-weight: 900;
+  color: #1f1f1f;
+  margin: 0 0 6px;
+  letter-spacing: -0.02em;
+}
+
+.mo-subtitle {
+  font-size: 14px;
+  color: #6b6b6b;
+  margin: 0 0 32px;
+}
+
+/* ── Sections ────────────────────────────────────────────── */
+.mo-section {
+  margin-bottom: 32px;
+}
+
+.mo-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b6b6b;
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.mo-section-title--urgent {
+  color: #92400e;
+  border-bottom-color: #fde68a;
+}
+
+/* ── Cards ───────────────────────────────────────────────── */
+.mo-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mo-card {
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 16px;
+  padding: 18px 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.15s;
+}
+
+.mo-card:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* Highlight unpaid cards */
+.mo-card:has(.mo-pay-btn) {
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+
+/* ── Card header ─────────────────────────────────────────── */
+.mo-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.mo-card-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.mo-order-num {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--brand-brown, #785E40);
+  font-family: monospace;
+}
+
+.mo-date {
+  font-size: 12px;
+  color: #9b9b9b;
+}
+
+/* ── Source tags ─────────────────────────────────────────── */
+.mo-source-tag {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.mo-source-tag--custom  { background: #ede9fe; color: #5b21b6; }
+.mo-source-tag--offline { background: #fce7f3; color: #be185d; }
+
+/* ── Items summary ───────────────────────────────────────── */
+.mo-card-items {
+  font-size: 14px;
+  color: #3a3a3a;
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+/* ── Card footer ─────────────────────────────────────────── */
+.mo-card-footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.mo-total {
+  font-size: 18px;
+  font-weight: 800;
+  color: #1f1f1f;
+}
+
+/* Promo discount display in order card */
+.mo-total-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mo-total--strikethrough {
+  font-size: 13px;
+  font-weight: 500;
+  color: #9b9b9b;
+  text-decoration: line-through;
+}
+
+.mo-promo-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #15803d;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 4px;
+  padding: 2px 8px;
+  width: fit-content;
+}
+
+.mo-total--final {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--brand-brown, #785E40);
+}
+
+.mo-card-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* ── Pay button ──────────────────────────────────────────── */
+.mo-pay-btn {
+  background: var(--brand-brown, #785E40);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.15s;
+  white-space: nowrap;
+}
+
+.mo-pay-btn:hover { filter: brightness(0.9); }
+
+/* ── Track button ────────────────────────────────────────── */
+.mo-track-btn {
+  background: #f9f5f0;
+  color: var(--brand-brown, #785E40);
+  border: 1px solid rgba(120, 94, 64, 0.2);
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.mo-track-btn:hover { background: #f0e8dc; }
+
+/* ── Proof sent indicator ────────────────────────────────── */
+.mo-proof-sent {
+  font-size: 13px;
+  font-weight: 600;
+  color: #166534;
+  background: #dcfce7;
+  border-radius: 6px;
+  padding: 6px 12px;
+}
+
+/* ── Custom order notice ─────────────────────────────────── */
+.mo-custom-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: #92400e;
+  line-height: 1.5;
+}
+
+/* ── Empty state ─────────────────────────────────────────── */
+.mo-empty {
+  text-align: center;
+  padding: 60px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.mo-empty-icon { font-size: 56px; }
+
+.mo-empty-text {
+  font-size: 16px;
+  color: #6b6b6b;
+  margin: 0;
+}
+
+.mo-empty-btn {
+  background: var(--brand-brown, #785E40);
+  color: #fff;
+  border-radius: 8px;
+  padding: 11px 24px;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: filter 0.15s;
+}
+
+.mo-empty-btn:hover { filter: brightness(0.9); }
+
+/* ── Navbar "Pesanan Saya" link ──────────────────────────── */
+.nav-orders-link {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brand-brown, #785E40);
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(120, 94, 64, 0.2);
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.nav-orders-link:hover { background: rgba(120, 94, 64, 0.06); }
+
+@media (max-width: 640px) {
+  .mo-card-footer { flex-direction: column; align-items: flex-start; }
+  .mo-card-actions { width: 100%; }
+  .mo-pay-btn, .mo-track-btn { flex: 1; text-align: center; }
+}

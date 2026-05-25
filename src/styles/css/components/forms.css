@@ -1,0 +1,35 @@
+.field{
+  display: grid;
+  gap: 8px;
+}
+.label{
+  font-weight: 700;
+}
+.input, .select, .textarea{
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 10px 12px;
+  outline: none;
+}
+.textarea{ min-height: 110px; resize: vertical; }
+.help{ font-size: 13px; color: var(--muted); }
+
+.form{
+  display: grid;
+  gap: 14px;
+}
+
+.form-actions{
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.alert{
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: rgba(237, 200, 174, 0.24);
+}

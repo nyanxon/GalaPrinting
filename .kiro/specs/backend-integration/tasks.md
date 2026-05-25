@@ -1,0 +1,346 @@
+# Implementation Plan: Backend Integration
+
+## Overview
+
+Integrate a Node.js/Express backend with MySQL 8.0.46 (XAMPP) into the Gala Printing React SPA. The plan proceeds in safe layers: backup → server scaffold → database → auth → core APIs → real-time → file uploads → frontend migration → property tests → production readiness. Each task builds on the previous so no orphaned code is introduced.
+
+## Tasks
+
+- [x] 1. Export localStorage backup and scaffold server directory
+  - [x] 1.1 Create `src/components/admin/MigrationExportTool.jsx`
+    - Reads all `gala.*` keys from localStorage
+    - Shows count + byte size in a confirm dialog before download
+    - Downloads `gala-backup-YYYY-MM-DD.json` via Blob URL
+    - Add the component to `AdminDashboardPage` settings section
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
+  - [x] 1.2 Scaffold `server/` directory structure
+    - Create `server/package.json` with dependencies: `express`, `mysql2`, `jsonwebtoken`, `bcrypt`, `dotenv`, `cors`, `helmet`, `multer`, `express-validator`, `express-rate-limit`, `socket.io`, `uuid`, `morgan`
+    - Create `server/package.json` devDependencies: `nodemon`, `vitest`
+    - Create `server/.env.example` with all required variables and inline comments
+    - Create `server/.env` (gitignored) with local XAMPP values
+    - Create empty placeholder files for all modules listed in the design directory structure
+    - _Requirements: 2.1, 2.2, 2.6_
+  - [x] 1.3 Implement `server/src/config/env.js`
+    - Read and validate all required env vars at startup
+    - Exit process with descriptive error if any required var is missing
+    - Export typed `config` object
+    - _Requirements: 2.1, 2.2, 2.5_
+
+- [x] 2. Database setup — connection pool and migrations
+  - [x] 2.1 Implement `server/src/db/connection.js`
+    - Create mysql2 promise pool using `config.db`
+    - Export `query(sql, params)` helper
+    - Test connection on startup, log success or exit on failure
+    - _Requirements: 3.1_
+  - [x] 2.2 Write SQL migration files (001–013)
+    - Write all 13 `CREATE TABLE IF NOT EXISTS` statements as per the design schema
+    - Correct dependency order: users → categories → products → orders → order_items → order_history → cart_items → conversations → messages → reviews → analytics_visits → analytics_product_views → refresh_tokens
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
+  - [x] 2.3 Write and run migration runner script
+    - `server/src/db/migrate.js` — reads all `.sql` files in order and executes them
+    - Add `"migrate": "node src/db/migrate.js"` to `server/package.json` scripts
+    - Run migrations against local XAMPP MySQL; verify all 13 tables created in HeidiSQL
+    - _Requirements: 3.2_
+
+- [x] 3. Express app scaffold and middleware
+  - [x] 3.1 Implement `server/src/app.js`
+    - Create Express app factory (no `listen` call)
+    - Apply: `helmet()`, `cors({ origin: config.clientOrigin, credentials: true })`, `express.json()`, `cookieParser()`, `morgan('dev')` in development
+    - Mount all route files under `/api`
+    - Serve `uploads/` as static: `express.static(config.uploadDir)`
+    - Mount global `errorHandler` as last middleware
+    - _Requirements: 2.3, 2.4, 15.4_
+  - [x] 3.2 Implement `server/src/server.js`
+    - Create HTTP server from app
+    - Attach Socket.io server
+    - Call `app.listen` on `config.port`
+    - Log startup message with port and environment
+    - _Requirements: 2.1_
+  - [x] 3.3 Implement `server/src/middleware/auth.js`
+    - Extract Bearer token from `Authorization` header
+    - Verify with `jwt.verify(token, config.jwt.accessSecret)`
+    - Attach `req.user = { id, role, name, email }` on success
+    - Return 401 `{ ok: false, message: 'Token tidak valid atau sudah kedaluwarsa.' }` on failure
+    - _Requirements: 4.4, 4.5_
+  - [x] 3.4 Implement `server/src/middleware/requireRole.js`
+    - `requireRole(...roles)` — middleware factory
+    - Return 403 `{ ok: false, message: 'Akses ditolak.' }` if `req.user.role` not in allowed list
+    - _Requirements: 5.2, 5.3_
+  - [x] 3.5 Implement `server/src/middleware/errorHandler.js`
+    - Catch all unhandled errors
+    - Log full stack to console
+    - Return 500 `{ ok: false, message: 'Terjadi kesalahan server.' }` without stack in production
+    - Handle `entity.too.large` → 413
+    - _Requirements: 15.4_
+  - [x] 3.6 Implement `server/src/utils/jwt.js`
+    - `signAccessToken(payload)` — signs with `JWT_ACCESS_SECRET`, expires in `JWT_ACCESS_EXPIRES_IN`
+    - `signRefreshToken(userId, family)` — signs with `JWT_REFRESH_SECRET`, expires in `JWT_REFRESH_EXPIRES_IN`
+    - `verifyAccessToken(token)` and `verifyRefreshToken(token)` — throw on invalid
+    - _Requirements: 4.1, 4.4, 4.5_
+  - [x] 3.7 Implement `server/src/utils/hash.js`
+    - `hashPassword(plain)` — bcrypt hash with `config.bcryptRounds`
+    - `comparePassword(plain, hash)` — bcrypt compare
+    - _Requirements: 4.3_
+
+- [x] 4. Authentication API
+  - [x] 4.1 Implement `server/src/services/auth.service.js`
+    - `register({ name, email, phone, password, gender, dob })` — validate unique email, hash password, insert user, return user row
+    - `login({ email, password })` — find user, compare password, return user row or null
+    - `createTokenPair(userId)` — generate access + refresh tokens, store refresh token hash + family in `refresh_tokens`, return `{ accessToken, refreshToken }`
+    - `rotateRefreshToken(token)` — verify, check reuse (used_at not null → delete family, throw), mark used, insert new token, return new pair
+    - `revokeRefreshToken(token)` — delete family from `refresh_tokens`
+    - `getUserById(id)` — return user row excluding `password_hash`
+    - _Requirements: 4.1, 4.2, 4.3, 4.6, 4.7, 4.8, 4.10_
+  - [x] 4.2 Implement `server/src/controllers/auth.controller.js` and `server/src/routes/auth.routes.js`
+    - `POST /api/auth/register` — validate body, call service, set refresh cookie, return access token
+    - `POST /api/auth/login` — validate body, call service, set refresh cookie, return access token
+    - `POST /api/auth/refresh` — read cookie, call `rotateRefreshToken`, set new cookie, return new access token
+    - `POST /api/auth/logout` — read cookie, call `revokeRefreshToken`, clear cookie
+    - `GET /api/auth/me` — auth middleware, return `req.user` profile
+    - Apply rate limiting (100 req/min) to all auth routes
+    - _Requirements: 4.1, 4.2, 4.6, 4.7, 4.8, 4.9, 15.6_
+  - [x] 4.3 Write property tests for auth service
+    - **Property 1: Token family invalidation** — presenting a used refresh token invalidates entire family
+    - Generate random user + token; use token twice; assert second use returns 401 and family is deleted
+    - Tag: `// Feature: backend-integration, Property 1: Token family invalidation`
+    - _Requirements: 4.10_
+
+- [x] 5. Product and Category API
+  - [x] 5.1 Implement `server/src/services/products.service.js`
+    - `listProducts({ page, limit, category, search })` — paginated query with optional filters
+    - `getProductById(id)` — single product or null
+    - `createProduct(data)` — insert, generate UUID and slug
+    - `updateProduct(id, data)` — update by id
+    - `deleteProduct(id)` — delete product, set `product_id = NULL` on order_items (handled by FK ON DELETE SET NULL)
+    - `listCategories()` — return all category names
+    - `createCategory(name)` — insert category
+    - `deleteCategory(id)` — delete category
+    - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9_
+  - [x] 5.2 Implement controllers and routes for products and categories
+    - `GET /api/products` — public, paginated
+    - `GET /api/products/:id` — public
+    - `POST /api/products` — auth + requireRole('admin')
+    - `PUT /api/products/:id` — auth + requireRole('admin')
+    - `DELETE /api/products/:id` — auth + requireRole('admin')
+    - `GET /api/categories` — public
+    - `POST /api/categories` — auth + requireRole('admin')
+    - `DELETE /api/categories/:id` — auth + requireRole('admin')
+    - _Requirements: 6.1–6.9_
+  - [x] 5.3 Write property test for pagination correctness
+    - **Property 7: Pagination correctness** — `items.length ≤ limit` always holds for any page/limit
+    - Generate random page and limit values; assert response shape is correct
+    - Tag: `// Feature: backend-integration, Property 7: Pagination correctness`
+    - _Requirements: 6.9_
+
+- [x] 6. Order API
+  - [x] 6.1 Implement `server/src/services/orders.service.js`
+    - `createOrder({ customer, items, subtotal, source, orderType })` — generate order number, insert order + items + first history entry
+    - `listOrders({ page, limit, status, role })` — paginated, filtered
+    - `listOrdersByCustomer({ customerId, customerPhone })` — customer's own orders
+    - `findOrder({ orderNumber, phone })` — track by number + phone
+    - `getOrderById(id)` — single order with items and history
+    - `updateOrderStatus(id, newStatus, actorId, actorRole)` — validate transition, update status, insert history entry
+    - `updateAdminNote(id, note)` — update admin_note
+    - `setTrackingNumber(id, trackingNumber, courierName, actorRole)` — set tracking, auto-advance to "In Delivery" if status is "Quality Checking"
+    - `attachPaymentProof(id, proofPath)` — update payment_proof_path
+    - `getAllowedNextStatuses(currentStatus, role)` — return allowed next statuses for role
+    - _Requirements: 7.1–7.11_
+  - [x] 6.2 Implement controllers and routes for orders
+    - `POST /api/orders` — auth + customer role
+    - `POST /api/orders/custom` — auth + requireRole('cs','admin')
+    - `POST /api/orders/offline` — auth + requireRole('offline','admin')
+    - `GET /api/orders` — auth + staff roles
+    - `GET /api/orders/my` — auth + customer
+    - `GET /api/orders/track` — public
+    - `GET /api/orders/:id` — auth
+    - `PATCH /api/orders/:id/status` — auth + staff
+    - `PATCH /api/orders/:id/note` — auth + requireRole('admin','cs')
+    - `PATCH /api/orders/:id/tracking` — auth + requireRole('qc','admin')
+    - `POST /api/orders/:id/payment-proof` — auth + customer (file upload)
+    - _Requirements: 7.1–7.11_
+  - [x] 6.3 Write property test for order status transition enforcement
+    - **Property 3: Order status transition** — only allowed role→status transitions succeed
+    - Generate random current status + random actor role; assert invalid transitions return 403
+    - Tag: `// Feature: backend-integration, Property 3: Order status transition`
+    - _Requirements: 5.4, 5.5_
+
+- [x] 7. Cart API
+  - [x] 7.1 Implement `server/src/services/cart.service.js`
+    - `getCart(userId)` — return all cart items for user
+    - `addItem(userId, item)` — insert cart item
+    - `updateItemQty(userId, itemId, quantity)` — update quantity, verify ownership
+    - `removeItem(userId, itemId)` — delete, verify ownership
+    - `clearCart(userId)` — delete all items for user
+    - `syncCart(userId, items)` — merge localStorage items into server cart (skip if server cart not empty)
+    - _Requirements: 8.1–8.7_
+  - [x] 7.2 Implement controllers and routes for cart
+    - `GET /api/cart` — auth + customer
+    - `POST /api/cart/items` — auth + customer
+    - `PATCH /api/cart/items/:itemId` — auth + customer
+    - `DELETE /api/cart/items/:itemId` — auth + customer
+    - `DELETE /api/cart` — auth + customer
+    - `POST /api/cart/sync` — auth + customer
+    - _Requirements: 8.1–8.7_
+  - [x] 7.3 Write property test for cart isolation
+    - **Property 4: Cart isolation** — customer A cannot read or modify customer B's cart
+    - Generate two random customer IDs; assert cross-customer operations return 403 or empty
+    - Tag: `// Feature: backend-integration, Property 4: Cart isolation`
+    - _Requirements: 5.6, 8_
+
+- [x] 8. File upload infrastructure
+  - [x] 8.1 Implement `server/src/utils/storage.js` (StorageService)
+    - `save(file, subdir)` — move multer temp file to `uploads/{subdir}/{timestamp}-{uuid}.{ext}`, return `{ path, url, fileName }`
+    - `delete(filePath)` — unlink file silently
+    - Create `uploads/designs/`, `uploads/payments/`, `uploads/chat/` on startup if missing
+    - _Requirements: 11.1, 11.2, 11.7_
+  - [x] 8.2 Implement `server/src/middleware/upload.js`
+    - `uploadDesign` — multer config: dest temp, max 20MB, allowed MIME: jpeg/png/pdf
+    - `uploadPayment` — multer config: dest temp, max 10MB, allowed MIME: jpeg/png/gif/webp/bmp/tiff/heic/pdf
+    - `uploadChat` — multer config: dest temp, max 5MB, allowed MIME: jpeg/png/pdf/zip
+    - Return 413 on size exceeded, 415 on wrong MIME type
+    - _Requirements: 11.3, 11.4, 11.5_
+  - [x] 8.3 Write property test for file size rejection
+    - **Property 5: File size rejection** — uploads exceeding the per-type limit always return 413
+    - Generate random file sizes above each limit; assert 413 response
+    - Tag: `// Feature: backend-integration, Property 5: File size rejection`
+    - _Requirements: 11.4_
+
+- [x] 9. Chat API and Socket.io real-time
+  - [x] 9.1 Implement `server/src/services/chat.service.js`
+    - `listConversations()` — all conversations with lastMessage + unreadCount
+    - `getOrCreateConversation(customerId, customerName)` — find or insert
+    - `getMessages(conversationId)` — all messages sorted oldest first
+    - `saveMessage({ conversationId, senderId, senderRole, type, content, filePath, fileName, fileSize, mimeType })` — insert message, update `conversations.last_at`
+    - `markAsRead(conversationId, readerRole)` — set `read_at = NOW()` on unread customer messages
+    - _Requirements: 9.1–9.8_
+  - [x] 9.2 Implement controllers and routes for chat
+    - `GET /api/conversations` — auth + requireRole('admin','owner','cs')
+    - `POST /api/conversations` — auth + customer (get or create own conversation)
+    - `GET /api/conversations/:id/messages` — auth + ownership check
+    - `POST /api/conversations/:id/messages` — auth + text message
+    - `POST /api/conversations/:id/messages/file` — auth + uploadChat middleware
+    - `PATCH /api/conversations/:id/read` — auth + requireRole('admin','cs','owner')
+    - _Requirements: 9.1–9.9_
+  - [x] 9.3 Implement `server/src/socket/index.js`
+    - Attach Socket.io to HTTP server with CORS config
+    - Auth middleware: verify access token from `socket.handshake.auth.token`, reject with `authentication_error` if invalid
+    - On connect: join customer to `customer:{userId}` and `conversation:{convId}` rooms; join staff to `staff` room
+    - Export `getIO()` for use in controllers
+    - _Requirements: 9.5, 9.6, 9.10, 14.5_
+  - [x] 9.4 Implement Socket.io event emission in order and chat controllers
+    - After order created: emit `order:new` to `staff` room
+    - After order status changed: emit `order:status_changed` to `customer:{customerId}` and `staff` rooms
+    - After payment proof uploaded: emit `order:payment_proof` to `staff` room
+    - After message saved: emit `message:new` to `conversation:{convId}` and `staff` rooms
+    - After messages marked read: emit `conversation:read` to `conversation:{convId}` room
+    - _Requirements: 7.12, 9.3, 9.7, 9.8, 14.1–14.4_
+  - [x] 9.5 Write property test for Socket.io auth rejection
+    - **Property 6: Socket auth rejection** — connections without valid token are always rejected
+    - Generate random invalid tokens; assert connection is rejected with `authentication_error`
+    - Tag: `// Feature: backend-integration, Property 6: Socket auth rejection`
+    - _Requirements: 9.10_
+
+- [x] 10. Review and Analytics APIs
+  - [x] 10.1 Implement review service, controller, and routes
+    - `GET /api/reviews` — public, optional `?productId=` filter
+    - `POST /api/reviews` — auth + customer, validate rating 1–5
+    - `DELETE /api/reviews/:id` — auth + requireRole('admin') or review author
+    - _Requirements: 10.1–10.5_
+  - [x] 10.2 Write property test for rating validation
+    - **Property 8: Rating validation** — reviews with rating outside 1–5 always return 422
+    - Generate random integers outside [1,5]; assert 422 response
+    - Tag: `// Feature: backend-integration, Property 8: Rating validation`
+    - _Requirements: 10.3_
+  - [x] 10.3 Implement analytics service, controller, and routes
+    - `GET /api/analytics/revenue` — auth + requireRole('owner','admin')
+    - `GET /api/analytics/monthly` — auth + requireRole('owner','admin')
+    - `GET /api/analytics/visits` — auth + requireRole('owner','admin')
+    - `GET /api/analytics/best-sellers` — auth + requireRole('owner','admin')
+    - `POST /api/analytics/visit` — public, rate limited 60/min per IP
+    - `POST /api/analytics/product-view` — public, rate limited 60/min per IP
+    - _Requirements: 12.1–12.7_
+
+- [x] 11. User and Staff Management API
+  - [x] 11.1 Implement user service, controller, and routes
+    - `GET /api/users/customers` — auth + requireRole('admin','cs'), paginated
+    - `GET /api/users/staff` — auth + requireRole('admin','owner')
+    - `POST /api/users/staff` — auth + requireRole('admin'), create staff account
+    - `PATCH /api/users/:id/role` — auth + requireRole('admin'), block self-role-change
+    - `DELETE /api/users/:id` — auth + requireRole('admin'), soft-delete (set deleted_at)
+    - _Requirements: 13.1–13.7_
+  - [x] 11.2 Write property test for role guard
+    - **Property 2: Role guard** — requests with insufficient role always return 403
+    - Generate random role + random protected endpoint; assert insufficient role → 403
+    - Tag: `// Feature: backend-integration, Property 2: Role guard`
+    - _Requirements: 5.2, 5.3_
+
+- [x] 12. Frontend service layer migration
+  - [x] 12.1 Update `src/core/httpClient.js`
+    - Add `USE_BACKEND` flag: `export const USE_BACKEND = import.meta.env.VITE_USE_BACKEND === 'true'`
+    - Add `api` axios instance with `baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001'`
+    - Implement 401 interceptor: auto-refresh → retry → logout on failure
+    - Add `setAccessToken(token)` and `clearSession()` helpers
+    - _Requirements: 16.2, 16.3, 16.4, 16.5_
+  - [x] 12.2 Migrate `src/services/authService.js`
+    - When `USE_BACKEND=true`: call `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`
+    - Store access token in memory (not localStorage)
+    - On login success: store token, init Socket.io connection
+    - On logout: clear token, disconnect Socket.io
+    - When `USE_BACKEND=false`: existing localStorage implementation unchanged
+    - _Requirements: 16.1, 16.3, 16.6_
+  - [x] 12.3 Migrate `src/services/productService.js` and `src/services/categoryService.js`
+    - When `USE_BACKEND=true`: call `/api/products` and `/api/categories`
+    - Preserve existing function signatures so no component changes are needed
+    - _Requirements: 16.1_
+  - [x] 12.4 Migrate `src/services/orderService.js`
+    - When `USE_BACKEND=true`: call all order endpoints
+    - Map API response shape to existing service return shape
+    - _Requirements: 16.1_
+  - [x] 12.5 Migrate `src/services/cartService.js`
+    - When `USE_BACKEND=true` and user is logged in: call cart API
+    - When user is not logged in: fall back to localStorage
+    - On login: call `POST /api/cart/sync` with current localStorage cart
+    - _Requirements: 16.1, 8.6, 8.7_
+  - [x] 12.6 Migrate `src/services/chatService.js` and initialise Socket.io client
+    - When `USE_BACKEND=true`: call chat API endpoints
+    - Initialise `socket.io-client` connection after login with access token
+    - Listen for `message:new`, `order:status_changed`, `order:new` events and update React state via context or event emitter
+    - Disconnect on logout
+    - _Requirements: 16.1, 16.6, 16.7_
+  - [x] 12.7 Migrate `src/services/reviewService.js` and `src/services/analyticsService.js`
+    - When `USE_BACKEND=true`: call `/api/reviews` and `/api/analytics/*`
+    - _Requirements: 16.1_
+
+- [x] 13. Checkpoint — end-to-end verification
+  - Start XAMPP MySQL, run `npm run migrate` in `server/`
+  - Start backend: `npm run dev` in `server/`
+  - Set `VITE_USE_BACKEND=true` in frontend `.env`
+  - Verify full auth flow: register → login → refresh → logout
+  - Verify product listing, order creation, chat messaging, file upload
+  - Run all property tests: `npm test` in `server/`
+  - Fix any failures before proceeding
+
+- [x] 14. Production readiness
+  - [x] 14.1 Add `server/README.md` with setup instructions
+    - XAMPP MySQL setup steps
+    - `.env` configuration guide
+    - Migration command
+    - Start command for development and production
+  - [x] 14.2 Add `server/.gitignore`
+    - Ignore: `.env`, `uploads/`, `node_modules/`
+  - [x] 14.3 Add production start script
+    - Add `"start": "node src/server.js"` to `server/package.json`
+    - Verify `NODE_ENV=production` suppresses stack traces and enables helmet
+    - _Requirements: 2.3, 2.4_
+  - [x] 14.4 Add `vite.config.js` proxy for development
+    - Proxy `/api` and `/uploads` to `http://localhost:3001` so frontend dev server forwards API calls
+    - This avoids CORS issues during local development
+
+## Notes
+
+- All property tests use `fast-check` with a minimum of 100 iterations
+- `USE_BACKEND=false` (default) keeps the app fully functional with localStorage — no breaking changes
+- Run the Migration Tool export **before** setting `USE_BACKEND=true` for the first time
+- The `server/uploads/` directory is gitignored; back it up separately before any server migration
+- MySQL UUIDs are stored as `CHAR(36)` for HeidiSQL compatibility; use `crypto.randomUUID()` in Node.js to generate them
+- Socket.io access token is passed as `socket.handshake.auth.token` (not query param) to avoid token leakage in server logs

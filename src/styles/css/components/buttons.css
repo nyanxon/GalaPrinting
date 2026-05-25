@@ -1,0 +1,29 @@
+.btn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+}
+.btn:hover{ filter: brightness(0.98); }
+.btn:active{ transform: translateY(1px); }
+
+.btn.primary{
+  background: var(--primary);
+  border-color: rgba(0,0,0,0.0);
+  color: var(--primary-contrast);
+}
+.btn.ghost{
+  background: transparent;
+}
+
+.btn:disabled{
+  opacity: 0.6;
+  cursor: not-allowed;
+}

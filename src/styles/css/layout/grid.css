@@ -1,0 +1,18 @@
+.container{
+  width: min(100% - 32px, var(--container));
+  margin-inline: auto;
+}
+
+.stack{ display: grid; gap: 14px; }
+.stack-lg{ display: grid; gap: 22px; }
+
+.grid{
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 768px){
+  .grid.cols-2{ grid-template-columns: 1fr 1fr; }
+  .grid.cols-3{ grid-template-columns: repeat(3, 1fr); }
+  .grid.cols-4{ grid-template-columns: repeat(4, 1fr); }
+}

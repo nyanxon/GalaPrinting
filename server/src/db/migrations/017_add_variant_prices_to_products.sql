@@ -1,0 +1,1 @@
+ALTER TABLE products ADD COLUMN IF NOT EXISTS variant_prices JSON DEFAULT NULL AFTER materials;

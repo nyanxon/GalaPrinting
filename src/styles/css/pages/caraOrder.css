@@ -1,0 +1,31 @@
+.content-page{
+  padding: 22px 0 10px;
+}
+
+.steps{
+  counter-reset: step;
+  display: grid;
+  gap: 12px;
+}
+.step{
+  display: grid;
+  gap: 8px;
+}
+.step-title{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 900;
+}
+.step-title::before{
+  counter-increment: step;
+  content: counter(step);
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary);
+  color: var(--primary-contrast);
+}

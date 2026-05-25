@@ -1,0 +1,8 @@
+# Environment variables — never commit secrets
+.env
+
+# Uploaded files — back up separately before any server migration
+uploads/
+
+# Node.js dependencies
+node_modules/

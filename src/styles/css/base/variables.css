@@ -1,0 +1,34 @@
+:root{
+  /* Brand */
+  --brand-brown: #785E40;
+  --brand-beige: #EDC8AE;
+  --white: #ffffff;
+
+  /* Neutrals */
+  --text: #1f1f1f;
+  --muted: #6b6b6b;
+  --border: rgba(31, 31, 31, 0.12);
+  --bg: #ffffff;
+  --surface: #ffffff;
+
+  /* Semantic */
+  --primary: var(--brand-brown);
+  --primary-contrast: var(--white);
+  --accent: var(--brand-beige);
+
+  /* Layout */
+  --container: 1120px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+
+  /* Shadows */
+  --shadow-sm: 0 6px 18px rgba(0,0,0,0.08);
+  --shadow-md: 0 14px 40px rgba(0,0,0,0.12);
+
+  /* Typography */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  --font-size-base: 16px;
+  --line-height: 1.5;
+}
+
+/* Dark mode intentionally disabled — site always uses light theme */

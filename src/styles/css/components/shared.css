@@ -1,0 +1,91 @@
+/* ══════════════════════════════════════════════════════════
+   SHARED UTILITY STYLES
+   Used across multiple pages / features
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Search highlight (product search results) ───────────── */
+mark.search-highlight {
+  background: rgba(120, 94, 64, 0.18);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+/* ── Checkout: auth-required screen ─────────────────────── */
+.co-auth-required {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 60px 24px;
+  gap: 16px;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.co-auth-icon {
+  font-size: 48px;
+  line-height: 1;
+}
+
+.co-auth-title {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0;
+  color: #1f1f1f;
+}
+
+.co-auth-desc {
+  font-size: 15px;
+  color: #6b6b6b;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.co-auth-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.co-auth-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 13px 24px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: filter 0.15s;
+  cursor: pointer;
+}
+
+.co-auth-btn--primary {
+  background: var(--brand-brown, #785E40);
+  color: #fff;
+  border: none;
+}
+
+.co-auth-btn:not(.co-auth-btn--primary) {
+  border: 1px solid #ccc;
+  color: #1f1f1f;
+  background: #fff;
+}
+
+.co-auth-btn:hover {
+  filter: brightness(0.92);
+}
+
+/* ── Product card category label ─────────────────────────── */
+.product-card-category {
+  font-size: 11px;
+  color: #9b9b9b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 2px;
+}

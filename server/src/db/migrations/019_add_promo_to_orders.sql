@@ -1,0 +1,3 @@
+ALTER TABLE orders
+  ADD COLUMN IF NOT EXISTS promo_code      VARCHAR(50)   DEFAULT NULL AFTER subtotal,
+  ADD COLUMN IF NOT EXISTS discount_amount DECIMAL(15,2) NOT NULL DEFAULT 0 AFTER promo_code;

@@ -1,0 +1,24 @@
+body{
+  font-family: var(--font-sans);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height);
+}
+
+h1,h2,h3{
+  margin: 0;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+p{ margin: 0; color: var(--text); }
+.muted{ color: var(--muted); }
+
+.page-title{
+  font-size: 32px;
+  margin: 18px 0 10px;
+}
+
+.section-title{
+  font-size: 22px;
+  margin: 0 0 10px;
+}

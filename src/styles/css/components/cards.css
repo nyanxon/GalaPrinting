@@ -1,0 +1,16 @@
+.card{
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.card-body{
+  padding: 14px;
+  display: grid;
+  gap: 8px;
+}
+
+.card-title{ font-weight: 800; }
+.card-subtitle{ color: var(--muted); font-size: 14px; }

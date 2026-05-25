@@ -1,0 +1,302 @@
+# Implementation Plan: Vanilla to React Migration
+
+## Overview
+
+Migrate the `gala-printing` vanilla JS MPA to a React SPA within the existing `gala-print-web` Vite scaffold. The plan proceeds in layers: dependencies → copied assets → context/guards → shared shell → public pages → staff dashboards → routing wiring → property-based tests → build verification. Each task builds on the previous so there is no orphaned code.
+
+## Tasks
+
+- [x] 1. Install react-router-dom and set up testing dependencies
+  - Run `npm install react-router-dom@^6`
+  - Run `npm install --save-dev vitest @vitest/coverage-v8 @testing-library/react @testing-library/jest-dom @testing-library/user-event fast-check jsdom`
+  - Add `test` script to `package.json`: `"test": "vitest --run"`
+  - Add `vitest` config block to `vite.config.js` (environment: `jsdom`, setupFiles pointing to a test setup file)
+  - Create `src/test/setup.js` that imports `@testing-library/jest-dom`
+  - _Requirements: 16.5_
+
+- [x] 2. Copy service and core utility files
+  - [x] 2.1 Copy 8 service files into `src/services/` without modification
+    - `authService.js`, `cartService.js`, `orderService.js`, `productService.js`, `categoryService.js`, `chatService.js`, `reviewService.js`, `analyticsService.js`
+    - _Requirements: 5.1_
+  - [x] 2.2 Copy 6 core utility files into `src/core/` without modification
+    - `config.js`, `storage.js`, `helpers.js`, `validate.js`, `notifications.js`, `httpClient.js`
+    - _Requirements: 5.2_
+  - [x] 2.3 Copy static image assets into `src/assets/`
+    - Copy `logo.png` and `placeholder.svg` from vanilla source into `src/assets/`
+    - _Requirements: 14.1_
+
+- [x] 3. Wire global CSS entry point
+  - Update `src/index.css` to `@import './styles/css/main.css'` (CSS tree already present at `src/styles/css/`)
+  - Verify CSS custom properties from `variables.css` (e.g. `--brand-brown`) are available globally
+  - _Requirements: 13.2, 13.3_
+
+- [x] 4. Implement AuthContext and CartContext
+  - [x] 4.1 Implement `src/components/context/AuthContext.jsx`
+    - Create `AuthContext` with `createContext(null)`
+    - `AuthProvider` initialises `user` state by calling `hydrateUser()` on mount inside `useEffect`
+    - Expose `{ user, updateUser }` as context value; `updateUser` calls `setState`
+    - Export both `AuthContext` and `AuthProvider`
+    - _Requirements: 4.1, 4.3, 4.4_
+  - [x] 4.2 Write property test for AuthContext user propagation
+    - **Property 6: AuthContext user update propagates**
+    - Generate random user objects with `fc.record({ id: fc.string(), name: fc.string(), role: fc.constantFrom('customer','admin','owner') })`
+    - Assert all consumers see the new user value after `updateUser` call
+    - Tag: `// Feature: vanilla-to-react-migration, Property 6: AuthContext user update propagates`
+    - **Validates: Requirements 4.4**
+  - [x] 4.3 Implement `src/components/context/CartContext.jsx`
+    - Create `CartContext` with `createContext(null)`
+    - `CartProvider` manages `items` array state
+    - Implement `addItem(item)`, `removeItem(itemId)`, `clearCart()` — pure state updates, no direct DOM
+    - Expose `{ items, addItem, removeItem, clearCart }` as context value
+    - Export both `CartContext` and `CartProvider`
+    - _Requirements: 4.2, 4.5, 4.6_
+  - [x] 4.4 Write property test for CartContext add/remove round trip
+    - **Property 4: Cart add/remove round trip**
+    - Generate random cart items and sequences; assert adding then removing by id returns original state
+    - Tag: `// Feature: vanilla-to-react-migration, Property 4: Cart add/remove round trip`
+    - **Validates: Requirements 4.2, 4.5**
+  - [x] 4.5 Write property test for CartContext non-negative count
+    - **Property 5: Cart item count is non-negative**
+    - Generate random add/remove sequences; assert `items.length` is never negative
+    - Tag: `// Feature: vanilla-to-react-migration, Property 5: Cart item count is non-negative`
+    - **Validates: Requirements 4.2**
+
+- [x] 5. Implement RoleGuard
+  - [x] 5.1 Implement `src/components/guards/RoleGuard.jsx`
+    - Read `user` from `AuthContext`
+    - If `user` is null or `user.role !== requiredRole`, render `<Navigate to="/register" replace />`
+    - Otherwise render `children`
+    - Props: `{ requiredRole: string, children: ReactNode }`
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
+  - [x] 5.2 Write property test for RoleGuard blocking non-permitted users
+    - **Property 1: Role guard blocks non-permitted users**
+    - Generate random staff paths and null/wrong-role users; assert redirect to `/register`
+    - Tag: `// Feature: vanilla-to-react-migration, Property 1: Role guard blocks non-permitted users`
+    - **Validates: Requirements 3.2, 3.3**
+  - [x] 5.3 Write property test for RoleGuard permitting correct-role users
+    - **Property 2: Role guard permits correct-role users**
+    - Generate random staff paths and matching-role users; assert child component renders
+    - Tag: `// Feature: vanilla-to-react-migration, Property 2: Role guard permits correct-role users`
+    - **Validates: Requirements 3.4**
+
+- [x] 6. Checkpoint — Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 7. Implement shared UI components
+  - [x] 7.1 Implement `src/components/shared/Modal.jsx`
+    - Generic overlay base: props `{ isOpen, onClose, children }`
+    - Set `aria-modal="true"` and `role="dialog"` on overlay element
+    - Close on Escape key via `useEffect` keyboard listener
+    - Trap focus within overlay; restore focus to trigger element on close (fallback to `document.body`)
+    - _Requirements: 8.3, 8.4, 8.5, 15.5_
+  - [x] 7.2 Write property test for Modal accessibility attributes
+    - **Property 11: Modal accessibility attributes**
+    - For any open modal, assert overlay has `aria-modal="true"` and `role="dialog"`
+    - Tag: `// Feature: vanilla-to-react-migration, Property 11: Modal accessibility attributes`
+    - **Validates: Requirements 8.3, 15.5**
+  - [x] 7.3 Implement `src/components/shared/Toast.jsx` and toast event emitter
+    - Create a module-level event emitter in `src/core/toastEmitter.js` so service-layer code can call `showToast(message, type, duration)` without importing React
+    - `Toast` component subscribes to the emitter, queues messages, displays one at a time, auto-dismisses after `duration` ms
+    - Render with `role="status"` and `aria-live="polite"`
+    - _Requirements: 6.4, 6.5, 15.6_
+  - [x] 7.4 Write property test for Toast auto-dismiss
+    - **Property 7: Toast auto-dismiss**
+    - Generate random messages and durations; assert toast visible immediately, not visible after duration
+    - Tag: `// Feature: vanilla-to-react-migration, Property 7: Toast auto-dismiss`
+    - **Validates: Requirements 6.5**
+  - [x] 7.5 Write property test for Toast accessibility attributes
+    - **Property 12: Toast accessibility attributes**
+    - For any toast message, assert container has `role="status"` or `aria-live="polite"`
+    - Tag: `// Feature: vanilla-to-react-migration, Property 12: Toast accessibility attributes`
+    - **Validates: Requirements 15.6**
+  - [x] 7.6 Implement `src/components/shared/Navbar.jsx`
+    - Read `user` from `AuthContext` and `items` from `CartContext`
+    - Render cart badge with `items.length`, updating reactively
+    - Render navigation links based on `user.role` (or guest links if `user` is null)
+    - Render `<nav aria-label="...">` landmark
+    - Preserve all `aria-*` attributes from vanilla source
+    - _Requirements: 6.1, 6.6, 6.7, 15.1, 15.7_
+  - [x] 7.7 Write property test for Navbar cart badge
+    - **Property 8: Navbar cart badge reflects context**
+    - Generate random cart sizes; assert badge count equals `items.length` after add/remove
+    - Tag: `// Feature: vanilla-to-react-migration, Property 8: Navbar cart badge reflects context`
+    - **Validates: Requirements 6.6**
+  - [x] 7.8 Write property test for Navbar role-based links
+    - **Property 9: Navbar links reflect user role**
+    - Generate random user roles; assert rendered links match role definition, no cross-role links
+    - Tag: `// Feature: vanilla-to-react-migration, Property 9: Navbar links reflect user role`
+    - **Validates: Requirements 6.7**
+  - [x] 7.9 Implement `src/components/shared/Footer.jsx`
+    - Render footer equivalent to vanilla `footer.js`
+    - Preserve all `aria-*` and `role` attributes
+    - _Requirements: 6.2, 15.1, 15.2_
+  - [x] 7.10 Implement `src/components/shared/ChatWidget.jsx`
+    - Render chat widget equivalent to vanilla `chatWidget.js`
+    - Use `chatService.js` for data; manage open/close state via `useState`
+    - _Requirements: 6.3_
+  - [x] 7.11 Implement `src/components/shared/ProductCard.jsx`
+    - Reusable card component used by `ProductsPage` and `HomePage`
+    - Props: `{ product }` — renders name, price, image, link to `/products/:slug`
+    - Import image via ES module or use `src` string from product data
+    - _Requirements: 7.2, 14.2, 14.3_
+  - [x] 7.12 Implement `src/components/shared/PaymentModal.jsx`
+    - 2-step flow: QRIS display → proof-of-payment file upload
+    - Wraps `<Modal>` base component
+    - Equivalent to vanilla `paymentModal.js`
+    - _Requirements: 8.1, 8.3, 8.4_
+  - [x] 7.13 Implement `src/components/shared/OrderDetailModal.jsx`
+    - Order detail viewer with file lightbox
+    - Wraps `<Modal>` base component
+    - Equivalent to vanilla `orderDetailModal.js`
+    - _Requirements: 8.2, 8.3, 8.4_
+
+- [x] 8. Implement layout components
+  - [x] 8.1 Implement `src/components/layout/PublicLayout.jsx`
+    - Renders `<Navbar />` + `<Outlet />` + `<Footer />` + `<ChatWidget />`
+    - Used as the layout route wrapping all public and customer pages
+    - _Requirements: 6.1, 6.2, 6.3_
+  - [x] 8.2 Implement `src/components/layout/StaffLayout.jsx`
+    - Sidebar shell for staff dashboards (no Navbar/Footer/ChatWidget)
+    - Renders `<Outlet />` for nested staff page content
+    - _Requirements: 6.8_
+
+- [x] 9. Implement public page components
+  - [x] 9.1 Implement `src/components/pages/public/HomePage.jsx`
+    - Hero banner, featured products (uses `<ProductCard>`), promotional sections
+    - Call `productService.js` in `useEffect`; initialise state with `[]`; wrap in `try/catch`
+    - Import `src/styles/css/pages/home.css`
+    - _Requirements: 7.1, 13.4_
+  - [x] 9.2 Implement `src/components/pages/public/ProductsPage.jsx`
+    - Product grid using `<ProductCard>`, filtering and pagination via `useState`
+    - Call `productService.js` and `categoryService.js` in `useEffect`
+    - Import `src/styles/css/pages/products.css`
+    - Assign stable `key` props to list items
+    - _Requirements: 7.2, 13.4, 16.4_
+  - [x] 9.3 Implement `src/components/pages/public/CatalogProductPage.jsx`
+    - Product detail view, design file upload (base64), add-to-cart via `CartContext`
+    - Read `:slug` param via `useParams`
+    - Import `src/styles/css/pages/catalogProduct.css`
+    - _Requirements: 7.3, 13.4_
+  - [x] 9.4 Implement `src/components/pages/public/CartPage.jsx`
+    - Cart item list with quantity controls and totals from `CartContext`
+    - Import `src/styles/css/pages/cart.css`
+    - _Requirements: 7.4, 13.4_
+  - [x] 9.5 Implement `src/components/pages/public/CheckoutPage.jsx`
+    - Checkout form; triggers `<PaymentModal>` on submission
+    - Call `orderService.js` `createOrder()`
+    - Import `src/styles/css/pages/checkout.css`
+    - _Requirements: 7.5, 13.4_
+  - [x] 9.6 Implement `src/components/pages/public/RegisterPage.jsx`
+    - Login and registration forms; on successful staff login redirect to role-specific dashboard via `useNavigate`
+    - Call `authService.js`; update `AuthContext` via `updateUser`
+    - Import `src/styles/css/pages/register.css`
+    - _Requirements: 7.6, 13.4_
+  - [x] 9.7 Implement `src/components/pages/public/StatusOrderPage.jsx`
+    - 8-step order timeline; courier tracking lookup by order number and phone
+    - Call `orderService.js` in `useEffect`
+    - Import `src/styles/css/pages/statusOrder.css`
+    - _Requirements: 7.7, 13.4_
+  - [x] 9.8 Implement `src/components/pages/public/MyOrdersPage.jsx`
+    - Customer order history; pay button for pending orders triggers `<PaymentModal>`
+    - Redirect to `/register` if `user` is null via `useNavigate`
+    - Import `src/styles/css/pages/myOrders.css`
+    - _Requirements: 7.8, 13.4_
+  - [x] 9.9 Implement static content pages
+    - `src/components/pages/public/CaraOrderPage.jsx` — import `src/styles/css/pages/caraOrder.css`
+    - `src/components/pages/public/PortfolioPage.jsx` — import `src/styles/css/pages/portfolio.css`
+    - `src/components/pages/public/TentangKamiPage.jsx` — import `src/styles/css/pages/tentangKami.css`
+    - _Requirements: 7.9, 13.4_
+  - [x] 9.10 Implement `src/components/pages/NotFoundPage.jsx`
+    - User-friendly 404 message with a link back to `/`
+    - _Requirements: 2.2_
+
+- [x] 10. Checkpoint — Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 11. Implement Chart component
+  - Implement `src/components/charts/Chart.jsx`
+  - SVG chart wrapper equivalent to vanilla `charts.js` and `js/modules/owner/dashboard/components/charts.js`
+  - Props: `{ data, type }` — renders SVG bar/line chart
+  - _Requirements: 10.2_
+
+- [x] 12. Implement staff dashboard pages
+  - [x] 12.1 Implement `src/components/pages/admin/AdminDashboardPage.jsx` and section components
+    - Sidebar shell equivalent to vanilla `adminView.js`
+    - Section components under `src/components/pages/admin/sections/`:
+      - `OrdersSection.jsx` — paginated orders table with status select dropdown
+      - `CustomersSection.jsx` — customer list
+      - `ProductsSection.jsx` — product CRUD table
+      - `ReviewsSection.jsx` — review moderation table
+      - `ChatsSection.jsx` — WhatsApp-style chat panel using `chatService.js`
+    - Section switching via `useState` (no page reload)
+    - Import `src/styles/css/pages/dashboard.css`
+    - Assign stable `key` props to all list items
+    - _Requirements: 9.1, 9.2, 9.3, 9.4, 13.4, 16.4_
+  - [x] 12.2 Implement `src/components/pages/owner/OwnerDashboardPage.jsx` and section components
+    - All Admin sections plus additional sections under `src/components/pages/owner/sections/`:
+      - `RevenueSection.jsx` — revenue summary using `<Chart>`
+      - `ReportsSection.jsx` — downloadable reports
+      - `AnalyticsSection.jsx` — best sellers and visit analytics using `analyticsService.js` and `<Chart>`
+    - Import `src/styles/css/pages/dashboard.css`
+    - _Requirements: 10.1, 10.2, 10.3, 13.4_
+  - [x] 12.3 Implement `src/components/pages/subadmin/SubAdminLayout.jsx`
+    - Common sidebar shell and section-switching logic from vanilla `subAdminController.js`
+    - _Requirements: 11.2_
+  - [x] 12.4 Implement sub-admin dashboard pages
+    - `src/components/pages/subadmin/CashierDashboardPage.jsx`
+    - `src/components/pages/subadmin/CSDashboardPage.jsx`
+    - `src/components/pages/subadmin/OperationalDashboardPage.jsx`
+    - `src/components/pages/subadmin/QCDashboardPage.jsx`
+    - Each wraps `<SubAdminLayout>` and renders its role-specific sections
+    - Import `src/styles/css/pages/dashboard.css`
+    - _Requirements: 11.1, 11.2, 13.4_
+  - [x] 12.5 Implement `src/components/pages/offline/OfflineDashboardPage.jsx`
+    - Walk-in order entry form and printable receipt view
+    - Call `orderService.js` `createOrder()` on submission
+    - Import `src/styles/css/pages/dashboard.css`
+    - _Requirements: 12.1, 12.2, 13.4_
+
+- [x] 13. Wire App.jsx — providers, boot sequence, and router
+  - Rewrite `src/App.jsx` to:
+    - Call `seedStaffUsers()` and `hydrateUser()` before first render (in component body or `useMemo` before state init)
+    - Wrap the tree in `<AuthProvider>` → `<CartProvider>`
+    - Render `<Toast />` at root level (accessible to all routes)
+    - Define the full `<BrowserRouter>` + `<Routes>` tree as per the routing table in the design:
+      - `<Route element={<PublicLayout />}>` wrapping all 11 public routes
+      - 7 staff routes each wrapped in `<RoleGuard requiredRole="...">` with no public shell
+      - Catch-all `<Route path="*" element={<NotFoundPage />} />`
+    - Remove the placeholder scaffold content
+    - _Requirements: 1.1, 1.3, 2.1, 2.2, 2.3, 2.4, 6.8_
+  - [x] 13.1 Write property test for unknown routes rendering NotFoundPage
+    - **Property 3: Unknown routes render NotFoundPage**
+    - Generate random non-matching path strings; assert `<NotFoundPage>` renders
+    - Tag: `// Feature: vanilla-to-react-migration, Property 3: Unknown routes render NotFoundPage`
+    - **Validates: Requirements 2.2**
+  - [x] 13.2 Write property test for staff routes excluding public shell
+    - **Property 10: Staff routes exclude public shell**
+    - For each of the 7 staff route paths, assert Navbar/Footer/ChatWidget are absent from rendered output
+    - Tag: `// Feature: vanilla-to-react-migration, Property 10: Staff routes exclude public shell`
+    - **Validates: Requirements 6.8**
+
+- [x] 14. Checkpoint — Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 15. Verify build and lint compliance
+  - [x] 15.1 Run `npm run lint` and fix any ESLint errors
+    - Ensure zero errors against the existing ESLint configuration
+    - Fix any missing `key` props, unused imports, or deprecated API usage
+    - _Requirements: 16.2, 16.3, 16.4_
+  - [x] 15.2 Run `npm run build` and verify zero errors
+    - Confirm production bundle builds successfully
+    - Confirm no ghost directories (`js/js/`, `js/pages/`, `js/modules/director/`) appear in output
+    - _Requirements: 16.1, 16.6_
+
+## Notes
+
+- Tasks marked with `*` are optional and can be skipped for a faster MVP
+- Each task references specific requirements for traceability
+- Checkpoints at tasks 6, 10, and 14 ensure incremental validation
+- Property tests use `fast-check` with a minimum of 100 iterations each
+- Unit tests and property tests are complementary — both are included
+- All CSS files remain as plain CSS; no CSS Modules or CSS-in-JS conversion
+- Service files and core utilities are copied without modification — no React-specific refactoring
