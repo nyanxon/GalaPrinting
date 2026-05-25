@@ -20,24 +20,21 @@ import {
 import { formatCurrency } from '../../../../core/helpers.js';
 import OrderDetailModal from '../../../shared/OrderDetailModal.jsx';
 import { showToast } from '../../../../core/toastEmitter.js';
+import { resolveApiUrl } from '../../../../core/httpClient.js';
 
 const CASHIER_STATUSES = ['Waiting for Payment', 'Payment Accepted'];
 
+function getProofUrl(proof) {
+  if (!proof) return null;
+  if (typeof proof === 'string') return resolveApiUrl(proof);
+  if (proof.dataUrl) return proof.dataUrl;
+  if (proof.url) return resolveApiUrl(proof.url);
+  return null;
+}
+
 function CashierProofCell({ order, onCancel }) {
   const proof = order.paymentProof;
-
-  const apiBase = import.meta.env.VITE_API_URL || '';
-  let proofUrl = null;
-  if (proof) {
-    if (typeof proof === 'string') {
-      proofUrl = proof.startsWith('http') || proof.startsWith('data:')
-        ? proof : `${apiBase}${proof}`;
-    } else if (proof.dataUrl) {
-      proofUrl = proof.dataUrl;
-    } else if (proof.url) {
-      proofUrl = proof.url.startsWith('http') ? proof.url : `${apiBase}${proof.url}`;
-    }
-  }
+  const proofUrl = getProofUrl(proof);
 
   return (
     <div className="cashier-proof-cell" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>

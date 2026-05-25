@@ -22,6 +22,21 @@ import axios from 'axios';
  * Requirement 16.2
  */
 export const USE_BACKEND = import.meta.env.VITE_USE_BACKEND === 'true';
+export const API_BASE = import.meta.env.VITE_API_URL || '';
+
+/**
+ * Resolve a backend-relative path to a full URL when needed.
+ * If the path is already absolute or a data URI, it is returned unchanged.
+ * When no VITE_API_URL is configured, relative paths stay relative for same-origin routing.
+ *
+ * @param {string|null|undefined} path
+ * @returns {string|null}
+ */
+export function resolveApiUrl(path) {
+  if (!path || typeof path !== 'string') return null;
+  if (path.startsWith('http') || path.startsWith('data:')) return path;
+  return `${API_BASE}${path.startsWith('/') ? path : '/' + path}`;
+}
 
 // ---------------------------------------------------------------------------
 // In-memory access token storage
@@ -70,13 +85,13 @@ export function clearSession() {
 
 /**
  * Pre-configured axios instance for all backend API calls.
- * - baseURL defaults to VITE_API_URL or http://localhost:3001
+ * - baseURL defaults to VITE_API_URL or `/api` for same-origin backend routing
  * - withCredentials: true so the HttpOnly refresh cookie is sent automatically
  *
  * Requirement 16.3
  */
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',

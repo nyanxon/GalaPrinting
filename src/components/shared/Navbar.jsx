@@ -5,9 +5,8 @@ import { CartContext } from '../context/CartContext.jsx';
 import { logout, login, getCurrentUser } from '../../services/authService.js';
 import { listCategories } from '../../services/categoryService.js';
 import { formatCurrency } from '../../core/helpers.js';
+import { resolveApiUrl } from '../../core/httpClient.js';
 import logoImg from '../../assets/logo.png';
-
-const API_BASE = import.meta.env.VITE_API_URL || '';
 
 const STAFF_ROLES = ['admin', 'owner', 'cashier', 'cs', 'operational', 'qc', 'offline'];
 
@@ -260,7 +259,7 @@ function Navbar() {
                       >
                         {user.avatar_url ? (
                           <img
-                            src={API_BASE + user.avatar_url}
+                            src={resolveApiUrl(user.avatar_url)}
                             alt="Foto profil"
                             className="nav-avatar-img"
                           />
@@ -280,7 +279,7 @@ function Navbar() {
                           <div className="profile-popup-header">
                             <div className="profile-popup-avatar">
                               {user.avatar_url ? (
-                                <img src={API_BASE + user.avatar_url} alt="Foto profil" className="profile-popup-avatar-img" />
+                                <img src={resolveApiUrl(user.avatar_url)} alt="Foto profil" className="profile-popup-avatar-img" />
                               ) : (
                                 <svg viewBox="0 0 24 24" fill="currentColor" className="profile-popup-avatar-icon" aria-hidden="true">
                                   <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />

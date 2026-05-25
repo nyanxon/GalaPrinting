@@ -46,11 +46,6 @@ export function createApp() {
     })
   );
 
-  // ── ngrok browser warning bypass ─────────────────────────────────────────
-  app.use((_req, res, next) => {
-    res.setHeader('ngrok-skip-browser-warning', 'true');
-    next();
-  });
 
   // ── Body parsing ──────────────────────────────────────────────────────────
   app.use(express.json({ limit: '1mb' }));
@@ -66,7 +61,7 @@ export function createApp() {
   const uploadsAbsPath = path.resolve(process.cwd(), config.uploadDir);
   app.use('/uploads', express.static(uploadsAbsPath));
 
-  // ── Serve React frontend build (production / ngrok) ───────────────────────
+  // ── Serve React frontend build in production
   if (fs.existsSync(distPath)) {
     app.use(express.static(distPath));
   }

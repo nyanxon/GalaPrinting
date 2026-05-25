@@ -195,7 +195,7 @@ export async function getCurrentUser() {
       const { default: axios } = await import("axios");
       try {
         const refreshRes = await axios.post(
-          `${api.defaults.baseURL}/api/auth/refresh`,
+          '/api/auth/refresh',
           {},
           { withCredentials: true }
         );

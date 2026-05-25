@@ -1,6 +1,6 @@
 import Modal from './Modal.jsx';
 import { formatCurrency } from '../../core/helpers.js';
-import { api } from '../../core/httpClient.js';
+import { api, resolveApiUrl } from '../../core/httpClient.js';
 
 /**
  * OrderDetailModal — detail pesanan untuk admin, subadmin, dan owner.
@@ -28,11 +28,7 @@ const STATUS_CONFIG = {
 function resolveDesignUrl(item) {
   if (item.designFileUrl) return item.designFileUrl;
   if (item.designDataUrl) return item.designDataUrl;
-  // Fallback: build URL from raw path
-  if (item.designFileName && item.designFileName.startsWith('/uploads/')) {
-    const base = import.meta.env.VITE_API_URL || '';
-    return `${base}${item.designFileName}`;
-  }
+  if (item.designFileName) return resolveApiUrl(item.designFileName);
   return null;
 }
 

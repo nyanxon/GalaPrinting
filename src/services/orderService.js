@@ -18,7 +18,7 @@ import {
   notifyOrderStatusChanged,
   notifyAdminNoteUpdated,
 } from "../core/notifications.js";
-import { USE_BACKEND, api } from "../core/httpClient.js";
+import { USE_BACKEND, api, resolveApiUrl } from "../core/httpClient.js";
 
 const KEY = "gala.orders";
 
@@ -167,14 +167,9 @@ export const STATUS_CONFIG = {
  */
 function mapOrder(row) {
   if (!row) return null;
-  const apiBase = typeof import.meta !== 'undefined'
-    ? (import.meta.env?.VITE_API_URL || '')
-    : '';
 
   function toAbsUrl(p) {
-    if (!p) return null;
-    if (p.startsWith('http') || p.startsWith('data:')) return p;
-    return `${apiBase}${p.startsWith('/') ? p : '/' + p}`;
+    return resolveApiUrl(p);
   }
 
   return {
@@ -215,16 +210,8 @@ function mapOrder(row) {
  * @returns {object}
  */
 function mapOrderItem(item) {
-  const apiBase = typeof import.meta !== 'undefined'
-    ? (import.meta.env?.VITE_API_URL || '')
-    : '';
   const rawPath = item.design_file_path ?? item.designFileName ?? null;
-  // Build a full accessible URL if it's a server path
-  const designUrl = rawPath
-    ? (rawPath.startsWith('http') || rawPath.startsWith('data:')
-        ? rawPath
-        : `${apiBase}${rawPath.startsWith('/') ? rawPath : '/' + rawPath}`)
-    : null;
+  const designUrl = resolveApiUrl(rawPath);
 
   return {
     id:             item.id,

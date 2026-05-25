@@ -61,7 +61,7 @@ export function connectSocket(accessToken) {
   // Avoid duplicate connections
   if (socket && socket.connected) return;
 
-  const serverUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
+  const serverUrl = import.meta.env.VITE_API_URL || undefined;
 
   socket = io(serverUrl, {
     auth: { token: accessToken },

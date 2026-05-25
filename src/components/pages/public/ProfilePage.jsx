@@ -14,9 +14,8 @@ import ProfileForm from '../../profile/ProfileForm.jsx';
 import AddressList from '../../profile/AddressList.jsx';
 import NotificationSettings from '../../profile/NotificationSettings.jsx';
 import * as profileService from '../../../services/profileService.js';
+import { resolveApiUrl } from '../../../core/httpClient.js';
 import '../../../styles/css/pages/profile.css';
-
-const API_BASE = import.meta.env.VITE_API_URL || '';
 
 const TABS = [
   { id: 'profile',       label: 'Profil',         icon: '👤' },
@@ -66,8 +65,8 @@ function ProfilePage() {
   }
 
   const avatarSrc = profile?.avatar_url
-    ? `${API_BASE}${profile.avatar_url}`
-    : (user?.avatar_url ? `${API_BASE}${user.avatar_url}` : null);
+    ? resolveApiUrl(profile.avatar_url)
+    : (user?.avatar_url ? resolveApiUrl(user.avatar_url) : null);
 
   return (
     <main>

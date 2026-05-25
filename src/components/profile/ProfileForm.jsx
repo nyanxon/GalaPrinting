@@ -17,9 +17,8 @@
 import { useState } from 'react';
 import { updateProfile } from '../../services/profileService.js';
 import { showToast } from '../../core/toastEmitter.js';
+import { resolveApiUrl } from '../../core/httpClient.js';
 import ImageCropper from './ImageCropper.jsx';
-
-const API_BASE = import.meta.env.VITE_API_URL || '';
 
 /** Format an ISO date string (or null) as DD/MM/YYYY, or return fallback. */
 function formatDob(dob) {
@@ -156,7 +155,7 @@ function ProfileForm({ profile, onProfileUpdated }) {
           >
             {profile?.avatar_url ? (
               <img
-                src={`${API_BASE}${profile.avatar_url}`}
+                src={resolveApiUrl(profile.avatar_url)}
                 alt="Foto profil"
                 className="pf-avatar-img"
               />
@@ -242,7 +241,7 @@ function ProfileForm({ profile, onProfileUpdated }) {
         >
           {profile?.avatar_url ? (
             <img
-              src={`${API_BASE}${profile.avatar_url}`}
+              src={resolveApiUrl(profile.avatar_url)}
               alt="Foto profil"
               className="pf-avatar-img"
             />
