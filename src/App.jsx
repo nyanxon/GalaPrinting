@@ -8,6 +8,7 @@ import RoleGuard from './components/guards/RoleGuard.jsx';
 import Toast from './components/shared/Toast.jsx';
 import { seedStaffUsers } from './services/authService.js';
 import { USE_BACKEND } from './core/httpClient.js';
+import { supabase } from './utils/supabase.js';
 
 // Public pages
 import HomePage from './components/pages/public/HomePage.jsx';
