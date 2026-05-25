@@ -9,6 +9,7 @@ import Toast from './components/shared/Toast.jsx';
 import { seedStaffUsers } from './services/authService.js';
 import { USE_BACKEND } from './core/httpClient.js';
 import { supabase } from './utils/supabase.js';
+import SupabaseDemo from './components/SupabaseDemo.jsx';
 
 // Public pages
 import HomePage from './components/pages/public/HomePage.jsx';
@@ -118,6 +119,7 @@ function App() {
               <Route path="/portfolio"      element={<PortfolioPage />} />
               <Route path="/tentang-kami"   element={<TentangKamiPage />} />
               <Route path="/profile"        element={<ProfilePage />} />
+              <Route path="/supabase-test" element={<SupabaseDemo />} />
             </Route>
 
             {/* Staff routes — no public shell, role-guarded */}
