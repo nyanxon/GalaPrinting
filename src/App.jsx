@@ -6,8 +6,7 @@ import { useContext } from 'react';
 import PublicLayout from './components/layout/PublicLayout.jsx';
 import RoleGuard from './components/guards/RoleGuard.jsx';
 import Toast from './components/shared/Toast.jsx';
-import { seedStaffUsers } from './services/authService.js';
-import { USE_BACKEND } from './core/httpClient.js';
+// NOTE: `seedStaffUsers` seeding is disabled — staff accounts come from the backend.
 
 // Public pages
 import HomePage from './components/pages/public/HomePage.jsx';
@@ -35,10 +34,7 @@ import OfflineDashboardPage from './components/pages/offline/OfflineDashboardPag
 // 404
 import NotFoundPage from './components/pages/NotFoundPage.jsx';
 
-// Boot sequence: seed staff accounts before any route renders.
-// hydrateUser (session restore) is handled inside AuthProvider on mount.
-// DEVELOPMENT ONLY — seeds localStorage staff accounts
-if (!USE_BACKEND) seedStaffUsers();
+// Boot sequence: hydrateUser (session restore) is handled inside AuthProvider on mount.
 
 /**
  * Dismissible warning banner for cart load failures.

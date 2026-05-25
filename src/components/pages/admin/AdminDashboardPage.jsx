@@ -163,28 +163,6 @@ function WelcomeCard({ userName }) {
           Are you ready to get back to our customer? Let&apos;s start the day!
         </div>
       </div>
-      <div className="staff-credentials">
-        <div className="staff-credentials-title">Staff Login Credentials</div>
-        <div className="staff-credentials-grid">
-          {[
-            { role: 'Super Admin',    email: 'admin@galaprinting.test' },
-            { role: 'Owner',          email: 'owner@galaprinting.test' },
-            { role: 'Kasir',          email: 'cashier@galaprinting.test' },
-            { role: 'CS',             email: 'cs@galaprinting.test' },
-            { role: 'Operasional',    email: 'operational@galaprinting.test' },
-            { role: 'QC',             email: 'qc@galaprinting.test' },
-            { role: 'Offline Admin',  email: 'offline@galaprinting.test' },
-          ].map(({ role, email }) => (
-            <div key={role} className="staff-cred-item">
-              <span className="staff-cred-role">{role}</span>
-              <span className="staff-cred-email">{email}</span>
-            </div>
-          ))}
-        </div>
-        <div className="staff-cred-pw">
-          Password semua: <strong>Password123!</strong>
-        </div>
-      </div>
     </div>
   );
 }
@@ -289,7 +267,7 @@ export default function AdminDashboardPage() {
           </header>
 
           {/* Body row: content + activity sidebar */}
-          <div className={`staff-body-row${isDashboard ? '' : ' staff-body-row--full'}`}>
+          <div className="staff-body-row">
             <div className="staff-content">
               {isDashboard && (
                 <>
@@ -297,6 +275,7 @@ export default function AdminDashboardPage() {
                   <MigrationExportTool />
                 </>
               )}
+
               <div id="adm-panel">
                 {renderSection()}
               </div>
