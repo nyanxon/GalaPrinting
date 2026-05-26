@@ -2,6 +2,13 @@
 
 This guide will help you deploy your Gala Printing project to Hostinger with proper backend and database connectivity.
 
+## Architecture Overview
+
+**Single Domain Setup** (Frontend + Backend on same domain):
+- Frontend (React): Serves from root path (`https://your-domain.com`)
+- Backend API: Serves from `/api` path (`https://your-domain.com/api`)
+- Backend runs on Node.js port 3001, proxied through Apache/Nginx
+
 ## Prerequisites
 
 - Hostinger hosting account with MySQL database
@@ -108,7 +115,7 @@ CLIENT_ORIGIN=https://your-domain.com  # Replace with your actual domain
 1. In Hostinger hPanel, go to **Setup** > **Node.js**
 2. Create a new Node.js application:
    - **Project folder**: `server` (or your backend directory)
-   - **Application URL**: Choose your domain/subdomain
+   - **Application URL**: Choose your domain (this will be used for both frontend and backend)
    - **Application startup file**: `src/server.js`
    - **Application mode**: `Production`
 3. Click **Create**
@@ -117,6 +124,12 @@ CLIENT_ORIGIN=https://your-domain.com  # Replace with your actual domain
    - **Application root**: Path to your application
    - **Environment variables**: Add your `.env` variables here
    - **Run script**: `npm start`
+
+**Important for Single-Domain Setup**:
+- The Node.js app will run on a specific port (e.g., 3001)
+- Hostinger will automatically configure Apache/Nginx to proxy `/api` requests to your Node.js app
+- Your frontend (React) will serve from the root path `/`
+- Your backend API will be accessible at `/api`
 
 ## Step 5: Deploy Frontend to Hostinger
 
@@ -142,12 +155,14 @@ CLIENT_ORIGIN=https://your-domain.com  # Replace with your actual domain
 2. Update the `.env` file in your project root:
    ```env
    VITE_USE_BACKEND=true
-   VITE_API_URL=https://your-backend-domain.com
+   VITE_API_URL=  # Leave empty for same-domain API calls
    ```
 3. Rebuild the frontend after updating `.env`:
    ```bash
    npm run build
    ```
+
+**Note**: For single-domain setup, leave `VITE_API_URL` empty. The frontend will use relative paths (`/api`) which automatically point to your same domain.
 
 ## Step 6: Configure Uploads Directory
 
@@ -164,12 +179,13 @@ CLIENT_ORIGIN=https://your-domain.com  # Replace with your actual domain
    - Look for: `[db] Connected to MySQL` message
 
 2. **Test Backend API**:
-   - Access: `https://your-backend-domain.com/api/health` (if you have a health endpoint)
-   - Or test authentication endpoints
+   - Access: `https://your-domain.com/api/health` (if you have a health endpoint)
+   - Or test authentication endpoints at `https://your-domain.com/api/auth/login`
 
 3. **Test Frontend**:
    - Access: `https://your-domain.com`
    - Try logging in and using the application
+   - Verify that API calls go to `https://your-domain.com/api/*`
 
 ## Troubleshooting
 
@@ -191,8 +207,9 @@ CLIENT_ORIGIN=https://your-domain.com  # Replace with your actual domain
 
 ### CORS Errors
 
-- Ensure `CLIENT_ORIGIN` in backend `.env` matches your frontend domain
-- Check that the backend URL in frontend `.env` is correct
+- Ensure `CLIENT_ORIGIN` in backend `.env` matches your domain (e.g., `https://your-domain.com`)
+- For single-domain setup, both frontend and backend share the same origin, so CORS should work automatically
+- If you still get CORS errors, verify that the backend is properly configured to accept requests from your domain
 
 ### File Upload Issues
 
@@ -210,7 +227,7 @@ CLIENT_ORIGIN=https://your-domain.com  # Replace with your actual domain
 
 ## Production Checklist
 
-- [ ] Database created in Hostinger
+- [V] Database created in Hostinger
 - [ ] All 29 migration files executed successfully
 - [ ] Backend `.env` configured with correct database credentials
 - [ ] Strong JWT secrets generated and configured
