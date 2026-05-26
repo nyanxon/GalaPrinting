@@ -192,7 +192,7 @@ api.interceptors.response.use(
       // POST /api/auth/refresh — the HttpOnly cookie is sent automatically
       // because withCredentials: true is set on the instance.
       const { data } = await axios.post(
-        `${api.defaults.baseURL}/api/auth/refresh`,
+        '/api/auth/refresh',
         {},
         { withCredentials: true },
       );

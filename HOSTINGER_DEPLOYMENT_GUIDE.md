@@ -122,14 +122,15 @@ CLIENT_ORIGIN=https://your-domain.com  # Replace with your actual domain
 
 4. After creation, you'll see:
    - **Application root**: Path to your application
-   - **Environment variables**: Add your `.env` variables here
+   - **Environment variables**: Add your `.env` variables here (copy from server/.env)
    - **Run script**: `npm start`
 
 **Important for Single-Domain Setup**:
 - The Node.js app will run on a specific port (e.g., 3001)
 - Hostinger will automatically configure Apache/Nginx to proxy `/api` requests to your Node.js app
-- Your frontend (React) will serve from the root path `/`
-- Your backend API will be accessible at `/api`
+- Your frontend (React) will serve from the root path `/` via Apache/Nginx
+- Your backend API will be accessible at `/api` via the proxy
+- The backend only serves API routes; it does NOT serve the frontend in production
 
 ## Step 5: Deploy Frontend to Hostinger
 
@@ -155,14 +156,14 @@ CLIENT_ORIGIN=https://your-domain.com  # Replace with your actual domain
 2. Update the `.env` file in your project root:
    ```env
    VITE_USE_BACKEND=true
-   VITE_API_URL=  # Leave empty for same-domain API calls
+   VITE_API_URL=
    ```
 3. Rebuild the frontend after updating `.env`:
    ```bash
    npm run build
    ```
 
-**Note**: For single-domain setup, leave `VITE_API_URL` empty. The frontend will use relative paths (`/api`) which automatically point to your same domain.
+**Important**: For single-domain setup, `VITE_API_URL` must be empty. The frontend will use relative paths (`/api`) which automatically point to your same domain. Do NOT set it to a full URL with `/api` suffix as this will cause duplicated paths like `/api/api/...`.
 
 ## Step 6: Configure Uploads Directory
 

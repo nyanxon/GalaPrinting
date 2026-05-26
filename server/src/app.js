@@ -61,8 +61,10 @@ export function createApp() {
   const uploadsAbsPath = path.resolve(process.cwd(), config.uploadDir);
   app.use('/uploads', express.static(uploadsAbsPath));
 
-  // ── Serve React frontend build in production
-  if (fs.existsSync(distPath)) {
+  // ── Serve React frontend build in production (for local development only)
+  // On Hostinger, frontend is served by Apache/Nginx from public_html
+  // Backend only serves API routes
+  if (config.isDev && fs.existsSync(distPath)) {
     app.use(express.static(distPath));
   }
 
@@ -80,8 +82,9 @@ export function createApp() {
   app.use('/api/profile',       profileRoutes);
   app.use('/api/addresses',     addressRoutes);
 
-  // ── SPA catch-all — serve index.html for all non-API routes ─────────────
-  if (fs.existsSync(path.join(distPath, 'index.html'))) {
+  // ── SPA catch-all — serve index.html for all non-API routes (development only)
+  // On Hostinger, Apache/Nginx handles SPA fallback for frontend served from public_html
+  if (config.isDev && fs.existsSync(path.join(distPath, 'index.html'))) {
     app.get('*', (_req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
