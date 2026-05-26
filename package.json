@@ -4,11 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "npx vite",
+    "build": "npx vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "test": "vitest --run"
+    "preview": "npx vite preview",
+    "test": "npx vitest --run"
   },
   "dependencies": {
     "@emoji-mart/data": "1.2.1",
