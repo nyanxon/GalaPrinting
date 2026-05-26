@@ -1,6 +1,5 @@
 -- Migration 022: Enhance conversations table for staff DM support
--- Idempotent: uses IF NOT EXISTS for columns and a stored procedure for the unique index.
--- Compatible with MySQL 8.0+ and MariaDB.
+-- NOTE (MariaDB): Avoid stored procedures because PHPMyAdmin often fails with "near ''" for CREATE PROCEDURE blocks.
 
 -- Make customer_id nullable so DM conversations (which have no customer) can be stored
 ALTER TABLE conversations
@@ -20,23 +19,20 @@ ALTER TABLE conversations
 UPDATE conversations SET conversation_type = 'customer_chat'
   WHERE conversation_type IS NULL OR conversation_type = '';
 
--- Create unique index only if it does not already exist (idempotent, MariaDB-compatible)
-DROP PROCEDURE IF EXISTS migration_022_create_dm_index;
+-- Create unique index only if it does not already exist (MariaDB-compatible via dynamic SQL)
+SET @create_idx_stmt := (
+  SELECT CONCAT('CREATE UNIQUE INDEX uq_dm_participants ON conversations (dm_participant_a, dm_participant_b)')
+  FROM information_schema.STATISTICS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME   = 'conversations'
+    AND INDEX_NAME   = 'uq_dm_participants'
+  LIMIT 1
+);
 
-CREATE PROCEDURE migration_022_create_dm_index()
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM information_schema.STATISTICS
-    WHERE TABLE_SCHEMA = DATABASE()
-      AND TABLE_NAME   = 'conversations'
-      AND INDEX_NAME   = 'uq_dm_participants'
-  ) THEN
-    CREATE UNIQUE INDEX uq_dm_participants
-      ON conversations (dm_participant_a, dm_participant_b);
-  END IF;
-END;
+-- If the index exists, do nothing; otherwise create it
+SET @idx_exists := (@create_idx_stmt IS NOT NULL);
+SET @sql := IF(@idx_exists, 'SELECT 1', 'CREATE UNIQUE INDEX uq_dm_participants ON conversations (dm_participant_a, dm_participant_b)');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
-CALL migration_022_create_dm_index();
-
-DROP PROCEDURE IF EXISTS migration_022_create_dm_index;
