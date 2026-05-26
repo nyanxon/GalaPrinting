@@ -14,10 +14,17 @@ import { ensureUploadDirs } from './utils/storage.js';
 
 
 async function start() {
+  console.log('[server] Starting backend server...');
+  console.log(`[server] Environment: ${config.nodeEnv}`);
+  console.log(`[server] Port: ${config.port}`);
+  console.log(`[server] Client Origin: ${config.clientOrigin}`);
+
   // Verify DB connection before accepting traffic
+  console.log('[server] Testing database connection...');
   await testConnection();
 
   // Ensure upload directories exist
+  console.log('[server] Ensuring upload directories exist...');
   await ensureUploadDirs();
 
   const app    = createApp();
@@ -27,9 +34,8 @@ async function start() {
   initSocket(server);
 
   server.listen(config.port, () => {
-    console.log(
-      `[server] Running on port ${config.port} (${config.nodeEnv})`
-    );
+    console.log(`[server] ✓ Server running on port ${config.port} (${config.nodeEnv})`);
+    console.log(`[server] ✓ API endpoints available at http://localhost:${config.port}/api/*`);
   });
 }
 

@@ -30,7 +30,10 @@ import profileRoutes   from './routes/profile.routes.js';
 import addressRoutes   from './routes/addresses.routes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const distPath  = path.resolve(__dirname, '../../dist');
+// Try multiple possible dist paths for different deployment structures
+const distPath  = path.resolve(__dirname, '../../dist'); // Default: server/src/../dist
+const altDistPath = path.resolve(__dirname, '../../../dist'); // Alternative: server/src/../../dist
+const finalDistPath = fs.existsSync(distPath) ? distPath : (fs.existsSync(altDistPath) ? altDistPath : null);
 
 export function createApp() {
   const app = express();
@@ -52,20 +55,28 @@ export function createApp() {
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
 
-  // ── Request logging (development only) ───────────────────────────────────
+  // ── Request logging ─────────────────────────────────────────────────────────
   if (config.isDev) {
     app.use(morgan('dev'));
+  } else {
+    // Simple logging in production
+    app.use((req, res, next) => {
+      console.log(`[app] ${req.method} ${req.path}`);
+      next();
+    });
   }
 
   // ── Static file serving for uploads ──────────────────────────────────────
   const uploadsAbsPath = path.resolve(process.cwd(), config.uploadDir);
   app.use('/uploads', express.static(uploadsAbsPath));
 
-  // ── Serve React frontend build in production (for local development only)
-  // On Hostinger, frontend is served by Apache/Nginx from public_html
-  // Backend only serves API routes
-  if (config.isDev && fs.existsSync(distPath)) {
-    app.use(express.static(distPath));
+  // ── Serve React frontend build ───────────────────────────────────────────────
+  // In production on Hostinger, backend serves both API and frontend
+  if (finalDistPath && fs.existsSync(finalDistPath)) {
+    console.log(`[app] Serving frontend from: ${finalDistPath}`);
+    app.use(express.static(finalDistPath));
+  } else {
+    console.warn('[app] Frontend dist directory not found. API only mode.');
   }
 
   // ── API routes ────────────────────────────────────────────────────────────
@@ -82,11 +93,15 @@ export function createApp() {
   app.use('/api/profile',       profileRoutes);
   app.use('/api/addresses',     addressRoutes);
 
-  // ── SPA catch-all — serve index.html for all non-API routes (development only)
-  // On Hostinger, Apache/Nginx handles SPA fallback for frontend served from public_html
-  if (config.isDev && fs.existsSync(path.join(distPath, 'index.html'))) {
-    app.get('*', (_req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+  // ── SPA catch-all — serve index.html for all non-API routes ──────────────────
+  // Must be declared AFTER API routes
+  if (finalDistPath && fs.existsSync(path.join(finalDistPath, 'index.html'))) {
+    app.get('*', (req, res) => {
+      // Don't intercept API routes
+      if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+        return res.status(404).json({ ok: false, message: 'Endpoint tidak ditemukan.' });
+      }
+      res.sendFile(path.join(finalDistPath, 'index.html'));
     });
   }
 

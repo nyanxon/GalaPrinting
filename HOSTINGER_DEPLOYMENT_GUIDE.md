@@ -5,9 +5,10 @@ This guide will help you deploy your Gala Printing project to Hostinger with pro
 ## Architecture Overview
 
 **Single Domain Setup** (Frontend + Backend on same domain):
-- Frontend (React): Serves from root path (`https://your-domain.com`)
+- Frontend (React): Served by Express backend from root path (`https://your-domain.com`)
 - Backend API: Serves from `/api` path (`https://your-domain.com/api`)
-- Backend runs on Node.js port 3001, proxied through Apache/Nginx
+- Backend runs on Node.js port (assigned by Hostinger), serves both frontend and API
+- The Express backend serves static files and handles API routes in a single Node.js app
 
 ## Prerequisites
 
@@ -90,17 +91,60 @@ CLIENT_ORIGIN=https://your-domain.com  # Replace with your actual domain
 
 ## Step 4: Deploy Backend to Hostinger
 
-### Option A: Using Hostinger File Manager
+### Option A: Using Git with GitHub Push (Recommended)
+
+This is the easiest method if you're using GitHub:
+
+1. **Push your code to GitHub**:
+   ```bash
+   git add .
+   git commit -m "Deploy to Hostinger"
+   git push origin main
+   ```
+
+2. **In Hostinger hPanel, go to Git**:
+   - Click **Create Git Repository**
+   - Choose **Clone from GitHub**
+   - Enter your GitHub repository URL
+   - Select the branch (usually `main`)
+   - Choose the destination directory (e.g., `public_html`)
+   - Click **Create**
+
+3. **After cloning, install dependencies**:
+   ```bash
+   cd server
+   npm install --production
+   ```
+
+4. **For future updates**, simply:
+   ```bash
+   git push origin main
+   ```
+   Then in Hostinger hPanel > Git, click **Pull** to update your deployment.
+
+### Option B: Using Hostinger File Manager
 
 1. In Hostinger hPanel, go to **Files** > **File Manager**
-2. Navigate to `public_html` (or create a subdirectory for backend)
-3. Upload the `server` folder contents:
+2. Navigate to your project root (e.g., `public_html` or a subdirectory)
+3. Upload the following structure:
+   ```
+   public_html/
+   ├── server/              # Backend directory
+   │   ├── src/
+   │   ├── package.json
+   │   ├── .env
+   │   └── node_modules/   (will be created after npm install)
+   └── dist/               # Frontend build (from Step 5)
+       ├── index.html
+       └── assets/
+   ```
+4. Upload the `server` folder contents:
    - Compress the server folder locally: `zip -r server.zip server/`
    - Upload `server.zip` to File Manager
    - Extract it on the server
-4. Ensure the `.env` file is uploaded (not in .gitignore)
+5. Ensure the `.env` file is uploaded (not in .gitignore)
 
-### Option B: Using Git (Recommended)
+### Option C: Using Git (Manual Clone)
 
 1. In Hostinger hPanel, go to **Git** > **Create Git Repository**
 2. Clone your repository to the server
@@ -114,23 +158,23 @@ CLIENT_ORIGIN=https://your-domain.com  # Replace with your actual domain
 
 1. In Hostinger hPanel, go to **Setup** > **Node.js**
 2. Create a new Node.js application:
-   - **Project folder**: `server` (or your backend directory)
-   - **Application URL**: Choose your domain (this will be used for both frontend and backend)
+   - **Project folder**: `server` (the backend directory)
+   - **Application URL**: Choose your domain
    - **Application startup file**: `src/server.js`
    - **Application mode**: `Production`
 3. Click **Create**
 
-4. After creation, you'll see:
-   - **Application root**: Path to your application
+4. After creation, configure:
+   - **Application root**: Should point to your `server` directory
    - **Environment variables**: Add your `.env` variables here (copy from server/.env)
    - **Run script**: `npm start`
 
 **Important for Single-Domain Setup**:
-- The Node.js app will run on a specific port (e.g., 3001)
-- Hostinger will automatically configure Apache/Nginx to proxy `/api` requests to your Node.js app
-- Your frontend (React) will serve from the root path `/` via Apache/Nginx
-- Your backend API will be accessible at `/api` via the proxy
-- The backend only serves API routes; it does NOT serve the frontend in production
+- The Node.js app will run on a port assigned by Hostinger (check in Node.js setup)
+- The Express backend serves BOTH the frontend static files AND the API routes
+- Frontend is served from the root path `/` via Express static middleware
+- Backend API is accessible at `/api` via Express routes
+- No Apache/Nginx proxy configuration needed - Express handles everything
 
 ## Step 5: Deploy Frontend to Hostinger
 
@@ -141,14 +185,6 @@ CLIENT_ORIGIN=https://your-domain.com  # Replace with your actual domain
    npm run build
    ```
 2. This creates a `dist` folder with production-ready files
-
-### Upload to Hostinger
-
-1. In Hostinger File Manager, navigate to `public_html`
-2. Upload the contents of the `dist` folder:
-   - Compress: `zip -r dist.zip dist/`
-   - Upload and extract
-3. Ensure `index.html` and other assets are in the root of `public_html`
 
 ### Configure Frontend Environment
 
@@ -165,23 +201,67 @@ CLIENT_ORIGIN=https://your-domain.com  # Replace with your actual domain
 
 **Important**: For single-domain setup, `VITE_API_URL` must be empty. The frontend will use relative paths (`/api`) which automatically point to your same domain. Do NOT set it to a full URL with `/api` suffix as this will cause duplicated paths like `/api/api/...`.
 
+### Upload to Hostinger
+
+1. In Hostinger File Manager, navigate to your project root (same level as `server` directory)
+2. Upload the `dist` folder contents:
+   - Compress: `zip -r dist.zip dist/`
+   - Upload and extract
+3. The final structure should be:
+   ```
+   public_html/
+   ├── server/              # Backend directory
+   │   ├── src/
+   │   ├── package.json
+   │   ├── .env
+   │   └── node_modules/
+   └── dist/               # Frontend build
+       ├── index.html
+       └── assets/
+   ```
+
+**Critical**: The `dist` folder must be at the same level as the `server` folder, so the backend can find it at `../../dist` relative to `server/src/app.js`.
+
 ## Step 6: Configure Uploads Directory
 
 1. In Hostinger File Manager, create an `uploads` directory:
-   - Path: `public_html/uploads` (or within your backend directory)
+   - Path: `server/uploads` (within the backend directory)
 2. Set proper permissions (755):
    - Right-click the folder > **Permissions**
    - Set to `755` (read/write/execute for owner, read/execute for others)
 
-## Step 7: Test the Deployment
+## Step 7: Configure PORT on Hostinger
+
+1. In Hostinger hPanel, go to **Setup** > **Node.js**
+2. Find your application and note the **assigned port**
+3. Update your `server/.env` file to use the Hostinger-assigned port:
+   ```env
+   PORT=<hostinger_assigned_port>
+   ```
+4. Or leave it empty and Hostinger will set it automatically via environment variable
+
+## Step 8: Restart the Node.js Application
+
+1. In Hostinger hPanel, go to **Setup** > **Node.js**
+2. Find your application
+3. Click **Restart** to apply the changes
+4. Check the application logs to ensure it started successfully:
+   - Look for: `[server] Starting backend server...`
+   - Look for: `[db] Connected to MySQL`
+   - Look for: `[app] Serving frontend from: ...`
+   - Look for: `[server] ✓ Server running on port ...`
+
+## Step 9: Test the Deployment
 
 1. **Test Database Connection**:
    - Check Hostinger Node.js logs for connection errors
    - Look for: `[db] Connected to MySQL` message
 
 2. **Test Backend API**:
-   - Access: `https://your-domain.com/api/health` (if you have a health endpoint)
-   - Or test authentication endpoints at `https://your-domain.com/api/auth/login`
+   - Access: `https://your-domain.com/api/products`
+   - Access: `https://your-domain.com/api/categories`
+   - Access: `https://your-domain.com/api/auth/login` (POST with credentials)
+   - All should return JSON responses (not 404)
 
 3. **Test Frontend**:
    - Access: `https://your-domain.com`
@@ -189,6 +269,28 @@ CLIENT_ORIGIN=https://your-domain.com  # Replace with your actual domain
    - Verify that API calls go to `https://your-domain.com/api/*`
 
 ## Troubleshooting
+
+### API Routes Return 404
+
+**Symptoms**: All `/api/*` requests return 404
+
+**Solutions**:
+1. Check Hostinger Node.js logs to see if the server is running:
+   - Look for: `[server] ✓ Server running on port ...`
+   - If not present, the server failed to start
+
+2. Verify the application startup file is correct:
+   - Should be: `src/server.js` (not `server.js`)
+
+3. Check if the dist folder is in the correct location:
+   - Must be at the same level as the `server` folder
+   - Structure: `public_html/server/` and `public_html/dist/`
+
+4. Verify PORT configuration:
+   - Check Hostinger Node.js setup for the assigned port
+   - Update `server/.env` with: `PORT=<assigned_port>`
+
+5. Restart the Node.js application after making changes
 
 ### Database Connection Issues
 
@@ -205,6 +307,19 @@ CLIENT_ORIGIN=https://your-domain.com  # Replace with your actual domain
 - Check Node.js application logs in Hostinger hPanel
 - Ensure all dependencies are installed: `npm install --production`
 - Verify the startup file path: `src/server.js`
+- Check that `.env` file exists in the `server` directory
+- Verify all required environment variables are set
+
+### Frontend Loads But API Doesn't Work
+
+**Symptoms**: Frontend loads but API requests fail
+
+**Solutions**:
+1. Check browser console for error messages
+2. Verify frontend `.env` has `VITE_API_URL=` (empty)
+3. Check that frontend was rebuilt after updating `.env`
+4. Verify backend is running and accessible
+5. Check Hostinger Node.js logs for errors
 
 ### CORS Errors
 
@@ -232,20 +347,25 @@ CLIENT_ORIGIN=https://your-domain.com  # Replace with your actual domain
 - [ ] All 29 migration files executed successfully
 - [ ] Backend `.env` configured with correct database credentials
 - [ ] Strong JWT secrets generated and configured
-- [ ] Backend deployed and running on Hostinger Node.js
-- [ ] Frontend built and uploaded to public_html
-- [ ] Frontend `.env` configured with correct backend URL
-- [ ] Uploads directory created with proper permissions
+- [ ] Backend deployed to Hostinger (server directory)
+- [ ] Frontend built and uploaded (dist directory at same level as server)
+- [ ] Frontend `.env` configured with `VITE_API_URL=` (empty)
+- [ ] Node.js application created in Hostinger with correct startup file (`src/server.js`)
+- [ ] PORT configured in `.env` (using Hostinger-assigned port)
+- [ ] Uploads directory created with proper permissions (server/uploads)
 - [ ] HTTPS enabled for domain
-- [ ] CORS configured correctly
-- [ ] Tested database connection
-- [ ] Tested API endpoints
+- [ ] CORS configured correctly (`CLIENT_ORIGIN` set to your domain)
+- [ ] Node.js application restarted
+- [ ] Tested database connection (check logs for `[db] Connected to MySQL`)
+- [ ] Tested API endpoints (`/api/products`, `/api/categories`, `/api/auth/login`)
 - [ ] Tested frontend functionality
 
 ## Support
 
 If you encounter issues:
-1. Check Hostinger Node.js application logs
+1. Check Hostinger Node.js application logs for startup errors
 2. Verify database credentials in phpMyAdmin
 3. Test database connection manually using phpMyAdmin
 4. Review Hostinger documentation for Node.js deployment
+5. Check that the `dist` folder is at the correct location relative to `server/src/app.js`
+6. Ensure the Node.js application startup file is set to `src/server.js`
