@@ -37,7 +37,10 @@ export const StorageService = {
     const destPath = path.join(destDir, fileName);
 
     await fs.mkdir(destDir, { recursive: true });
-    await fs.rename(file.path, destPath);
+    // Use copyFile + unlink instead of rename to support cross-device moves
+    // (multer writes to /tmp which is a different filesystem on Hostinger)
+    await fs.copyFile(file.path, destPath);
+    await fs.unlink(file.path).catch(() => {}); // clean up temp file
 
     return {
       path:     `uploads/${subdir}/${fileName}`,
