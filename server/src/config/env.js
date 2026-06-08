@@ -28,8 +28,9 @@ if (missing.length > 0 || missingPresent.length > 0) {
   const all = [...missing, ...missingPresent];
   console.error(
     `[config] FATAL: Missing required environment variable(s): ${all.join(', ')}\n` +
-      'Copy server/.env.example to server/.env and fill in the values.'
+      'Set these in Hostinger hPanel → Environment Variables.'
   );
+  console.error('[config] All current env keys:', Object.keys(process.env).filter(k => !k.startsWith('npm_')).join(', '));
   process.exit(1);
 }
 
