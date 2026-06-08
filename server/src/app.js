@@ -38,6 +38,9 @@ const finalDistPath = fs.existsSync(distPath) ? distPath : (fs.existsSync(altDis
 export function createApp() {
   const app = express();
 
+  // Trust Hostinger's reverse proxy so express-rate-limit and req.ip work correctly
+  app.set('trust proxy', 1);
+
   // ── Security headers ──────────────────────────────────────────────────────
   app.use(helmet());
 
