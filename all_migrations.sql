@@ -353,3 +353,9 @@ CREATE TABLE IF NOT EXISTS notification_preferences (
   CONSTRAINT fk_notif_pref_user FOREIGN KEY (user_id)
     REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- Migration 030: Add hidden_by_admin flag to conversations
+-- Allows admin to "close" (hide) a chat from the list without deleting messages.
+-- The conversation and all its history remain accessible via search.
+ALTER TABLE conversations
+  ADD COLUMN IF NOT EXISTS hidden_by_admin TINYINT(1) NOT NULL DEFAULT 0
+    AFTER last_at;

@@ -240,6 +240,23 @@ export async function markAsRead(req, res, next) {
   }
 }
 
+// PATCH /api/conversations/:id/hide — admin only (hides without deleting)
+export async function hideConversation(req, res, next) {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ ok: false, message: 'Akses ditolak. Hanya admin yang dapat menutup percakapan.' });
+    }
+
+    const found = await svc.hideConversation(req.params.id);
+    if (!found) {
+      return res.status(404).json({ ok: false, message: 'Percakapan tidak ditemukan.' });
+    }
+    return res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+}
+
 // DELETE /api/conversations/:id — admin only
 export async function deleteConversation(req, res, next) {
   try {

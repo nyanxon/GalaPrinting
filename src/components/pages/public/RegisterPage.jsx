@@ -109,7 +109,7 @@ function RegisterPage() {
       }
       setRegisterAlert({ message: res.message, type: 'info' });
       updateUser(await Promise.resolve(getCurrentUser()));
-      navigate('/products');
+      navigate('/');
     } finally {
       setRegisterSubmitting(false);
     }

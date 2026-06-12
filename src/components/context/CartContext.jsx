@@ -54,10 +54,12 @@ export function CartProvider({ children }) {
   function mergeDesignData(serverItems) {
     const cache = getDesignCache();
     return serverItems.map((item) => {
-      // Server returns snake_case (product_id), frontend uses camelCase (productId)
+      // Use item id as the primary cache key (unique per cart slot).
+      // Fall back to "productId|name" for backwards-compat with old cache entries.
+      const itemId = item.id ?? '';
       const pid = item.productId ?? item.product_id ?? '';
-      const key = `${pid}|${item.name}`;
-      const cached = cache[key];
+      const legacyKey = `${pid}|${item.name}`;
+      const cached = cache[itemId] || cache[legacyKey];
       return cached
         ? { ...item, designDataUrl: cached.designDataUrl ?? null, designFileName: cached.designFileName ?? item.designFileName ?? item.design_file_path }
         : item;
@@ -113,8 +115,8 @@ export function CartProvider({ children }) {
         // Cache design data locally so it survives server cart refresh
         if (item.designDataUrl || item.designFileName) {
           const cache = getDesignCache();
-          const pid = item.productId ?? item.product_id ?? '';
-          cache[`${pid}|${item.name}`] = {
+          const cacheKey = tempItem.id; // unique per cart slot — avoids cross-item collision
+          cache[cacheKey] = {
             designDataUrl: item.designDataUrl ?? null,
             designFileName: item.designFileName ?? null,
           };
@@ -154,9 +156,11 @@ export function CartProvider({ children }) {
     // Optimistic update
     const removedItem = items.find((i) => i.id === itemId);
     setItems((prev) => prev.filter((i) => i.id !== itemId));
-    // Clear design cache for this item
+    // Clear design cache for this item (keyed by item id)
     if (removedItem) {
       const cache = getDesignCache();
+      delete cache[itemId];
+      // Also clean up legacy "productId|name" key if present
       const pid = removedItem.productId ?? removedItem.product_id ?? '';
       delete cache[`${pid}|${removedItem.name}`];
       setDesignCache(cache);

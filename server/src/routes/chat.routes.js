@@ -66,6 +66,14 @@ router.patch(
   ctrl.markAsRead
 );
 
+// Hide a conversation (admin only) — removes from list but keeps all history
+router.patch(
+  '/:id/hide',
+  authenticate,
+  requireRole('admin'),
+  ctrl.hideConversation
+);
+
 // Delete a conversation (admin only)
 router.delete(
   '/:id',

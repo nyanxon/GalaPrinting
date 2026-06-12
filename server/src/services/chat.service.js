@@ -10,6 +10,8 @@ import { query } from '../db/connection.js';
 /**
  * List all customer conversations with lastMessage and unreadCount, sorted by last_at DESC.
  * DM conversations are excluded (Req 1.1).
+ * Conversations hidden by admin are excluded from the default list — they can still be
+ * re-opened via the customer search panel (handleCustomerSelect → createOrGetConversation).
  */
 export async function listConversations() {
   const [rows] = await query(
@@ -33,6 +35,7 @@ export async function listConversations() {
         LIMIT 1) AS last_message
      FROM conversations c
      WHERE c.conversation_type = 'customer_chat'
+       AND (c.hidden_by_admin = 0 OR c.hidden_by_admin IS NULL)
      ORDER BY c.last_at DESC`
   );
   return rows.map((r) => ({
@@ -45,6 +48,7 @@ export async function listConversations() {
 /**
  * Get or create a customer conversation.
  * Explicitly sets conversation_type = 'customer_chat' on INSERT (Req 4.1).
+ * If the conversation was hidden by admin, it is automatically un-hidden on access.
  * Returns { conv, created } where created is true if a new conversation was inserted.
  */
 export async function getOrCreateConversation(customerId, customerName) {
@@ -52,7 +56,13 @@ export async function getOrCreateConversation(customerId, customerName) {
     "SELECT * FROM conversations WHERE customer_id = ? AND conversation_type = 'customer_chat'",
     [customerId]
   );
-  if (existing.length > 0) return { conv: existing[0], created: false };
+  if (existing.length > 0) {
+    // Un-hide the conversation if it was hidden — accessing it again means admin wants to see it
+    if (existing[0].hidden_by_admin) {
+      await query('UPDATE conversations SET hidden_by_admin = 0 WHERE id = ?', [existing[0].id]);
+    }
+    return { conv: { ...existing[0], hidden_by_admin: 0 }, created: false };
+  }
 
   const id = randomUUID();
   await query(
@@ -76,6 +86,8 @@ export async function getMessages(conversationId) {
 
 /**
  * Save a new message and update conversation.last_at.
+ * When the sender is an admin, also set assigned_admin_id on the conversation
+ * so the UI can show "Ditangani" instead of "Belum ditangani".
  */
 export async function saveMessage({ conversationId, senderId, senderRole, type = 'text', content, filePath, fileName, fileSize, mimeType }) {
   const id = randomUUID();
@@ -86,10 +98,18 @@ export async function saveMessage({ conversationId, senderId, senderRole, type =
     [id, conversationId, senderId, senderRole, type, content || null, filePath || null, fileName || null, fileSize || null, mimeType || null]
   );
 
-  await query(
-    'UPDATE conversations SET last_at = NOW() WHERE id = ?',
-    [conversationId]
-  );
+  if (senderRole === 'admin' || senderRole === 'staff') {
+    // Mark conversation as handled by this admin/staff and update last_at
+    await query(
+      'UPDATE conversations SET last_at = NOW(), assigned_admin_id = COALESCE(assigned_admin_id, ?) WHERE id = ?',
+      [senderId, conversationId]
+    );
+  } else {
+    await query(
+      'UPDATE conversations SET last_at = NOW() WHERE id = ?',
+      [conversationId]
+    );
+  }
 
   const [rows] = await query('SELECT * FROM messages WHERE id = ?', [id]);
   return rows[0];
@@ -115,6 +135,22 @@ export async function markAsRead(conversationId) {
 export async function getConversationById(id) {
   const [rows] = await query('SELECT * FROM conversations WHERE id = ?', [id]);
   return rows[0] || null;
+}
+
+/**
+ * Hide a conversation from the admin chat list without deleting any data.
+ * The conversation and all its messages remain in the database.
+ * It reappears in the list as soon as the admin opens it again via customer search.
+ *
+ * @param {string} conversationId
+ * @returns {Promise<boolean>} true if the row was found and updated
+ */
+export async function hideConversation(conversationId) {
+  const [result] = await query(
+    'UPDATE conversations SET hidden_by_admin = 1 WHERE id = ? AND conversation_type = ?',
+    [conversationId, 'customer_chat']
+  );
+  return result.affectedRows > 0;
 }
 
 /**

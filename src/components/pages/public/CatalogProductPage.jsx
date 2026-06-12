@@ -184,7 +184,6 @@ function CatalogProductPage() {
       designDataUrl: designFile ? designDataUrl : null,
     });
     setAlertMsg('Produk ditambahkan ke keranjang.');
-    setTimeout(() => navigate('/cart'), 400);
   }
 
   if (notFound) {

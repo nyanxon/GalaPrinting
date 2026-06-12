@@ -12,7 +12,7 @@ import {
   getMessagesByConversation,
   sendMessage,
   markAsRead,
-  deleteConversation,
+  hideConversation,
   searchCustomers,
   createOrGetConversation,
 } from '../../../../services/chatService.js';
@@ -304,20 +304,20 @@ export default function ChatsSection() {
     loadConversations();
   }
 
-  async function handleDeleteConversation() {
+  async function handleHideConversation() {
     if (!activeConvId) return;
     const confirmed = window.confirm(
-      'Apakah kamu yakin ingin menutup dan menghapus percakapan ini secara permanen?\n\nSeluruh riwayat pesan dan file terkait akan dihapus dan tidak dapat dipulihkan.'
+      'Tutup percakapan ini?\n\nPercakapan akan dihapus dari daftar chat, tetapi seluruh riwayat pesan tetap tersimpan. Kamu bisa membukanya kembali kapan saja dengan mencari nama atau nomor telepon customer.'
     );
     if (!confirmed) return;
 
-    const res = await deleteConversation(activeConvId);
+    const res = await hideConversation(activeConvId);
     if (res.ok) {
       setActiveConvId(null);
       setMessages([]);
       await loadConversations();
     } else {
-      setSendError(res.message || 'Gagal menghapus percakapan.');
+      setSendError(res.message || 'Gagal menutup percakapan.');
     }
   }
 
@@ -408,6 +408,9 @@ export default function ChatsSection() {
               style={{ marginTop: '10px', fontSize: '13px', padding: '6px 10px', width: '100%' }}
               aria-label="Cari percakapan"
             />
+            <div style={{ marginTop: '5px', fontSize: '11px', color: '#9ca3af', lineHeight: 1.4 }}>
+              Chat yang ditutup dapat dibuka kembali lewat "+ Mulai Chat Baru".
+            </div>
           </div>
           <div className="chat-conv-list">
             {conversations.length === 0 ? (
@@ -465,9 +468,9 @@ export default function ChatsSection() {
                   <button
                     type="button"
                     className="chat-close-btn"
-                    onClick={handleDeleteConversation}
-                    title="Tutup dan hapus percakapan ini secara permanen"
-                    style={{ marginLeft: 'auto', background: '#b91c1c', color: '#fff', border: 'none', borderRadius: '6px', padding: '6px 14px', cursor: 'pointer', fontSize: '13px' }}
+                    onClick={handleHideConversation}
+                    title="Tutup percakapan — riwayat tetap tersimpan, bisa dibuka kembali lewat pencarian"
+                    style={{ marginLeft: 'auto', background: '#374151', color: '#fff', border: 'none', borderRadius: '6px', padding: '6px 14px', cursor: 'pointer', fontSize: '13px' }}
                   >
                     Tutup Chat
                   </button>

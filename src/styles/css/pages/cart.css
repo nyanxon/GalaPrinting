@@ -53,3 +53,29 @@
     min-width: 44px;
   }
 }
+
+/* Quantity input box */
+.cart-qty-input {
+  width: 52px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 15px;
+  padding: 4px 6px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg, #fff);
+  color: var(--text);
+  outline: none;
+  /* hide browser spin arrows */
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.cart-qty-input::-webkit-outer-spin-button,
+.cart-qty-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.cart-qty-input:focus {
+  border-color: var(--accent, #c77a3a);
+  box-shadow: 0 0 0 3px rgba(199,122,58,.15);
+}

@@ -120,7 +120,7 @@ function CheckoutPage() {
 
     try {
       const order = await createOrderFromCart({
-        customer: { name: formData.name, phone: formData.phone, address: formData.address, addressTitle: formData.addressTitle || null },
+        customer: { name: formData.name, phone: user?.phone || formData.phone, address: formData.address, addressTitle: formData.addressTitle || null },
         items,
         subtotal,
         promoCode: promoApplied ? promoCode.trim() : null,

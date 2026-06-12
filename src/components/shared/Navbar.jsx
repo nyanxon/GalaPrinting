@@ -87,14 +87,25 @@ function Navbar() {
 
   useEffect(() => {
     function handleDocClick(e) {
-      if (headerRef.current && !headerRef.current.contains(e.target)) closeAllPopups();
+      if (headerRef.current && !headerRef.current.contains(e.target)) {
+        // Only close kategori and profile on outside click.
+        // Login and cart popups stay open until the user explicitly toggles them.
+        setKategoriOpen(false);
+        setProfileOpen(false);
+      }
     }
     document.addEventListener('click', handleDocClick);
     return () => document.removeEventListener('click', handleDocClick);
   }, []);
 
   useEffect(() => {
-    function handleKeyDown(e) { if (e.key === 'Escape') closeAllPopups(); }
+    function handleKeyDown(e) {
+      if (e.key === 'Escape') {
+        // Only close kategori and profile with Escape — login and cart need explicit toggle.
+        setKategoriOpen(false);
+        setProfileOpen(false);
+      }
+    }
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
@@ -375,28 +386,60 @@ function Navbar() {
             <NavLink to="/portfolio">Portfolio</NavLink>
           </div>
         )}
-
-        {/* Mobile nav */}
-        {!isStaff && (
-          <div className={`nav-mobile${mobileOpen ? ' open' : ''}`} data-nav-mobile>
-            <NavLink to="/">Beranda</NavLink>
-            <NavLink to="/products">Produk</NavLink>
-            <NavLink to="/portfolio">Portfolio</NavLink>
-            <NavLink to="/cara-order">Cara Order</NavLink>
-            <NavLink to="/tentang-kami">Tentang Kami</NavLink>
-            <NavLink to="/status">Status Order</NavLink>
-            {user && <NavLink to="/my-orders">Pesanan Saya</NavLink>}
-            {user && <NavLink to="/profile">Profil Saya</NavLink>}
-            {user && <NavLink to="/cart">Keranjang ({cartCount})</NavLink>}
-            {!user && <NavLink to="/register">Login / Daftar</NavLink>}
-            {user && (
-              <button className="nav-mobile-logout" type="button" onClick={handleLogout}>
-                Keluar
-              </button>
-            )}
-          </div>
-        )}
       </div>
+
+      {/* Mobile sidebar — rendered outside .container so it can be full-height fixed */}
+      {!isStaff && (
+        <>
+          {/* Backdrop overlay */}
+          <div
+            className={`nav-sidebar-backdrop${mobileOpen ? ' open' : ''}`}
+            aria-hidden="true"
+            onClick={() => setMobileOpen(false)}
+          />
+
+          {/* Sidebar panel */}
+          <nav
+            className={`nav-mobile${mobileOpen ? ' open' : ''}`}
+            aria-label="Menu mobile"
+            aria-hidden={!mobileOpen}
+            data-nav-mobile
+          >
+            {/* Sidebar header with close button */}
+            <div className="nav-sidebar-header">
+              <Link className="brand" to="/" onClick={() => setMobileOpen(false)}>
+                <img src={logoImg} alt="Gala Printing logo" style={{ width: 48, height: 48 }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+              </Link>
+              <button
+                className="nav-sidebar-close"
+                type="button"
+                aria-label="Tutup menu"
+                onClick={() => setMobileOpen(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="nav-sidebar-links">
+              <Link to="/" onClick={() => setMobileOpen(false)}>Beranda</Link>
+              <Link to="/products" onClick={() => setMobileOpen(false)}>Produk</Link>
+              <Link to="/portfolio" onClick={() => setMobileOpen(false)}>Portfolio</Link>
+              <Link to="/cara-order" onClick={() => setMobileOpen(false)}>Cara Order</Link>
+              <Link to="/tentang-kami" onClick={() => setMobileOpen(false)}>Tentang Kami</Link>
+              <Link to="/status" onClick={() => setMobileOpen(false)}>Status Order</Link>
+              {user && <Link to="/my-orders" onClick={() => setMobileOpen(false)}>Pesanan Saya</Link>}
+              {user && <Link to="/profile" onClick={() => setMobileOpen(false)}>Profil Saya</Link>}
+              {user && <Link to="/cart" onClick={() => setMobileOpen(false)}>Keranjang ({cartCount})</Link>}
+              {!user && <Link to="/register" onClick={() => setMobileOpen(false)}>Login / Daftar</Link>}
+              {user && (
+                <button className="nav-mobile-logout" type="button" onClick={handleLogout}>
+                  Keluar
+                </button>
+              )}
+            </div>
+          </nav>
+        </>
+      )}
     </header>
   );
 }

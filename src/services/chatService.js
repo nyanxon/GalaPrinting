@@ -318,7 +318,14 @@ export async function createOrGetConversation(customerId, customerName) {
   // Original localStorage implementation (unchanged)
   const data = load();
   const existing = data.conversations.find((c) => c.customerId === customerId);
-  if (existing) return existing;
+  if (existing) {
+    // Un-hide if previously hidden — re-opening via search makes it visible again
+    if (existing.hidden_by_admin) {
+      existing.hidden_by_admin = false;
+      saveLocal(data);
+    }
+    return existing;
+  }
 
   const conv = {
     id:              crypto.randomUUID(),
@@ -360,6 +367,7 @@ export async function getAllConversations() {
   // Original localStorage implementation (unchanged)
   const data = load();
   return data.conversations
+    .filter((conv) => !conv.hidden_by_admin)
     .map((conv) => {
       const msgs = data.messages
         .filter((m) => m.conversationId === conv.id)
@@ -644,6 +652,38 @@ export function assignAdmin(convId, adminId) {
   if (!conv) return { ok: false };
   conv.assignedAdminId = adminId;
   saveLocal(data);
+  return { ok: true };
+}
+
+/**
+ * Hide a conversation from the admin chat list without deleting any data.
+ * The conversation and all its messages are preserved — it reappears as soon as
+ * the admin opens it again via customer search (name or phone).
+ *
+ * - USE_BACKEND=true : PATCH /api/conversations/:id/hide
+ * - USE_BACKEND=false: sets hidden_by_admin=true on the localStorage record
+ *
+ * @param {string} conversationId
+ * @returns {Promise<{ ok: boolean, message?: string }>}
+ */
+export async function hideConversation(conversationId) {
+  if (USE_BACKEND) {
+    try {
+      await api.patch(`/api/conversations/${conversationId}/hide`);
+      return { ok: true };
+    } catch (err) {
+      const message = err.response?.data?.message ?? 'Gagal menutup percakapan.';
+      return { ok: false, message };
+    }
+  }
+
+  // localStorage mode: mark as hidden (keeps data, just excluded from list)
+  const data = load();
+  const conv = data.conversations.find((c) => c.id === conversationId);
+  if (conv) {
+    conv.hidden_by_admin = true;
+    saveLocal(data);
+  }
   return { ok: true };
 }
 

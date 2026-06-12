@@ -7,7 +7,7 @@
  * Requirements: 7.4, 13.4
  */
 
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CartContext } from '../../context/CartContext.jsx';
 import { formatCurrency } from '../../../core/helpers.js';
@@ -15,25 +15,32 @@ import placeholderImg from '../../../assets/placeholder.svg';
 import '../../../styles/css/pages/cart.css';
 
 function CartPage() {
-  const { items, removeItem, addItem } = useContext(CartContext);
+  const { items, removeItem, updateItemQty } = useContext(CartContext);
+  // Track raw input value per item id so user can freely type before committing
+  const [qtyInputs, setQtyInputs] = useState({});
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-  function handleQtyMinus(item) {
-    if (item.quantity <= 1) {
-      removeItem(item.id);
-    } else {
-      addItem({ ...item, quantity: item.quantity - 1 });
-      removeItem(item.id);
-      // Replace with updated quantity
-      addItem({ ...item, quantity: item.quantity - 1 });
-    }
+  function getDisplayQty(item) {
+    return qtyInputs[item.id] !== undefined ? qtyInputs[item.id] : String(item.quantity);
   }
 
-  function handleQtyPlus(item) {
-    addItem({ ...item, id: item.id, quantity: item.quantity + 1 });
-    removeItem(item.id);
-    addItem({ ...item, quantity: item.quantity + 1 });
+  function handleQtyInput(item, value) {
+    setQtyInputs((prev) => ({ ...prev, [item.id]: value }));
+  }
+
+  function commitQty(item) {
+    const raw = qtyInputs[item.id];
+    if (raw === undefined) return; // not edited
+    const parsed = parseInt(raw, 10);
+    if (!isNaN(parsed) && parsed >= 1) {
+      updateItemQty(item.id, parsed);
+    } else if (!isNaN(parsed) && parsed < 1) {
+      removeItem(item.id);
+    } else {
+      // Invalid input — revert display to current quantity
+    }
+    setQtyInputs((prev) => { const next = { ...prev }; delete next[item.id]; return next; });
   }
 
   return (
@@ -80,22 +87,30 @@ function CartPage() {
                             if (item.quantity <= 1) {
                               removeItem(item.id);
                             } else {
-                              removeItem(item.id);
-                              addItem({ ...item, quantity: item.quantity - 1 });
+                              updateItemQty(item.id, item.quantity - 1);
                             }
                           }}
                         >
                           -
                         </button>
-                        <strong data-qty>{item.quantity}</strong>
+                        <input
+                          className="cart-qty-input"
+                          type="number"
+                          min="1"
+                          data-qty
+                          value={getDisplayQty(item)}
+                          onChange={(e) => handleQtyInput(item, e.target.value)}
+                          onBlur={() => commitQty(item)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') { e.currentTarget.blur(); } }}
+                          aria-label={`Jumlah ${item.name}`}
+                        />
                         <button
                           className="btn ghost"
                           style={{ padding: '6px 10px' }}
                           type="button"
                           data-qty-plus
                           onClick={() => {
-                            removeItem(item.id);
-                            addItem({ ...item, quantity: item.quantity + 1 });
+                            updateItemQty(item.id, item.quantity + 1);
                           }}
                         >
                           +

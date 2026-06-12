@@ -151,14 +151,8 @@ function ProductModal({ product, categories, onClose, onSaved }) {
   const currentSizes     = splitField(formData.sizes);
   const currentMaterials = splitField(formData.materials);
 
-  // Close on Escape
-  useEffect(() => {
-    function handleKey(e) {
-      if (e.key === 'Escape') onClose();
-    }
-    document.addEventListener('keydown', handleKey);
-    return () => document.removeEventListener('keydown', handleKey);
-  }, [onClose]);
+  // Close on Escape is intentionally disabled — use the × button to close.
+  // (The modal has an explicit close button so we don't need keyboard dismiss.)
 
   function handleChange(e) {
     const { name, value, type, checked } = e.target;
@@ -341,7 +335,6 @@ function ProductModal({ product, categories, onClose, onSaved }) {
     <div
       className="adm-modal-overlay"
       ref={overlayRef}
-      onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="prod-modal-title"
