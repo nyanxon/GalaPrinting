@@ -25,3 +25,17 @@
   border-radius: 999px;
   font-weight: 800;
 }
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .portfolio-item {
+    aspect-ratio: 3 / 2;
+  }
+}
+
+@media (max-width: 480px) {
+  .portfolio-item span {
+    font-size: 13px;
+    padding: 4px 8px;
+  }
+}

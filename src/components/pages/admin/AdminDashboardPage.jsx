@@ -1,7 +1,5 @@
 /**
  * AdminDashboardPage.jsx — Super Admin dashboard with sidebar shell and section switching.
- * Equivalent to vanilla adminView.js + adminController.js
- *
  * Requirements: 9.1, 9.2, 9.3, 9.4, 13.4, 16.4
  */
 
@@ -47,7 +45,6 @@ function ActivitySidebar({ onGoToOrders, onGoToChats }) {
     } catch (err) {
       console.error('Failed to load activity orders:', err);
     }
-
     try {
       const convs = await listConversations();
       const unhandled = (Array.isArray(convs) ? convs : [])
@@ -61,13 +58,11 @@ function ActivitySidebar({ onGoToOrders, onGoToChats }) {
 
   useEffect(() => {
     loadActivity();
-
     function handleOrdersUpdate() { loadActivity(); }
     function handleChatUpdate()   { loadActivity(); }
     function handleStorage(e) {
       if (e.key === 'gala.orders' || e.key === 'gala.chats') loadActivity();
     }
-
     window.addEventListener('gala:orders-updated', handleOrdersUpdate);
     window.addEventListener('gala:chat-updated', handleChatUpdate);
     window.addEventListener('storage', handleStorage);
@@ -81,41 +76,24 @@ function ActivitySidebar({ onGoToOrders, onGoToChats }) {
   return (
     <aside className="staff-activity" aria-label="Activity">
       <div className="staff-activity-title">ACTIVITY</div>
-
       <div className="staff-activity-card">
         <div className="staff-activity-card-header">
           <div className="staff-activity-card-title">NEW ORDER</div>
-          <button
-            className="staff-activity-goto"
-            type="button"
-            aria-label="Lihat semua pesanan"
-            onClick={onGoToOrders}
-          >
-            →
-          </button>
+          <button className="staff-activity-goto" type="button" aria-label="Lihat semua pesanan" onClick={onGoToOrders}>→</button>
         </div>
         {recentOrders.length === 0 ? (
           <p className="staff-activity-empty">Tidak ada pesanan baru.</p>
         ) : (
           recentOrders.map((o) => (
-            <div
-              key={o.id}
-              className="staff-activity-item"
-              style={{ cursor: 'pointer' }}
-              onClick={onGoToOrders}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onGoToOrders(); }}
-            >
+            <div key={o.id} className="staff-activity-item" style={{ cursor: 'pointer' }}
+              onClick={onGoToOrders} role="button" tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onGoToOrders(); }}>
               <div className="staff-activity-order-num">{o.orderNumber}</div>
-              <div className="staff-activity-order-meta">
-                {o.customer?.name || '—'} · {o.status}
-              </div>
+              <div className="staff-activity-order-meta">{o.customer?.name || '—'} · {o.status}</div>
             </div>
           ))
         )}
       </div>
-
       <div className="staff-activity-card">
         <div className="staff-activity-card-header">
           <div className="staff-activity-card-title">NEW CHAT</div>
@@ -126,20 +104,12 @@ function ActivitySidebar({ onGoToOrders, onGoToChats }) {
           unhandledChats.map((c) => {
             const last = c.lastMessage;
             const preview = last
-              ? last.type === 'file'
-                ? `📎 ${last.fileName || 'file'}`
-                : last.content.slice(0, 35) + '…'
+              ? last.type === 'file' ? `📎 ${last.fileName || 'file'}` : last.content.slice(0, 35) + '…'
               : 'Belum ada pesan';
             return (
-              <div
-                key={c.id}
-                className="staff-activity-item"
-                style={{ cursor: 'pointer' }}
-                onClick={onGoToChats}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onGoToChats(); }}
-              >
+              <div key={c.id} className="staff-activity-item" style={{ cursor: 'pointer' }}
+                onClick={onGoToChats} role="button" tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onGoToChats(); }}>
                 <div className="staff-activity-order-num">{c.customerName}</div>
                 <div className="staff-activity-order-meta">{preview}</div>
               </div>
@@ -156,12 +126,8 @@ function WelcomeCard({ userName }) {
     <div className="staff-welcome-card" id="staff-welcome">
       <div className="staff-welcome-text">
         <div className="staff-welcome-title">DASHBOARD</div>
-        <div className="staff-welcome-sub">
-          Welcome back, <strong>{userName}</strong>!
-        </div>
-        <div className="staff-welcome-hint">
-          Are you ready to get back to our customer? Let&apos;s start the day!
-        </div>
+        <div className="staff-welcome-sub">Welcome back, <strong>{userName}</strong>!</div>
+        <div className="staff-welcome-hint">Are you ready to get back to our customer? Let&apos;s start the day!</div>
       </div>
     </div>
   );
@@ -170,12 +136,16 @@ function WelcomeCard({ userName }) {
 export default function AdminDashboardPage() {
   const { user, updateUser } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [activeNav, setActiveNav] = useState('dashboard');
+  const [activeNav, setActiveNav]       = useState('dashboard');
+  const [sidebarOpen, setSidebarOpen]   = useState(false);
 
-  const userName   = user?.name || 'Admin';
+  const userName    = user?.name || 'Admin';
   const isDashboard = activeNav === 'dashboard';
 
-  function handleNavClick(navId) { setActiveNav(navId); }
+  function handleNavClick(navId) {
+    setActiveNav(navId);
+    setSidebarOpen(false); // close drawer on mobile after selection
+  }
 
   async function handleLogout() {
     await Promise.resolve(logout());
@@ -199,18 +169,39 @@ export default function AdminDashboardPage() {
     }
   }
 
+  const currentNavLabel = ADMIN_NAV.find((n) => n.id === activeNav)?.label ?? 'DASHBOARD';
+
   return (
     <div className="staff-body">
       <div className="staff-layout">
 
-        {/* Left sidebar */}
-        <aside className="staff-sidebar" aria-label="Admin navigation">
+        {/* ── Mobile sidebar backdrop ── */}
+        {sidebarOpen && (
+          <div
+            className="staff-sidebar-backdrop"
+            onClick={() => setSidebarOpen(false)}
+            aria-hidden="true"
+          />
+        )}
+
+        {/* ── Left sidebar (desktop: always visible / mobile: drawer) ── */}
+        <aside
+          className={`staff-sidebar${sidebarOpen ? ' staff-sidebar--open' : ''}`}
+          aria-label="Admin navigation"
+        >
+          {/* Mobile: close button inside drawer */}
+          <button
+            className="staff-sidebar-close"
+            type="button"
+            aria-label="Tutup menu"
+            onClick={() => setSidebarOpen(false)}
+          >
+            ✕
+          </button>
+
           <div className="staff-sidebar-logo">
-            <img
-              src={logoImg}
-              alt="Gala Printing"
-              onError={(e) => { e.currentTarget.style.display = 'none'; }}
-            />
+            <img src={logoImg} alt="Gala Printing"
+              onError={(e) => { e.currentTarget.style.display = 'none'; }} />
           </div>
           <nav className="staff-nav">
             {ADMIN_NAV.map((item) => (
@@ -226,11 +217,22 @@ export default function AdminDashboardPage() {
           </nav>
         </aside>
 
-        {/* Right column: header + content */}
+        {/* ── Right column ── */}
         <div className="staff-main">
-
           <header className="staff-header">
-            <div className="staff-header-left" />
+            {/* Mobile: hamburger button */}
+            <button
+              className="staff-hamburger"
+              type="button"
+              aria-label="Buka menu"
+              aria-expanded={sidebarOpen}
+              onClick={() => setSidebarOpen(true)}
+            >
+              <span /><span /><span />
+            </button>
+
+            <div className="staff-header-section-label">{currentNavLabel}</div>
+
             <div className="staff-header-right">
               <div className="staff-header-avatar">
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"
@@ -241,16 +243,12 @@ export default function AdminDashboardPage() {
               </div>
               <div className="staff-header-auth">
                 <span className="staff-header-name">{userName}</span>
-                <button className="staff-logout-btn" type="button" onClick={handleLogout}>
-                  Keluar
-                </button>
+                <button className="staff-logout-btn" type="button" onClick={handleLogout}>Keluar</button>
               </div>
             </div>
           </header>
 
-          {/* Body row — two-column on dashboard, single-column everywhere else */}
           <div className={`staff-body-row${isDashboard ? '' : ' staff-body-row--full'}`}>
-
             <div className="staff-content">
               {isDashboard && (
                 <>
@@ -258,15 +256,11 @@ export default function AdminDashboardPage() {
                   <MigrationExportTool />
                 </>
               )}
-              <div id="adm-panel">
-                {renderSection()}
-              </div>
+              <div id="adm-panel">{renderSection()}</div>
             </div>
-
             {isDashboard && (
               <ActivitySidebar onGoToOrders={goToOrders} onGoToChats={goToChats} />
             )}
-
           </div>
         </div>
 

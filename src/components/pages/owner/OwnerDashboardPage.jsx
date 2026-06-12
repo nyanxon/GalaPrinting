@@ -1,8 +1,6 @@
 /**
  * OwnerDashboardPage.jsx — Owner dashboard with sidebar shell and section switching.
  * Includes all Admin sections plus Revenue, Reports, and Analytics.
- * Equivalent to vanilla ownerView.js + ownerController.js
- *
  * Requirements: 10.1, 10.2, 10.3, 13.4
  */
 
@@ -12,14 +10,12 @@ import { AuthContext } from '../../context/AuthContext.jsx';
 import { logout } from '../../../services/authService.js';
 import { listAllOrders } from '../../../services/orderService.js';
 import { listConversations } from '../../../services/chatService.js';
-// Admin sections (reused)
 import OrdersSection from '../admin/sections/OrdersSection.jsx';
 import CustomersSection from '../admin/sections/CustomersSection.jsx';
 import ProductsSection from '../admin/sections/ProductsSection.jsx';
 import ReviewsSection from '../admin/sections/ReviewsSection.jsx';
 import ChatsSection from '../admin/sections/ChatsSection.jsx';
 import PromoSection from '../admin/sections/PromoSection.jsx';
-// Owner-specific sections
 import RevenueSection from './sections/RevenueSection.jsx';
 import ReportsSection from './sections/ReportsSection.jsx';
 import AnalyticsSection from './sections/AnalyticsSection.jsx';
@@ -47,33 +43,24 @@ function ActivitySidebar({ onGoToOrders, onGoToChats }) {
     try {
       const orders = await listAllOrders();
       const unprocessed = (Array.isArray(orders) ? orders : [])
-        .filter((o) => o.status === 'Waiting for Payment')
-        .slice(0, 3);
+        .filter((o) => o.status === 'Waiting for Payment').slice(0, 3);
       setRecentOrders(unprocessed);
-    } catch (err) {
-      console.error('Failed to load activity orders:', err);
-    }
-
+    } catch (err) { console.error('Failed to load activity orders:', err); }
     try {
       const convs = await listConversations();
       const unhandled = (Array.isArray(convs) ? convs : [])
-        .filter((c) => (c.unreadCount ?? 0) > 0)
-        .slice(0, 4);
+        .filter((c) => (c.unreadCount ?? 0) > 0).slice(0, 4);
       setUnhandledChats(unhandled);
-    } catch (err) {
-      console.error('Failed to load activity chats:', err);
-    }
+    } catch (err) { console.error('Failed to load activity chats:', err); }
   }
 
   useEffect(() => {
     loadActivity();
-
     function handleOrdersUpdate() { loadActivity(); }
     function handleChatUpdate()   { loadActivity(); }
     function handleStorage(e) {
       if (e.key === 'gala.orders' || e.key === 'gala.chats') loadActivity();
     }
-
     window.addEventListener('gala:orders-updated', handleOrdersUpdate);
     window.addEventListener('gala:chat-updated', handleChatUpdate);
     window.addEventListener('storage', handleStorage);
@@ -87,41 +74,24 @@ function ActivitySidebar({ onGoToOrders, onGoToChats }) {
   return (
     <aside className="staff-activity" aria-label="Activity">
       <div className="staff-activity-title">ACTIVITY</div>
-
       <div className="staff-activity-card">
         <div className="staff-activity-card-header">
           <div className="staff-activity-card-title">NEW ORDER</div>
-          <button
-            className="staff-activity-goto"
-            type="button"
-            aria-label="Lihat semua pesanan"
-            onClick={onGoToOrders}
-          >
-            →
-          </button>
+          <button className="staff-activity-goto" type="button" aria-label="Lihat semua pesanan" onClick={onGoToOrders}>→</button>
         </div>
         {recentOrders.length === 0 ? (
           <p className="staff-activity-empty">Tidak ada pesanan baru.</p>
         ) : (
           recentOrders.map((o) => (
-            <div
-              key={o.id}
-              className="staff-activity-item"
-              style={{ cursor: 'pointer' }}
-              onClick={onGoToOrders}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onGoToOrders(); }}
-            >
+            <div key={o.id} className="staff-activity-item" style={{ cursor: 'pointer' }}
+              onClick={onGoToOrders} role="button" tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onGoToOrders(); }}>
               <div className="staff-activity-order-num">{o.orderNumber}</div>
-              <div className="staff-activity-order-meta">
-                {o.customer?.name || '—'} · {o.status}
-              </div>
+              <div className="staff-activity-order-meta">{o.customer?.name || '—'} · {o.status}</div>
             </div>
           ))
         )}
       </div>
-
       <div className="staff-activity-card">
         <div className="staff-activity-card-header">
           <div className="staff-activity-card-title">NEW CHAT</div>
@@ -132,20 +102,12 @@ function ActivitySidebar({ onGoToOrders, onGoToChats }) {
           unhandledChats.map((c) => {
             const last = c.lastMessage;
             const preview = last
-              ? last.type === 'file'
-                ? `📎 ${last.fileName || 'file'}`
-                : last.content.slice(0, 35) + '…'
+              ? last.type === 'file' ? `📎 ${last.fileName || 'file'}` : last.content.slice(0, 35) + '…'
               : 'Belum ada pesan';
             return (
-              <div
-                key={c.id}
-                className="staff-activity-item"
-                style={{ cursor: 'pointer' }}
-                onClick={onGoToChats}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onGoToChats(); }}
-              >
+              <div key={c.id} className="staff-activity-item" style={{ cursor: 'pointer' }}
+                onClick={onGoToChats} role="button" tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onGoToChats(); }}>
                 <div className="staff-activity-order-num">{c.customerName}</div>
                 <div className="staff-activity-order-meta">{preview}</div>
               </div>
@@ -162,12 +124,8 @@ function WelcomeCard({ userName }) {
     <div className="staff-welcome-card" id="staff-welcome">
       <div className="staff-welcome-text">
         <div className="staff-welcome-title">DASHBOARD</div>
-        <div className="staff-welcome-sub">
-          Welcome back, <strong>{userName}</strong>!
-        </div>
-        <div className="staff-welcome-hint">
-          Here&apos;s your business overview for today.
-        </div>
+        <div className="staff-welcome-sub">Welcome back, <strong>{userName}</strong>!</div>
+        <div className="staff-welcome-hint">Here&apos;s your business overview for today.</div>
       </div>
     </div>
   );
@@ -176,13 +134,15 @@ function WelcomeCard({ userName }) {
 export default function OwnerDashboardPage() {
   const { user, updateUser } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [activeNav, setActiveNav] = useState('dashboard');
+  const [activeNav, setActiveNav]     = useState('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const userName = user?.name || 'Owner';
+  const userName    = user?.name || 'Owner';
   const isDashboard = activeNav === 'dashboard';
 
   function handleNavClick(navId) {
     setActiveNav(navId);
+    setSidebarOpen(false);
   }
 
   async function handleLogout() {
@@ -191,13 +151,8 @@ export default function OwnerDashboardPage() {
     navigate('/register');
   }
 
-  function goToOrders() {
-    setActiveNav('orders');
-  }
-
-  function goToChats() {
-    setActiveNav('chats');
-  }
+  function goToOrders() { setActiveNav('orders'); }
+  function goToChats()  { setActiveNav('chats'); }
 
   function renderSection() {
     switch (activeNav) {
@@ -214,17 +169,23 @@ export default function OwnerDashboardPage() {
     }
   }
 
+  const currentNavLabel = OWNER_NAV.find((n) => n.id === activeNav)?.label ?? 'DASHBOARD';
+
   return (
     <div className="staff-body">
       <div className="staff-layout">
-        {/* Sidebar */}
-        <aside className="staff-sidebar staff-sidebar--owner" aria-label="Owner navigation">
+
+        {sidebarOpen && (
+          <div className="staff-sidebar-backdrop" onClick={() => setSidebarOpen(false)} aria-hidden="true" />
+        )}
+
+        <aside
+          className={`staff-sidebar staff-sidebar--owner${sidebarOpen ? ' staff-sidebar--open' : ''}`}
+          aria-label="Owner navigation"
+        >
+          <button className="staff-sidebar-close" type="button" aria-label="Tutup menu" onClick={() => setSidebarOpen(false)}>✕</button>
           <div className="staff-sidebar-logo">
-            <img
-              src={logoImg}
-              alt="Gala Printing"
-              onError={(e) => { e.currentTarget.style.display = 'none'; }}
-            />
+            <img src={logoImg} alt="Gala Printing" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
           </div>
           <nav className="staff-nav">
             {OWNER_NAV.map((item) => (
@@ -240,57 +201,40 @@ export default function OwnerDashboardPage() {
           </nav>
         </aside>
 
-        {/* Main content */}
         <div className="staff-main">
-          {/* Header */}
           <header className="staff-header">
-            <div className="staff-header-left" />
+            <button className="staff-hamburger" type="button" aria-label="Buka menu" aria-expanded={sidebarOpen} onClick={() => setSidebarOpen(true)}>
+              <span /><span /><span />
+            </button>
+
+            <div className="staff-header-section-label">{currentNavLabel}</div>
+
             <div className="staff-header-right">
               <div className="staff-header-avatar">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="32"
-                  height="32"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="#666"
-                  strokeWidth="1.5"
-                  aria-hidden="true"
-                >
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"
+                  fill="none" viewBox="0 0 24 24" stroke="#666" strokeWidth="1.5" aria-hidden="true">
                   <circle cx="12" cy="8" r="4" />
                   <path strokeLinecap="round" d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
                 </svg>
               </div>
               <div className="staff-header-auth">
                 <span className="staff-header-name">{userName}</span>
-                <button
-                  className="staff-logout-btn"
-                  type="button"
-                  onClick={handleLogout}
-                >
-                  Keluar
-                </button>
+                <button className="staff-logout-btn" type="button" onClick={handleLogout}>Keluar</button>
               </div>
             </div>
           </header>
 
-          {/* Body row: content + activity sidebar */}
           <div className={`staff-body-row${isDashboard ? '' : ' staff-body-row--full'}`}>
             <div className="staff-content">
               {isDashboard && <WelcomeCard userName={userName} />}
-              <div id="adm-panel">
-                {renderSection()}
-              </div>
+              <div id="adm-panel">{renderSection()}</div>
             </div>
-
             {isDashboard && (
-              <ActivitySidebar
-                onGoToOrders={goToOrders}
-                onGoToChats={goToChats}
-              />
+              <ActivitySidebar onGoToOrders={goToOrders} onGoToChats={goToChats} />
             )}
           </div>
         </div>
+
       </div>
     </div>
   );

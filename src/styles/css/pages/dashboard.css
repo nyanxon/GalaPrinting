@@ -3857,49 +3857,222 @@
    RESPONSIVE: TABLET (max-width: 768px)
    Collapse sidebar and allow natural page scroll on small screens.
    ══════════════════════════════════════════════════════════ */
+
+/* ── Hamburger button — hidden on desktop ────────────────── */
+.staff-hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(120, 94, 64, 0.25);
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.staff-hamburger span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: #7f664a;
+  border-radius: 2px;
+}
+
+/* Current section label in header — hidden on desktop */
+.staff-header-section-label {
+  display: none;
+  font-size: 14px;
+  font-weight: 800;
+  color: #2d2d2d;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Close button inside sidebar drawer — hidden on desktop */
+.staff-sidebar-close {
+  display: none;
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  z-index: 1;
+}
+.staff-sidebar-close:hover { background: rgba(255, 255, 255, 0.25); }
+
+/* Mobile backdrop */
+.staff-sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 299;
+}
+
 @media (max-width: 768px) {
+  /* Overall layout — natural scroll */
   .staff-body {
     height: auto;
-    overflow: visible;
+    min-height: 100vh;
+    overflow-x: hidden;
   }
 
   .staff-layout {
-    display: block;
-    height: auto;
-    padding: 16px;
-  }
-
-  .staff-sidebar {
-    height: auto;
-    position: static;
-    margin-bottom: 16px;
-    border-radius: 20px;
-  }
-
-  .staff-header {
+    display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    height: auto;
+    min-height: 100vh;
+    padding: 0;
+    gap: 0;
   }
 
+  /* Sidebar becomes a fixed left drawer */
+  .staff-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 260px;
+    max-width: 82vw;
+    height: 100dvh;
+    height: 100vh;
+    border-radius: 0;
+    z-index: 300;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+    padding-top: 56px;
+  }
+
+  .staff-sidebar--open {
+    transform: translateX(0);
+  }
+
+  .staff-sidebar-backdrop {
+    display: block;
+  }
+
+  .staff-sidebar-close {
+    display: flex;
+  }
+
+  /* Main takes full screen width */
   .staff-main {
+    flex: 1;
     height: auto;
     overflow: visible;
+    width: 100%;
   }
 
+  /* Header: sticky bar with hamburger */
+  .staff-header {
+    border-radius: 0;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    height: 60px;
+    gap: 12px;
+    margin-bottom: 0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    backdrop-filter: blur(8px);
+  }
+
+  .staff-hamburger {
+    display: flex;
+  }
+
+  .staff-header-section-label {
+    display: block;
+  }
+
+  .staff-header-avatar {
+    display: none;
+  }
+
+  .staff-header-name {
+    font-size: 13px;
+  }
+
+  .staff-logout-btn {
+    font-size: 12px;
+    padding: 5px 10px;
+  }
+
+  /* Body row stacks vertically */
   .staff-body-row,
   .staff-body-row--full {
     display: block;
     overflow: visible;
+    padding: 16px;
+    gap: 0;
   }
 
   .staff-content {
     overflow-y: visible;
+    padding-right: 0;
+    padding-bottom: 32px;
+    min-width: 0;
   }
 
-  .staff-activity,
+  /* Cards: natural height, no overflow clipping */
+  .staff-content .adm-card {
+    max-height: none;
+    overflow: visible;
+  }
+
+  /* Tables scroll horizontally with touch */
+  .adm-card .adm-table-wrap,
+  .adm-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Padding reductions */
   .staff-welcome-card,
   .staff-placeholder-msg {
-    padding: 24px;
+    padding: 20px;
+  }
+
+  .staff-activity {
+    padding: 20px;
+    margin-top: 16px;
+  }
+
+  .adm-card {
+    border-radius: 16px;
+    padding: 16px;
+  }
+
+  /* Toolbar wraps */
+  .adm-toolbar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .adm-section-title {
+    font-size: 16px;
+  }
+
+  .adm-pagination {
+    flex-wrap: wrap;
+    gap: 4px;
   }
 }
 
