@@ -34,7 +34,7 @@ const ADMIN_NAV = [
 ];
 
 function ActivitySidebar({ onGoToOrders, onGoToChats }) {
-  const [recentOrders, setRecentOrders] = useState([]);
+  const [recentOrders, setRecentOrders]     = useState([]);
   const [unhandledChats, setUnhandledChats] = useState([]);
 
   async function loadActivity() {
@@ -172,12 +172,10 @@ export default function AdminDashboardPage() {
   const navigate = useNavigate();
   const [activeNav, setActiveNav] = useState('dashboard');
 
-  const userName = user?.name || 'Admin';
+  const userName   = user?.name || 'Admin';
   const isDashboard = activeNav === 'dashboard';
 
-  function handleNavClick(navId) {
-    setActiveNav(navId);
-  }
+  function handleNavClick(navId) { setActiveNav(navId); }
 
   async function handleLogout() {
     await Promise.resolve(logout());
@@ -185,13 +183,8 @@ export default function AdminDashboardPage() {
     navigate('/register');
   }
 
-  function goToOrders() {
-    setActiveNav('orders');
-  }
-
-  function goToChats() {
-    setActiveNav('chats');
-  }
+  function goToOrders() { setActiveNav('orders'); }
+  function goToChats()  { setActiveNav('chats'); }
 
   function renderSection() {
     switch (activeNav) {
@@ -209,7 +202,8 @@ export default function AdminDashboardPage() {
   return (
     <div className="staff-body">
       <div className="staff-layout">
-        {/* Sidebar */}
+
+        {/* Left sidebar */}
         <aside className="staff-sidebar" aria-label="Admin navigation">
           <div className="staff-sidebar-logo">
             <img
@@ -232,42 +226,31 @@ export default function AdminDashboardPage() {
           </nav>
         </aside>
 
-        {/* Main content */}
+        {/* Right column: header + content */}
         <div className="staff-main">
-          {/* Header */}
+
           <header className="staff-header">
             <div className="staff-header-left" />
             <div className="staff-header-right">
               <div className="staff-header-avatar">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="32"
-                  height="32"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="#666"
-                  strokeWidth="1.5"
-                  aria-hidden="true"
-                >
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"
+                  fill="none" viewBox="0 0 24 24" stroke="#666" strokeWidth="1.5" aria-hidden="true">
                   <circle cx="12" cy="8" r="4" />
                   <path strokeLinecap="round" d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
                 </svg>
               </div>
               <div className="staff-header-auth">
                 <span className="staff-header-name">{userName}</span>
-                <button
-                  className="staff-logout-btn"
-                  type="button"
-                  onClick={handleLogout}
-                >
+                <button className="staff-logout-btn" type="button" onClick={handleLogout}>
                   Keluar
                 </button>
               </div>
             </div>
           </header>
 
-          {/* Body row: content + activity sidebar */}
+          {/* Body row — two-column on dashboard, single-column everywhere else */}
           <div className={`staff-body-row${isDashboard ? '' : ' staff-body-row--full'}`}>
+
             <div className="staff-content">
               {isDashboard && (
                 <>
@@ -275,20 +258,18 @@ export default function AdminDashboardPage() {
                   <MigrationExportTool />
                 </>
               )}
-
               <div id="adm-panel">
                 {renderSection()}
               </div>
             </div>
 
             {isDashboard && (
-              <ActivitySidebar
-                onGoToOrders={goToOrders}
-                onGoToChats={goToChats}
-              />
+              <ActivitySidebar onGoToOrders={goToOrders} onGoToChats={goToChats} />
             )}
+
           </div>
         </div>
+
       </div>
     </div>
   );

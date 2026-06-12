@@ -138,12 +138,11 @@
   display: grid;
   grid-template-columns: 1fr 340px;
   gap: 24px;
-  overflow: hidden;          /* children scroll, not this container */
-  min-height: 0;             /* required for flex children to shrink */
+  overflow: hidden;
+  min-height: 0;
 }
 
-/* When activity sidebar is hidden (non-dashboard sections),
-   collapse the grid to a single full-width column */
+/* Non-dashboard sections: content fills full width */
 .staff-body-row--full {
   grid-template-columns: 1fr;
 }
@@ -153,11 +152,10 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
-  flex: 1;
   min-height: 0;
-  overflow-x: hidden;
+  min-width: 0;
   overflow-y: auto;
-  padding-right: 4px;        /* breathing room for scrollbar */
+  padding-right: 4px;
   padding-bottom: 24px;
 }
 
@@ -242,20 +240,25 @@
   padding: 24px;
   box-shadow: 0 8px 32px rgba(68, 41, 7, 0.06);
   border: 1px solid rgba(120, 94, 64, 0.08);
-  /* Fill available height and scroll internally */
   display: flex;
   flex-direction: column;
+  width: 100%;
+  min-width: 0;
   min-height: 0;
+  box-sizing: border-box;
   overflow: hidden;
 }
 
-/* Table wrap scrolls inside the card */
+/* Table wrap scrolls inside the card.
+   overflow-x: auto lets the table scroll horizontally within the card. */
 .adm-card .adm-table-wrap {
   flex: 1;
   overflow-y: auto;
   overflow-x: auto;
   min-height: 0;
 }
+
+/* standalone .adm-table-wrap (outside .adm-card context) */
 
 /* Toolbar stays fixed at top of card */
 .adm-card .adm-toolbar {
@@ -548,8 +551,9 @@
 }
 
 @media (max-width: 1150px) {
-  .staff-body-row {
-    grid-template-columns: 1fr;
+  /* Collapse the activity sidebar column on narrower screens */
+  .staff-body-row:not(.staff-body-row--full) {
+    grid-template-columns: 1fr 280px;
   }
 
   .staff-activity {
@@ -558,21 +562,6 @@
 }
 
 @media (max-width: 760px) {
-  .staff-layout {
-    display: block;
-    padding: 16px;
-  }
-
-  .staff-sidebar {
-    min-height: auto;
-    border-radius: 20px;
-  }
-
-  .staff-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
   .staff-activity,
   .staff-welcome-card,
   .staff-placeholder-msg {
@@ -3102,16 +3091,16 @@
    SCROLL FIXES — all staff content areas
    ══════════════════════════════════════════════════════════ */
 
-/* adm-card inside staff-content fills available space naturally —
-   no hardcoded max-height so it works whether the activity sidebar
-   is visible (dashboard) or hidden (other sections / --full layout) */
+/* adm-card inside staff-content fills available space naturally */
 .staff-content .adm-card {
   flex: 1;
   min-height: 0;
+  min-width: 0;
+  width: 100%;
   overflow: hidden;
 }
 
-/* Chat card keeps its own internal scroll — don't override */
+/* Chat card keeps its own internal scroll */
 .staff-content .adm-card--chat {
   overflow: hidden;
 }
@@ -3865,11 +3854,10 @@
 }
 
 /* ══════════════════════════════════════════════════════════
-   RESPONSIVE: TABLET (max-width: 1023px)
-   Disable fixed viewport height and overflow lock so the
-   page can scroll naturally on tablet-sized screens.
+   RESPONSIVE: TABLET (max-width: 768px)
+   Collapse sidebar and allow natural page scroll on small screens.
    ══════════════════════════════════════════════════════════ */
-@media (max-width: 1023px) {
+@media (max-width: 768px) {
   .staff-body {
     height: auto;
     overflow: visible;
@@ -3885,11 +3873,33 @@
     height: auto;
     position: static;
     margin-bottom: 16px;
+    border-radius: 20px;
+  }
+
+  .staff-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .staff-main {
     height: auto;
     overflow: visible;
+  }
+
+  .staff-body-row,
+  .staff-body-row--full {
+    display: block;
+    overflow: visible;
+  }
+
+  .staff-content {
+    overflow-y: visible;
+  }
+
+  .staff-activity,
+  .staff-welcome-card,
+  .staff-placeholder-msg {
+    padding: 24px;
   }
 }
 
