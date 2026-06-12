@@ -539,6 +539,11 @@
     max-width: calc(100vw - 32px);
   }
 
+  /* Cart icon hidden on mobile — keranjang is accessible via the sidebar menu */
+  .nav-cart-wrap {
+    display: none;
+  }
+
   /* Search bar takes priority — hide the Kategori button on mobile */
   .navbar-kategori-wrap {
     display: none;
