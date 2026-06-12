@@ -277,8 +277,21 @@
 
 .nav-orders-link:hover { background: rgba(120, 94, 64, 0.06); }
 
+/* ── Table overflow wrapper ──────────────────────────────── */
+.my-orders-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 @media (max-width: 640px) {
   .mo-card-footer { flex-direction: column; align-items: flex-start; }
   .mo-card-actions { width: 100%; }
   .mo-pay-btn, .mo-track-btn { flex: 1; text-align: center; }
+}
+
+@media (max-width: 767px) {
+  .my-orders-card-footer {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
 }

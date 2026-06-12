@@ -420,6 +420,13 @@
   }
 }
 
+/* Tablet: category grid 3 columns (601px – 1023px) */
+@media (max-width: 1023px) and (min-width: 601px) {
+  .home-cat-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 @media (max-width: 600px) {
   .home-cat-grid {
     grid-template-columns: repeat(2, 1fr);

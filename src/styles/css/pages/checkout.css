@@ -598,6 +598,14 @@
   }
 
   .co-payment-amount { font-size: 22px; }
+
+  .co-step-dot-label {
+    font-size: 10px;
+    max-width: 60px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 /* ══════════════════════════════════════════════════════════

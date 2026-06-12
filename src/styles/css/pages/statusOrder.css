@@ -786,3 +786,24 @@ details[open] .so-history-toggle::before {
   color: #15803d;
   padding: 4px 0;
 }
+
+/* ══════════════════════════════════════════════════════════
+   RESPONSIVE — Mobile overrides (< 768 px)
+   Requirements: 9.2, 9.3
+   ══════════════════════════════════════════════════════════ */
+
+@media (max-width: 767px) {
+  .so-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 767px) {
+  .so-timeline-step {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+}

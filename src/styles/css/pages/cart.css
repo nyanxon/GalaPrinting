@@ -44,3 +44,12 @@
   justify-content: space-between;
   gap: 10px;
 }
+
+/* Tap-target sizing for quantity controls on touch/narrow screens */
+@media (max-width: 919px) {
+  .cart-item-actions button,
+  .cart-item-actions a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}

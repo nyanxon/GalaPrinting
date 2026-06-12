@@ -10,6 +10,7 @@
   font-weight: 700;
   cursor: pointer;
   user-select: none;
+  min-height: 44px; /* ensure tap target meets 44px minimum (Req 12.1) */
 }
 .btn:hover{ filter: brightness(0.98); }
 .btn:active{ transform: translateY(1px); }

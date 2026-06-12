@@ -9,7 +9,8 @@
 }
 .modal-backdrop.open{ display: grid; }
 .modal{
-  width: min(560px, 100%);
+  width: min(90vw, 520px);
+  padding: 16px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -30,4 +31,11 @@
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+@media (max-width: 767px) {
+  .modal {
+    max-height: 90vh;
+    overflow-y: auto;
+  }
 }

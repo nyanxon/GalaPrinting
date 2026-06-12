@@ -163,6 +163,15 @@
 }
 
 /* Responsive */
+
+/* Tablet: collapse product grid to 2 columns */
+@media (max-width: 1023px) {
+  .catalog-product-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Mobile: sidebar stacks above product grid */
 @media (max-width: 768px) {
   .catalog-layout {
     flex-direction: column;

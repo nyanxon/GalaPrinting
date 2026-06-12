@@ -1,6 +1,9 @@
 *{ box-sizing: border-box; }
 html, body{ height: 100%; }
-html{ color-scheme: light; }
+html{
+  color-scheme: light;
+  overflow-x: hidden; /* prevent body-level horizontal scroll */
+}
 body{
   margin: 0;
   background: #ffffff;
@@ -10,3 +13,17 @@ img, svg, video, canvas{ display: block; max-width: 100%; }
 button, input, select, textarea{ font: inherit; color: inherit; }
 a{ color: inherit; text-decoration: none; }
 ul, ol{ margin: 0; padding: 0; list-style: none; }
+
+/* ── Touch device: ensure form inputs meet 44px tap-target minimum ── */
+@media (pointer: coarse) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="number"],
+  select,
+  textarea {
+    min-height: 44px;
+  }
+}

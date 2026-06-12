@@ -3781,3 +3781,50 @@
 .odm-total-row--final .odm-total-value {
   font-size: 18px;
 }
+
+/* ══════════════════════════════════════════════════════════
+   RESPONSIVE: TABLET (max-width: 1023px)
+   Disable fixed viewport height and overflow lock so the
+   page can scroll naturally on tablet-sized screens.
+   ══════════════════════════════════════════════════════════ */
+@media (max-width: 1023px) {
+  .staff-body {
+    height: auto;
+    overflow: visible;
+  }
+
+  .staff-layout {
+    display: block;
+    height: auto;
+    padding: 16px;
+  }
+
+  .staff-sidebar {
+    height: auto;
+    position: static;
+    margin-bottom: 16px;
+  }
+
+  .staff-main {
+    height: auto;
+    overflow: visible;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   RESPONSIVE: MOBILE (max-width: 767px)
+   Reduce KPI grids to 2 columns and stack the chat layout
+   vertically so it fits on small screens.
+   ══════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+  .rev-kpi-row,
+  .dir-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .chat-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    height: auto;
+  }
+}

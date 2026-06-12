@@ -18,6 +18,23 @@
     padding: 16px 12px 48px;
     gap: 16px;
   }
+
+  .pf-sidebar {
+    position: static;
+  }
+
+  .pf-form input,
+  .pf-form select,
+  .pf-form textarea {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .pf-sidebar-item {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 
 /* ── Sidebar ─────────────────────────────────────────────── */

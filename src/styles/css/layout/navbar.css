@@ -115,6 +115,8 @@
   cursor: pointer;
   padding: 4px;
   position: relative;
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .nav-cart-badge {
@@ -190,8 +192,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border-radius: 10px;
   border: 1px solid var(--border);
   background: #fff;
@@ -420,6 +422,14 @@
   }
 }
 
+@media (max-width: 919px) {
+  .cart-popup,
+  .login-popup,
+  .profile-popup {
+    max-width: calc(100vw - 32px);
+  }
+}
+
 /* ══════════════════════════════════════════════════════════
    NAVBAR — Avatar button & Profile popup
    ══════════════════════════════════════════════════════════ */
@@ -440,6 +450,8 @@
   padding: 2px;
   border-radius: 50%;
   transition: box-shadow 0.15s;
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .nav-avatar-btn:hover,

@@ -351,3 +351,23 @@
 .design-preview-empty span:first-child {
   font-size: 28px;
 }
+
+/* ── Catalog Product Grid ────────────────────────────────── */
+/* Desktop default: 4 columns */
+.catalog-product-grid {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+/* Tablet (768–1023 px): 3 columns */
+@media (max-width: 1023px) {
+  .catalog-product-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Mobile (< 768 px): 2 columns */
+@media (max-width: 767px) {
+  .catalog-product-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
