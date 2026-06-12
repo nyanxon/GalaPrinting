@@ -12,12 +12,15 @@ import { Link } from 'react-router-dom';
 import { CartContext } from '../../context/CartContext.jsx';
 import { formatCurrency } from '../../../core/helpers.js';
 import placeholderImg from '../../../assets/placeholder.svg';
+import ConfirmDialog from '../../shared/ConfirmDialog.jsx';
 import '../../../styles/css/pages/cart.css';
 
 function CartPage() {
   const { items, removeItem, updateItemQty } = useContext(CartContext);
   // Track raw input value per item id so user can freely type before committing
   const [qtyInputs, setQtyInputs] = useState({});
+  // Confirm delete dialog
+  const [confirmId, setConfirmId] = useState(null);
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
@@ -116,12 +119,12 @@ function CartPage() {
                           +
                         </button>
                       </div>
-                      <strong>{formatCurrency(item.price * item.quantity)}</strong>
+                      <strong className="cart-item-price">{formatCurrency(item.price * item.quantity)}</strong>
                       <button
-                        className="btn"
+                        className="btn primary"
                         type="button"
                         data-remove
-                        onClick={() => removeItem(item.id)}
+                        onClick={() => setConfirmId(item.id)}
                         aria-label={`Hapus ${item.name} dari keranjang`}
                       >
                         Hapus
@@ -155,7 +158,7 @@ function CartPage() {
                 className="btn"
                 type="button"
                 data-clear
-                onClick={() => items.forEach((i) => removeItem(i.id))}
+                onClick={() => setConfirmId('__clear_all__')}
               >
                 Hapus Keranjang
               </button>
@@ -163,6 +166,28 @@ function CartPage() {
           </div>
         </aside>
       </div>
+
+      {/* Confirm remove single item */}
+      <ConfirmDialog
+        isOpen={confirmId !== null && confirmId !== '__clear_all__'}
+        onClose={() => setConfirmId(null)}
+        onConfirm={() => removeItem(confirmId)}
+        title="Hapus Produk"
+        message="Yakin ingin menghapus produk ini dari daftar belanja?"
+        confirmLabel="Hapus"
+        cancelLabel="Tidak"
+      />
+
+      {/* Confirm clear all */}
+      <ConfirmDialog
+        isOpen={confirmId === '__clear_all__'}
+        onClose={() => setConfirmId(null)}
+        onConfirm={() => items.forEach((i) => removeItem(i.id))}
+        title="Hapus Semua"
+        message="Yakin ingin menghapus semua produk dari daftar belanja?"
+        confirmLabel="Hapus"
+        cancelLabel="Tidak"
+      />
     </main>
   );
 }

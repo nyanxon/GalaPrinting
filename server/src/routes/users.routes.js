@@ -33,7 +33,7 @@ router.post(
 router.patch(
   '/:id/role',
   authenticate,
-  requireRole('admin'),
+  requireRole('admin', 'owner'),
   [body('role').isIn(['customer', ...VALID_STAFF_ROLES]).withMessage('Role tidak valid.')],
   ctrl.updateRole
 );

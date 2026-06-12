@@ -29,7 +29,7 @@ export async function register(req, res, next) {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(422).json({ ok: false, message: 'Validasi gagal.', errors: errors.mapped() });
+      return res.status(422).json({ ok: false, message: 'Silahkan masukkan Email dan Password.', errors: errors.mapped() });
     }
 
     const { name, email, phone, password, gender, dob } = req.body;
@@ -48,7 +48,7 @@ export async function login(req, res, next) {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(422).json({ ok: false, message: 'Validasi gagal.', errors: errors.mapped() });
+      return res.status(422).json({ ok: false, message: 'Silahkan masukkan Email dan Password.', errors: errors.mapped() });
     }
 
     const { email, password } = req.body;

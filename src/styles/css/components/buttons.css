@@ -24,6 +24,13 @@
   background: transparent;
 }
 
+.btn.danger{
+  background: #dc2626;
+  border-color: rgba(0,0,0,0.0);
+  color: #fff;
+}
+.btn.danger:hover{ filter: brightness(0.93); }
+
 .btn:disabled{
   opacity: 0.6;
   cursor: not-allowed;

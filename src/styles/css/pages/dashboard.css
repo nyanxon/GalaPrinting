@@ -812,6 +812,88 @@
 
 .adm-modal-body { padding: 20px; }
 
+.adm-modal-body p { margin: 0 0 10px; font-size: 14px; line-height: 1.55; color: #333; }
+
+.adm-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 20px 20px;
+}
+
+/* ── Role select in customer table ─────────────────────────── */
+.adm-role-select {
+  border: 1px solid #d1c5b8;
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 13px;
+  color: #1f1f1f;
+  background: #faf8f5;
+  cursor: pointer;
+  outline: none;
+  min-width: 120px;
+}
+
+.adm-role-select:hover  { border-color: #a0856a; }
+.adm-role-select:focus  { border-color: var(--brand-brown, #7a5c3e); box-shadow: 0 0 0 2px rgba(122,92,62,0.15); }
+
+/* ── Secondary & Danger buttons (used in confirmation modal) ─ */
+.adm-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  background: #f5f5f5;
+  color: #444;
+  transition: filter 0.15s;
+}
+.adm-btn-secondary:hover:not(:disabled) { filter: brightness(0.95); }
+.adm-btn-secondary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.adm-btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: #c0392b;
+  color: #fff;
+  transition: filter 0.15s;
+}
+.adm-btn-danger:hover:not(:disabled) { filter: brightness(0.9); }
+.adm-btn-danger:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ── Toast notification ──────────────────────────────────── */
+.adm-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 600;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  animation: adm-toast-in 0.25s ease;
+  max-width: 360px;
+}
+.adm-toast--success { background: #16a34a; color: #fff; }
+.adm-toast--error   { background: #c0392b; color: #fff; }
+
+@keyframes adm-toast-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* ── Form ────────────────────────────────────────────────── */
 .adm-form { display: flex; flex-direction: column; gap: 14px; }
 
