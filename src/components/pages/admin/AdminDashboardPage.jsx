@@ -267,7 +267,7 @@ export default function AdminDashboardPage() {
           </header>
 
           {/* Body row: content + activity sidebar */}
-          <div className="staff-body-row">
+          <div className={`staff-body-row${isDashboard ? '' : ' staff-body-row--full'}`}>
             <div className="staff-content">
               {isDashboard && (
                 <>
