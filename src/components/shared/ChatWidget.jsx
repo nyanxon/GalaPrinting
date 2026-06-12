@@ -127,13 +127,11 @@ function ChatWidget() {
   useEffect(() => {
     if (isOpen && isCustomer && user) {
       createOrGetConversation(user.id, user.name).then((conv) => {
-        // In backend mode, tell the socket server to join this conversation room
+        // In backend mode, tell the socket server to join this conversation room.
+        // The _handleJoinConversation handler in chatService queues the join if
+        // the socket is not yet connected, so dispatch unconditionally.
         if (USE_BACKEND && conv?.id) {
-          import('../../services/chatService.js').then(({ connectSocket: _cs, ...mod }) => {
-            // Emit join:conversation via the socket if available
-            // The socket is managed in chatService — dispatch a custom event
-            window.dispatchEvent(new CustomEvent('gala:join-conversation', { detail: { conversationId: conv.id } }));
-          }).catch(() => {});
+          window.dispatchEvent(new CustomEvent('gala:join-conversation', { detail: { conversationId: conv.id } }));
         }
       }).catch(() => {});
       loadMessages();
