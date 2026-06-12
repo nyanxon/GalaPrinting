@@ -153,6 +153,8 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding-right: 4px;        /* breathing room for scrollbar */
   padding-bottom: 24px;
@@ -545,7 +547,7 @@
 }
 
 @media (max-width: 1150px) {
-  .staff-main {
+  .staff-body-row {
     grid-template-columns: 1fr;
   }
 
@@ -3099,29 +3101,26 @@
    SCROLL FIXES — all staff content areas
    ══════════════════════════════════════════════════════════ */
 
-/* staff-content already has overflow-y:auto — ensure it works */
-.staff-content {
-  overflow-y: auto !important;
-  padding-bottom: 32px;
-}
-
-/* adm-card inside staff-content should scroll its own content */
+/* adm-card inside staff-content fills available space naturally —
+   no hardcoded max-height so it works whether the activity sidebar
+   is visible (dashboard) or hidden (other sections / --full layout) */
 .staff-content .adm-card {
-  overflow-y: auto;
-  max-height: calc(100vh - 200px);
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* Chat card keeps its own internal scroll — don't override */
 .staff-content .adm-card--chat {
   overflow: hidden;
-  max-height: none;
 }
 
 /* Offline / CS custom order form cards — allow full scroll */
 .offline-order-card,
 .adm-card.offline-order-card {
-  overflow-y: auto !important;
-  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 /* Chat file action buttons */
