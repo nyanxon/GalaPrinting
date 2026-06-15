@@ -93,20 +93,44 @@ function PaginationBar({ page, totalPages, total, limit, onPageChange }) {
  * Returns Image_Entry[] — each existing URL becomes { url, status: 'done' }.
  * Handles JSON array strings, single URL strings, and placeholder values.
  *
+ * Priority order:
+ *  1. product.images  — already-normalized array set by normalizeProduct() in productService
+ *  2. product.image_path — raw JSON array string or single URL from the DB row
+ *  3. product.image  — single resolved URL (first image only, used as fallback)
+ *
  * @param {object|null} product
  * @returns {{ url: string, status: 'uploading'|'done'|'error', error?: string, file?: File }[]}
  */
 function parseImages(product) {
   if (!product) return [];
-  const raw = product.image || product.image_path;
+
+  // 1. Use the pre-normalized images array when available (contains all resolved URLs)
+  if (Array.isArray(product.images) && product.images.length > 0) {
+    return product.images
+      .filter((url) => url && !url.includes('placeholder'))
+      .map((url) => ({ url, status: 'done' }));
+  }
+
+  // 2. Try raw image_path from the DB (may be a JSON array string or single URL)
+  const raw = product.image_path || product.image;
   if (!raw) return [];
+
   let urls = [];
-  try {
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) urls = parsed;
-  } catch {}
-  if (!urls.length && raw !== '/assets/img/placeholder.svg') urls = [raw];
-  return urls.map((url) => ({ url, status: 'done' }));
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) urls = parsed;
+    } catch {}
+  }
+
+  // 3. Fall back to single URL if JSON parse didn't yield an array
+  if (!urls.length && raw && !raw.includes('placeholder')) {
+    urls = [raw];
+  }
+
+  return urls
+    .filter((url) => url && !url.includes('placeholder'))
+    .map((url) => ({ url, status: 'done' }));
 }
 
 function ProductModal({ product, categories, onClose, onSaved }) {
