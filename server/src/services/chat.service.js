@@ -7,6 +7,8 @@
 import { randomUUID } from 'crypto';
 import { query } from '../db/connection.js';
 
+const STAFF_ROLES = new Set(['admin', 'owner', 'cashier', 'cs', 'operational', 'qc', 'offline']);
+
 /**
  * List all customer conversations with lastMessage and unreadCount, sorted by last_at DESC.
  * DM conversations are excluded (Req 1.1).
@@ -86,8 +88,10 @@ export async function getMessages(conversationId) {
 
 /**
  * Save a new message and update conversation.last_at.
- * When the sender is an admin, also set assigned_admin_id on the conversation
- * so the UI can show "Ditangani" instead of "Belum ditangani".
+ *
+ * Status logic:
+ * - Customer mengirim pesan → status "Belum Ditangani": reset assigned_admin_id ke NULL
+ * - Admin/staff membalas → status "Ditangani": set assigned_admin_id ke pengirim
  */
 export async function saveMessage({ conversationId, senderId, senderRole, type = 'text', content, filePath, fileName, fileSize, mimeType }) {
   const id = randomUUID();
@@ -98,15 +102,18 @@ export async function saveMessage({ conversationId, senderId, senderRole, type =
     [id, conversationId, senderId, senderRole, type, content || null, filePath || null, fileName || null, fileSize || null, mimeType || null]
   );
 
-  if (senderRole === 'admin' || senderRole === 'staff') {
-    // Mark conversation as handled by this admin/staff and update last_at
+  const isStaff = STAFF_ROLES.has(senderRole);
+
+  if (isStaff) {
+    // Admin/staff membalas → tandai sebagai "Ditangani"
     await query(
-      'UPDATE conversations SET last_at = NOW(), assigned_admin_id = COALESCE(assigned_admin_id, ?) WHERE id = ?',
+      'UPDATE conversations SET last_at = NOW(), assigned_admin_id = ? WHERE id = ?',
       [senderId, conversationId]
     );
   } else {
+    // Customer mengirim pesan baru → kembali ke "Belum Ditangani"
     await query(
-      'UPDATE conversations SET last_at = NOW() WHERE id = ?',
+      'UPDATE conversations SET last_at = NOW(), assigned_admin_id = NULL WHERE id = ?',
       [conversationId]
     );
   }

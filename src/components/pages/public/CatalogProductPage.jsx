@@ -113,6 +113,8 @@ function CatalogProductPage() {
         };
 
         setProduct(prod);
+        setThumbStart(0);
+        setActiveIndex(0);
         setSelectedColor(prod.colors[0] || null);
         setSelectedSize(prod.sizes[0] || null);
         setSelectedMaterial(prod.materials[0] || '');
@@ -200,13 +202,45 @@ function CatalogProductPage() {
   const images = product?.images?.length > 0 ? product.images : (product?.image ? [product.image] : [placeholderImg]);
   const totalImages = images.length;
 
+  // Thumbnail window: always show exactly 3 (or fewer if < 3 images)
+  const THUMB_VISIBLE = 3;
+  const [thumbStart, setThumbStart] = useState(0);
+
   const goNext = useCallback(() => {
-    setActiveIndex((i) => (i + 1) % totalImages);
+    setActiveIndex((i) => {
+      const next = (i + 1) % totalImages;
+      // Shift thumb window so the active thumb stays visible
+      setThumbStart((s) => {
+        if (next >= s + THUMB_VISIBLE) return Math.min(next - THUMB_VISIBLE + 1, totalImages - THUMB_VISIBLE);
+        if (next < s) return next;
+        return s;
+      });
+      return next;
+    });
   }, [totalImages]);
 
   const goPrev = useCallback(() => {
-    setActiveIndex((i) => (i - 1 + totalImages) % totalImages);
+    setActiveIndex((i) => {
+      const prev = (i - 1 + totalImages) % totalImages;
+      setThumbStart((s) => {
+        if (prev < s) return Math.max(prev, 0);
+        if (prev >= s + THUMB_VISIBLE) return Math.min(prev - THUMB_VISIBLE + 1, totalImages - THUMB_VISIBLE);
+        return s;
+      });
+      return prev;
+    });
   }, [totalImages]);
+
+  // Arrow buttons for the thumbnail strip itself
+  const thumbCanPrev = thumbStart > 0;
+  const thumbCanNext = thumbStart + THUMB_VISIBLE < totalImages;
+
+  const thumbNext = () => {
+    setThumbStart((s) => Math.min(s + 1, totalImages - THUMB_VISIBLE));
+  };
+  const thumbPrev = () => {
+    setThumbStart((s) => Math.max(s - 1, 0));
+  };
 
   // ── Zoom handlers ──────────────────────────────────────────────────────────
 
@@ -288,36 +322,38 @@ function CatalogProductPage() {
                 className="gallery-nav-btn"
                 type="button"
                 aria-label="Sebelumnya"
-                onClick={goPrev}
-                disabled={totalImages <= 1}
+                onClick={thumbPrev}
+                disabled={!thumbCanPrev}
               >
                 &#8249;
               </button>
               <div className="gallery-thumbs">
-                {images.slice(0, 3).map((src, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    className={`gallery-thumb${activeIndex === idx ? ' active' : ''}`}
-                    aria-label={`Lihat foto ${idx + 1}`}
-                    aria-pressed={activeIndex === idx}
-                    onClick={() => setActiveIndex(idx)}
-                  >
-                    <img
-                      src={src}
-                      alt={`${product.name} — thumbnail ${idx + 1}`}
-                      onError={(e) => { e.currentTarget.src = placeholderImg; }}
-                    />
-                  </button>
-                ))}
-
+                {images.slice(thumbStart, thumbStart + THUMB_VISIBLE).map((src, idx) => {
+                  const realIdx = thumbStart + idx;
+                  return (
+                    <button
+                      key={realIdx}
+                      type="button"
+                      className={`gallery-thumb${activeIndex === realIdx ? ' active' : ''}`}
+                      aria-label={`Lihat foto ${realIdx + 1}`}
+                      aria-pressed={activeIndex === realIdx}
+                      onClick={() => setActiveIndex(realIdx)}
+                    >
+                      <img
+                        src={src}
+                        alt={`${product.name} — thumbnail ${realIdx + 1}`}
+                        onError={(e) => { e.currentTarget.src = placeholderImg; }}
+                      />
+                    </button>
+                  );
+                })}
               </div>
               <button
                 className="gallery-nav-btn"
                 type="button"
                 aria-label="Berikutnya"
-                onClick={goNext}
-                disabled={totalImages <= 1}
+                onClick={thumbNext}
+                disabled={!thumbCanNext}
               >
                 &#8250;
               </button>

@@ -459,10 +459,12 @@ export default function ChatsSection() {
                   {(activeConv.customerName || '?')[0].toUpperCase()}
                 </div>
                 <div className="chat-main-name">{activeConv.customerName}</div>
+                {/* Ditangani = pesan terakhir dari admin/staff (assigned_admin_id ter-set)
+                    Belum Ditangani = pesan terakhir dari customer (assigned_admin_id NULL) */}
                 {activeConv.assignedAdminId ? (
                   <span className="chat-assigned">Ditangani</span>
                 ) : (
-                  <span className="chat-unassigned">Belum ditangani</span>
+                  <span className="chat-unassigned">Belum Ditangani</span>
                 )}
                 {user?.role === 'admin' && (
                   <button
