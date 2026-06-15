@@ -142,6 +142,7 @@ export async function updateProduct(id, data) {
     const col = key === 'shortDescription' ? 'short_description'
               : key === 'requiresDesign'   ? 'requires_design'
               : key === 'imagePath'        ? 'image_path'
+              : key === 'image'            ? 'image_path'   // frontend sends 'image' as JSON array string
               : key === 'categoryId'       ? 'category_id'
               : key === 'variantPrices'    ? 'variant_prices'
               : key; // already snake_case (e.g. category_id sent by controller)

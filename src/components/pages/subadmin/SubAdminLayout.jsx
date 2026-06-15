@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import { logout } from '../../../services/authService.js';
 import { STAFF_ROLES } from '../../../core/config.js';
+import StaffAvatarButton from '../../shared/StaffAvatarButton.jsx';
 import logoImg from '../../../assets/logo.png';
 import '../../../styles/css/pages/dashboard.css';
 
@@ -102,13 +103,7 @@ export default function SubAdminLayout({ navItems, sections, title }) {
             <div className="staff-header-section-label">{currentLabel}</div>
 
             <div className="staff-header-right">
-              <div className="staff-header-avatar">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"
-                  fill="none" viewBox="0 0 24 24" stroke="#666" strokeWidth="1.5" aria-hidden="true">
-                  <circle cx="12" cy="8" r="4" />
-                  <path strokeLinecap="round" d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-                </svg>
-              </div>
+              <StaffAvatarButton />
               <div className="staff-header-auth">
                 <span className="staff-header-name">{userName}</span>
                 <button className="staff-logout-btn" type="button" onClick={handleLogout}>Keluar</button>

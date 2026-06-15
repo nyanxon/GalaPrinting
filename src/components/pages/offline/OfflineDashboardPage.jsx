@@ -23,6 +23,7 @@ import { formatCurrency } from '../../../core/helpers.js';
 import { showToast } from '../../../core/toastEmitter.js';
 import ChatsSection from '../admin/sections/ChatsSection.jsx';
 import DMSection from '../admin/sections/DMSection.jsx';
+import StaffAvatarButton from '../../shared/StaffAvatarButton.jsx';
 import logoImg from '../../../assets/logo.png';
 import '../../../styles/css/pages/dashboard.css';
 
@@ -620,21 +621,7 @@ export default function OfflineDashboardPage() {
               </span>
             </div>
             <div className="staff-header-right">
-              <div className="staff-header-avatar">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="32"
-                  height="32"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="#666"
-                  strokeWidth="1.5"
-                  aria-hidden="true"
-                >
-                  <circle cx="12" cy="8" r="4" />
-                  <path strokeLinecap="round" d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-                </svg>
-              </div>
+              <StaffAvatarButton />
               <div className="staff-header-auth">
                 <span className="staff-header-name">{userName}</span>
                 <button
