@@ -119,7 +119,7 @@ export async function createProduct({ name, categoryId, price, shortDescription,
       sizes  ? JSON.stringify(sizes)  : null,
       materials ? JSON.stringify(materials) : null,
       imagePath || null,
-      JSON.stringify(variantPrices) || null,
+      variantPrices != null ? JSON.stringify(variantPrices) : null,
     ]
   );
 
@@ -134,7 +134,7 @@ export async function updateProduct(id, data) {
   const fields = [];
   const params = [];
 
-  const allowed = ['name', 'category_id', 'price', 'short_description', 'requires_design', 'image_path'];
+  const allowed    = ['name', 'category_id', 'price', 'short_description', 'requires_design', 'image_path'];
   const jsonFields = ['colors', 'sizes', 'materials', 'variant_prices'];
 
   for (const [key, val] of Object.entries(data)) {
@@ -148,10 +148,16 @@ export async function updateProduct(id, data) {
               : key; // already snake_case (e.g. category_id sent by controller)
     if (allowed.includes(col)) {
       fields.push(`${col} = ?`);
-      params.push(val);
+      // Coerce boolean requires_design to 0/1 for TINYINT column
+      if (col === 'requires_design') {
+        params.push(val ? 1 : 0);
+      } else {
+        params.push(val);
+      }
     } else if (jsonFields.includes(col)) {
       fields.push(`${col} = ?`);
-      params.push(val !== undefined ? JSON.stringify(val) : null);
+      // null → SQL NULL; everything else → JSON string
+      params.push(val != null ? JSON.stringify(val) : null);
     }
   }
 

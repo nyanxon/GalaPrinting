@@ -356,15 +356,6 @@ function ChatWidget() {
                 <div className="cw-header-sub">Gala Printing · Online</div>
               </div>
             </div>
-            <button
-              className="cw-close"
-              id="cw-close"
-              type="button"
-              aria-label="Tutup chat"
-              onClick={handleClose}
-            >
-              ✕
-            </button>
           </div>
 
           {/* Body */}

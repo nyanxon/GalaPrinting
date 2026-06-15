@@ -67,8 +67,6 @@ export async function createProduct(req, res, next) {
       body.categoryId = categoryId;
     }
 
-    const { variantPrices } = body;
-
     const product = await svc.createProduct({
       name:             body.name,
       categoryId:       body.categoryId || null,
@@ -79,7 +77,7 @@ export async function createProduct(req, res, next) {
       sizes:            body.sizes,
       materials:        body.materials,
       imagePath:        body.image || body.imagePath || null,
-      variantPrices,
+      variantPrices:    body.variantPrices ?? null,
     });
     return res.status(201).json({ ok: true, data: product });
   } catch (err) {
@@ -95,9 +93,10 @@ export async function updateProduct(req, res, next) {
       const categoryId = await svc.resolveCategoryId(body.category);
       body.category_id = categoryId;
     }
+    // Remove the raw category name — the DB column is category_id only
+    delete body.category;
 
-    const { variantPrices } = body;
-    const product = await svc.updateProduct(req.params.id, { ...body, variantPrices });
+    const product = await svc.updateProduct(req.params.id, body);
     if (!product) {
       return res.status(404).json({ ok: false, message: 'Produk tidak ditemukan.' });
     }
