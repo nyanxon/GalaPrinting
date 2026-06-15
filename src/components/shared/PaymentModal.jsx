@@ -103,7 +103,7 @@ function PaymentModal({ isOpen, onClose, order, subtotal: subtotalProp, onPaymen
   }
 
   function handleCopyAccount() {
-    navigator.clipboard?.writeText('1234567890').catch(() => {});
+    navigator.clipboard?.writeText('6485600063').catch(() => {});
     setCopyLabel('✅ Tersalin!');
     setTimeout(() => setCopyLabel('📋 Salin'), 2000);
   }
@@ -299,7 +299,7 @@ function PaymentModal({ isOpen, onClose, order, subtotal: subtotalProp, onPaymen
                       <div className="co-payment-bank-row">
                         <span className="co-payment-bank-label">No. Rekening</span>
                         <div className="co-payment-bank-value-wrap">
-                          <strong className="co-payment-bank-value">1234567890</strong>
+                          <strong className="co-payment-bank-value">6485600063</strong>
                           <button
                             className="co-payment-copy-btn"
                             type="button"

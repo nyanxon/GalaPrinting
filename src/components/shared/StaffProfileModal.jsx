@@ -58,16 +58,12 @@ export default function StaffProfileModal({ isOpen, onClose }) {
     /* Backdrop — rendered directly into document.body */
     <div
       className="spm-overlay"
-      onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-label="Edit Profil"
     >
       {/* Modal panel */}
-      <div
-        className="spm-panel"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="spm-panel">
         {/* Header */}
         <div className="spm-header">
           <h2 className="spm-title">Edit Profil</h2>
