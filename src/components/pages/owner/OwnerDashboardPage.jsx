@@ -20,6 +20,7 @@ import RevenueSection from './sections/RevenueSection.jsx';
 import ReportsSection from './sections/ReportsSection.jsx';
 import AnalyticsSection from './sections/AnalyticsSection.jsx';
 import StaffAvatarButton from '../../shared/StaffAvatarButton.jsx';
+import ExportDataCards from '../../admin/ExportDataCards.jsx';
 import logoImg from '../../../assets/logo.png';
 import '../../../styles/css/pages/dashboard.css';
 
@@ -221,7 +222,12 @@ export default function OwnerDashboardPage() {
 
           <div className={`staff-body-row${isDashboard ? '' : ' staff-body-row--full'}`}>
             <div className="staff-content">
-              {isDashboard && <WelcomeCard userName={userName} />}
+              {isDashboard && (
+                <>
+                  <WelcomeCard userName={userName} />
+                  <ExportDataCards />
+                </>
+              )}
               <div id="adm-panel">{renderSection()}</div>
             </div>
             {isDashboard && (

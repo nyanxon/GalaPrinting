@@ -17,6 +17,7 @@ import ChatsSection from './sections/ChatsSection.jsx';
 import DMSection from './sections/DMSection.jsx';
 import PromoSection from './sections/PromoSection.jsx';
 import MigrationExportTool from '../../admin/MigrationExportTool.jsx';
+import ExportDataCards from '../../admin/ExportDataCards.jsx';
 import StaffAvatarButton from '../../shared/StaffAvatarButton.jsx';
 import logoImg from '../../../assets/logo.png';
 import '../../../styles/css/pages/dashboard.css';
@@ -248,6 +249,7 @@ export default function AdminDashboardPage() {
               {isDashboard && (
                 <>
                   <WelcomeCard userName={userName} />
+                  <ExportDataCards />
                   <MigrationExportTool />
                 </>
               )}

@@ -28,6 +28,7 @@ import userRoutes      from './routes/users.routes.js';
 import promoRoutes     from './routes/promo.routes.js';
 import profileRoutes   from './routes/profile.routes.js';
 import addressRoutes   from './routes/addresses.routes.js';
+import exportRoutes    from './routes/export.routes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Try multiple possible dist paths for different deployment structures
@@ -100,6 +101,7 @@ export function createApp() {
   app.use('/api/promo',         promoRoutes);
   app.use('/api/profile',       profileRoutes);
   app.use('/api/addresses',     addressRoutes);
+  app.use('/api/export',        exportRoutes);
 
   // ── SPA catch-all — serve index.html for all non-API routes ──────────────────
   // Must be declared AFTER API routes
