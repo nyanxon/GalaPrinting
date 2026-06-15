@@ -751,6 +751,70 @@ export async function deleteConversation(conversationId) {
 }
 
 /* ══════════════════════════════════════════════════════════
+   CUSTOMER UNREAD COUNT
+   ══════════════════════════════════════════════════════════ */
+
+/**
+ * Get the number of unread messages from admin/staff for the logged-in customer.
+ * Falls back to 0 on error so the badge degrades gracefully.
+ *
+ * - USE_BACKEND=true : GET /api/conversations/unread-count
+ * - USE_BACKEND=false: computed from localStorage messages
+ *
+ * @param {string} customerId
+ * @returns {Promise<number>}
+ */
+export async function getCustomerUnreadCount(customerId) {
+  if (USE_BACKEND) {
+    try {
+      const res = await api.get('/api/conversations/unread-count');
+      return Number(res.data.count ?? 0);
+    } catch {
+      return 0;
+    }
+  }
+
+  // localStorage mode: count admin messages with no readAt in the customer's conversation
+  const data = load();
+  const conv = data.conversations.find((c) => c.customerId === customerId);
+  if (!conv) return 0;
+  return data.messages.filter(
+    (m) => m.conversationId === conv.id && m.senderRole !== 'customer' && !m.readAt
+  ).length;
+}
+
+/**
+ * Mark all admin/staff messages in the customer's conversation as read.
+ * Called when the customer opens the chat widget.
+ *
+ * - USE_BACKEND=true : POST /api/conversations/mark-read
+ * - USE_BACKEND=false: sets readAt on all admin messages in localStorage
+ *
+ * @param {string} customerId
+ */
+export async function markAdminMessagesReadForCustomer(customerId) {
+  if (USE_BACKEND) {
+    try {
+      await api.post('/api/conversations/mark-read');
+    } catch { /* silent */ }
+    return;
+  }
+
+  // localStorage mode
+  const data = load();
+  const conv = data.conversations.find((c) => c.customerId === customerId);
+  if (!conv) return;
+  let changed = false;
+  data.messages.forEach((m) => {
+    if (m.conversationId === conv.id && m.senderRole !== 'customer' && !m.readAt) {
+      m.readAt = new Date().toISOString();
+      changed = true;
+    }
+  });
+  if (changed) saveLocal(data);
+}
+
+/* ══════════════════════════════════════════════════════════
    LEGACY COMPAT (used by admin activity sidebar)
    ══════════════════════════════════════════════════════════ */
 

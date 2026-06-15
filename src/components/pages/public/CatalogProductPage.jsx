@@ -310,10 +310,7 @@ function CatalogProductPage() {
                     />
                   </button>
                 ))}
-                {/* Fill remaining slots as empty placeholders if fewer than 3 images */}
-                {Array.from({ length: Math.max(0, 3 - images.length) }).map((_, i) => (
-                  <div key={`empty-${i}`} className="gallery-thumb gallery-thumb--empty" aria-hidden="true" />
-                ))}
+
               </div>
               <button
                 className="gallery-nav-btn"

@@ -6,6 +6,8 @@ import {
   getMessagesByCustomer,
   sendMessage,
   validateFile,
+  getCustomerUnreadCount,
+  markAdminMessagesReadForCustomer,
 } from '../../services/chatService.js';
 import { USE_BACKEND } from '../../core/httpClient.js';
 import EmojiPickerButton from './EmojiPickerButton.jsx';
@@ -115,6 +117,55 @@ function ChatWidget() {
   const role = user?.role ?? null;
   const isStaff = role !== null && STAFF_ROLES.includes(role);
   const isCustomer = role === 'customer';
+
+  // ── Unread count state ──────────────────────────────────
+  const [unreadCount, setUnreadCount] = useState(0);
+  const pollTimerRef = useRef(null);
+  const isOpenRef = useRef(false);
+
+  // Keep isOpenRef in sync with isOpen so the polling callback always sees the latest value
+  useEffect(() => { isOpenRef.current = isOpen; }, [isOpen]);
+
+  const refreshUnreadCount = useCallback(async () => {
+    if (!isCustomer || !user) return;
+    const count = await getCustomerUnreadCount(user.id);
+    setUnreadCount(count);
+  }, [isCustomer, user]);
+
+  // Poll for unread count every 30s and on relevant socket events
+  useEffect(() => {
+    if (!isCustomer) return;
+
+    refreshUnreadCount();
+
+    pollTimerRef.current = setInterval(refreshUnreadCount, 30_000);
+
+    function handleNewMessage() {
+      // Only bump badge when widget is closed
+      if (!isOpenRef.current) {
+        refreshUnreadCount();
+      }
+    }
+
+    window.addEventListener('gala:message-new', handleNewMessage);
+    window.addEventListener('gala:chat-updated', refreshUnreadCount);
+
+    return () => {
+      clearInterval(pollTimerRef.current);
+      window.removeEventListener('gala:message-new', handleNewMessage);
+      window.removeEventListener('gala:chat-updated', refreshUnreadCount);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCustomer, user]);
+
+  // Clear badge when widget opens
+  useEffect(() => {
+    if (isOpen && isCustomer && user && unreadCount > 0) {
+      setUnreadCount(0);
+      markAdminMessagesReadForCustomer(user.id);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   // Load messages when widget opens (customer only)
   const loadMessages = useCallback(async () => {
@@ -276,11 +327,16 @@ function ChatWidget() {
         className="cw-toggle"
         id="cw-toggle"
         type="button"
-        aria-label={isOpen ? 'Tutup chat' : 'Buka chat'}
+        aria-label={isOpen ? 'Tutup chat' : `Buka chat${unreadCount > 0 ? `, ${unreadCount} pesan baru` : ''}`}
         aria-expanded={isOpen}
         onClick={handleToggle}
       >
         {toggleIcon}
+        {!isOpen && unreadCount > 0 && (
+          <span className="cw-unread-badge" aria-hidden="true">
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
+        )}
       </button>
 
       {/* Chat box */}

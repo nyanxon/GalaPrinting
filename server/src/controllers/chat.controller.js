@@ -34,6 +34,16 @@ function emitMessageNew(conversationId, message) {
   } catch { /* ignore */ }
 }
 
+// GET /api/conversations/unread-count — customer only
+export async function getCustomerUnreadCount(req, res, next) {
+  try {
+    const count = await svc.getCustomerUnreadCount(req.user.id);
+    return res.json({ ok: true, count });
+  } catch (err) {
+    next(err);
+  }
+}
+
 // GET /api/conversations
 export async function listConversations(req, res, next) {
   try {
@@ -213,6 +223,16 @@ export async function getOrCreateDMConversation(req, res, next) {
     } catch { /* ignore */ }
 
     return res.status(201).json({ ok: true, data: conv });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// POST /api/conversations/mark-read — customer marks admin messages as read
+export async function markAdminMessagesRead(req, res, next) {
+  try {
+    await svc.markAdminMessagesRead(req.user.id);
+    return res.json({ ok: true });
   } catch (err) {
     next(err);
   }

@@ -283,3 +283,47 @@ export async function markDMAsRead(conversationId, readerId) {
     [conversationId, readerId]
   );
 }
+
+/**
+ * Count unread messages sent by admin/staff in a customer's conversation.
+ * Used to power the notification bubble on the customer chat widget.
+ *
+ * A message is "unread by customer" when:
+ *   - sender_role is NOT 'customer'
+ *   - read_at IS NULL
+ *
+ * @param {string} customerId
+ * @returns {Promise<number>} Unread count (0 if no conversation exists yet)
+ */
+export async function getCustomerUnreadCount(customerId) {
+  const [rows] = await query(
+    `SELECT COUNT(*) AS cnt
+     FROM messages m
+     INNER JOIN conversations c ON c.id = m.conversation_id
+     WHERE c.customer_id = ?
+       AND c.conversation_type = 'customer_chat'
+       AND m.sender_role != 'customer'
+       AND m.read_at IS NULL`,
+    [customerId]
+  );
+  return Number(rows[0]?.cnt ?? 0);
+}
+
+/**
+ * Mark all admin/staff messages in a customer's conversation as read by the customer.
+ * Called when the customer opens their chat widget.
+ *
+ * @param {string} customerId
+ */
+export async function markAdminMessagesRead(customerId) {
+  await query(
+    `UPDATE messages m
+     INNER JOIN conversations c ON c.id = m.conversation_id
+     SET m.read_at = NOW()
+     WHERE c.customer_id = ?
+       AND c.conversation_type = 'customer_chat'
+       AND m.sender_role != 'customer'
+       AND m.read_at IS NULL`,
+    [customerId]
+  );
+}
