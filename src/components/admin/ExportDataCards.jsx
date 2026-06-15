@@ -2,17 +2,11 @@
  * ExportDataCards.jsx — Dashboard export cards for Super-Admin / Owner.
  *
  * Three cards:
- *   1. Export File Upload  → "localStorage GALA (DATE).zip"
- *      Hits GET /api/export/uploads — server zips all files from persistent_uploads
- *      (designs, payments, chat, avatars, products) and streams the ZIP.
+ *   1. Export File Upload  → "BackupGALA (Photo) DATE.zip"
  *
- *   2. Export Database     → "Database GALA (DATE).zip"
- *      Hits GET /api/export/database — full DB snapshot packaged into a ZIP
- *      by the browser.
+ *   2. Export Database     → "BackupGALA (DB) DATE.zip"
  *
- *   3. Export Both         → "LocalStorage + Database GALA (DATE).zip"
- *      Downloads both ZIPs in sequence (uploads ZIP from server + DB ZIP
- *      built in browser).
+ *   3. Export Both         → "BackupGALA (Photo + DB) DATE.zip"
  */
 
 import { useState } from 'react';
@@ -132,9 +126,7 @@ async function exportUploads(setLoading) {
     const date = dateStr();
     // Use axios with responseType: 'blob' so we get raw binary
     const res = await api.get('/api/export/uploads', { responseType: 'blob' });
-    downloadBlob(res.data, `localStorage GALA (${date}).zip`);
-  } catch (err) {
-    console.error('Upload export failed:', err);
+    downloadBlob(res.data, `BackupGALA (Photo) ${date}.zip`);
     const msg = err.response?.status === 404
       ? 'Tidak ada file upload yang ditemukan di server.\nPastikan folder persistent_uploads sudah memiliki file.'
       : 'Gagal mengambil file upload dari server. Pastikan server berjalan dan Anda sudah login.';
@@ -163,7 +155,7 @@ async function exportDatabase(setLoading) {
       {
         name: 'README.txt',
         data: jsonBytes({
-          source:     'Database GALA',
+          source:     'BackupGALA (DB)',
           exportedAt: data.exportedAt,
           tables:     Object.keys(tables),
           totalRows,
@@ -173,7 +165,7 @@ async function exportDatabase(setLoading) {
 
     downloadBlob(
       new Blob([zipBytes], { type: 'application/zip' }),
-      `Database GALA (${date}).zip`,
+      `BackupGALA (DB) ${date}.zip`,
     );
   } catch (err) {
     console.error('DB export failed:', err);
@@ -184,46 +176,15 @@ async function exportDatabase(setLoading) {
 }
 
 /**
- * Card 3 — Export Both (uploads ZIP + database ZIP, downloaded sequentially)
+ * Card 3 — Export Both
+ * Server builds one ZIP with Photo/ and DB/ folders, browser just downloads it.
  */
 async function exportBoth(setLoading) {
   setLoading(true);
   try {
     const date = dateStr();
-
-    // 1. Upload files ZIP (streamed from server)
-    try {
-      const res = await api.get('/api/export/uploads', { responseType: 'blob' });
-      downloadBlob(res.data, `localStorage GALA (${date}).zip`);
-    } catch (err) {
-      if (err.response?.status !== 404) throw err;
-      // No upload files — continue to DB export
-    }
-
-    // 2. Database ZIP (built in browser)
-    const { data } = await api.get('/api/export/database');
-    if (!data.ok) throw new Error('Server menolak permintaan export.');
-
-    const tables    = data.tables || {};
-    const totalRows = Object.values(tables).reduce((s, rows) => s + (rows?.length ?? 0), 0);
-
-    const zipBytes = buildZip([
-      { name: 'database.json', data: jsonBytes(tables) },
-      {
-        name: 'README.txt',
-        data: jsonBytes({
-          source:     'LocalStorage + Database GALA',
-          exportedAt: new Date().toISOString(),
-          tables:     Object.keys(tables),
-          totalRows,
-        }),
-      },
-    ]);
-
-    downloadBlob(
-      new Blob([zipBytes], { type: 'application/zip' }),
-      `LocalStorage + Database GALA (${date}).zip`,
-    );
+    const res  = await api.get('/api/export/all', { responseType: 'blob' });
+    downloadBlob(res.data, `BackupGALA (Photo + DB) ${date}.zip`);
   } catch (err) {
     console.error('Combined export failed:', err);
     alert('Gagal export gabungan. Pastikan server berjalan dan Anda sudah login.');

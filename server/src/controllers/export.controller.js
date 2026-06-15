@@ -2,12 +2,12 @@
  * export.controller.js — Owner-only endpoints to export data.
  *
  * GET /api/export/database — full DB snapshot as JSON
- * GET /api/export/uploads  — all uploaded files as a ZIP archive
+ * GET /api/export/uploads  — all uploaded files as a ZIP
+ * GET /api/export/all      — one ZIP with two folders: Photo/ and DB/
  *
  * Security: authenticate + requireRole('owner', 'admin') applied on routes.
  */
 
-import fs from 'fs';
 import fsp from 'fs/promises';
 import path from 'path';
 import { query } from '../db/connection.js';
@@ -170,7 +170,7 @@ const EXPORT_TABLES = [
  * GET /api/export/database
  * Returns a JSON snapshot of all DB tables.
  */
-export async function exportDatabase(req, res, next) {
+export async function exportDatabase(_req, res, next) {
   try {
     const snapshot = {};
     for (const table of EXPORT_TABLES) {
@@ -196,7 +196,7 @@ export async function exportDatabase(req, res, next) {
  * Streams a ZIP archive of all files inside the upload directory.
  * Structure inside ZIP: uploads/<subdir>/<filename>
  */
-export async function exportUploads(req, res, next) {
+export async function exportUploads(_req, res, next) {
   try {
     const uploadRoot = resolveUploadRoot();
     const date = new Date().toISOString().slice(0, 10);
@@ -238,7 +238,104 @@ export async function exportUploads(req, res, next) {
     });
 
     const zipBuf = buildZipBuffer(zipEntries);
-    const filename = `localStorage GALA (${date}).zip`;
+    const filename = `BackupGALA (Photo) ${date}.zip`;
+
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${encodeURIComponent(filename)}"`,
+    );
+    res.setHeader('Content-Length', zipBuf.length);
+    return res.end(zipBuf);
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * GET /api/export/all
+ * One ZIP file with two top-level folders:
+ *   Photo/designs/…
+ *   Photo/payments/…
+ *   Photo/chat/…
+ *   Photo/avatars/…
+ *   Photo/products/…
+ *   DB/database.json
+ *   DB/README.txt
+ *   manifest.json
+ */
+export async function exportAll(_req, res, next) {
+  try {
+    const uploadRoot = resolveUploadRoot();
+    const date       = new Date().toISOString().slice(0, 10);
+    const exportedAt = new Date().toISOString();
+    const zipEntries = [];
+
+    // ── Folder Photo ────────────────────────────────────────
+    const photoFiles = [];
+    for (const sub of SUBDIRS) {
+      const subDir = path.join(uploadRoot, sub);
+      const files  = await collectFiles(subDir, `Photo/${sub}/`);
+      photoFiles.push(...files);
+    }
+
+    await Promise.all(
+      photoFiles.map(async ({ zipName, absPath }) => {
+        const data = await fsp.readFile(absPath);
+        zipEntries.push({ name: zipName, data });
+      }),
+    );
+
+    // ── Folder DB ───────────────────────────────────────────
+    const snapshot = {};
+    for (const table of EXPORT_TABLES) {
+      try {
+        const [rows] = await query(`SELECT * FROM \`${table}\``);
+        snapshot[table] = rows;
+      } catch {
+        snapshot[table] = [];
+      }
+    }
+    const totalRows = Object.values(snapshot).reduce((s, r) => s + (r?.length ?? 0), 0);
+
+    zipEntries.push({
+      name: 'DB/database.json',
+      data: Buffer.from(JSON.stringify(snapshot, null, 2), 'utf8'),
+    });
+    zipEntries.push({
+      name: 'DB/README.txt',
+      data: Buffer.from(
+        JSON.stringify({
+          source:     'BackupGALA (Photo + DB)',
+          exportedAt,
+          tables:     Object.keys(snapshot),
+          totalRows,
+        }, null, 2),
+        'utf8',
+      ),
+    });
+
+    // ── manifest.json ───────────────────────────────────────
+    zipEntries.push({
+      name: 'manifest.json',
+      data: Buffer.from(
+        JSON.stringify({
+          exportedAt,
+          photo: {
+            totalFiles: photoFiles.length,
+            files: photoFiles.map((f) => f.zipName),
+          },
+          db: {
+            tables:    Object.keys(snapshot),
+            totalRows,
+          },
+        }, null, 2),
+        'utf8',
+      ),
+    });
+
+    const zipBuf  = buildZipBuffer(zipEntries);
+    const filename = `BackupGALA (Photo + DB) ${date}.zip`;
 
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader(
