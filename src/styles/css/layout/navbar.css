@@ -450,6 +450,9 @@
   right: 0;
   min-width: 300px;
   padding: 18px;
+  max-height: calc(100dvh - 80px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .login-popup-arrow { right: 56px; left: auto; }
@@ -529,6 +532,9 @@
   .login-popup {
     right: -12px;
     min-width: calc(100vw - 24px);
+    /* Ensure popup stays within viewport height on small screens */
+    max-height: calc(100dvh - 72px);
+    overflow-y: auto;
   }
 }
 

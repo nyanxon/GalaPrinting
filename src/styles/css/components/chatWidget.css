@@ -413,6 +413,22 @@
 
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 440px) {
-  .cw-box { width: calc(100vw - 32px); }
-  #chat-widget-root { right: 16px; bottom: 16px; }
+  #chat-widget-root {
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    align-items: flex-end;
+  }
+
+  .cw-box {
+    width: 100%;
+    max-width: 100%;
+    max-height: calc(100dvh - 80px);
+    border-radius: 16px;
+  }
+
+  .cw-body {
+    min-height: 180px;
+    max-height: calc(100dvh - 240px);
+  }
 }
