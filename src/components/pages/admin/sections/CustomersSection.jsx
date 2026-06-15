@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useContext } from 'react';
 import { listCustomers, updateUserRole } from '../../../../services/authService.js';
-import { AuthContext } from '../../context/AuthContext.jsx';
+import { AuthContext } from '../../../context/AuthContext.jsx';
 
 const PAGE_SIZE = 10;
 
