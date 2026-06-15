@@ -8,7 +8,7 @@
  * Requirements: 7.3, 13.4
  */
 
-import { useState, useEffect, useContext, useRef } from 'react';
+import { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { CartContext } from '../../context/CartContext.jsx';
 import { AuthContext } from '../../context/AuthContext.jsx';
@@ -42,6 +42,15 @@ function CatalogProductPage() {
 
   const [product, setProduct] = useState(null);
   const [notFound, setNotFound] = useState(false);
+
+  // Gallery
+  const [activeIndex, setActiveIndex] = useState(0);
+  // Zoom state
+  const [zoomActive, setZoomActive] = useState(false);
+  const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
+  const galleryMainRef = useRef(null);
+  // Fullscreen lightbox (mobile)
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   // Selectors
   const [selectedColor, setSelectedColor] = useState(null);
@@ -186,6 +195,32 @@ function CatalogProductPage() {
     setAlertMsg('Produk ditambahkan ke keranjang.');
   }
 
+  // ── Gallery helpers ────────────────────────────────────────────────────────
+
+  const images = product?.images?.length > 0 ? product.images : (product?.image ? [product.image] : [placeholderImg]);
+  const totalImages = images.length;
+
+  const goNext = useCallback(() => {
+    setActiveIndex((i) => (i + 1) % totalImages);
+  }, [totalImages]);
+
+  const goPrev = useCallback(() => {
+    setActiveIndex((i) => (i - 1 + totalImages) % totalImages);
+  }, [totalImages]);
+
+  // ── Zoom handlers ──────────────────────────────────────────────────────────
+
+  function handleMouseMove(e) {
+    const rect = galleryMainRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setZoomPos({ x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) });
+  }
+
+  function handleMouseEnter() { setZoomActive(true); }
+  function handleMouseLeave() { setZoomActive(false); }
+
   if (notFound) {
     return (
       <main className="container product-detail">
@@ -217,23 +252,137 @@ function CatalogProductPage() {
 
         {/* ── Gallery ── */}
         <section className="gallery" aria-label="Galeri produk">
-          <div className="gallery-main" data-gallery-main>
+          {/* Main image with zoom */}
+          <div
+            className={`gallery-main${zoomActive ? ' gallery-main--zoom' : ''}`}
+            ref={galleryMainRef}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            onMouseMove={handleMouseMove}
+            onClick={() => setLightboxOpen(true)}
+            style={{ cursor: zoomActive ? 'crosshair' : 'zoom-in' }}
+            role="button"
+            tabIndex={0}
+            aria-label="Lihat gambar lebih besar"
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setLightboxOpen(true); }}
+          >
             <img
-              src={product.image || placeholderImg}
-              alt={product.name}
+              src={images[activeIndex] || placeholderImg}
+              alt={`${product.name} — foto ${activeIndex + 1}`}
               onError={(e) => { e.currentTarget.src = placeholderImg; }}
+              style={zoomActive ? {
+                transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
+                transform: 'scale(2)',
+                transition: 'transform 0.1s ease',
+              } : {
+                transform: 'scale(1)',
+                transition: 'transform 0.2s ease',
+              }}
             />
           </div>
-          <div className="gallery-thumbs-row">
-            <button className="gallery-nav-btn" type="button" aria-label="Sebelumnya">&#8249;</button>
-            <div className="gallery-thumbs">
-              <div className="gallery-thumb active" />
-              <div className="gallery-thumb" />
-              <div className="gallery-thumb" />
+
+          {/* Thumbnails row — only show when there are images */}
+          {totalImages > 0 && (
+            <div className="gallery-thumbs-row">
+              <button
+                className="gallery-nav-btn"
+                type="button"
+                aria-label="Sebelumnya"
+                onClick={goPrev}
+                disabled={totalImages <= 1}
+              >
+                &#8249;
+              </button>
+              <div className="gallery-thumbs">
+                {images.slice(0, 3).map((src, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    className={`gallery-thumb${activeIndex === idx ? ' active' : ''}`}
+                    aria-label={`Lihat foto ${idx + 1}`}
+                    aria-pressed={activeIndex === idx}
+                    onClick={() => setActiveIndex(idx)}
+                  >
+                    <img
+                      src={src}
+                      alt={`${product.name} — thumbnail ${idx + 1}`}
+                      onError={(e) => { e.currentTarget.src = placeholderImg; }}
+                    />
+                  </button>
+                ))}
+                {/* Fill remaining slots as empty placeholders if fewer than 3 images */}
+                {Array.from({ length: Math.max(0, 3 - images.length) }).map((_, i) => (
+                  <div key={`empty-${i}`} className="gallery-thumb gallery-thumb--empty" aria-hidden="true" />
+                ))}
+              </div>
+              <button
+                className="gallery-nav-btn"
+                type="button"
+                aria-label="Berikutnya"
+                onClick={goNext}
+                disabled={totalImages <= 1}
+              >
+                &#8250;
+              </button>
             </div>
-            <button className="gallery-nav-btn" type="button" aria-label="Berikutnya">&#8250;</button>
-          </div>
+          )}
         </section>
+
+        {/* ── Fullscreen Lightbox (mobile tap / desktop click) ── */}
+        {lightboxOpen && (
+          <div
+            className="gallery-lightbox"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Tampilan penuh gambar produk"
+            onClick={() => setLightboxOpen(false)}
+          >
+            <button
+              className="gallery-lightbox-close"
+              type="button"
+              aria-label="Tutup"
+              onClick={(e) => { e.stopPropagation(); setLightboxOpen(false); }}
+            >
+              ✕
+            </button>
+            <button
+              className="gallery-lightbox-nav gallery-lightbox-nav--prev"
+              type="button"
+              aria-label="Sebelumnya"
+              onClick={(e) => { e.stopPropagation(); goPrev(); }}
+            >
+              &#8249;
+            </button>
+            <img
+              src={images[activeIndex] || placeholderImg}
+              alt={`${product.name} — foto ${activeIndex + 1}`}
+              className="gallery-lightbox-img"
+              onClick={(e) => e.stopPropagation()}
+              onError={(e) => { e.currentTarget.src = placeholderImg; }}
+            />
+            <button
+              className="gallery-lightbox-nav gallery-lightbox-nav--next"
+              type="button"
+              aria-label="Berikutnya"
+              onClick={(e) => { e.stopPropagation(); goNext(); }}
+            >
+              &#8250;
+            </button>
+            {totalImages > 1 && (
+              <div className="gallery-lightbox-dots" onClick={(e) => e.stopPropagation()}>
+                {images.map((_, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    className={`gallery-lightbox-dot${activeIndex === idx ? ' active' : ''}`}
+                    aria-label={`Foto ${idx + 1}`}
+                    onClick={() => setActiveIndex(idx)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ── Product Info & Options ── */}
         <section className="stack product-info-stack">
