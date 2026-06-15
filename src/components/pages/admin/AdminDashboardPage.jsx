@@ -16,7 +16,6 @@ import ReviewsSection from './sections/ReviewsSection.jsx';
 import ChatsSection from './sections/ChatsSection.jsx';
 import DMSection from './sections/DMSection.jsx';
 import PromoSection from './sections/PromoSection.jsx';
-import MigrationExportTool from '../../admin/MigrationExportTool.jsx';
 import ExportDataCards from '../../admin/ExportDataCards.jsx';
 import StaffAvatarButton from '../../shared/StaffAvatarButton.jsx';
 import logoImg from '../../../assets/logo.png';
@@ -250,7 +249,6 @@ export default function AdminDashboardPage() {
                 <>
                   <WelcomeCard userName={userName} />
                   <ExportDataCards />
-                  <MigrationExportTool />
                 </>
               )}
               <div id="adm-panel">{renderSection()}</div>

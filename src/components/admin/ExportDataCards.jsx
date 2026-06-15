@@ -2,57 +2,45 @@
  * ExportDataCards.jsx — Dashboard export cards for Super-Admin / Owner.
  *
  * Three cards:
- *   1. Export localStorage  → "localStorage GALA (DATE).zip"
- *   2. Export Database      → "Database GALA (DATE).zip"
- *   3. Export Both          → "LocalStorage + Database GALA (DATE).zip"
+ *   1. Export File Upload  → "localStorage GALA (DATE).zip"
+ *      Hits GET /api/export/uploads — server zips all files from persistent_uploads
+ *      (designs, payments, chat, avatars, products) and streams the ZIP.
  *
- * ZIP is built in-browser using the ZIP format written manually (no extra
- * dependencies). The database snapshot is fetched from GET /api/export/database.
+ *   2. Export Database     → "Database GALA (DATE).zip"
+ *      Hits GET /api/export/database — full DB snapshot packaged into a ZIP
+ *      by the browser.
+ *
+ *   3. Export Both         → "LocalStorage + Database GALA (DATE).zip"
+ *      Downloads both ZIPs in sequence (uploads ZIP from server + DB ZIP
+ *      built in browser).
  */
 
 import { useState } from 'react';
 import { api } from '../../core/httpClient.js';
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   localStorage keys to collect
-───────────────────────────────────────────────────────────────────────────── */
-const GALA_LS_KEYS = [
-  'gala.users',
-  'gala.session',
-  'gala.products',
-  'gala.orders',
-  'gala.chats',
-  'gala.reviews',
-  'gala.analytics.visits',
-  'gala.analytics.productViews',
-];
-
-/* ─────────────────────────────────────────────────────────────────────────────
    Helpers
 ───────────────────────────────────────────────────────────────────────────── */
 
-/** Returns YYYY-MM-DD string for today */
 function dateStr() {
   return new Date().toISOString().slice(0, 10);
 }
 
-/** Collect all present gala.* localStorage entries into a plain object */
-function collectLocalStorage() {
-  const data = {};
-  GALA_LS_KEYS.forEach((key) => {
-    const raw = localStorage.getItem(key);
-    if (raw !== null && raw !== '') {
-      try { data[key] = JSON.parse(raw); }
-      catch { data[key] = raw; }
-    }
-  });
-  return data;
+/** Trigger a browser file download from a Blob */
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a   = document.createElement('a');
+  a.href     = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   Minimal ZIP builder (no external lib)
-   Spec: PKWARE .ZIP format — Local File Header + Data + Central Directory.
-   Supports STORE method (no compression) for simplicity & universal support.
+   Minimal ZIP builder — used only for the Database card (built in-browser).
+   STORE method, no compression, no external dependencies.
 ───────────────────────────────────────────────────────────────────────────── */
 
 function crc32(buf) {
@@ -73,11 +61,6 @@ function crc32(buf) {
 function u16le(n) { return [n & 0xff, (n >> 8) & 0xff]; }
 function u32le(n) { return [n & 0xff, (n >> 8) & 0xff, (n >> 16) & 0xff, (n >> 24) & 0xff]; }
 
-/**
- * Build a ZIP archive in memory.
- * @param {Array<{ name: string, data: Uint8Array }>} files
- * @returns {Uint8Array}
- */
 function buildZip(files) {
   const enc = new TextEncoder();
   const parts = [];
@@ -86,46 +69,25 @@ function buildZip(files) {
 
   for (const { name, data } of files) {
     const nameBytes = enc.encode(name);
-    const crc = crc32(data);
+    const crc  = crc32(data);
     const size = data.length;
-    const dosDate = 0; // 0 = no date
-    const dosTime = 0;
 
-    // Local file header
     const lfh = new Uint8Array([
-      0x50, 0x4b, 0x03, 0x04,       // signature
-      ...u16le(20),                  // version needed: 2.0
-      ...u16le(0),                   // general purpose bit flag
-      ...u16le(0),                   // compression: STORE
-      ...u16le(dosTime),
-      ...u16le(dosDate),
-      ...u32le(crc),
-      ...u32le(size),                // compressed size
-      ...u32le(size),                // uncompressed size
-      ...u16le(nameBytes.length),
-      ...u16le(0),                   // extra field length
+      0x50, 0x4b, 0x03, 0x04,
+      ...u16le(20), ...u16le(0), ...u16le(0),
+      ...u16le(0),  ...u16le(0),
+      ...u32le(crc), ...u32le(size), ...u32le(size),
+      ...u16le(nameBytes.length), ...u16le(0),
       ...nameBytes,
     ]);
 
-    // Central directory header entry (saved for later)
     const cdfh = new Uint8Array([
-      0x50, 0x4b, 0x01, 0x02,       // signature
-      ...u16le(20),                  // version made by
-      ...u16le(20),                  // version needed
-      ...u16le(0),
-      ...u16le(0),                   // STORE
-      ...u16le(dosTime),
-      ...u16le(dosDate),
-      ...u32le(crc),
-      ...u32le(size),
-      ...u32le(size),
-      ...u16le(nameBytes.length),
-      ...u16le(0),                   // extra field length
-      ...u16le(0),                   // file comment length
-      ...u16le(0),                   // disk number start
-      ...u16le(0),                   // internal attrs
-      ...u32le(0),                   // external attrs
-      ...u32le(offset),              // offset of local file header
+      0x50, 0x4b, 0x01, 0x02,
+      ...u16le(20), ...u16le(20), ...u16le(0), ...u16le(0),
+      ...u16le(0),  ...u16le(0),
+      ...u32le(crc), ...u32le(size), ...u32le(size),
+      ...u16le(nameBytes.length), ...u16le(0), ...u16le(0),
+      ...u16le(0),  ...u16le(0),  ...u32le(0), ...u32le(offset),
       ...nameBytes,
     ]);
 
@@ -134,98 +96,77 @@ function buildZip(files) {
     offset += lfh.length + data.length;
   }
 
-  // End of central directory record
   const cdSize = centralDir.reduce((s, b) => s + b.length, 0);
   const eocd = new Uint8Array([
-    0x50, 0x4b, 0x05, 0x06,         // signature
-    ...u16le(0),                     // disk number
-    ...u16le(0),                     // disk with start of central dir
-    ...u16le(files.length),
-    ...u16le(files.length),
-    ...u32le(cdSize),
-    ...u32le(offset),                // offset of central dir
-    ...u16le(0),                     // comment length
+    0x50, 0x4b, 0x05, 0x06,
+    ...u16le(0), ...u16le(0),
+    ...u16le(files.length), ...u16le(files.length),
+    ...u32le(cdSize), ...u32le(offset),
+    ...u16le(0),
   ]);
 
-  const allParts = [...parts, ...centralDir, eocd];
-  const total = allParts.reduce((s, b) => s + b.length, 0);
-  const result = new Uint8Array(total);
+  const all   = [...parts, ...centralDir, eocd];
+  const total = all.reduce((s, b) => s + b.length, 0);
+  const out   = new Uint8Array(total);
   let pos = 0;
-  for (const b of allParts) { result.set(b, pos); pos += b.length; }
-  return result;
+  for (const b of all) { out.set(b, pos); pos += b.length; }
+  return out;
 }
 
-/** Encode a plain object to a pretty-printed JSON Uint8Array */
 function jsonBytes(obj) {
   return new TextEncoder().encode(JSON.stringify(obj, null, 2));
-}
-
-/** Trigger a browser file download */
-function downloadBlob(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
    Export handlers
 ───────────────────────────────────────────────────────────────────────────── */
 
-async function fetchDatabaseSnapshot() {
-  const { data } = await api.get('/api/export/database');
-  if (!data.ok) throw new Error('Server menolak permintaan export.');
-  return data;
-}
-
-async function exportLocalStorage() {
-  const ls = collectLocalStorage();
-  const count = Object.keys(ls).length;
-  if (count === 0) {
-    alert('Tidak ada data localStorage (gala.*) yang ditemukan.');
-    return;
+/**
+ * Card 1 — Export Upload Files
+ * The server reads persistent_uploads, zips everything, and streams the ZIP.
+ * The browser just needs to receive the binary and trigger a download.
+ */
+async function exportUploads(setLoading) {
+  setLoading(true);
+  try {
+    const date = dateStr();
+    // Use axios with responseType: 'blob' so we get raw binary
+    const res = await api.get('/api/export/uploads', { responseType: 'blob' });
+    downloadBlob(res.data, `localStorage GALA (${date}).zip`);
+  } catch (err) {
+    console.error('Upload export failed:', err);
+    const msg = err.response?.status === 404
+      ? 'Tidak ada file upload yang ditemukan di server.\nPastikan folder persistent_uploads sudah memiliki file.'
+      : 'Gagal mengambil file upload dari server. Pastikan server berjalan dan Anda sudah login.';
+    alert(msg);
+  } finally {
+    setLoading(false);
   }
-
-  const date = dateStr();
-  const zipBytes = buildZip([
-    { name: 'localStorage.json', data: jsonBytes(ls) },
-    {
-      name: 'README.txt',
-      data: jsonBytes({
-        source: 'localStorage GALA',
-        exportedAt: new Date().toISOString(),
-        keys: Object.keys(ls),
-      }),
-    },
-  ]);
-
-  downloadBlob(
-    new Blob([zipBytes], { type: 'application/zip' }),
-    `localStorage GALA (${date}).zip`,
-  );
 }
 
+/**
+ * Card 2 — Export Database
+ * Fetch DB snapshot from server, build a ZIP in the browser, download.
+ */
 async function exportDatabase(setLoading) {
   setLoading(true);
   try {
-    const snapshot = await fetchDatabaseSnapshot();
-    const date = dateStr();
-    const tables = snapshot.tables || {};
-    const tableCount = Object.values(tables).reduce((s, rows) => s + (rows?.length ?? 0), 0);
+    const { data } = await api.get('/api/export/database');
+    if (!data.ok) throw new Error('Server menolak permintaan export.');
+
+    const date   = dateStr();
+    const tables = data.tables || {};
+    const totalRows = Object.values(tables).reduce((s, rows) => s + (rows?.length ?? 0), 0);
 
     const zipBytes = buildZip([
       { name: 'database.json', data: jsonBytes(tables) },
       {
         name: 'README.txt',
         data: jsonBytes({
-          source: 'Database GALA',
-          exportedAt: snapshot.exportedAt,
-          tableNames: Object.keys(tables),
-          totalRows: tableCount,
+          source:     'Database GALA',
+          exportedAt: data.exportedAt,
+          tables:     Object.keys(tables),
+          totalRows,
         }),
       },
     ]);
@@ -242,26 +183,39 @@ async function exportDatabase(setLoading) {
   }
 }
 
+/**
+ * Card 3 — Export Both (uploads ZIP + database ZIP, downloaded sequentially)
+ */
 async function exportBoth(setLoading) {
   setLoading(true);
   try {
-    const ls = collectLocalStorage();
-    const snapshot = await fetchDatabaseSnapshot();
     const date = dateStr();
-    const tables = snapshot.tables || {};
-    const lsCount = Object.keys(ls).length;
-    const tableCount = Object.values(tables).reduce((s, rows) => s + (rows?.length ?? 0), 0);
+
+    // 1. Upload files ZIP (streamed from server)
+    try {
+      const res = await api.get('/api/export/uploads', { responseType: 'blob' });
+      downloadBlob(res.data, `localStorage GALA (${date}).zip`);
+    } catch (err) {
+      if (err.response?.status !== 404) throw err;
+      // No upload files — continue to DB export
+    }
+
+    // 2. Database ZIP (built in browser)
+    const { data } = await api.get('/api/export/database');
+    if (!data.ok) throw new Error('Server menolak permintaan export.');
+
+    const tables    = data.tables || {};
+    const totalRows = Object.values(tables).reduce((s, rows) => s + (rows?.length ?? 0), 0);
 
     const zipBytes = buildZip([
-      { name: 'localStorage.json', data: jsonBytes(ls) },
-      { name: 'database.json',     data: jsonBytes(tables) },
+      { name: 'database.json', data: jsonBytes(tables) },
       {
         name: 'README.txt',
         data: jsonBytes({
-          source: 'LocalStorage + Database GALA',
+          source:     'LocalStorage + Database GALA',
           exportedAt: new Date().toISOString(),
-          localStorage: { keys: Object.keys(ls), keyCount: lsCount },
-          database:     { tables: Object.keys(tables), totalRows: tableCount },
+          tables:     Object.keys(tables),
+          totalRows,
         }),
       },
     ]);
@@ -272,7 +226,7 @@ async function exportBoth(setLoading) {
     );
   } catch (err) {
     console.error('Combined export failed:', err);
-    alert('Gagal mengambil data database untuk export gabungan. Pastikan server berjalan.');
+    alert('Gagal export gabungan. Pastikan server berjalan dan Anda sudah login.');
   } finally {
     setLoading(false);
   }
@@ -282,7 +236,6 @@ async function exportBoth(setLoading) {
    Component
 ───────────────────────────────────────────────────────────────────────────── */
 
-/** Single export card */
 function ExportCard({ icon, title, description, buttonLabel, onExport, loading }) {
   return (
     <div className="export-card">
@@ -305,8 +258,9 @@ function ExportCard({ icon, title, description, buttonLabel, onExport, loading }
 }
 
 export default function ExportDataCards() {
-  const [loadingDb,   setLoadingDb]   = useState(false);
-  const [loadingBoth, setLoadingBoth] = useState(false);
+  const [loadingUploads, setLoadingUploads] = useState(false);
+  const [loadingDb,      setLoadingDb]      = useState(false);
+  const [loadingBoth,    setLoadingBoth]    = useState(false);
 
   return (
     <section className="export-cards-section" aria-labelledby="export-section-title">
@@ -319,12 +273,14 @@ export default function ExportDataCards() {
 
       <div className="export-cards-grid">
         <ExportCard
-          icon="💾"
-          title="LocalStorage"
-          description="Export semua data sesi lokal (gala.*) yang tersimpan di browser ini."
-          buttonLabel="⬇ Export localStorage"
-          loading={false}
-          onExport={exportLocalStorage}
+          icon="🖼️"
+          title="File Upload (Foto)"
+          description={
+            'Export semua foto yang tersimpan di server — produk, pembayaran, desain, avatar, dan chat.'
+          }
+          buttonLabel="⬇ Export File Upload"
+          loading={loadingUploads}
+          onExport={() => exportUploads(setLoadingUploads)}
         />
         <ExportCard
           icon="🗄️"
@@ -336,8 +292,8 @@ export default function ExportDataCards() {
         />
         <ExportCard
           icon="📦"
-          title="LocalStorage + Database"
-          description="Export gabungan data browser lokal dan database server dalam satu file."
+          title="File Upload + Database"
+          description="Export semua foto dan data database — dua file ZIP terpisah yang didownload sekaligus."
           buttonLabel="⬇ Export Semua"
           loading={loadingBoth}
           onExport={() => exportBoth(setLoadingBoth)}
