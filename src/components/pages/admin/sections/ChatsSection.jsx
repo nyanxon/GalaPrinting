@@ -17,6 +17,7 @@ import {
   createOrGetConversation,
 } from '../../../../services/chatService.js';
 import EmojiPickerButton from '../../../shared/EmojiPickerButton.jsx';
+import ChatAvatar from '../../../shared/ChatAvatar.jsx';
 
 function formatTime(iso) {
   return new Date(iso).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
@@ -433,9 +434,7 @@ export default function ChatsSection() {
                     tabIndex={0}
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleConvSelect(c.id); }}
                   >
-                    <div className="chat-conv-avatar">
-                      {(c.customerName || '?')[0].toUpperCase()}
-                    </div>
+                    <ChatAvatar name={c.customerName} avatarUrl={c.customerAvatarUrl} />
                     <div className="chat-conv-info">
                       <div className="chat-conv-name">{c.customerName}</div>
                       <div className="chat-conv-preview">{preview}</div>
@@ -455,9 +454,7 @@ export default function ChatsSection() {
           {activeConv ? (
             <>
               <div className="chat-main-header">
-                <div className="chat-conv-avatar">
-                  {(activeConv.customerName || '?')[0].toUpperCase()}
-                </div>
+                <ChatAvatar name={activeConv.customerName} avatarUrl={activeConv.customerAvatarUrl} size={40} />
                 <div className="chat-main-name">{activeConv.customerName}</div>
                 {/* Ditangani = pesan terakhir dari admin/staff (assigned_admin_id ter-set)
                     Belum Ditangani = pesan terakhir dari customer (assigned_admin_id NULL) */}

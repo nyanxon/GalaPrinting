@@ -250,14 +250,15 @@ export async function getDMConversations() {
     const raw = res.data.data ?? res.data.items ?? [];
     return raw.map((c) => ({
       ...c,
-      otherParticipantId:   c.other_participant_id   ?? c.otherParticipantId,
-      otherParticipantName: c.other_participant_name  ?? c.otherParticipantName,
-      otherParticipantRole: c.other_participant_role  ?? c.otherParticipantRole,
-      lastAt:               c.last_at                ?? c.lastAt,
-      unreadCount:          c.unread_count            ?? c.unreadCount ?? 0,
-      lastMessage:          c.last_message            ?? c.lastMessage ?? null,
-      dmParticipantA:       c.dm_participant_a        ?? c.dmParticipantA,
-      dmParticipantB:       c.dm_participant_b        ?? c.dmParticipantB,
+      otherParticipantId:         c.other_participant_id          ?? c.otherParticipantId,
+      otherParticipantName:       c.other_participant_name        ?? c.otherParticipantName,
+      otherParticipantRole:       c.other_participant_role        ?? c.otherParticipantRole,
+      otherParticipantAvatarUrl:  c.other_participant_avatar_url  ?? c.otherParticipantAvatarUrl ?? null,
+      lastAt:                     c.last_at                       ?? c.lastAt,
+      unreadCount:                c.unread_count                  ?? c.unreadCount ?? 0,
+      lastMessage:                c.last_message                  ?? c.lastMessage ?? null,
+      dmParticipantA:             c.dm_participant_a              ?? c.dmParticipantA,
+      dmParticipantB:             c.dm_participant_b              ?? c.dmParticipantB,
     }));
   }
 
@@ -384,11 +385,12 @@ export async function getAllConversations() {
     const raw = res.data.data ?? res.data.items ?? [];
     return raw.map((c) => ({
       ...c,
-      customerId:      c.customer_id      ?? c.customerId,
-      customerName:    c.customer_name    ?? c.customerName,
-      assignedAdminId: c.assigned_admin_id ?? c.assignedAdminId,
-      lastAt:          c.last_at          ?? c.lastAt,
-      unreadCount:     c.unread_count     ?? c.unreadCount ?? 0,
+      customerId:        c.customer_id         ?? c.customerId,
+      customerName:      c.customer_name       ?? c.customerName,
+      customerAvatarUrl: c.customer_avatar_url ?? c.customerAvatarUrl ?? null,
+      assignedAdminId:   c.assigned_admin_id   ?? c.assignedAdminId,
+      lastAt:            c.last_at             ?? c.lastAt,
+      unreadCount:       c.unread_count        ?? c.unreadCount ?? 0,
     }));
   }
 

@@ -117,6 +117,109 @@
   display: grid;
   place-items: center;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* Button variant — adds cursor + hover ring */
+.staff-header-avatar--btn {
+  border: 2px solid transparent;
+  padding: 0;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.staff-header-avatar--btn:hover,
+.staff-header-avatar--btn:focus-visible {
+  border-color: var(--brand-brown, #785E40);
+  box-shadow: 0 0 0 3px rgba(120, 94, 64, 0.2);
+  outline: none;
+}
+
+/* Avatar image fills the circle */
+.staff-header-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 50%;
+}
+
+/* ── Staff Profile Modal ─────────────────────────────────── */
+.spm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.spm-panel {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.22);
+  display: flex;
+  flex-direction: column;
+}
+
+.spm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 1;
+  border-radius: 16px 16px 0 0;
+}
+
+.spm-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #1f1f1f;
+  margin: 0;
+}
+
+.spm-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #6b6b6b;
+  padding: 4px 8px;
+  border-radius: 6px;
+  line-height: 1;
+  transition: background 0.12s;
+}
+
+.spm-close:hover { background: #f0f0f0; }
+
+.spm-body {
+  padding: 24px;
+  flex: 1;
+}
+
+.spm-loading {
+  text-align: center;
+  color: #9b9b9b;
+  font-size: 14px;
+  padding: 32px 0;
+}
+
+.spm-error {
+  text-align: center;
+  color: #dc2626;
+  font-size: 14px;
+  padding: 24px 0;
 }
 
 .staff-header-auth {
@@ -342,6 +445,14 @@
   font-size: 15px;
   flex-shrink: 0;
   text-transform: uppercase;
+}
+
+/* When a real avatar photo is shown, it replaces the coloured initial circle */
+.chat-conv-avatar--img {
+  background: transparent;
+  object-fit: cover;
+  display: block;
+  border: 1.5px solid rgba(0, 0, 0, 0.08);
 }
 
 .chat-conv-info { min-width: 0; }

@@ -18,9 +18,23 @@ export async function listReviews({ productId } = {}) {
 
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
   const [rows] = await query(
-    `SELECT r.*, p.name AS product_name
+    `SELECT
+       r.id,
+       r.product_id        AS productId,
+       p.name              AS productName,
+       c.name              AS category,
+       r.order_id          AS orderId,
+       r.order_item_id     AS orderItemId,
+       r.customer_id       AS customerId,
+       r.customer_name     AS customerName,
+       u.email             AS customerEmail,
+       r.rating,
+       r.comment,
+       r.created_at        AS createdAt
      FROM reviews r
-     LEFT JOIN products p ON r.product_id = p.id
+     LEFT JOIN products   p ON r.product_id  = p.id
+     LEFT JOIN categories c ON p.category_id = c.id
+     LEFT JOIN users      u ON r.customer_id = u.id
      ${where}
      ORDER BY r.created_at DESC`,
     params

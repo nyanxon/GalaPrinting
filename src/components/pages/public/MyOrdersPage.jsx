@@ -218,6 +218,14 @@ function OrderCard({ order, onPayNow }) {
           >
             🔍 Lacak Pesanan
           </Link>
+          {order.status === 'Finished' && (
+            <Link
+              className="mo-review-btn"
+              to={`/status?order=${encodeURIComponent(order.orderNumber)}&phone=${encodeURIComponent(order.customerPhone || order.customer?.phone || '')}#ulasan`}
+            >
+              ⭐ Beri Ulasan
+            </Link>
+          )}
         </div>
       </div>
 

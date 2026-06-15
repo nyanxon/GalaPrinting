@@ -6,7 +6,7 @@
  * Requirements: 7.7, 13.4
  */
 
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import { findOrder, ORDER_STATUSES, STATUS_CONFIG } from '../../../services/orderService.js';
@@ -181,9 +181,19 @@ function ItemReviewCard({ item, user, orderId }) {
 
 // ── Order detail ──────────────────────────────────────────────────────────────
 
-function OrderDetail({ order, onReset, user }) {
+function OrderDetail({ order, onReset, user, scrollToReview }) {
+  const reviewSectionRef = useRef(null);
   const currentStepIdx = STANDARD_STEPS.indexOf(order.status);
   const cfg = STATUS_CONFIG[order.status] || { icon: '○', badge: '' };
+
+  // Auto-scroll to review section when navigated via "Beri Ulasan" button
+  useEffect(() => {
+    if (scrollToReview && reviewSectionRef.current) {
+      setTimeout(() => {
+        reviewSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 300);
+    }
+  }, [scrollToReview]);
 
   const timelineMap = {};
   (order.timeline || []).forEach((t) => { timelineMap[t.label] = t; });
@@ -369,7 +379,7 @@ function OrderDetail({ order, onReset, user }) {
 
           {/* ── Per-item review cards (Finished orders only) ── */}
           {canReview && items.length > 0 && (
-            <div className="so-review-section">
+            <div className="so-review-section" id="ulasan" ref={reviewSectionRef}>
               <h3 className="so-section-label" style={{ marginTop: '28px' }}>
                 ⭐ Tulis Ulasan
               </h3>
@@ -409,12 +419,15 @@ function StatusOrderPage() {
   const [phone, setPhone] = useState('');
   const [foundOrder, setFoundOrder] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [scrollToReview, setScrollToReview] = useState(false);
 
   useEffect(() => {
     const prefillOrder = searchParams.get('order') || '';
     const prefillPhone = searchParams.get('phone') || '';
+    const hash = window.location.hash;
     setOrderNumber(prefillOrder);
     setPhone(prefillPhone);
+    setScrollToReview(hash === '#ulasan');
     if (prefillOrder) runLookup(prefillOrder, prefillPhone);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -461,7 +474,7 @@ function StatusOrderPage() {
     <main>
       <div className="container so-page">
         {foundOrder ? (
-          <OrderDetail order={foundOrder} onReset={handleReset} user={user} />
+          <OrderDetail order={foundOrder} onReset={handleReset} user={user} scrollToReview={scrollToReview} />
         ) : (
           <div className="so-lookup-wrap">
             <h1 className="so-title">Status Order</h1>

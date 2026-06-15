@@ -19,6 +19,7 @@ export async function listConversations() {
   const [rows] = await query(
     `SELECT
        c.*,
+       u.avatar_url AS customer_avatar_url,
        (SELECT COUNT(*) FROM messages m
         WHERE m.conversation_id = c.id
           AND m.sender_role = 'customer'
@@ -36,13 +37,15 @@ export async function listConversations() {
         ORDER BY m2.created_at DESC
         LIMIT 1) AS last_message
      FROM conversations c
+     LEFT JOIN users u ON u.id = c.customer_id
      WHERE c.conversation_type = 'customer_chat'
        AND (c.hidden_by_admin = 0 OR c.hidden_by_admin IS NULL)
      ORDER BY c.last_at DESC`
   );
   return rows.map((r) => ({
     ...r,
-    unreadCount: r.unread_count,
+    unreadCount:        r.unread_count,
+    customerAvatarUrl:  r.customer_avatar_url ?? null,
     lastMessage: r.last_message ? (typeof r.last_message === 'string' ? JSON.parse(r.last_message) : r.last_message) : null,
   }));
 }
@@ -201,8 +204,9 @@ export async function listDMConversations(userId) {
          WHEN c.dm_participant_a = ? THEN c.dm_participant_b
          ELSE c.dm_participant_a
        END AS other_participant_id,
-       u.name  AS other_participant_name,
-       u.role  AS other_participant_role,
+       u.name       AS other_participant_name,
+       u.role       AS other_participant_role,
+       u.avatar_url AS other_participant_avatar_url,
        (SELECT COUNT(*)
         FROM messages m
         WHERE m.conversation_id = c.id
@@ -233,7 +237,8 @@ export async function listDMConversations(userId) {
 
   return rows.map((r) => ({
     ...r,
-    unread_count: Number(r.unread_count),
+    unread_count:               Number(r.unread_count),
+    otherParticipantAvatarUrl:  r.other_participant_avatar_url ?? null,
     last_message: r.last_message
       ? (typeof r.last_message === 'string' ? JSON.parse(r.last_message) : r.last_message)
       : null,

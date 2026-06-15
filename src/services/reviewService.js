@@ -24,6 +24,7 @@ export async function listReviews(productId) {
   if (USE_BACKEND) {
     const params = productId ? { productId } : {};
     const res = await api.get('/api/reviews', { params });
+    // API already returns camelCase fields from the service layer
     return res.data.data ?? [];
   }
   // localStorage fallback — filter by productId if provided

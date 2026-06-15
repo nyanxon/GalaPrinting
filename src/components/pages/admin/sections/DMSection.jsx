@@ -20,6 +20,7 @@ import {
 } from '../../../../services/chatService.js';
 import { api } from '../../../../core/httpClient.js';
 import EmojiPickerButton from '../../../shared/EmojiPickerButton.jsx';
+import ChatAvatar from '../../../shared/ChatAvatar.jsx';
 
 /* ── Helpers ─────────────────────────────────────────────── */
 
@@ -483,7 +484,7 @@ export default function DMSection() {
                       if (e.key === 'Enter' || e.key === ' ') handleConvSelect(c.id);
                     }}
                   >
-                    <div className="chat-conv-avatar">{name[0].toUpperCase()}</div>
+                    <ChatAvatar name={c.otherParticipantName} avatarUrl={c.otherParticipantAvatarUrl} />
                     <div className="chat-conv-info">
                       <div
                         className="chat-conv-name"
@@ -525,9 +526,7 @@ export default function DMSection() {
             <>
               {/* Thread header */}
               <div className="chat-main-header">
-                <div className="chat-conv-avatar">
-                  {(activeConv.otherParticipantName || '?')[0].toUpperCase()}
-                </div>
+                <ChatAvatar name={activeConv.otherParticipantName} avatarUrl={activeConv.otherParticipantAvatarUrl} size={40} />
                 <div className="chat-main-name">{activeConv.otherParticipantName}</div>
                 {activeConv.otherParticipantRole && (
                   <span
