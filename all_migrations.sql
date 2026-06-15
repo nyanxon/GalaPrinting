@@ -359,3 +359,9 @@ CREATE TABLE IF NOT EXISTS notification_preferences (
 ALTER TABLE conversations
   ADD COLUMN IF NOT EXISTS hidden_by_admin TINYINT(1) NOT NULL DEFAULT 0
     AFTER last_at;
+
+-- Migration 031: Expand image_path from VARCHAR(500) to TEXT
+-- image_path stores a JSON array of up to 8 product image URLs.
+-- VARCHAR(500) can be too small for 8 long paths, causing JSON truncation.
+ALTER TABLE products
+  MODIFY COLUMN image_path TEXT DEFAULT NULL;

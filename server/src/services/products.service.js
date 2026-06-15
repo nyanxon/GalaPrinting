@@ -103,6 +103,22 @@ export async function createProduct({ name, categoryId, price, shortDescription,
   const id   = randomUUID();
   const slug = await uniqueSlug(name);
 
+  // Normalize imagePath: accept Array, JSON string, or plain URL string.
+  // Always persist as a JSON array string so multiple images are supported.
+  let normalizedImagePath = null;
+  if (imagePath) {
+    if (Array.isArray(imagePath)) {
+      normalizedImagePath = JSON.stringify(imagePath);
+    } else if (typeof imagePath === 'string') {
+      try {
+        const parsed = JSON.parse(imagePath);
+        normalizedImagePath = Array.isArray(parsed) ? imagePath : JSON.stringify([imagePath]);
+      } catch {
+        normalizedImagePath = JSON.stringify([imagePath]);
+      }
+    }
+  }
+
   await query(
     `INSERT INTO products
        (id, category_id, name, slug, price, short_description, requires_design, colors, sizes, materials, image_path, variant_prices)
@@ -118,7 +134,7 @@ export async function createProduct({ name, categoryId, price, shortDescription,
       colors ? JSON.stringify(colors) : null,
       sizes  ? JSON.stringify(sizes)  : null,
       materials ? JSON.stringify(materials) : null,
-      imagePath || null,
+      normalizedImagePath,
       variantPrices != null ? JSON.stringify(variantPrices) : null,
     ]
   );
@@ -148,9 +164,26 @@ export async function updateProduct(id, data) {
               : key; // already snake_case (e.g. category_id sent by controller)
     if (allowed.includes(col)) {
       fields.push(`${col} = ?`);
-      // Coerce boolean requires_design to 0/1 for TINYINT column
       if (col === 'requires_design') {
+        // Coerce boolean to 0/1 for TINYINT column
         params.push(val ? 1 : 0);
+      } else if (col === 'image_path') {
+        // Normalize: accept Array, JSON string, or plain string.
+        // Always persist as a JSON array string so multiple images are preserved.
+        if (Array.isArray(val)) {
+          params.push(JSON.stringify(val));
+        } else if (typeof val === 'string') {
+          try {
+            const parsed = JSON.parse(val);
+            // Already a valid JSON array — keep as-is
+            params.push(Array.isArray(parsed) ? val : JSON.stringify([val]));
+          } catch {
+            // Plain URL string — wrap in array
+            params.push(JSON.stringify([val]));
+          }
+        } else {
+          params.push(val);
+        }
       } else {
         params.push(val);
       }
