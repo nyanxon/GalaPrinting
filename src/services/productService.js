@@ -1,7 +1,7 @@
 import { readJson, writeJson } from "../core/storage.js";
 import { listCategoryNames } from "./categoryService.js";
 import { normalizePagination } from "../core/validate.js";
-import { USE_BACKEND, api } from "../core/httpClient.js";
+import { USE_BACKEND, api, resolveApiUrl } from "../core/httpClient.js";
 
 const KEY = "gala.products";
 
@@ -149,18 +149,29 @@ function normalizeProduct(raw) {
       }
     } catch {}
   }
+  // Resolve relative upload paths to absolute URLs (e.g. /uploads/products/xxx.jpg
+  // needs to be prefixed with VITE_API_URL when running on a different origin)
+  const resolveImg = (url) => {
+    if (!url) return url;
+    // Placeholder SVG — keep as-is (served from frontend build)
+    if (url.includes('placeholder')) return url;
+    return resolveApiUrl(url) || url;
+  };
+
+  const resolvedPrimary = resolveImg(imagePrimary);
+
   return {
     ...raw,
-    image:            imagePrimary,
+    image:            resolvedPrimary,
     images:           (() => {
       const raw2 = raw.image || raw.image_path || null;
       if (typeof raw2 === 'string' && raw2.trim().startsWith('[')) {
         try {
           const parsed = JSON.parse(raw2);
-          if (Array.isArray(parsed)) return parsed;
+          if (Array.isArray(parsed)) return parsed.map(resolveImg).filter(Boolean);
         } catch {}
       }
-      if (raw2 && raw2 !== '/assets/img/placeholder.svg') return [raw2];
+      if (raw2 && !raw2.includes('placeholder')) return [resolveImg(raw2)].filter(Boolean);
       return [];
     })(),
     shortDescription: raw.shortDescription || raw.short_description || '',

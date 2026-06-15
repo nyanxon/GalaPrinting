@@ -70,8 +70,13 @@ export function createApp() {
   }
 
   // ── Static file serving for uploads ──────────────────────────────────────
-  const uploadsAbsPath = path.resolve(process.cwd(), config.uploadDir);
+  // Supports both absolute UPLOAD_DIR (production / Hostinger persistent path)
+  // and relative paths (development). path.resolve handles both correctly.
+  const uploadsAbsPath = path.isAbsolute(config.uploadDir)
+    ? config.uploadDir
+    : path.resolve(process.cwd(), config.uploadDir);
   app.use('/uploads', express.static(uploadsAbsPath));
+  console.log(`[app] Serving uploads from: ${uploadsAbsPath}`);
 
   // ── Serve React frontend build ───────────────────────────────────────────────
   // In production on Hostinger, backend serves both API and frontend

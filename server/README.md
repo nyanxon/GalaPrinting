@@ -177,7 +177,48 @@ server/
 
 ---
 
-## 8. Available Scripts
+## 9. Deployment ke Hostinger — Persistent File Uploads
+
+> **Masalah:** Karena deployment menggunakan Git push, folder `uploads/` di dalam project directory akan hilang setiap kali ada push baru (Git tidak menyimpan folder yang ada di `.gitignore`).
+
+### Solusi: Simpan file di luar folder project
+
+**Langkah-langkah di Hostinger:**
+
+1. **Buat folder persisten via File Manager:**
+   - Buka hPanel → File Manager
+   - Navigasi ke `/home/u<account_id>/` (satu level di atas `public_html` / folder project)
+   - Buat folder baru: `persistent_uploads`
+   - Di dalam `persistent_uploads`, buat subfolder:
+     - `designs`
+     - `payments`
+     - `chat`
+     - `avatars`
+     - `products`
+
+2. **Set environment variable di hPanel:**
+   - hPanel → Node.js → Environment Variables
+   - Tambahkan atau update:
+     ```
+     UPLOAD_DIR=/home/u<account_id>/persistent_uploads
+     ```
+   - Ganti `u<account_id>` dengan username Hostinger kamu (cek di File Manager di bagian atas path)
+
+3. **Restart Node.js app** di hPanel → Node.js → Restart
+
+**Setelah ini:**
+- Setiap file yang diupload akan disimpan ke `/home/u<account_id>/persistent_uploads/`
+- Folder ini tidak pernah disentuh oleh Git
+- Saat deploy ulang (git push), file tetap ada
+- Server tetap menyajikan file via `/uploads/**` karena `app.js` sudah dikonfigurasi untuk membaca dari path absolut tersebut
+
+**Verifikasi:**
+Setelah restart, cek log di hPanel → Node.js → Logs, harusnya muncul:
+```
+[storage] Upload root: /home/u<account_id>/persistent_uploads
+[app] Serving uploads from: /home/u<account_id>/persistent_uploads
+```
+
 
 | Script | Command | Description |
 |---|---|---|

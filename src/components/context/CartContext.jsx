@@ -60,9 +60,19 @@ export function CartProvider({ children }) {
       const pid = item.productId ?? item.product_id ?? '';
       const legacyKey = `${pid}|${item.name}`;
       const cached = cache[itemId] || cache[legacyKey];
-      return cached
-        ? { ...item, designDataUrl: cached.designDataUrl ?? null, designFileName: cached.designFileName ?? item.designFileName ?? item.design_file_path }
-        : item;
+      if (cached) {
+        // Update cache to use server ID going forward (removes stale temp IDs)
+        if (!cache[itemId] && cache[legacyKey]) {
+          cache[itemId] = cache[legacyKey];
+          setDesignCache(cache);
+        }
+        return {
+          ...item,
+          designDataUrl: cached.designDataUrl ?? null,
+          designFileName: cached.designFileName ?? item.designFileName ?? item.design_file_path,
+        };
+      }
+      return item;
     });
   }
 
@@ -109,14 +119,26 @@ export function CartProvider({ children }) {
         await updateCartItemQty(user?.id, itemId, item.quantity);
       } else {
         // New item — optimistic add then refresh from server
-        const tempItem = { ...item, id: itemId || crypto.randomUUID() };
+        const tempId = itemId || crypto.randomUUID();
+        const tempItem = { ...item, id: tempId };
         setItems((prev) => [...prev, tempItem]);
 
-        // Cache design data locally so it survives server cart refresh
+        // Cache design data locally keyed by a stable fingerprint:
+        // productId + name + timestamp. This fingerprint is stored on the
+        // tempItem so we can match it against server items after refresh.
+        const fingerprint = `${item.productId ?? ''}|${item.name ?? ''}|${Date.now()}`;
+        const tempItemWithFP = { ...tempItem, _designFP: fingerprint };
+        setItems((prev) => prev.map((i) => i.id === tempId ? tempItemWithFP : i));
+
         if (item.designDataUrl || item.designFileName) {
           const cache = getDesignCache();
-          const cacheKey = tempItem.id; // unique per cart slot — avoids cross-item collision
-          cache[cacheKey] = {
+          // Store under both the tempId AND the fingerprint for robust matching
+          cache[tempId] = {
+            designDataUrl: item.designDataUrl ?? null,
+            designFileName: item.designFileName ?? null,
+            fingerprint,
+          };
+          cache[fingerprint] = {
             designDataUrl: item.designDataUrl ?? null,
             designFileName: item.designFileName ?? null,
           };
@@ -125,12 +147,40 @@ export function CartProvider({ children }) {
 
         const result = await addToCart(user?.id, item);
         if (result.ok) {
-          // Refresh to get the server-assigned id, then merge design data back
+          // Refresh to get the server-assigned id, then merge design data back.
+          // mergeDesignData will match by item.id first, then legacyKey.
+          // We also try to match by fingerprint for the newly added item.
           const { items: refreshed } = await getCart(user?.id);
-          setItems(mergeDesignData(refreshed));
+          const merged = mergeDesignData(refreshed);
+
+          // Extra pass: find the server item that corresponds to the temp item
+          // (same productId + name, not yet in previous state) and apply its
+          // fingerprint cache entry so it picks up the design file.
+          const cache = getDesignCache();
+          const finalItems = merged.map((serverItem) => {
+            if (serverItem.designDataUrl) return serverItem; // already resolved
+            // Try fingerprint — the server item for the newly-added product
+            // will have the same productId + name
+            const pid = serverItem.productId ?? serverItem.product_id ?? '';
+            const legKey = `${pid}|${serverItem.name}`;
+            const fpEntry = cache[fingerprint];
+            if (fpEntry && pid === (item.productId ?? '') && serverItem.name === item.name) {
+              // Update cache to use server-assigned ID going forward
+              cache[serverItem.id] = fpEntry;
+              setDesignCache(cache);
+              return {
+                ...serverItem,
+                designDataUrl: fpEntry.designDataUrl ?? null,
+                designFileName: fpEntry.designFileName ?? serverItem.designFileName,
+              };
+            }
+            return serverItem;
+          });
+
+          setItems(finalItems);
         } else {
           // Rollback on failure
-          setItems((prev) => prev.filter((i) => i.id !== tempItem.id));
+          setItems((prev) => prev.filter((i) => i.id !== tempId));
         }
       }
     } else {
@@ -163,6 +213,10 @@ export function CartProvider({ children }) {
       // Also clean up legacy "productId|name" key if present
       const pid = removedItem.productId ?? removedItem.product_id ?? '';
       delete cache[`${pid}|${removedItem.name}`];
+      // Clean up fingerprint key if present
+      if (removedItem._designFP) {
+        delete cache[removedItem._designFP];
+      }
       setDesignCache(cache);
     }
     await removeFromCart(user?.id, itemId);
