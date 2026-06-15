@@ -276,4 +276,33 @@ export async function updateUserRole(userId, newRole) {
   return { ok: true, data: users[idx] };
 }
 
+// ---------------------------------------------------------------------------
+// deleteUser — owner only
+// ---------------------------------------------------------------------------
+
+/**
+ * Soft-delete a user account (owner only).
+ *
+ * @param {string} userId
+ * @returns {Promise<{ ok: boolean, message?: string }>}
+ */
+export async function deleteUser(userId) {
+  if (USE_BACKEND) {
+    try {
+      const res = await api.delete(`/api/users/${userId}`);
+      return { ok: true, message: res.data.message };
+    } catch (err) {
+      const message =
+        err.response?.data?.message || 'Gagal menghapus akun. Coba lagi nanti.';
+      return { ok: false, message };
+    }
+  }
+  // localStorage fallback
+  const users = loadUsers();
+  const filtered = users.filter((u) => u.id !== userId);
+  if (filtered.length === users.length) return { ok: false, message: 'User tidak ditemukan.' };
+  saveUsers(filtered);
+  return { ok: true, message: 'User berhasil dihapus.' };
+}
+
 // (seedStaffUsers removed) Staff accounts are now provided by the backend database.

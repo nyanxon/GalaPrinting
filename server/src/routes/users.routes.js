@@ -33,11 +33,11 @@ router.post(
 router.patch(
   '/:id/role',
   authenticate,
-  requireRole('admin', 'owner'),
+  requireRole('owner'),
   [body('role').isIn(['customer', ...VALID_STAFF_ROLES]).withMessage('Role tidak valid.')],
   ctrl.updateRole
 );
 
-router.delete('/:id', authenticate, requireRole('admin'), ctrl.deleteUser);
+router.delete('/:id', authenticate, requireRole('owner'), ctrl.deleteUser);
 
 export default router;

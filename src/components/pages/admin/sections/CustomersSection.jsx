@@ -3,10 +3,14 @@
  * Equivalent to vanilla admin/sections/customersSection.js
  *
  * Requirements: 9.2, 16.4
+ *
+ * Permissions:
+ *  - owner : dapat mengubah role DAN menghapus akun
+ *  - admin  : hanya bisa melihat daftar, TIDAK bisa mengubah role atau menghapus
  */
 
 import { useState, useEffect, useContext } from 'react';
-import { listCustomers, updateUserRole } from '../../../../services/authService.js';
+import { listCustomers, updateUserRole, deleteUser } from '../../../../services/authService.js';
 import { AuthContext } from '../../../context/AuthContext.jsx';
 
 const PAGE_SIZE = 10;
@@ -24,11 +28,14 @@ const ROLE_LABELS = {
   offline:     'Offline',
 };
 
+// ---------------------------------------------------------------------------
+// PaginationBar
+// ---------------------------------------------------------------------------
 function PaginationBar({ page, totalPages, total, limit, onPageChange }) {
   if (totalPages <= 1) return null;
 
   const start = (page - 1) * limit + 1;
-  const end = Math.min(page * limit, total);
+  const end   = Math.min(page * limit, total);
 
   const pages = [];
   for (let p = Math.max(1, page - 2); p <= Math.min(totalPages, page + 2); p++) {
@@ -72,9 +79,9 @@ function PaginationBar({ page, totalPages, total, limit, onPageChange }) {
   );
 }
 
-/**
- * Modal konfirmasi sebelum mengubah role.
- */
+// ---------------------------------------------------------------------------
+// ConfirmRoleModal — hanya muncul untuk owner
+// ---------------------------------------------------------------------------
 function ConfirmRoleModal({ customer, newRole, onConfirm, onCancel, saving }) {
   return (
     <div
@@ -118,19 +125,116 @@ function ConfirmRoleModal({ customer, newRole, onConfirm, onCancel, saving }) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// DeleteUserModal — popup konfirmasi hapus akun, hanya muncul untuk owner
+// ---------------------------------------------------------------------------
+function DeleteUserModal({ customer, onConfirm, onCancel, deleting }) {
+  const joinDate = customer.created_at
+    ? new Date(customer.created_at).toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
+    : '—';
+
+  return (
+    <div
+      className="adm-modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="delete-user-title"
+    >
+      <div className="adm-modal">
+        {/* Header */}
+        <h3 className="adm-modal-title" id="delete-user-title" style={{ color: '#c0392b' }}>
+          ⚠ Hapus Akun
+        </h3>
+
+        {/* Data akun */}
+        <div
+          className="adm-modal-body"
+          style={{
+            background: '#fafafa',
+            border: '1px solid #e0e0e0',
+            borderRadius: '6px',
+            padding: '12px 14px',
+            marginBottom: '12px',
+            fontSize: '0.9rem',
+            lineHeight: '1.7',
+          }}
+        >
+          <div><span style={{ color: '#666', minWidth: 80, display: 'inline-block' }}>Nama</span>: <strong>{customer.name || '—'}</strong></div>
+          <div><span style={{ color: '#666', minWidth: 80, display: 'inline-block' }}>Email</span>: {customer.email}</div>
+          <div><span style={{ color: '#666', minWidth: 80, display: 'inline-block' }}>Telepon</span>: {customer.phone || '—'}</div>
+          <div><span style={{ color: '#666', minWidth: 80, display: 'inline-block' }}>Role</span>: {ROLE_LABELS[customer.role] ?? customer.role}</div>
+          <div><span style={{ color: '#666', minWidth: 80, display: 'inline-block' }}>Bergabung</span>: {joinDate}</div>
+        </div>
+
+        {/* Peringatan */}
+        <p
+          className="adm-modal-body"
+          style={{
+            color: '#c0392b',
+            fontSize: '0.85rem',
+            background: '#fff5f5',
+            border: '1px solid #f5c6cb',
+            borderRadius: '6px',
+            padding: '10px 12px',
+          }}
+        >
+          <strong>Peringatan:</strong> Tindakan ini akan menonaktifkan akun secara permanen.
+          Semua data terkait akun ini (riwayat pesanan, chat, dll.) tidak akan dapat diakses
+          oleh pengguna. Tindakan ini <strong>tidak dapat dibatalkan</strong>.
+        </p>
+
+        <div className="adm-modal-actions">
+          <button
+            className="adm-btn adm-btn-secondary"
+            type="button"
+            onClick={onCancel}
+            disabled={deleting}
+          >
+            Batal
+          </button>
+          <button
+            className="adm-btn adm-btn-danger"
+            type="button"
+            onClick={onConfirm}
+            disabled={deleting}
+          >
+            {deleting ? 'Menghapus…' : 'Ya, Hapus Akun'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// CustomersSection
+// ---------------------------------------------------------------------------
 export default function CustomersSection() {
   const { user: currentUser } = useContext(AuthContext);
 
-  const [allCustomers, setAllCustomers]   = useState([]);
-  const [searchQuery, setSearchQuery]     = useState('');
-  const [currentPage, setCurrentPage]     = useState(1);
+  const [allCustomers, setAllCustomers] = useState([]);
+  const [searchQuery, setSearchQuery]   = useState('');
+  const [currentPage, setCurrentPage]   = useState(1);
 
-  // Role-change state
+  // Role-change state (owner only)
   const [pendingChange, setPendingChange] = useState(null); // { customer, newRole }
   const [saving, setSaving]               = useState(false);
-  const [toast, setToast]                 = useState(null); // { type: 'success'|'error', message }
 
-  const canChangeRole = currentUser?.role === 'owner' || currentUser?.role === 'admin';
+  // Delete state (owner only)
+  const [pendingDelete, setPendingDelete] = useState(null); // customer object
+  const [deleting, setDeleting]           = useState(false);
+
+  const [toast, setToast] = useState(null); // { type: 'success'|'error', message }
+
+  // Hanya owner yang bisa ubah role atau hapus akun
+  const isOwner     = currentUser?.role === 'owner';
+  // Admin (superadmin) hanya boleh melihat, tidak boleh edit role / hapus
+  const canChangeRole = isOwner;
+  const canDelete     = isOwner;
 
   useEffect(() => {
     async function load() {
@@ -144,14 +248,14 @@ export default function CustomersSection() {
     load();
   }, []);
 
-  // Auto-dismiss toast after 3 seconds
+  // Auto-dismiss toast setelah 3 detik
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(null), 3000);
     return () => clearTimeout(t);
   }, [toast]);
 
-  const q = searchQuery.toLowerCase();
+  const q        = searchQuery.toLowerCase();
   const filtered = q
     ? allCustomers.filter(
         (u) =>
@@ -171,7 +275,9 @@ export default function CustomersSection() {
     setCurrentPage(1);
   }
 
+  // --- Role change handlers (owner only) ---
   function handleRoleSelect(customer, newRole) {
+    if (!isOwner) return;
     if (newRole === customer.role) return;
     setPendingChange({ customer, newRole });
   }
@@ -183,7 +289,6 @@ export default function CustomersSection() {
     try {
       const result = await updateUserRole(customer.id, newRole);
       if (result.ok) {
-        // Remove from list if role changed away from 'customer', otherwise update in-place
         if (newRole !== 'customer') {
           setAllCustomers((prev) => prev.filter((u) => u.id !== customer.id));
         } else {
@@ -191,7 +296,10 @@ export default function CustomersSection() {
             prev.map((u) => (u.id === customer.id ? { ...u, role: newRole } : u))
           );
         }
-        setToast({ type: 'success', message: `Role ${customer.name || customer.email} berhasil diubah menjadi ${ROLE_LABELS[newRole] ?? newRole}.` });
+        setToast({
+          type: 'success',
+          message: `Role ${customer.name || customer.email} berhasil diubah menjadi ${ROLE_LABELS[newRole] ?? newRole}.`,
+        });
       } else {
         setToast({ type: 'error', message: result.message || 'Gagal mengubah role.' });
       }
@@ -203,6 +311,38 @@ export default function CustomersSection() {
       setPendingChange(null);
     }
   }
+
+  // --- Delete handlers (owner only) ---
+  function handleDeleteClick(customer) {
+    if (!isOwner) return;
+    setPendingDelete(customer);
+  }
+
+  async function handleConfirmDelete() {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    try {
+      const result = await deleteUser(pendingDelete.id);
+      if (result.ok) {
+        setAllCustomers((prev) => prev.filter((u) => u.id !== pendingDelete.id));
+        setToast({
+          type: 'success',
+          message: `Akun ${pendingDelete.name || pendingDelete.email} berhasil dihapus.`,
+        });
+      } else {
+        setToast({ type: 'error', message: result.message || 'Gagal menghapus akun.' });
+      }
+    } catch (err) {
+      console.error('deleteUser error:', err);
+      setToast({ type: 'error', message: 'Terjadi kesalahan. Coba lagi.' });
+    } finally {
+      setDeleting(false);
+      setPendingDelete(null);
+    }
+  }
+
+  // Hitung jumlah kolom untuk colspan empty state
+  const colCount = 4 + (canChangeRole ? 1 : 0) + (canDelete ? 1 : 0);
 
   return (
     <div className="adm-card">
@@ -240,12 +380,13 @@ export default function CustomersSection() {
               <th>Telepon</th>
               <th>Bergabung</th>
               {canChangeRole && <th>Role</th>}
+              {canDelete     && <th>Aksi</th>}
             </tr>
           </thead>
           <tbody>
             {items.length === 0 ? (
               <tr>
-                <td colSpan={canChangeRole ? 5 : 4} className="adm-empty">
+                <td colSpan={colCount} className="adm-empty">
                   Belum ada customer.
                 </td>
               </tr>
@@ -280,6 +421,18 @@ export default function CustomersSection() {
                       </select>
                     </td>
                   )}
+                  {canDelete && (
+                    <td>
+                      <button
+                        className="adm-btn adm-btn-danger adm-btn-sm"
+                        type="button"
+                        onClick={() => handleDeleteClick(u)}
+                        aria-label={`Hapus akun ${u.name || u.email}`}
+                      >
+                        Hapus
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))
             )}
@@ -295,7 +448,7 @@ export default function CustomersSection() {
         onPageChange={setCurrentPage}
       />
 
-      {/* Confirmation modal */}
+      {/* Modal konfirmasi ubah role (owner only) */}
       {pendingChange && (
         <ConfirmRoleModal
           customer={pendingChange.customer}
@@ -303,6 +456,16 @@ export default function CustomersSection() {
           onConfirm={handleConfirmRoleChange}
           onCancel={() => setPendingChange(null)}
           saving={saving}
+        />
+      )}
+
+      {/* Modal konfirmasi hapus akun (owner only) */}
+      {pendingDelete && (
+        <DeleteUserModal
+          customer={pendingDelete}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setPendingDelete(null)}
+          deleting={deleting}
         />
       )}
     </div>
