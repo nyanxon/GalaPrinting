@@ -70,7 +70,7 @@
   text-shadow: none;
 }
 
-/* Arrow buttons */
+/* Arrow buttons — hidden by default, fade in on carousel hover */
 .home-hero-arrow {
   position: absolute;
   top: 50%;
@@ -87,9 +87,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.18s;
   padding: 0;
   line-height: 1;
+  opacity: 0;
+  transition: opacity 0.22s ease, background 0.18s ease;
+}
+
+.home-hero--carousel:hover .home-hero-arrow {
+  opacity: 1;
 }
 
 .home-hero-arrow:hover {
@@ -462,8 +467,10 @@
 .home-section-banner-bg {
   position: absolute;
   inset: 0;
-  background: rgba(237, 200, 174, 0.5);
-  /* In future: background-image: url(...) / cover */
+  background-color: rgba(237, 200, 174, 0.5);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .home-section-banner-label {
@@ -578,6 +585,21 @@
    RESPONSIVE
    ══════════════════════════════════════════════════════════ */
 
+/* ── Tablet (≤ 1023px) ───────────────────────────────────── */
+@media (max-width: 1023px) {
+  /* Hero: slightly shorter on tablet */
+  .home-hero,
+  .home-hero-content {
+    min-height: 220px;
+  }
+
+  /* Design showcase: 3 cols on tablet */
+  .home-cat-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ── Tablet products grid (≤ 900px) ─────────────────────── */
 @media (max-width: 900px) {
   .home-section-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -598,18 +620,53 @@
   }
 }
 
-/* Tablet: category grid 3 columns (601px – 1023px) */
-@media (max-width: 1023px) and (min-width: 601px) {
-  .home-cat-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
+/* ── Mobile (≤ 600px) ────────────────────────────────────── */
 @media (max-width: 600px) {
+
+  /* ── Hero carousel ── */
+  .home-hero,
+  .home-hero-content {
+    min-height: 180px;
+  }
+
+  /* Always show arrows on touch — hover doesn't work on mobile */
+  .home-hero-arrow {
+    opacity: 1;
+    width: 32px;
+    height: 32px;
+  }
+
+  .home-hero-arrow--prev { left: 6px; }
+  .home-hero-arrow--next { right: 6px; }
+
+  /* Dots: larger tap target */
+  .home-hero-dot {
+    width: 10px;
+    height: 10px;
+  }
+
+  .home-hero-dots {
+    bottom: 8px;
+    gap: 8px;
+  }
+
+  /* ── Design showcase: 2 cols ── */
   .home-cat-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
   }
 
+  /* Slightly less tall on small screens */
+  .home-cat-item {
+    aspect-ratio: 3 / 2;
+  }
+
+  .home-cat-item-label {
+    font-size: 11px;
+    padding: 6px 8px;
+  }
+
+  /* ── Custom order: stack ── */
   .home-custom-order {
     flex-direction: column;
   }
@@ -621,29 +678,35 @@
     border-bottom: 1px solid var(--border);
   }
 
-  /* Stack sections vertically on mobile */
+  /* ── Product sections: stack vertically ── */
   .home-product-section {
     flex-direction: column;
   }
 
-  /* On mobile, always show banner on top regardless of zig-zag */
+  /* Reverse: banner still goes on top when stacked */
   .home-product-section--reverse {
     flex-direction: column-reverse;
   }
 
+  /* Category banner: full-width strip on mobile */
   .home-section-banner-wrap {
     flex: none !important;
     width: 100% !important;
     min-width: unset !important;
-    height: 160px !important;
+    height: 180px !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border) !important;
   }
 
   .home-section-banner {
-    min-height: 160px;
+    min-height: 180px;
   }
 
+  /* Product grid inside section stays 2-col */
   .home-section-grid {
     grid-template-columns: repeat(2, 1fr);
+    padding: 8px !important;
   }
 
   .home-section-grid .product-card:nth-child(4n) {
@@ -659,10 +722,13 @@
     border-bottom: none;
   }
 
-  .home-section-banner-wrap {
-    border-left: none !important;
-    border-right: none !important;
-    border-bottom: 1px solid var(--border) !important;
+  /* Search row: stack on very small screens */
+  .home-search-greeting {
+    display: none; /* save space on mobile */
+  }
+
+  .home-search-input-wrap {
+    min-width: unset;
   }
 }
 
