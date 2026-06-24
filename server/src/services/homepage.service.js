@@ -150,6 +150,22 @@ export async function reorderDesignItems(items) {
 
 // ── Category Banners ──────────────────────────────────────────────────────────
 
+/**
+ * Resolve a categoryId that may be either:
+ *   - a UUID  → return as-is
+ *   - a name  → look up in categories table and return the UUID
+ *   - null/'' → return null (uncategorised)
+ */
+async function resolveCatId(categoryId) {
+  if (!categoryId) return null;
+  // UUID format check (8-4-4-4-12)
+  const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (uuidRe.test(categoryId)) return categoryId;
+  // Treat as name — look up the UUID
+  const [rows] = await query('SELECT id FROM categories WHERE name = ? LIMIT 1', [categoryId]);
+  return rows[0]?.id ?? null;
+}
+
 /** Return all category banners (admin view). */
 export async function listCatBanners() {
   const [rows] = await query(
@@ -188,7 +204,9 @@ export async function getCatBannersMap() {
 
 /** Create or update a category banner (upsert by category_id). */
 export async function saveCatBanner({ categoryId, title, imagePath, linkUrl, ctaText }) {
-  const existing = await getCatBanner(categoryId || null);
+  // categoryId may be a UUID or a category name string — resolve to UUID
+  const resolvedId = await resolveCatId(categoryId);
+  const existing = await getCatBanner(resolvedId);
 
   if (existing) {
     const fields = [];
@@ -212,7 +230,7 @@ export async function saveCatBanner({ categoryId, title, imagePath, linkUrl, cta
   await query(
     `INSERT INTO homepage_cat_banners (id, category_id, title, image_path, link_url, cta_text)
      VALUES (?, ?, ?, ?, ?, ?)`,
-    [id, categoryId || null, title || null, imagePath || null, linkUrl || null, ctaText || 'Lihat Semua →']
+    [id, resolvedId, title || null, imagePath || null, linkUrl || null, ctaText || 'Lihat Semua →']
   );
   const [rows] = await query('SELECT * FROM homepage_cat_banners WHERE id = ?', [id]);
   return rows[0] || null;

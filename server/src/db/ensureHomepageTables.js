@@ -62,17 +62,9 @@ export async function ensureHomepageTables() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `);
 
-    // Add FK separately — IF NOT EXISTS not supported for constraints in older MySQL,
-    // so we catch the duplicate-key error silently.
-    try {
-      await query(`
-        ALTER TABLE homepage_cat_banners
-          ADD CONSTRAINT fk_hcb_category
-          FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
-      `);
-    } catch {
-      // Constraint already exists — safe to ignore
-    }
+    // Note: no FK constraint on category_id — categoryId is resolved to UUID
+    // in the service layer before insert, so we don't need a hard DB constraint
+    // that can cause unhelpful 500 errors.
 
     // Add sort_order to homepage_hero if the column was added by migration 033
     // but the table was created by an older version of this function without it.

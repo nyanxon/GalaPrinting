@@ -26,7 +26,21 @@ import {
   saveCatBanner,
   deleteCatBanner,
 } from '../../../../services/homepageService.js';
-import { listCategories } from '../../../../services/productService.js';
+import { api } from '../../../../core/httpClient.js';
+
+// Fetch categories as [{id, name}] objects (not the name-only array from productService)
+async function fetchCategoriesWithIds() {
+  try {
+    const res = await api.get('/api/categories');
+    const raw = res.data.data ?? res.data.items ?? res.data ?? [];
+    if (Array.isArray(raw)) {
+      return raw.map((c) => (typeof c === 'string' ? { id: c, name: c } : c));
+    }
+    return [];
+  } catch {
+    return [];
+  }
+}
 
 // ── Small shared helpers ──────────────────────────────────────────────────────
 
@@ -729,16 +743,10 @@ function CatBannersTab() {
     try {
       const [b, cats] = await Promise.all([
         listCatBanners(),
-        listCategories().catch(() => []),
+        fetchCategoriesWithIds(),
       ]);
       setBanners(b);
-      // listCategories returns string[] — convert to [{id,name}] if needed
-      if (Array.isArray(cats) && cats.length > 0 && typeof cats[0] === 'string') {
-        // string array — no ids available, use name as id key
-        setCategories(cats.map((n) => ({ id: n, name: n })));
-      } else {
-        setCategories(cats);
-      }
+      setCategories(cats);
     } catch {
       showToast('Gagal memuat category banners.', 'error');
     } finally {
