@@ -206,6 +206,7 @@ export async function saveCatBanner(req, res, next) {
     const banner = await svc.saveCatBanner({ categoryId, title, imagePath, linkUrl, ctaText });
     return res.json({ ok: true, data: banner });
   } catch (err) {
+    console.error('[homepage] saveCatBanner error:', err.message, err.stack);
     next(err);
   }
 }

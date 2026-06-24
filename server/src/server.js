@@ -10,6 +10,7 @@ import { config } from './config/env.js';
 import { testConnection } from './db/connection.js';
 import { initSocket } from './socket/index.js';
 import { ensureUploadDirs } from './utils/storage.js';
+import { ensureHomepageTables } from './db/ensureHomepageTables.js';
 
 
 
@@ -26,6 +27,9 @@ async function start() {
   // Ensure upload directories exist
   console.log('[server] Ensuring upload directories exist...');
   await ensureUploadDirs();
+
+  // Ensure homepage tables exist (auto-creates on first deploy)
+  await ensureHomepageTables();
 
   const app    = createApp();
   const server = http.createServer(app);

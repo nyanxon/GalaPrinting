@@ -41,14 +41,7 @@
   opacity: 1;
 }
 
-/* Scrim over image slides */
-.home-hero-scrim {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.28);
-  z-index: 1;
-  pointer-events: none;
-}
+/* Scrim removed — no overlay on hero images */
 
 /* Content layer */
 .home-hero-content {
@@ -63,14 +56,14 @@
 }
 
 /* Carousel text color — data attribute on the section toggles dark/light */
-/* Default: white text (most slides have an image + scrim) */
+/* Default: white text (most slides have an image) */
 .home-hero--carousel .home-hero-label,
 .home-hero--carousel .home-hero-sub {
   color: #fff;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.45);
+  text-shadow: 0 1px 6px rgba(0,0,0,0.55);
 }
 
-/* No-image slide: dark text (set via data-has-image="false" in JSX) */
+/* No-image slide: dark text */
 .home-hero--carousel[data-has-image="false"] .home-hero-label,
 .home-hero--carousel[data-has-image="false"] .home-hero-sub {
   color: #1f1f1f;
@@ -89,8 +82,6 @@
   border-radius: 50%;
   width: 40px;
   height: 40px;
-  font-size: 22px;
-  line-height: 1;
   color: #fff;
   cursor: pointer;
   display: flex;
@@ -98,10 +89,16 @@
   justify-content: center;
   transition: background 0.18s;
   padding: 0;
+  line-height: 1;
 }
 
 .home-hero-arrow:hover {
   background: rgba(255, 255, 255, 0.42);
+}
+
+.home-hero-arrow svg {
+  display: block;
+  flex-shrink: 0;
 }
 
 .home-hero-arrow--prev { left: 12px; }
@@ -171,7 +168,6 @@
   .home-hero-arrow {
     width: 32px;
     height: 32px;
-    font-size: 18px;
   }
   .home-hero-arrow--prev { left: 6px; }
   .home-hero-arrow--next { right: 6px; }
