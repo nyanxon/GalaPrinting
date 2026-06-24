@@ -10,48 +10,74 @@
 import { randomUUID } from 'crypto';
 import { query } from '../db/connection.js';
 
-// ── Hero ──────────────────────────────────────────────────────────────────────
+// ── Hero Banners (carousel — multiple slides) ─────────────────────────────────
 
-/** Return the active hero row (always the first / only row). */
-export async function getHero() {
+/** Return all active hero slides ordered by sort_order (public). */
+export async function listHeroBanners() {
   const [rows] = await query(
-    'SELECT * FROM homepage_hero WHERE is_active = 1 ORDER BY created_at ASC LIMIT 1'
+    'SELECT * FROM homepage_hero WHERE is_active = 1 ORDER BY sort_order ASC, created_at ASC'
   );
+  return rows;
+}
+
+/** Return all hero slides including inactive (admin). */
+export async function listAllHeroBanners() {
+  const [rows] = await query(
+    'SELECT * FROM homepage_hero ORDER BY sort_order ASC, created_at ASC'
+  );
+  return rows;
+}
+
+/** Create a new hero slide. */
+export async function createHeroBanner({ title, subtitle, imagePath, ctaUrl, sortOrder }) {
+  const id = randomUUID();
+  await query(
+    `INSERT INTO homepage_hero (id, title, subtitle, image_path, cta_url, sort_order, is_active)
+     VALUES (?, ?, ?, ?, ?, ?, 1)`,
+    [id, title || null, subtitle || null, imagePath || null, ctaUrl || null, sortOrder ?? 0]
+  );
+  const [rows] = await query('SELECT * FROM homepage_hero WHERE id = ?', [id]);
+  return rows[0];
+}
+
+/** Update an existing hero slide. */
+export async function updateHeroBanner(id, { title, subtitle, imagePath, ctaUrl, sortOrder, isActive }) {
+  const fields = [];
+  const params = [];
+
+  if (title     !== undefined) { fields.push('title = ?');       params.push(title     || null); }
+  if (subtitle  !== undefined) { fields.push('subtitle = ?');    params.push(subtitle  || null); }
+  if (imagePath !== undefined) { fields.push('image_path = ?');  params.push(imagePath || null); }
+  if (ctaUrl    !== undefined) { fields.push('cta_url = ?');     params.push(ctaUrl    || null); }
+  if (sortOrder !== undefined) { fields.push('sort_order = ?');  params.push(sortOrder); }
+  if (isActive  !== undefined) { fields.push('is_active = ?');   params.push(isActive ? 1 : 0); }
+
+  if (fields.length > 0) {
+    params.push(id);
+    await query(`UPDATE homepage_hero SET ${fields.join(', ')} WHERE id = ?`, params);
+  }
+  const [rows] = await query('SELECT * FROM homepage_hero WHERE id = ?', [id]);
   return rows[0] || null;
 }
 
-/**
- * Upsert the hero row.
- * If the DEFAULT seed row exists (id = 00000000-…-0001) it is updated in-place.
- * Otherwise a new row is created.
- */
-export async function saveHero({ id, title, subtitle, imagePath, ctaUrl }) {
-  const rowId = id || '00000000-0000-0000-0000-000000000001';
+/** Delete a hero slide. */
+export async function deleteHeroBanner(id) {
+  await query('DELETE FROM homepage_hero WHERE id = ?', [id]);
+}
 
-  const [existing] = await query('SELECT id FROM homepage_hero WHERE id = ?', [rowId]);
-
-  if (existing.length > 0) {
-    const fields = [];
-    const params = [];
-
-    if (title     !== undefined) { fields.push('title = ?');      params.push(title     || null); }
-    if (subtitle  !== undefined) { fields.push('subtitle = ?');   params.push(subtitle  || null); }
-    if (imagePath !== undefined) { fields.push('image_path = ?'); params.push(imagePath || null); }
-    if (ctaUrl    !== undefined) { fields.push('cta_url = ?');    params.push(ctaUrl    || null); }
-
-    if (fields.length > 0) {
-      params.push(rowId);
-      await query(`UPDATE homepage_hero SET ${fields.join(', ')} WHERE id = ?`, params);
-    }
-  } else {
-    await query(
-      `INSERT INTO homepage_hero (id, title, subtitle, image_path, cta_url, is_active)
-       VALUES (?, ?, ?, ?, ?, 1)`,
-      [rowId, title || null, subtitle || null, imagePath || null, ctaUrl || null]
-    );
+/** Reorder hero slides. @param {Array<{id:string, sortOrder:number}>} items */
+export async function reorderHeroBanners(items) {
+  for (const { id, sortOrder } of items) {
+    await query('UPDATE homepage_hero SET sort_order = ? WHERE id = ?', [sortOrder, id]);
   }
+}
 
-  const [rows] = await query('SELECT * FROM homepage_hero WHERE id = ?', [rowId]);
+// Keep a single-row legacy shim so existing callers (if any) don't crash.
+/** @deprecated Use listHeroBanners() instead. */
+export async function getHero() {
+  const [rows] = await query(
+    'SELECT * FROM homepage_hero WHERE is_active = 1 ORDER BY sort_order ASC, created_at ASC LIMIT 1'
+  );
   return rows[0] || null;
 }
 

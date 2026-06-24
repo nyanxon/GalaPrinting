@@ -24,23 +24,80 @@ export async function uploadHomepageImage(req, res, next) {
   }
 }
 
-// ── Hero ──────────────────────────────────────────────────────────────────────
+// ── Hero Banners (carousel) ───────────────────────────────────────────────────
 
-/** GET /api/homepage/hero — public */
-export async function getHero(req, res, next) {
+/** GET /api/homepage/hero — public: all active slides */
+export async function listHeroBanners(req, res, next) {
   try {
-    const hero = await svc.getHero();
-    return res.json({ ok: true, data: hero });
+    const banners = await svc.listHeroBanners();
+    return res.json({ ok: true, data: banners });
   } catch (err) {
     next(err);
   }
 }
 
-/** PUT /api/homepage/hero — admin */
-export async function saveHero(req, res, next) {
+/** GET /api/homepage/hero/all — admin: all including inactive */
+export async function listAllHeroBanners(req, res, next) {
   try {
-    const { id, title, subtitle, imagePath, ctaUrl } = req.body;
-    const hero = await svc.saveHero({ id, title, subtitle, imagePath, ctaUrl });
+    const banners = await svc.listAllHeroBanners();
+    return res.json({ ok: true, data: banners });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** POST /api/homepage/hero — admin */
+export async function createHeroBanner(req, res, next) {
+  try {
+    const { title, subtitle, imagePath, ctaUrl, sortOrder } = req.body;
+    const banner = await svc.createHeroBanner({ title, subtitle, imagePath, ctaUrl, sortOrder });
+    return res.status(201).json({ ok: true, data: banner });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** PUT /api/homepage/hero/:id — admin */
+export async function updateHeroBanner(req, res, next) {
+  try {
+    const { title, subtitle, imagePath, ctaUrl, sortOrder, isActive } = req.body;
+    const banner = await svc.updateHeroBanner(req.params.id, { title, subtitle, imagePath, ctaUrl, sortOrder, isActive });
+    if (!banner) return res.status(404).json({ ok: false, message: 'Banner tidak ditemukan.' });
+    return res.json({ ok: true, data: banner });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** DELETE /api/homepage/hero/:id — admin */
+export async function deleteHeroBanner(req, res, next) {
+  try {
+    await svc.deleteHeroBanner(req.params.id);
+    return res.json({ ok: true, message: 'Banner berhasil dihapus.' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** PUT /api/homepage/hero/reorder — admin */
+export async function reorderHeroBanners(req, res, next) {
+  try {
+    const { items } = req.body;
+    if (!Array.isArray(items)) {
+      return res.status(400).json({ ok: false, message: 'items harus berupa array.' });
+    }
+    await svc.reorderHeroBanners(items);
+    return res.json({ ok: true, message: 'Urutan berhasil disimpan.' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Legacy single-hero shim (kept for backward compat)
+/** GET /api/homepage/hero/single — deprecated */
+export async function getHero(req, res, next) {
+  try {
+    const hero = await svc.getHero();
     return res.json({ ok: true, data: hero });
   } catch (err) {
     next(err);

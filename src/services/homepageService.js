@@ -27,14 +27,6 @@ function resolveImageUrl(path) {
   return resolveApiUrl(path) || path;
 }
 
-function normalizeHero(raw) {
-  if (!raw) return null;
-  return {
-    ...raw,
-    imageUrl: resolveImageUrl(raw.image_path),
-  };
-}
-
 function normalizeDesignItem(raw) {
   if (!raw) return null;
   return {
@@ -75,20 +67,61 @@ export async function uploadHomepageImage(file) {
   return res.data.url;
 }
 
-// ── Hero ──────────────────────────────────────────────────────────────────────
+// ── Hero Banners (carousel) ───────────────────────────────────────────────────
 
-export async function getHero() {
-  const res = await api.get('/api/homepage/hero');
-  return normalizeHero(res.data.data);
+function normalizeHeroBanner(raw) {
+  if (!raw) return null;
+  return {
+    ...raw,
+    imageUrl:  resolveImageUrl(raw.image_path),
+    ctaUrl:    raw.cta_url    || null,
+    sortOrder: raw.sort_order ?? 0,
+    isActive:  Boolean(raw.is_active),
+  };
 }
 
-/**
- * Save (upsert) the hero banner.
- * @param {{ id?, title?, subtitle?, imagePath?, ctaUrl? }} data
- */
+/** Public — active slides ordered by sort_order. */
+export async function listHeroBanners() {
+  const res = await api.get('/api/homepage/hero');
+  return (res.data.data || []).map(normalizeHeroBanner);
+}
+
+/** Admin — all slides including inactive. */
+export async function listAllHeroBanners() {
+  const res = await api.get('/api/homepage/hero/all');
+  return (res.data.data || []).map(normalizeHeroBanner);
+}
+
+export async function createHeroBanner(data) {
+  const res = await api.post('/api/homepage/hero', data);
+  return normalizeHeroBanner(res.data.data);
+}
+
+export async function updateHeroBanner(id, data) {
+  const res = await api.put(`/api/homepage/hero/${id}`, data);
+  return normalizeHeroBanner(res.data.data);
+}
+
+export async function deleteHeroBanner(id) {
+  await api.delete(`/api/homepage/hero/${id}`);
+  return { ok: true };
+}
+
+export async function reorderHeroBanners(items) {
+  const res = await api.put('/api/homepage/hero/reorder', { items });
+  return res.data;
+}
+
+// Legacy shim kept so any existing import of getHero/saveHero doesn't break
+/** @deprecated Use listHeroBanners() */
+export async function getHero() {
+  const items = await listHeroBanners();
+  return items[0] || null;
+}
+/** @deprecated Use createHeroBanner() / updateHeroBanner() */
 export async function saveHero(data) {
-  const res = await api.put('/api/homepage/hero', data);
-  return normalizeHero(res.data.data);
+  if (data.id) return updateHeroBanner(data.id, data);
+  return createHeroBanner(data);
 }
 
 // ── Design Showcase Items ─────────────────────────────────────────────────────

@@ -17,13 +17,122 @@
   position: relative;
 }
 
-/* When a bg image is set (via inline style) overlay a subtle scrim */
-.home-hero[style*="background-image"]::after {
-  content: '';
+/* ── Carousel variant ────────────────────────────────────── */
+.home-hero--carousel {
+  cursor: default;
+}
+
+/* Slide stack — all positioned absolute, only active is visible */
+.home-hero-slides {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.home-hero-slide {
+  position: absolute;
+  inset: 0;
+  background: rgba(237, 200, 174, 0.45);
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.home-hero-slide--active {
+  opacity: 1;
+}
+
+/* Scrim over image slides */
+.home-hero-scrim {
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.28);
+  z-index: 1;
   pointer-events: none;
+}
+
+/* Content layer */
+.home-hero-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 260px;
+}
+
+/* Carousel text color — data attribute on the section toggles dark/light */
+/* Default: white text (most slides have an image + scrim) */
+.home-hero--carousel .home-hero-label,
+.home-hero--carousel .home-hero-sub {
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.45);
+}
+
+/* No-image slide: dark text (set via data-has-image="false" in JSX) */
+.home-hero--carousel[data-has-image="false"] .home-hero-label,
+.home-hero--carousel[data-has-image="false"] .home-hero-sub {
+  color: #1f1f1f;
+  text-shadow: none;
+}
+
+/* Arrow buttons */
+.home-hero-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  background: rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(4px);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 22px;
+  line-height: 1;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.18s;
+  padding: 0;
+}
+
+.home-hero-arrow:hover {
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.home-hero-arrow--prev { left: 12px; }
+.home-hero-arrow--next { right: 12px; }
+
+/* Dot indicators */
+.home-hero-dots {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  display: flex;
+  gap: 7px;
+  align-items: center;
+}
+
+.home-hero-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.home-hero-dot--active {
+  background: #fff;
+  transform: scale(1.35);
 }
 
 .home-hero-link {
@@ -58,11 +167,14 @@
   margin: 0;
 }
 
-/* When hero has a bg image, text goes white */
-.home-hero[style*="background-image"] .home-hero-label,
-.home-hero[style*="background-image"] .home-hero-sub {
-  color: #fff;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+@media (max-width: 600px) {
+  .home-hero-arrow {
+    width: 32px;
+    height: 32px;
+    font-size: 18px;
+  }
+  .home-hero-arrow--prev { left: 6px; }
+  .home-hero-arrow--next { right: 6px; }
 }
 
 /* ── Category Quick Links ────────────────────────────────── */

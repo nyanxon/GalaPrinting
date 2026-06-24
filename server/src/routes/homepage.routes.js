@@ -40,14 +40,36 @@ router.post(
   ctrl.uploadHomepageImage
 );
 
-// ── Hero ──────────────────────────────────────────────────────────────────────
-router.get('/hero', ctrl.getHero);
+// ── Hero Banners (carousel — up to 8 slides) ──────────────────────────────────
+router.get('/hero',     ctrl.listHeroBanners);   // public — active slides
+router.get('/hero/all', authenticate, requireRole('admin', 'owner'), ctrl.listAllHeroBanners); // admin
 
-router.put(
+router.post(
   '/hero',
   authenticate,
   requireRole('admin', 'owner'),
-  ctrl.saveHero
+  ctrl.createHeroBanner
+);
+
+router.put(
+  '/hero/reorder',
+  authenticate,
+  requireRole('admin', 'owner'),
+  ctrl.reorderHeroBanners
+);
+
+router.put(
+  '/hero/:id',
+  authenticate,
+  requireRole('admin', 'owner'),
+  ctrl.updateHeroBanner
+);
+
+router.delete(
+  '/hero/:id',
+  authenticate,
+  requireRole('admin', 'owner'),
+  ctrl.deleteHeroBanner
 );
 
 // ── Design Showcase Items ─────────────────────────────────────────────────────

@@ -8,13 +8,13 @@
  * Requirements: 7.1, 13.4
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import ProductCard from '../../shared/ProductCard.jsx';
 import { listProducts } from '../../../services/productService.js';
 import { listCategories } from '../../../services/categoryService.js';
 import {
-  getHero,
+  listHeroBanners,
   listDesignItems,
   getCatBannersMap,
 } from '../../../services/homepageService.js';
@@ -110,38 +110,132 @@ function ProductSection({ products, category, reverse, bannerData }) {
   );
 }
 
-/** Hero / Landing Page Banner (database-driven) */
-function HeroBanner({ hero }) {
-  const title    = hero?.title    || 'LANDING PAGE';
-  const subtitle = hero?.subtitle || '4+ PAGE';
-  const bgImage  = hero?.imageUrl  ? `url(${hero.imageUrl})` : undefined;
+/**
+ * Hero Carousel — auto-plays through up to 8 database-managed banner slides.
+ * Features: auto-advance every 5 s, pause on hover, prev/next buttons, dot nav.
+ * Falls back to a solid-colour placeholder when no slides are configured.
+ */
+function HeroCarousel({ slides }) {
+  const [current, setCurrent] = useState(0);
+  const [paused, setPaused]   = useState(false);
+  const timerRef = useRef(null);
 
-  const inner = (
+  const total = slides.length;
+
+  const goTo = useCallback((idx) => {
+    setCurrent((idx + total) % total);
+  }, [total]);
+
+  // Auto-advance
+  useEffect(() => {
+    if (total <= 1 || paused) return;
+    timerRef.current = setInterval(() => {
+      setCurrent((prev) => (prev + 1) % total);
+    }, 5000);
+    return () => clearInterval(timerRef.current);
+  }, [total, paused]);
+
+  // Reset to first slide when slides change
+  useEffect(() => { setCurrent(0); }, [total]);
+
+  // No slides configured — render placeholder
+  if (total === 0) {
+    return (
+      <section className="home-hero" aria-label="Hero banner">
+        <div className="home-hero-inner">
+          <p className="home-hero-label">LANDING PAGE</p>
+          <p className="home-hero-sub">4+ PAGE</p>
+        </div>
+      </section>
+    );
+  }
+
+  const slide = slides[current];
+  const bgImage = slide.imageUrl ? `url(${slide.imageUrl})` : undefined;
+
+  const slideContent = (
     <div className="home-hero-inner">
-      <p className="home-hero-label">{title}</p>
-      <p className="home-hero-sub">{subtitle}</p>
+      {slide.title    && <p className="home-hero-label">{slide.title}</p>}
+      {slide.subtitle && <p className="home-hero-sub">{slide.subtitle}</p>}
     </div>
   );
 
   return (
     <section
-      className="home-hero"
-      style={
-        bgImage
-          ? {
-              backgroundImage: bgImage,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-            }
-          : undefined
-      }
+      className="home-hero home-hero--carousel"
+      aria-label="Hero banner"
+      aria-roledescription="carousel"
+      data-has-image={bgImage ? 'true' : 'false'}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
     >
-      {hero?.ctaUrl ? (
-        <Link to={hero.ctaUrl} className="home-hero-link" aria-label={title}>
-          {inner}
-        </Link>
-      ) : (
-        inner
+      {/* Slide backgrounds — stack all, only active one visible */}
+      <div className="home-hero-slides" aria-live="off">
+        {slides.map((s, i) => (
+          <div
+            key={s.id}
+            className={`home-hero-slide${i === current ? ' home-hero-slide--active' : ''}`}
+            style={
+              s.imageUrl
+                ? { backgroundImage: `url(${s.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+                : undefined
+            }
+            aria-hidden={i !== current}
+          />
+        ))}
+      </div>
+
+      {/* Scrim */}
+      {bgImage && <div className="home-hero-scrim" />}
+
+      {/* Content */}
+      <div className="home-hero-content">
+        {slide.ctaUrl ? (
+          <Link to={slide.ctaUrl} className="home-hero-link" aria-label={slide.title || 'Lihat lebih lanjut'}>
+            {slideContent}
+          </Link>
+        ) : (
+          slideContent
+        )}
+      </div>
+
+      {/* Prev / Next arrows — only show when > 1 slide */}
+      {total > 1 && (
+        <>
+          <button
+            className="home-hero-arrow home-hero-arrow--prev"
+            type="button"
+            aria-label="Slide sebelumnya"
+            onClick={() => goTo(current - 1)}
+          >
+            ‹
+          </button>
+          <button
+            className="home-hero-arrow home-hero-arrow--next"
+            type="button"
+            aria-label="Slide berikutnya"
+            onClick={() => goTo(current + 1)}
+          >
+            ›
+          </button>
+        </>
+      )}
+
+      {/* Dot indicators */}
+      {total > 1 && (
+        <div className="home-hero-dots" role="tablist" aria-label="Pilih slide">
+          {slides.map((s, i) => (
+            <button
+              key={s.id}
+              className={`home-hero-dot${i === current ? ' home-hero-dot--active' : ''}`}
+              type="button"
+              role="tab"
+              aria-selected={i === current}
+              aria-label={`Slide ${i + 1}`}
+              onClick={() => goTo(i)}
+            />
+          ))}
+        </div>
       )}
     </section>
   );
@@ -203,11 +297,11 @@ function DesignShowcase({ items }) {
 }
 
 function HomePage() {
-  const [products, setProducts]       = useState([]);
-  const [categories, setCategories]   = useState([]);
-  const [hero, setHero]               = useState(null);
-  const [designItems, setDesignItems] = useState([]);
-  const [catBanners, setCatBanners]   = useState({});
+  const [products, setProducts]           = useState([]);
+  const [categories, setCategories]       = useState([]);
+  const [heroBanners, setHeroBanners]     = useState([]);
+  const [designItems, setDesignItems]     = useState([]);
+  const [catBanners, setCatBanners]       = useState({});
   const [searchQuery, setSearchQuery]     = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showDropdown, setShowDropdown]   = useState(false);
@@ -230,14 +324,14 @@ function HomePage() {
 
       // Homepage content (non-fatal — page still works without it)
       try {
-        const [heroData, designData, bannersMap] = await Promise.all([
-          getHero().catch(() => null),
+        const [bannersData, designData, catBannersMap] = await Promise.all([
+          listHeroBanners().catch(() => []),
           listDesignItems().catch(() => []),
           getCatBannersMap().catch(() => ({})),
         ]);
-        setHero(heroData);
+        setHeroBanners(Array.isArray(bannersData) ? bannersData : []);
         setDesignItems(Array.isArray(designData) ? designData : []);
-        setCatBanners(bannersMap || {});
+        setCatBanners(catBannersMap || {});
       } catch (err) {
         console.error('Failed to load homepage content:', err);
       }
@@ -340,9 +434,9 @@ function HomePage() {
 
   return (
     <main>
-      {/* ── Hero Banner (database-driven, contained in layout) ── */}
+      {/* ── Hero Carousel (database-driven, contained in layout) ── */}
       <div className="container">
-        <HeroBanner hero={hero} />
+        <HeroCarousel slides={heroBanners} />
       </div>
 
       <div className="container">

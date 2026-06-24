@@ -11,8 +11,11 @@ import { useState, useEffect } from 'react';
 import { showToast } from '../../../../core/toastEmitter.js';
 import { resolveApiUrl } from '../../../../core/httpClient.js';
 import {
-  getHero,
-  saveHero,
+  listAllHeroBanners,
+  createHeroBanner,
+  updateHeroBanner,
+  deleteHeroBanner,
+  reorderHeroBanners,
   uploadHomepageImage,
   listAllDesignItems,
   createDesignItem,
@@ -91,127 +94,273 @@ function ImagePickerField({ label, currentUrl, onUrlChange, uploading, setUpload
   );
 }
 
-// ── A. Hero Banner Tab ────────────────────────────────────────────────────────
+// ── A. Hero Banners Tab (carousel — up to 8 slides) ──────────────────────────
 
-function HeroTab() {
-  const [form, setForm]         = useState({ id: '', title: '', subtitle: '', imagePath: '', ctaUrl: '' });
+function HeroBannerModal({ banner, onClose, onSaved }) {
+  const [form, setForm] = useState({
+    title:     banner?.title      || '',
+    subtitle:  banner?.subtitle   || '',
+    imagePath: banner?.image_path || '',
+    ctaUrl:    banner?.cta_url    || '',
+    sortOrder: banner?.sort_order ?? 0,
+    isActive:  banner ? Boolean(banner.is_active) : true,
+  });
   const [uploading, setUploading] = useState(false);
-  const [saving, setSaving]     = useState(false);
-  const [loading, setLoading]   = useState(true);
-
-  useEffect(() => {
-    async function load() {
-      setLoading(true);
-      try {
-        const hero = await getHero();
-        if (hero) {
-          setForm({
-            id:        hero.id        || '',
-            title:     hero.title     || '',
-            subtitle:  hero.subtitle  || '',
-            imagePath: hero.image_path || '',
-            ctaUrl:    hero.cta_url   || '',
-          });
-        }
-      } catch (err) {
-        showToast('Gagal memuat hero banner.', 'error');
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
-  }, []);
+  const [saving, setSaving]       = useState(false);
+  const [error, setError]         = useState('');
 
   function handleChange(e) {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   }
 
-  async function handleSave(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setSaving(true);
+    setError('');
     try {
-      await saveHero({
-        id:        form.id || undefined,
-        title:     form.title,
-        subtitle:  form.subtitle,
+      const payload = {
+        title:     form.title     || null,
+        subtitle:  form.subtitle  || null,
         imagePath: form.imagePath || null,
-        ctaUrl:    form.ctaUrl   || null,
-      });
-      showToast('Hero banner disimpan.', 'success');
-    } catch (err) {
-      showToast('Gagal menyimpan hero banner.', 'error');
+        ctaUrl:    form.ctaUrl    || null,
+        sortOrder: Number(form.sortOrder) || 0,
+        isActive:  form.isActive,
+      };
+      if (banner) {
+        await updateHeroBanner(banner.id, payload);
+        showToast('Banner diperbarui.', 'success');
+      } else {
+        await createHeroBanner(payload);
+        showToast('Banner ditambahkan.', 'success');
+      }
+      onSaved();
+      onClose();
+    } catch {
+      setError('Gagal menyimpan banner.');
     } finally {
       setSaving(false);
     }
   }
 
-  if (loading) return <p style={{ padding: 24, color: '#6b7280' }}>Memuat…</p>;
-
   return (
-    <div className="adm-card">
-      <h2 className="adm-section-title" style={{ marginBottom: 16 }}>Landing Page Banner</h2>
-      <form className="adm-form" onSubmit={handleSave} noValidate>
-        <ImagePickerField
-          label="Gambar Banner"
-          currentUrl={form.imagePath}
-          onUrlChange={(url) => setForm((prev) => ({ ...prev, imagePath: url }))}
-          uploading={uploading}
-          setUploading={setUploading}
-        />
-        <div className="adm-field">
-          <label className="adm-label" htmlFor="hero-title">Judul</label>
-          <input className="adm-input" id="hero-title" name="title"
-            value={form.title} onChange={handleChange} placeholder="LANDING PAGE" />
+    <div className="adm-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="hb-modal-title">
+      <div className="adm-modal" style={{ maxWidth: 560 }}>
+        <div className="adm-modal-header">
+          <h2 className="adm-modal-title" id="hb-modal-title">
+            {banner ? 'Edit Banner' : 'Tambah Banner'}
+          </h2>
+          <button className="adm-modal-close" type="button" aria-label="Tutup" onClick={onClose}>✕</button>
         </div>
-        <div className="adm-field">
-          <label className="adm-label" htmlFor="hero-subtitle">Subtitle</label>
-          <input className="adm-input" id="hero-subtitle" name="subtitle"
-            value={form.subtitle} onChange={handleChange} placeholder="4+ PAGE" />
-        </div>
-        <div className="adm-field">
-          <label className="adm-label" htmlFor="hero-cta">Link Tombol (opsional)</label>
-          <input className="adm-input" id="hero-cta" name="ctaUrl"
-            value={form.ctaUrl} onChange={handleChange} placeholder="https://..." />
-        </div>
-        {/* Preview */}
-        {(form.title || form.imagePath) && (
-          <div style={{ marginBottom: 16 }}>
-            <p className="adm-label" style={{ marginBottom: 6 }}>Preview</p>
-            <div style={{
-              minHeight: 120, borderRadius: 8, overflow: 'hidden', position: 'relative',
-              background: form.imagePath ? 'none' : 'rgba(237,200,174,0.45)',
-              backgroundImage: form.imagePath ? `url(${resolveImg(form.imagePath)})` : undefined,
-              backgroundSize: 'cover', backgroundPosition: 'center',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              border: '1px solid var(--border)',
-            }}>
-              {form.imagePath && (
-                <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.25)' }} />
-              )}
-              <div style={{ position: 'relative', textAlign: 'center', padding: '16px 24px' }}>
-                <p style={{ fontWeight: 900, fontSize: 22, margin: 0,
-                  color: form.imagePath ? '#fff' : '#1f1f1f',
-                  textShadow: form.imagePath ? '0 2px 8px rgba(0,0,0,0.5)' : 'none' }}>
-                  {form.title || 'LANDING PAGE'}
-                </p>
-                <p style={{ fontWeight: 700, fontSize: 16, margin: 0,
-                  color: form.imagePath ? 'rgba(255,255,255,0.9)' : '#555',
-                  textShadow: form.imagePath ? '0 1px 4px rgba(0,0,0,0.4)' : 'none' }}>
-                  {form.subtitle || '4+ PAGE'}
-                </p>
+        <div className="adm-modal-body">
+          <form className="adm-form" onSubmit={handleSubmit} noValidate>
+            <ImagePickerField
+              label="Gambar Banner"
+              currentUrl={form.imagePath}
+              onUrlChange={(url) => setForm((prev) => ({ ...prev, imagePath: url }))}
+              uploading={uploading}
+              setUploading={setUploading}
+            />
+            <div className="adm-field">
+              <label className="adm-label" htmlFor="hb-title">Judul (opsional)</label>
+              <input className="adm-input" id="hb-title" name="title"
+                value={form.title} onChange={handleChange} placeholder="LANDING PAGE" />
+            </div>
+            <div className="adm-field">
+              <label className="adm-label" htmlFor="hb-subtitle">Subtitle (opsional)</label>
+              <input className="adm-input" id="hb-subtitle" name="subtitle"
+                value={form.subtitle} onChange={handleChange} placeholder="4+ PAGE" />
+            </div>
+            <div className="adm-field">
+              <label className="adm-label" htmlFor="hb-cta">Link Tujuan (opsional)</label>
+              <input className="adm-input" id="hb-cta" name="ctaUrl"
+                value={form.ctaUrl} onChange={handleChange} placeholder="https://... atau /products" />
+            </div>
+            <div className="adm-field">
+              <label className="adm-label" htmlFor="hb-order">Urutan Tampil</label>
+              <input className="adm-input" id="hb-order" name="sortOrder" type="number" min="0"
+                value={form.sortOrder} onChange={handleChange} />
+            </div>
+            <div className="adm-field adm-field--check">
+              <label className="adm-label">
+                <input type="checkbox" name="isActive" checked={form.isActive} onChange={handleChange} />
+                {' '}Aktifkan slide ini
+              </label>
+            </div>
+            {/* Mini preview */}
+            <div style={{ marginBottom: 12 }}>
+              <p className="adm-label" style={{ marginBottom: 6 }}>Preview</p>
+              <div style={{
+                height: 100, borderRadius: 6, overflow: 'hidden', position: 'relative',
+                background: form.imagePath ? 'none' : 'rgba(237,200,174,0.45)',
+                backgroundImage: form.imagePath ? `url(${resolveImg(form.imagePath)})` : undefined,
+                backgroundSize: 'cover', backgroundPosition: 'center',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: '1px solid var(--border)',
+              }}>
+                {form.imagePath && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.28)' }} />}
+                <div style={{ position: 'relative', textAlign: 'center', padding: '8px 16px' }}>
+                  {form.title && (
+                    <p style={{ fontWeight: 900, fontSize: 18, margin: 0,
+                      color: form.imagePath ? '#fff' : '#1f1f1f',
+                      textShadow: form.imagePath ? '0 2px 8px rgba(0,0,0,0.5)' : 'none' }}>
+                      {form.title}
+                    </p>
+                  )}
+                  {form.subtitle && (
+                    <p style={{ fontWeight: 700, fontSize: 13, margin: 0,
+                      color: form.imagePath ? 'rgba(255,255,255,0.9)' : '#555',
+                      textShadow: form.imagePath ? '0 1px 4px rgba(0,0,0,0.4)' : 'none' }}>
+                      {form.subtitle}
+                    </p>
+                  )}
+                  {!form.title && !form.subtitle && (
+                    <p style={{ color: '#aaa', fontSize: 13, margin: 0 }}>Tidak ada teks</p>
+                  )}
+                </div>
               </div>
             </div>
+            {error && <div className="adm-form-alert" role="alert">{error}</div>}
+            <div className="adm-form-actions">
+              <button className="adm-btn adm-btn--primary" type="submit" disabled={saving || uploading}>
+                {saving ? 'Menyimpan…' : (banner ? 'Simpan Perubahan' : 'Tambah Banner')}
+              </button>
+              <button className="adm-btn" type="button" onClick={onClose} disabled={saving}>Batal</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HeroTab() {
+  const [banners, setBanners]     = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing]     = useState(null);
+
+  async function load() {
+    setLoading(true);
+    try { setBanners(await listAllHeroBanners()); }
+    catch { showToast('Gagal memuat banner.', 'error'); }
+    finally { setLoading(false); }
+  }
+
+  useEffect(() => { load(); }, []);
+
+  async function handleDelete(id) {
+    if (!window.confirm('Hapus banner ini?')) return;
+    try {
+      await deleteHeroBanner(id);
+      showToast('Banner dihapus.', 'success');
+      load();
+    } catch { showToast('Gagal menghapus.', 'error'); }
+  }
+
+  async function handleMove(idx, dir) {
+    const updated = [...banners];
+    const swap = dir === 'up' ? idx - 1 : idx + 1;
+    if (swap < 0 || swap >= updated.length) return;
+    [updated[idx], updated[swap]] = [updated[swap], updated[idx]];
+    const reordered = updated.map((b, i) => ({ id: b.id, sortOrder: i }));
+    try {
+      await reorderHeroBanners(reordered);
+      setBanners(updated.map((b, i) => ({ ...b, sort_order: i })));
+    } catch { showToast('Gagal menyimpan urutan.', 'error'); }
+  }
+
+  return (
+    <>
+      <div className="adm-card">
+        <div className="adm-toolbar">
+          <h2 className="adm-section-title">
+            Landing Page Banner
+            <span style={{ fontSize: 13, fontWeight: 400, color: '#6b7280', marginLeft: 8 }}>
+              (carousel · maks. 8 slide)
+            </span>
+          </h2>
+          <div className="adm-toolbar-right">
+            <button className="adm-btn adm-btn--primary" type="button"
+              onClick={() => { setEditing(null); setModalOpen(true); }}
+              disabled={banners.length >= 8}>
+              + Tambah Banner
+            </button>
+          </div>
+        </div>
+
+        {loading ? (
+          <p style={{ padding: 16, color: '#6b7280' }}>Memuat…</p>
+        ) : banners.length === 0 ? (
+          <p style={{ padding: 16, color: '#6b7280' }}>
+            Belum ada banner. Tambahkan slide pertama untuk carousel Homepage.
+          </p>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px,1fr))', gap: 14, padding: '4px 0' }}>
+            {banners.map((b, idx) => (
+              <div key={b.id} style={{
+                border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden',
+                opacity: b.is_active ? 1 : 0.5, position: 'relative',
+              }}>
+                {/* Slide number badge */}
+                <span style={{
+                  position: 'absolute', top: 6, left: 6,
+                  background: b.is_active ? 'var(--brand-brown)' : '#9ca3af',
+                  color: '#fff', fontSize: 10, padding: '2px 6px', borderRadius: 4, zIndex: 1,
+                }}>
+                  Slide {idx + 1}{!b.is_active && ' (nonaktif)'}
+                </span>
+                {/* Thumbnail */}
+                {resolveImg(b.image_path) ? (
+                  <img src={resolveImg(b.image_path)} alt={b.title || ''}
+                    style={{ width: '100%', aspectRatio: '16/7', objectFit: 'cover', display: 'block' }}
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                ) : (
+                  <div style={{ width: '100%', aspectRatio: '16/7',
+                    background: 'rgba(237,200,174,0.35)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#aaa', fontSize: 12 }}>
+                    Tidak ada gambar
+                  </div>
+                )}
+                <div style={{ padding: '8px 10px' }}>
+                  <p style={{ margin: 0, fontWeight: 600, fontSize: 13, marginBottom: 2 }}>
+                    {b.title || <span style={{ color: '#aaa' }}>Tanpa judul</span>}
+                  </p>
+                  {b.subtitle && (
+                    <p style={{ margin: 0, fontSize: 11, color: '#6b7280', marginBottom: 2 }}>{b.subtitle}</p>
+                  )}
+                  {b.cta_url && (
+                    <p style={{ margin: 0, fontSize: 11, color: '#6b7280',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {b.cta_url}
+                    </p>
+                  )}
+                  <div className="adm-actions" style={{ marginTop: 8 }}>
+                    <button className="adm-btn" type="button" style={{ padding: '3px 8px', fontSize: 12 }}
+                      onClick={() => handleMove(idx, 'up')} disabled={idx === 0} aria-label="Pindah ke atas">↑</button>
+                    <button className="adm-btn" type="button" style={{ padding: '3px 8px', fontSize: 12 }}
+                      onClick={() => handleMove(idx, 'down')} disabled={idx >= banners.length - 1} aria-label="Pindah ke bawah">↓</button>
+                    <button className="adm-btn adm-btn--edit" type="button"
+                      onClick={() => { setEditing(b); setModalOpen(true); }}>Edit</button>
+                    <button className="adm-btn adm-btn--delete" type="button"
+                      onClick={() => handleDelete(b.id)}>Hapus</button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
-        <div className="adm-form-actions">
-          <button className="adm-btn adm-btn--primary" type="submit"
-            disabled={saving || uploading}>
-            {saving ? 'Menyimpan…' : 'Simpan'}
-          </button>
-        </div>
-      </form>
-    </div>
+      </div>
+
+      {modalOpen && (
+        <HeroBannerModal
+          banner={editing}
+          onClose={() => { setModalOpen(false); setEditing(null); }}
+          onSaved={load}
+        />
+      )}
+    </>
   );
 }
 
