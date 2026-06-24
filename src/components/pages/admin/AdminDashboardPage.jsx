@@ -16,6 +16,7 @@ import ReviewsSection from './sections/ReviewsSection.jsx';
 import ChatsSection from './sections/ChatsSection.jsx';
 import DMSection from './sections/DMSection.jsx';
 import PromoSection from './sections/PromoSection.jsx';
+import HomepageSection from './sections/HomepageSection.jsx';
 import ExportDataCards from '../../admin/ExportDataCards.jsx';
 import StaffAvatarButton from '../../shared/StaffAvatarButton.jsx';
 import logoImg from '../../../assets/logo.png';
@@ -30,6 +31,7 @@ const ADMIN_NAV = [
   { id: 'chats',     label: 'CHATS' },
   { id: 'dm',        label: 'DM' },
   { id: 'promo',     label: 'PROMO' },
+  { id: 'homepage',  label: 'HOMEPAGE' },
 ];
 
 function ActivitySidebar({ onGoToOrders, onGoToChats }) {
@@ -166,6 +168,7 @@ export default function AdminDashboardPage() {
       case 'chats':    return <ChatsSection />;
       case 'dm':       return <DMSection />;
       case 'promo':    return <PromoSection />;
+      case 'homepage': return <HomepageSection />;
       default:         return null;
     }
   }

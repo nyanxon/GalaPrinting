@@ -1,7 +1,10 @@
 /**
  * HomePage.jsx
  *
- * Hero banner, featured products grouped by category, promotional sections.
+ * Hero banner, design showcase, featured products grouped by category,
+ * promotional sections. All banner/hero/showcase content is driven by the
+ * database (managed via Admin → Homepage Management).
+ *
  * Requirements: 7.1, 13.4
  */
 
@@ -10,6 +13,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import ProductCard from '../../shared/ProductCard.jsx';
 import { listProducts } from '../../../services/productService.js';
 import { listCategories } from '../../../services/categoryService.js';
+import {
+  getHero,
+  listDesignItems,
+  getCatBannersMap,
+} from '../../../services/homepageService.js';
 import '../../../styles/css/pages/home.css';
 
 const PER_SECTION = 8; // 4 cols × 2 rows
@@ -30,26 +38,48 @@ function buildGroups(products, categories) {
   return grouped;
 }
 
-/** Category banner linking to /products?cat=... */
-function CategoryBanner({ category }) {
+/**
+ * Category banner that uses the dynamic banner image from the database
+ * (falls back to the solid-colour placeholder if no image is set).
+ */
+function CategoryBanner({ category, bannerData }) {
   const name = category ? category.name : 'Produk';
-  const href = category ? `/products?cat=${encodeURIComponent(category.name)}` : '/products';
+  const href = bannerData?.linkUrl
+    ? bannerData.linkUrl
+    : category
+    ? `/products?cat=${encodeURIComponent(category.name)}`
+    : '/products';
+  const ctaText = bannerData?.ctaText || 'Lihat Semua →';
+  const displayName = bannerData?.title || name;
+  const bgImage = bannerData?.imageUrl ? `url(${bannerData.imageUrl})` : undefined;
+
   return (
-    <Link className="home-section-banner" to={href} aria-label={`Lihat semua ${name}`}>
-      <div className="home-section-banner-bg"></div>
+    <Link className="home-section-banner" to={href} aria-label={`Lihat semua ${displayName}`}>
+      <div
+        className="home-section-banner-bg"
+        style={
+          bgImage
+            ? {
+                backgroundImage: bgImage,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }
+            : undefined
+        }
+      />
       <div className="home-section-banner-label">
-        <span className="home-section-banner-name">{name}</span>
-        <span className="home-section-banner-cta">Lihat Semua →</span>
+        <span className="home-section-banner-name">{displayName}</span>
+        <span className="home-section-banner-cta">{ctaText}</span>
       </div>
     </Link>
   );
 }
 
 /** A section of products with a category banner */
-function ProductSection({ products, category, reverse }) {
+function ProductSection({ products, category, reverse, bannerData }) {
   const bannerEl = (
     <div className="home-section-banner-wrap" data-banner>
-      <CategoryBanner category={category} />
+      <CategoryBanner category={category} bannerData={bannerData} />
     </div>
   );
   const gridEl = (
@@ -80,31 +110,136 @@ function ProductSection({ products, category, reverse }) {
   );
 }
 
+/** Hero / Landing Page Banner (database-driven) */
+function HeroBanner({ hero }) {
+  const title    = hero?.title    || 'LANDING PAGE';
+  const subtitle = hero?.subtitle || '4+ PAGE';
+  const bgImage  = hero?.imageUrl  ? `url(${hero.imageUrl})` : undefined;
+
+  const inner = (
+    <div className="home-hero-inner">
+      <p className="home-hero-label">{title}</p>
+      <p className="home-hero-sub">{subtitle}</p>
+    </div>
+  );
+
+  return (
+    <section
+      className="home-hero"
+      style={
+        bgImage
+          ? {
+              backgroundImage: bgImage,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }
+          : undefined
+      }
+    >
+      {hero?.ctaUrl ? (
+        <Link to={hero.ctaUrl} className="home-hero-link" aria-label={title}>
+          {inner}
+        </Link>
+      ) : (
+        inner
+      )}
+    </section>
+  );
+}
+
+/**
+ * Design showcase grid — replaces the old category quick-links.
+ * Shows max 4 items, each with image, optional title, and optional link.
+ */
+function DesignShowcase({ items }) {
+  const visible = items.slice(0, 4);
+
+  if (visible.length === 0) {
+    // Render placeholder grid while loading or if no items configured
+    return (
+      <div className="home-cat-grid" data-cat-grid>
+        <div className="home-cat-item home-cat-placeholder" />
+        <div className="home-cat-item home-cat-placeholder" />
+        <div className="home-cat-item home-cat-placeholder" />
+        <div className="home-cat-item home-cat-placeholder" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="home-cat-grid" data-cat-grid>
+      {visible.map((item) => {
+        const inner = (
+          <>
+            {item.imageUrl && (
+              <img
+                src={item.imageUrl}
+                alt={item.title || ''}
+                className="home-cat-item-img"
+              />
+            )}
+            {item.title && (
+              <span className="home-cat-item-label">{item.title}</span>
+            )}
+          </>
+        );
+
+        return item.linkUrl ? (
+          <Link
+            key={item.id}
+            className="home-cat-item home-cat-item--showcase"
+            to={item.linkUrl}
+          >
+            {inner}
+          </Link>
+        ) : (
+          <div key={item.id} className="home-cat-item home-cat-item--showcase">
+            {inner}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function HomePage() {
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [products, setProducts]       = useState([]);
+  const [categories, setCategories]   = useState([]);
+  const [hero, setHero]               = useState(null);
+  const [designItems, setDesignItems] = useState([]);
+  const [catBanners, setCatBanners]   = useState({});
+  const [searchQuery, setSearchQuery]     = useState('');
   const [searchResults, setSearchResults] = useState([]);
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [showDropdown, setShowDropdown]   = useState(false);
   // Drop zone state
-  const [droppedFile, setDroppedFile] = useState(null);   // { name, previewUrl }
-  const [isDragOver, setIsDragOver] = useState(false);
-  const navigate = useNavigate();
-  const dropdownRef = useRef(null);
+  const [droppedFile, setDroppedFile] = useState(null);
+  const [isDragOver, setIsDragOver]   = useState(false);
+  const navigate     = useNavigate();
+  const dropdownRef  = useRef(null);
 
   useEffect(() => {
     async function load() {
+      // Products + categories
       try {
-        const prods = await listProducts();
+        const [prods, cats] = await Promise.all([listProducts(), listCategories()]);
         setProducts(prods);
+        setCategories(Array.isArray(cats) ? cats : []);
       } catch (err) {
-        console.error('Failed to load products:', err);
+        console.error('Failed to load products/categories:', err);
       }
+
+      // Homepage content (non-fatal — page still works without it)
       try {
-        const cats = await listCategories();
-        setCategories(cats);
+        const [heroData, designData, bannersMap] = await Promise.all([
+          getHero().catch(() => null),
+          listDesignItems().catch(() => []),
+          getCatBannersMap().catch(() => ({})),
+        ]);
+        setHero(heroData);
+        setDesignItems(Array.isArray(designData) ? designData : []);
+        setCatBanners(bannersMap || {});
       } catch (err) {
-        console.error('Failed to load categories:', err);
+        console.error('Failed to load homepage content:', err);
       }
     }
     load();
@@ -135,7 +270,6 @@ function HomePage() {
   function handleSearchChange(e) {
     const q = e.target.value;
     setSearchQuery(q);
-    
     if (q.trim()) {
       const filtered = products.filter((p) =>
         p.name.toLowerCase().includes(q.toLowerCase()) ||
@@ -160,12 +294,10 @@ function HomePage() {
   }
 
   function handleSearchKeyDown(e) {
-    if (e.key === 'Enter') {
-      handleSearchSubmit(e);
-    }
+    if (e.key === 'Enter') handleSearchSubmit(e);
   }
 
-  // ── Drop zone handlers ──────────────────────────────────
+  // ── Drop zone handlers ──────────────────────────────────────────────────────
   function processDropFile(file) {
     if (!file) return;
     const isImage = file.type.startsWith('image/');
@@ -176,7 +308,6 @@ function HomePage() {
       };
       reader.readAsDataURL(file);
     } else {
-      // Non-image: show filename only, no preview URL
       setDroppedFile({ name: file.name, previewUrl: null });
     }
   }
@@ -209,38 +340,15 @@ function HomePage() {
 
   return (
     <main>
-      {/* Hero Section */}
-      <section className="home-hero">
-        <div className="home-hero-inner">
-          <p className="home-hero-label">LANDING PAGE</p>
-          <p className="home-hero-sub">4+ PAGE</p>
-        </div>
-      </section>
+      {/* ── Hero Banner (database-driven, contained in layout) ── */}
+      <div className="container">
+        <HeroBanner hero={hero} />
+      </div>
 
       <div className="container">
-        {/* Category Quick Links + Search */}
-        <section className="home-categories" aria-label="Kategori cepat">
-          <div className="home-cat-grid" data-cat-grid>
-            {categories.length > 0 ? (
-              categories.slice(0, 4).map((cat) => (
-                <Link
-                  key={cat.id}
-                  className="home-cat-item"
-                  to={`/products?cat=${encodeURIComponent(cat.name)}`}
-                  style={{ background: 'rgba(237, 200, 174, 0.5)' }}
-                >
-                  {cat.name}
-                </Link>
-              ))
-            ) : (
-              <>
-                <div className="home-cat-item home-cat-placeholder"></div>
-                <div className="home-cat-item home-cat-placeholder"></div>
-                <div className="home-cat-item home-cat-placeholder"></div>
-                <div className="home-cat-item home-cat-placeholder"></div>
-              </>
-            )}
-          </div>
+        {/* ── Design Showcase + Search ── */}
+        <section className="home-categories" aria-label="Design showcase">
+          <DesignShowcase items={designItems} />
           <div className="home-search-row">
             <span className="home-search-greeting">
               Hallo, <strong>Mau Pesan apa?</strong>
@@ -325,7 +433,7 @@ function HomePage() {
           </div>
         </section>
 
-        {/* Custom Order */}
+        {/* ── Custom Order ── */}
         <section className="home-custom-order card" aria-label="Custom Order">
           <div
             className={`home-custom-drop${isDragOver ? ' home-custom-drop--over' : ''}`}
@@ -337,7 +445,6 @@ function HomePage() {
             onDrop={handleDropZoneDrop}
           >
             {droppedFile ? (
-              /* File has been dropped / selected — show preview */
               <div className="home-custom-drop-preview">
                 {droppedFile.previewUrl ? (
                   <img
@@ -359,7 +466,6 @@ function HomePage() {
                 </button>
               </div>
             ) : (
-              /* Empty state */
               <>
                 <span className="home-custom-drop-label">Drop your design here</span>
                 <input
@@ -387,7 +493,7 @@ function HomePage() {
           </div>
         </section>
 
-        {/* Product Sections grouped by category */}
+        {/* ── Product Sections grouped by category ── */}
         <div id="home-product-sections" data-product-sections>
           {groups.length === 0 ? (
             <p className="muted" style={{ padding: '24px 0' }}>
@@ -399,12 +505,17 @@ function HomePage() {
               for (let i = 0; i < group.products.length; i += PER_SECTION) {
                 chunks.push(group.products.slice(i, i + PER_SECTION));
               }
+              // Look up the category banner for this group
+              const bannerKey = group.category?.id ?? '__uncategorised__';
+              const bannerData = catBanners[bannerKey] || null;
+
               return chunks.map((chunk, chunkIdx) => (
                 <ProductSection
                   key={`${group.category?.id ?? 'uncategorised'}-${chunkIdx}`}
                   products={chunk}
                   category={group.category}
                   reverse={idx % 2 !== 0}
+                  bannerData={bannerData}
                 />
               ));
             })

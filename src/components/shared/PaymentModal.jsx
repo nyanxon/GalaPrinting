@@ -311,7 +311,7 @@ function PaymentModal({ isOpen, onClose, order, subtotal: subtotalProp, onPaymen
                       </div>
                       <div className="co-payment-bank-row">
                         <span className="co-payment-bank-label">Atas Nama</span>
-                        <strong className="co-payment-bank-value">Gala Printing Bali</strong>
+                        <strong className="co-payment-bank-value">Gala Agung Jaya CV</strong>
                       </div>
                       <div className="co-payment-bank-row">
                         <span className="co-payment-bank-label">Nominal</span>

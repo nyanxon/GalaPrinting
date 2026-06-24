@@ -3,17 +3,46 @@
    ══════════════════════════════════════════════════════════ */
 
 /* ── Hero Banner ─────────────────────────────────────────── */
+/* Hero lives inside .container so it is never full-width */
 .home-hero {
   background: rgba(237, 200, 174, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 220px;
+  min-height: 260px;
   text-align: center;
   margin-bottom: 28px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  position: relative;
 }
 
-.home-hero-inner { padding: 32px 16px; }
+/* When a bg image is set (via inline style) overlay a subtle scrim */
+.home-hero[style*="background-image"]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.28);
+  pointer-events: none;
+}
+
+.home-hero-link {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 260px;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  position: relative;
+  z-index: 1;
+}
+
+.home-hero-inner {
+  padding: 32px 16px;
+  position: relative;
+  z-index: 1;
+}
 
 .home-hero-label {
   font-size: clamp(28px, 5vw, 48px);
@@ -27,6 +56,13 @@
   font-weight: 900;
   letter-spacing: -0.02em;
   margin: 0;
+}
+
+/* When hero has a bg image, text goes white */
+.home-hero[style*="background-image"] .home-hero-label,
+.home-hero[style*="background-image"] .home-hero-sub {
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
 }
 
 /* ── Category Quick Links ────────────────────────────────── */
@@ -48,6 +84,40 @@
   aspect-ratio: 4 / 3;
   border-radius: var(--radius-sm);
   overflow: hidden;
+}
+
+/* Showcase item: covers full cell with image */
+.home-cat-item--showcase {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  text-decoration: none;
+  background: rgba(237, 200, 174, 0.35);
+  transition: filter 0.18s;
+}
+
+.home-cat-item--showcase:hover {
+  filter: brightness(0.9);
+}
+
+.home-cat-item-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.home-cat-item-label {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  padding: 8px 10px;
+  background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 100%);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.4);
 }
 
 .home-cat-placeholder { background: rgba(237, 200, 174, 0.5); }

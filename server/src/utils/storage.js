@@ -28,7 +28,7 @@ import path from 'path';
 import { randomUUID } from 'crypto';
 import { config } from '../config/env.js';
 
-const SUBDIRS = ['designs', 'payments', 'chat', 'avatars', 'products'];
+const SUBDIRS = ['designs', 'payments', 'chat', 'avatars', 'products', 'homepage'];
 
 /**
  * Resolve the absolute path to the upload root directory.
