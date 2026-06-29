@@ -53,7 +53,13 @@ function ActivitySidebar({ onGoToOrders, onGoToChats }) {
     try {
       const convs = await listConversations();
       const unhandled = (Array.isArray(convs) ? convs : [])
-        .filter((c) => (c.unreadCount ?? 0) > 0)
+        .filter((c) => {
+          // Show chat if: unread count > 0 OR last message was from customer (needsReply)
+          const hasUnread = (c.unreadCount ?? 0) > 0;
+          const needsReply = c.needsReply === true;
+          const lastMsgFromCustomer = c.lastMessage?.senderRole === 'customer';
+          return hasUnread || needsReply || lastMsgFromCustomer;
+        })
         .slice(0, 4);
       setUnhandledChats(unhandled);
     } catch (err) {
@@ -102,6 +108,7 @@ function ActivitySidebar({ onGoToOrders, onGoToChats }) {
       <div className="staff-activity-card">
         <div className="staff-activity-card-header">
           <div className="staff-activity-card-title">NEW CHAT</div>
+          <button className="staff-activity-goto" type="button" aria-label="Lihat semua chat" onClick={onGoToChats}>→</button>
         </div>
         {unhandledChats.length === 0 ? (
           <p className="staff-activity-empty">Semua chat sudah ditangani.</p>
@@ -250,7 +257,7 @@ export default function AdminDashboardPage() {
                   onClick={() => navigate('/')}
                   title="Buka Homepage"
                 >
-                  🌐 Homepage
+                  Homepage
                 </button>
                 <button className="staff-logout-btn" type="button" onClick={handleLogout}>Keluar</button>
               </div>

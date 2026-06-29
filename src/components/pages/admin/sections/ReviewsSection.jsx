@@ -8,6 +8,7 @@
 import { useState, useEffect } from 'react';
 import { listReviews, deleteReview } from '../../../../services/reviewService.js';
 import { showToast } from '../../../../core/toastEmitter.js';
+import { resolveApiUrl } from '../../../../core/httpClient.js';
 
 const PAGE_SIZE = 10;
 
@@ -135,6 +136,7 @@ export default function ReviewsSection() {
               <th>Rating</th>
               <th>Customer</th>
               <th>Komentar</th>
+              <th>Foto</th>
               <th>Tanggal</th>
               <th>Aksi</th>
             </tr>
@@ -142,7 +144,7 @@ export default function ReviewsSection() {
           <tbody>
             {items.length === 0 ? (
               <tr>
-                <td colSpan={7} className="adm-empty">
+                <td colSpan={8} className="adm-empty">
                   Belum ada ulasan.
                 </td>
               </tr>
@@ -158,6 +160,22 @@ export default function ReviewsSection() {
                   </td>
                   <td>{r.customerName || '—'}</td>
                   <td>{r.comment || '—'}</td>
+                  <td>
+                    {r.photoUrl ? (
+                      <a href={resolveApiUrl(r.photoUrl) || r.photoUrl} target="_blank" rel="noopener noreferrer" title="Lihat foto">
+                        <img
+                          src={resolveApiUrl(r.photoUrl) || r.photoUrl}
+                          alt="Foto ulasan"
+                          style={{
+                            width: 48, height: 48, objectFit: 'cover',
+                            borderRadius: 6, border: '1px solid var(--border)',
+                            display: 'block',
+                          }}
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                      </a>
+                    ) : <span style={{ color: '#ccc', fontSize: 12 }}>—</span>}
+                  </td>
                   <td className="adm-date">
                     {new Date(r.createdAt).toLocaleDateString('id-ID')}
                   </td>

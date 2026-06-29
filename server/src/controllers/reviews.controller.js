@@ -6,6 +6,7 @@
 
 import { validationResult } from 'express-validator';
 import * as svc from '../services/reviews.service.js';
+import { StorageService } from '../utils/storage.js';
 
 export async function listReviews(req, res, next) {
   try {
@@ -34,10 +35,27 @@ export async function createReview(req, res, next) {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      // Clean up temp file if validation failed
+      if (req.file) {
+        import('fs/promises').then((fs) => fs.unlink(req.file.path).catch(() => {}));
+      }
       return res.status(422).json({ ok: false, message: 'Validasi gagal.', errors: errors.mapped() });
     }
 
     const { productId, orderId, orderItemId, rating, comment } = req.body;
+
+    // Handle optional photo upload
+    let photoUrl = null;
+    if (req.file) {
+      try {
+        const saved = await StorageService.save(req.file, 'reviews');
+        photoUrl = saved.url;
+      } catch (uploadErr) {
+        console.error('[reviews.controller] Photo upload failed:', uploadErr);
+        // Non-fatal: review is saved without photo
+      }
+    }
+
     const review = await svc.createReview({
       productId,
       orderId,
@@ -46,6 +64,7 @@ export async function createReview(req, res, next) {
       customerName: req.user.name,
       rating:       parseInt(rating, 10),
       comment,
+      photoUrl,
     });
     return res.status(201).json({ ok: true, data: review });
   } catch (err) {
@@ -69,6 +88,11 @@ export async function deleteReview(req, res, next) {
     // Only admin or the review author can delete
     if (req.user.role !== 'admin' && review.customer_id !== req.user.id) {
       return res.status(403).json({ ok: false, message: 'Akses ditolak.' });
+    }
+
+    // Delete associated photo if present
+    if (review.photo_url) {
+      await StorageService.delete(review.photo_url.replace(/^\//, ''));
     }
 
     await svc.deleteReview(req.params.id);

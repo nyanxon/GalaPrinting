@@ -1074,11 +1074,348 @@ function DesignPreviewCarousel() {
   );
 }
 
+// ── E. Full Homepage Preview ──────────────────────────────────────────────────
+
+/**
+ * HomepageFullPreview — renders a full-page preview of the customer homepage
+ * inside the admin panel. Uses the same data sources as the real HomePage:
+ * hero banners, design showcase, category banners, and products grouped by category.
+ */
+function HomepageFullPreview() {
+  const [heroBanners, setHeroBanners]   = useState([]);
+  const [designItems, setDesignItems]   = useState([]);
+  const [catBanners, setCatBanners]     = useState({});
+  const [products, setProducts]         = useState([]);
+  const [categories, setCategories]     = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [heroIdx, setHeroIdx]           = useState(0);
+  const heroTimer = useRef(null);
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      try {
+        const [bannersData, designData, catBannersData, prodsRes, catsRes] = await Promise.all([
+          listAllHeroBanners().catch(() => []),
+          listAllDesignItems().catch(() => []),
+          listCatBanners().catch(() => []),
+          api.get('/api/products?limit=100').catch(() => ({ data: { data: [] } })),
+          api.get('/api/categories').catch(() => ({ data: [] })),
+        ]);
+
+        setHeroBanners(Array.isArray(bannersData) ? bannersData.filter((b) => b.is_active) : []);
+        setDesignItems(Array.isArray(designData) ? designData.filter((d) => d.is_active).slice(0, 4) : []);
+
+        // Build catBanners map
+        const catBannerMap = {};
+        const rawCatBanners = Array.isArray(catBannersData) ? catBannersData : [];
+        rawCatBanners.forEach((b) => {
+          const key = b.category_id ?? b.categoryId ?? '__uncategorised__';
+          catBannerMap[String(key)] = b;
+        });
+        setCatBanners(catBannerMap);
+
+        const rawProds = prodsRes.data?.data ?? prodsRes.data?.items ?? prodsRes.data ?? [];
+        setProducts(Array.isArray(rawProds) ? rawProds : []);
+
+        const rawCats = catsRes.data?.data ?? catsRes.data?.items ?? catsRes.data ?? [];
+        setCategories(Array.isArray(rawCats) ? rawCats.map((c) =>
+          typeof c === 'string' ? { id: c, name: c } : c
+        ) : []);
+      } catch (err) {
+        console.error('[HomepageFullPreview] load error:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  // Auto-advance hero carousel
+  useEffect(() => {
+    if (heroBanners.length <= 1) return;
+    heroTimer.current = setInterval(() => {
+      setHeroIdx((prev) => (prev + 1) % heroBanners.length);
+    }, 5000);
+    return () => clearInterval(heroTimer.current);
+  }, [heroBanners.length]);
+
+  useEffect(() => { setHeroIdx(0); }, [heroBanners.length]);
+
+  if (loading) {
+    return (
+      <div className="adm-card" style={{ padding: 32, textAlign: 'center', color: '#6b7280' }}>
+        <p>Memuat preview homepage…</p>
+      </div>
+    );
+  }
+
+  // Group products by category (same logic as real HomePage)
+  const grouped = categories
+    .map((cat) => ({
+      category: cat,
+      products: products.filter((p) => p.category === cat.name),
+    }))
+    .filter((g) => g.products.length > 0);
+
+  const categorisedIds = new Set(grouped.flatMap((g) => g.products.map((p) => p.id)));
+  const uncategorised = products.filter((p) => !categorisedIds.has(p.id));
+  if (uncategorised.length) grouped.push({ category: null, products: uncategorised });
+
+  const PER_SECTION = 8;
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 10, border: '2px solid var(--border)', overflow: 'hidden' }}>
+      {/* Label */}
+      <div style={{
+        padding: '10px 16px', background: '#785e40', color: '#fff',
+        fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8,
+      }}>
+        <span>🏠</span>
+        <span>PREVIEW HOMEPAGE — Tampilan customer</span>
+        <span style={{ marginLeft: 'auto', fontWeight: 400, fontSize: 12, opacity: 0.8 }}>
+          Skala 1:1 (scroll untuk melihat seluruh halaman)
+        </span>
+      </div>
+
+      {/* Preview body */}
+      <div style={{ padding: '0 0 32px', fontFamily: 'inherit', background: '#fafaf9' }}>
+
+        {/* ── Hero Carousel ── */}
+        {heroBanners.length === 0 ? (
+          <div style={{
+            height: 220, background: 'linear-gradient(135deg, #f3e9df 0%, #e8d5c4 100%)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexDirection: 'column', gap: 8, margin: '16px 16px 0',
+            borderRadius: 10, border: '1px solid var(--border)',
+          }}>
+            <p style={{ fontSize: 22, fontWeight: 900, color: '#785e40', margin: 0 }}>LANDING PAGE</p>
+            <p style={{ fontSize: 14, fontWeight: 700, color: '#9a7a5a', margin: 0 }}>4+ PAGE</p>
+          </div>
+        ) : (
+          <div style={{ position: 'relative', margin: '16px 16px 0', borderRadius: 10, overflow: 'hidden', height: 220 }}>
+            {heroBanners.map((b, i) => (
+              <div
+                key={b.id}
+                style={{
+                  position: 'absolute', inset: 0,
+                  opacity: i === heroIdx ? 1 : 0,
+                  transition: 'opacity 0.6s ease',
+                  background: b.image_path ? 'none' : 'linear-gradient(135deg, #f3e9df 0%, #e8d5c4 100%)',
+                  backgroundImage: b.image_path ? `url(${resolveImg(b.image_path)})` : undefined,
+                  backgroundSize: 'cover', backgroundPosition: 'center',
+                }}
+              >
+                {b.image_path && (
+                  <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.28)' }} />
+                )}
+                <div style={{
+                  position: 'absolute', inset: 0, display: 'flex',
+                  flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {b.title && (
+                    <p style={{ fontSize: 26, fontWeight: 900, margin: 0,
+                      color: b.image_path ? '#fff' : '#1f1f1f',
+                      textShadow: b.image_path ? '0 2px 12px rgba(0,0,0,0.5)' : 'none' }}>
+                      {b.title}
+                    </p>
+                  )}
+                  {b.subtitle && (
+                    <p style={{ fontSize: 15, fontWeight: 600, margin: '4px 0 0',
+                      color: b.image_path ? 'rgba(255,255,255,0.9)' : '#555',
+                      textShadow: b.image_path ? '0 1px 6px rgba(0,0,0,0.4)' : 'none' }}>
+                      {b.subtitle}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+            {/* Prev / Next */}
+            {heroBanners.length > 1 && (
+              <>
+                <button type="button" onClick={() => setHeroIdx((heroIdx - 1 + heroBanners.length) % heroBanners.length)}
+                  style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
+                    background: 'rgba(255,255,255,0.8)', border: 'none', borderRadius: '50%',
+                    width: 32, height: 32, cursor: 'pointer', fontSize: 18, color: '#785e40', zIndex: 2 }}>
+                  ‹
+                </button>
+                <button type="button" onClick={() => setHeroIdx((heroIdx + 1) % heroBanners.length)}
+                  style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+                    background: 'rgba(255,255,255,0.8)', border: 'none', borderRadius: '50%',
+                    width: 32, height: 32, cursor: 'pointer', fontSize: 18, color: '#785e40', zIndex: 2 }}>
+                  ›
+                </button>
+              </>
+            )}
+            {/* Dots */}
+            {heroBanners.length > 1 && (
+              <div style={{ position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)',
+                display: 'flex', gap: 6 }}>
+                {heroBanners.map((b, i) => (
+                  <button key={b.id} type="button" onClick={() => setHeroIdx(i)}
+                    style={{
+                      width: i === heroIdx ? 20 : 8, height: 8, borderRadius: 4, border: 'none',
+                      background: i === heroIdx ? '#fff' : 'rgba(255,255,255,0.5)',
+                      cursor: 'pointer', padding: 0, transition: 'width 0.3s',
+                    }} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Design Showcase (4-grid) ── */}
+        <div style={{ margin: '16px 16px 0' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+            {(designItems.length > 0 ? designItems : Array(4).fill(null)).map((item, i) => (
+              <div key={item?.id ?? i} style={{
+                aspectRatio: '1/1', borderRadius: 8, overflow: 'hidden',
+                background: item?.image_path
+                  ? 'none'
+                  : `hsl(${30 + i * 15}, 40%, ${85 - i * 3}%)`,
+                backgroundImage: item?.image_path ? `url(${resolveImg(item.image_path)})` : undefined,
+                backgroundSize: 'cover', backgroundPosition: 'center',
+                display: 'flex', alignItems: 'flex-end',
+                border: '1px solid rgba(0,0,0,0.06)',
+              }}>
+                {item?.title && (
+                  <div style={{
+                    width: '100%', padding: '8px 10px',
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 100%)',
+                  }}>
+                    <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: '#fff',
+                      textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>
+                      {item.title}
+                    </p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Search bar placeholder ── */}
+        <div style={{ margin: '16px 16px 0', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: 14, color: '#555' }}>
+            Hallo, <strong>Mau Pesan apa?</strong>
+          </span>
+          <div style={{
+            flex: 1, display: 'flex', border: '1px solid #d1d5db', borderRadius: 8,
+            overflow: 'hidden', background: '#fff', maxWidth: 400,
+          }}>
+            <input readOnly placeholder="Cari semua produk disini..."
+              style={{ flex: 1, border: 'none', outline: 'none', padding: '8px 12px', fontSize: 13, background: 'transparent' }} />
+            <button type="button" style={{ padding: '0 14px', background: '#785e40', border: 'none', cursor: 'default', color: '#fff' }}>
+              🔍
+            </button>
+          </div>
+        </div>
+
+        {/* ── Category Banners + Product Sections ── */}
+        {grouped.length === 0 ? (
+          <div style={{ padding: '24px 16px', color: '#9ca3af', textAlign: 'center', fontSize: 13 }}>
+            Belum ada produk untuk ditampilkan.
+          </div>
+        ) : (
+          grouped.map((group, idx) => {
+            const chunks = [];
+            for (let i = 0; i < group.products.length; i += PER_SECTION) {
+              chunks.push(group.products.slice(i, i + PER_SECTION));
+            }
+            const bannerKey = group.category?.id ? String(group.category.id) : '__uncategorised__';
+            const bannerData = catBanners[bannerKey] || null;
+            const catName = bannerData?.title || group.category?.name || 'Produk';
+            const bgImage = bannerData?.image_path ? `url(${resolveImg(bannerData.image_path)})` : undefined;
+            const reverse = idx % 2 !== 0;
+
+            return chunks.map((chunk, chunkIdx) => (
+              <div
+                key={`${group.category?.id ?? 'uncategorised'}-${chunkIdx}`}
+                style={{
+                  display: 'flex', flexDirection: reverse ? 'row-reverse' : 'row',
+                  gap: 12, margin: '16px 16px 0', alignItems: 'stretch',
+                }}
+              >
+                {/* Category Banner */}
+                <div style={{
+                  flex: '0 0 160px', borderRadius: 10, overflow: 'hidden',
+                  background: bgImage ? 'none' : `hsl(${25 + idx * 20}, 45%, ${80 - idx * 5}%)`,
+                  backgroundImage: bgImage,
+                  backgroundSize: 'cover', backgroundPosition: 'center',
+                  minHeight: 180, position: 'relative', display: 'flex', alignItems: 'flex-end',
+                  border: '1px solid rgba(0,0,0,0.06)',
+                }}>
+                  <div style={{
+                    width: '100%', padding: '14px 12px',
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 100%)',
+                  }}>
+                    <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#fff',
+                      textShadow: '0 1px 6px rgba(0,0,0,0.4)' }}>
+                      {catName}
+                    </p>
+                    <p style={{ margin: '2px 0 0', fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.85)' }}>
+                      {bannerData?.cta_text || 'Lihat Semua →'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Product grid */}
+                <div style={{
+                  flex: 1, display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 8,
+                }}>
+                  {chunk.map((p) => (
+                    <div key={p.id} style={{
+                      background: '#fff', borderRadius: 8, overflow: 'hidden',
+                      border: '1px solid rgba(0,0,0,0.06)',
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                    }}>
+                      <div style={{ aspectRatio: '1/1', background: '#f3e9df', overflow: 'hidden' }}>
+                        {p.image ? (
+                          <img src={p.image} alt={p.name}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                        ) : (
+                          <div style={{ width: '100%', height: '100%', display: 'flex',
+                            alignItems: 'center', justifyContent: 'center',
+                            color: '#c4a882', fontSize: 22 }}>
+                            🖼
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ padding: '6px 8px' }}>
+                        <p style={{ margin: 0, fontSize: 11, fontWeight: 600,
+                          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                          color: '#1f1f1f' }}>
+                          {p.name}
+                        </p>
+                        {p.category && (
+                          <p style={{ margin: '1px 0 0', fontSize: 10, color: '#9ca3af' }}>{p.category}</p>
+                        )}
+                        {p.price != null && (
+                          <p style={{ margin: '2px 0 0', fontSize: 11, fontWeight: 700, color: '#785e40' }}>
+                            Rp {Number(p.price).toLocaleString('id-ID')}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ));
+          })
+        )}
+      </div>
+    </div>
+  );
+}
+
 const TABS = [
   { id: 'hero',    label: 'Landing Page Banner' },
   { id: 'design',  label: 'Design Showcase' },
   { id: 'banners', label: 'Category Banners' },
   { id: 'preview', label: '▶ Preview Design' },
+  { id: 'fullpreview', label: '🏠 Preview Homepage' },
 ];
 
 export default function HomepageSection() {
@@ -1087,7 +1424,7 @@ export default function HomepageSection() {
   return (
     <div>
       {/* Tab bar */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: '2px solid var(--border)', paddingBottom: 0 }}>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: '2px solid var(--border)', paddingBottom: 0, flexWrap: 'wrap' }}>
         {TABS.map((tab) => (
           <button
             key={tab.id}
@@ -1112,10 +1449,11 @@ export default function HomepageSection() {
       </div>
 
       {/* Tab content */}
-      {activeTab === 'hero'    && <HeroTab />}
-      {activeTab === 'design'  && <DesignShowcaseTab />}
-      {activeTab === 'banners' && <CatBannersTab />}
-      {activeTab === 'preview' && <DesignPreviewCarousel />}
+      {activeTab === 'hero'        && <HeroTab />}
+      {activeTab === 'design'      && <DesignShowcaseTab />}
+      {activeTab === 'banners'     && <CatBannersTab />}
+      {activeTab === 'preview'     && <DesignPreviewCarousel />}
+      {activeTab === 'fullpreview' && <HomepageFullPreview />}
     </div>
   );
 }

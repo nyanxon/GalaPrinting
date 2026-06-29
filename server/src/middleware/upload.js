@@ -14,6 +14,7 @@ const ALLOWED_MIME = {
   chat:    ['image/jpeg', 'image/png', 'application/pdf', 'application/zip'],
   avatar:  ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
   product: ['image/jpeg', 'image/png', 'image/webp'],
+  review:  ['image/jpeg', 'image/png', 'image/webp'],
 };
 
 const MAX_SIZE = {
@@ -22,6 +23,7 @@ const MAX_SIZE = {
   chat:     5 * 1024 * 1024, //  5 MB
   avatar:   5 * 1024 * 1024, //  5 MB
   product: 10 * 1024 * 1024, // 10 MB
+  review:   5 * 1024 * 1024, //  5 MB
 };
 
 function buildUpload(type) {
@@ -45,3 +47,4 @@ export const uploadPayment = buildUpload('payment');
 export const uploadChat    = buildUpload('chat');
 export const uploadAvatar  = buildUpload('avatar');
 export const uploadProduct = buildUpload('product');
+export const uploadReview  = buildUpload('review');

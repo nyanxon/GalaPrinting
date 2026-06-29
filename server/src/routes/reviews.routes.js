@@ -8,6 +8,7 @@ import { Router } from 'express';
 import { body } from 'express-validator';
 import { authenticate } from '../middleware/auth.js';
 import { requireRole } from '../middleware/requireRole.js';
+import { uploadReview } from '../middleware/upload.js';
 import * as ctrl from '../controllers/reviews.controller.js';
 
 const router = Router();
@@ -21,6 +22,8 @@ router.post(
   '/',
   authenticate,
   requireRole('customer'),
+  // Optional photo upload (field name: 'photo')
+  uploadReview.single('photo'),
   [
     body('rating')
       .isInt({ min: 1, max: 5 })

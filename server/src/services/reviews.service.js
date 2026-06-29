@@ -30,6 +30,7 @@ export async function listReviews({ productId } = {}) {
        u.email             AS customerEmail,
        r.rating,
        r.comment,
+       r.photo_url         AS photoUrl,
        r.created_at        AS createdAt
      FROM reviews r
      LEFT JOIN products   p ON r.product_id  = p.id
@@ -53,9 +54,10 @@ export async function listReviews({ productId } = {}) {
  *   customerName: string,
  *   rating: number,
  *   comment?: string,
+ *   photoUrl?: string|null,
  * }} data
  */
-export async function createReview({ productId, orderId, orderItemId, customerId, customerName, rating, comment }) {
+export async function createReview({ productId, orderId, orderItemId, customerId, customerName, rating, comment, photoUrl }) {
   if (rating < 1 || rating > 5) {
     const err = new Error('Rating harus antara 1 dan 5.');
     err.status = 422;
@@ -89,8 +91,8 @@ export async function createReview({ productId, orderId, orderItemId, customerId
 
   const id = randomUUID();
   await query(
-    `INSERT INTO reviews (id, product_id, order_id, order_item_id, customer_id, customer_name, rating, comment)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO reviews (id, product_id, order_id, order_item_id, customer_id, customer_name, rating, comment, photo_url)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       resolvedProductId,
@@ -100,6 +102,7 @@ export async function createReview({ productId, orderId, orderItemId, customerId
       customerName,
       rating,
       comment || null,
+      photoUrl || null,
     ]
   );
 

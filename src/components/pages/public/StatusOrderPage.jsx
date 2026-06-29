@@ -54,11 +54,14 @@ function TimelineStep({ label, entry, isCurrent, isPast }) {
 function ItemReviewCard({ item, user, orderId }) {
   const [rating, setRating]       = useState(5);
   const [comment, setComment]     = useState('');
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
   const [error, setError]         = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [alreadyReviewed, setAlreadyReviewed] = useState(false);
   const [checking, setChecking]   = useState(true);
+  const fileInputRef = useRef(null);
 
   // Check on mount if this item was already reviewed
   useEffect(() => {
@@ -72,6 +75,31 @@ function ItemReviewCard({ item, user, orderId }) {
       .finally(() => setChecking(false));
   }, [item.id]);
 
+  function handlePhotoChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowed.includes(file.type)) {
+      setError('Foto harus berformat JPG, PNG, atau WEBP.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Ukuran foto maksimal 5 MB.');
+      return;
+    }
+    setPhotoFile(file);
+    const reader = new FileReader();
+    reader.onload = (evt) => setPhotoPreview(evt.target.result);
+    reader.readAsDataURL(file);
+    setError('');
+  }
+
+  function removePhoto() {
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
@@ -79,15 +107,32 @@ function ItemReviewCard({ item, user, orderId }) {
 
     setSubmitting(true);
     try {
-      await addReview({
-        productId:    item.productId ?? item.product_id ?? null,
-        orderId,
-        orderItemId:  item.id ?? null,
-        customerId:   user.id,
-        customerName: user.name,
-        rating,
-        comment: comment.trim(),
-      });
+      // If USE_BACKEND, we need to send multipart/form-data to include the photo
+      const { USE_BACKEND, api: httpClient } = await import('../../../core/httpClient.js');
+      if (USE_BACKEND && photoFile) {
+        const formData = new FormData();
+        formData.append('rating', String(rating));
+        formData.append('comment', comment.trim());
+        if (item.productId ?? item.product_id) {
+          formData.append('productId', item.productId ?? item.product_id);
+        }
+        if (orderId) formData.append('orderId', orderId);
+        if (item.id) formData.append('orderItemId', item.id);
+        formData.append('photo', photoFile);
+        await httpClient.post('/api/reviews', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      } else {
+        await addReview({
+          productId:    item.productId ?? item.product_id ?? null,
+          orderId,
+          orderItemId:  item.id ?? null,
+          customerId:   user.id,
+          customerName: user.name,
+          rating,
+          comment: comment.trim(),
+        });
+      }
       setSubmitted(true);
     } catch (err) {
       const msg = err?.response?.data?.message || 'Gagal mengirim ulasan. Silakan coba lagi.';
@@ -164,6 +209,37 @@ function ItemReviewCard({ item, user, orderId }) {
           onChange={(e) => { setComment(e.target.value); setError(''); }}
           disabled={submitting}
         />
+
+        {/* Photo upload */}
+        <div className="so-review-photo-wrap">
+          {photoPreview ? (
+            <div className="so-review-photo-preview">
+              <img src={photoPreview} alt="Preview foto ulasan"
+                style={{ maxWidth: 160, maxHeight: 120, objectFit: 'cover',
+                  borderRadius: 8, border: '1px solid #e5e7eb', display: 'block' }} />
+              <button type="button" className="so-review-photo-remove"
+                onClick={removePhoto} disabled={submitting}
+                aria-label="Hapus foto">
+                ✕ Hapus foto
+              </button>
+            </div>
+          ) : (
+            <label className="so-review-photo-label" style={{ cursor: submitting ? 'not-allowed' : 'pointer' }}>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handlePhotoChange}
+                disabled={submitting}
+                style={{ display: 'none' }}
+              />
+              <span className="so-review-photo-btn">
+                📷 Tambah Foto (opsional)
+              </span>
+              <span style={{ fontSize: 11, color: '#9ca3af', marginLeft: 6 }}>JPG, PNG, WEBP · Maks. 5 MB</span>
+            </label>
+          )}
+        </div>
 
         {error && <div className="so-review-error">{error}</div>}
 
