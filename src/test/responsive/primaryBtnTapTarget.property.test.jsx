@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Property 5: Primary action button tap target
  * Validates: Requirements 12.1
  *
@@ -190,7 +190,7 @@ function stubDimensions(el, height, width) {
 // Helper: render a button element with the given class
 // ---------------------------------------------------------------------------
 
-function renderButton(selector, tagName) {
+function renderButton(selector, _tagName) {
   // Strip the leading "." to get the class name
   const className = selector.replace(/^\./, '');
 
@@ -227,7 +227,7 @@ describe('Property 5: Primary action button tap target', () => {
    * Validates: Requirements 12.1
    */
   describe('CSS sizing rules produce ≥ 44 px tap targets', () => {
-    for (const { selector, label, simulatedHeight, simulatedWidth } of buttonDescriptors) {
+    for (const { selector, label, simulatedHeight: _sh, simulatedWidth: _sw } of buttonDescriptors) {
       it(`${label}: computed sizing rules ensure height ≥ 44px and width ≥ 44px`, () => {
         const { el, unmount } = renderButton(selector, 'button');
 
@@ -240,7 +240,6 @@ describe('Property 5: Primary action button tap target', () => {
         // present and not "none" or "0px".
         const minHeight = computed.minHeight;
         const height = computed.height;
-        const padding = computed.padding;
         const paddingTop = computed.paddingTop;
         const paddingBottom = computed.paddingBottom;
 
@@ -319,7 +318,7 @@ describe('Property 5: Primary action button tap target', () => {
       fc.property(
         selectorArbitrary,
         viewportArbitrary,
-        ({ selector, label, simulatedHeight, simulatedWidth }, viewport) => {
+        ({ selector, label: _label, simulatedHeight, simulatedWidth }, viewport) => {
           const { el, unmount } = renderButton(selector, 'button');
 
           expect(el).not.toBeNull();
@@ -352,7 +351,7 @@ describe('Property 5: Primary action button tap target', () => {
    * Validates: Requirements 12.1
    */
   it('all four primary action button selectors render a DOM element', () => {
-    for (const { selector, label } of buttonDescriptors) {
+    for (const { selector, label: _label } of buttonDescriptors) {
       const { el, unmount } = renderButton(selector, 'button');
 
       expect(el).not.toBeNull();

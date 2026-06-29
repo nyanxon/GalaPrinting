@@ -49,7 +49,11 @@ export function CartProvider({ children }) {
     try { return JSON.parse(localStorage.getItem('gala.designCache') || '{}'); } catch { return {}; }
   }
   function setDesignCache(cache) {
-    try { localStorage.setItem('gala.designCache', JSON.stringify(cache)); } catch {}
+    try {
+      localStorage.setItem('gala.designCache', JSON.stringify(cache));
+    } catch (_err) {
+      // localStorage may be unavailable (private browsing quota, etc.) — silently ignore
+    }
   }
   function mergeDesignData(serverItems) {
     const cache = getDesignCache();
@@ -95,6 +99,9 @@ export function CartProvider({ children }) {
       }
     }
     loadCart();
+  // mergeDesignData is defined inside the component and recreated on every render,
+  // but we intentionally only reload the cart when the logged-in user changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   // ---------------------------------------------------------------------------
@@ -162,7 +169,6 @@ export function CartProvider({ children }) {
             // Try fingerprint — the server item for the newly-added product
             // will have the same productId + name
             const pid = serverItem.productId ?? serverItem.product_id ?? '';
-            const legKey = `${pid}|${serverItem.name}`;
             const fpEntry = cache[fingerprint];
             if (fpEntry && pid === (item.productId ?? '') && serverItem.name === item.name) {
               // Update cache to use server-assigned ID going forward

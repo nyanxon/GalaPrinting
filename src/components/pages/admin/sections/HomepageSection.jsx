@@ -422,7 +422,7 @@ function DesignItemModal({ item, onClose, onSaved }) {
       }
       onSaved();
       onClose();
-    } catch (err) {
+    } catch (_err) {
       setError('Gagal menyimpan design item.');
     } finally {
       setSaving(false);
@@ -846,237 +846,6 @@ function CatBannersTab() {
 
 // â”€â”€ Root HomepageSection with tab switching â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// â”€â”€ D. Design Preview Carousel (interactive preview for superadmin) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-function DesignPreviewCarousel() {
-  const [items, setItems]     = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [current, setCurrent] = useState(0);
-  const [paused, setPaused]   = useState(false);
-  const timerRef = useRef(null);
-
-  useEffect(() => {
-    async function load() {
-      setLoading(true);
-      try { setItems(await listAllDesignItems()); }
-      catch { showToast('Gagal memuat design items.', 'error'); }
-      finally { setLoading(false); }
-    }
-    load();
-  }, []);
-
-  const active = items.filter((it) => it.is_active);
-  const total  = active.length;
-
-  useEffect(() => {
-    if (total <= 1 || paused) return;
-    timerRef.current = setInterval(() => {
-      setCurrent((prev) => (prev + 1) % total);
-    }, 3500);
-    return () => clearInterval(timerRef.current);
-  }, [total, paused]);
-
-  useEffect(() => { setCurrent(0); }, [total]);
-
-  function goTo(idx) { setCurrent((idx + total) % total); }
-
-  if (loading) {
-    return <p style={{ padding: 16, color: '#6b7280' }}>Memuatâ€¦</p>;
-  }
-
-  if (active.length === 0) {
-    return (
-      <div className="adm-card" style={{ padding: 32, textAlign: 'center', color: '#6b7280' }}>
-        <p style={{ fontSize: 16, marginBottom: 8 }}>Belum ada design item aktif.</p>
-        <p style={{ fontSize: 13 }}>Tambahkan design di tab <strong>Design Showcase</strong> terlebih dahulu.</p>
-      </div>
-    );
-  }
-
-  const item = active[current];
-
-  return (
-    <div className="adm-card">
-      <div className="adm-toolbar" style={{ marginBottom: 16 }}>
-        <h2 className="adm-section-title">
-          Preview Design Showcase
-          <span style={{ fontSize: 13, fontWeight: 400, color: '#6b7280', marginLeft: 8 }}>
-            ({total} design aktif)
-          </span>
-        </h2>
-      </div>
-
-      {/* Main carousel */}
-      <div
-        style={{ position: 'relative', userSelect: 'none' }}
-        onMouseEnter={() => setPaused(true)}
-        onMouseLeave={() => setPaused(false)}
-      >
-        {/* Slide */}
-        <div style={{
-          width: '100%',
-          aspectRatio: '16/7',
-          borderRadius: 10,
-          overflow: 'hidden',
-          position: 'relative',
-          background: '#f3e9df',
-          boxShadow: '0 2px 16px rgba(0,0,0,0.10)',
-        }}>
-          {active.map((it, i) => (
-            <div
-              key={it.id}
-              style={{
-                position: 'absolute', inset: 0,
-                opacity: i === current ? 1 : 0,
-                transition: 'opacity 0.5s ease',
-                pointerEvents: i === current ? 'auto' : 'none',
-              }}
-            >
-              {resolveImg(it.image_path) ? (
-                <img
-                  src={resolveImg(it.image_path)}
-                  alt={it.title || ''}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                />
-              ) : (
-                <div style={{
-                  width: '100%', height: '100%', display: 'flex',
-                  alignItems: 'center', justifyContent: 'center', color: '#aaa', fontSize: 13,
-                }}>
-                  Tidak ada gambar
-                </div>
-              )}
-              {it.title && (
-                <div style={{
-                  position: 'absolute', bottom: 0, left: 0, right: 0,
-                  padding: '18px 20px',
-                  background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 100%)',
-                }}>
-                  <p style={{ margin: 0, fontWeight: 700, fontSize: 18, color: '#fff',
-                    textShadow: '0 2px 6px rgba(0,0,0,0.5)' }}>{it.title}</p>
-                </div>
-              )}
-            </div>
-          ))}
-
-          {/* Prev / Next arrows */}
-          {total > 1 && (
-            <>
-              <button
-                type="button"
-                aria-label="Slide sebelumnya"
-                onClick={() => goTo(current - 1)}
-                style={{
-                  position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
-                  background: 'rgba(255,255,255,0.85)', border: 'none', borderRadius: '50%',
-                  width: 36, height: 36, cursor: 'pointer', display: 'flex',
-                  alignItems: 'center', justifyContent: 'center',
-                  boxShadow: '0 1px 4px rgba(0,0,0,0.18)', zIndex: 2,
-                  fontSize: 16, color: '#785e40',
-                }}
-              >â€¹</button>
-              <button
-                type="button"
-                aria-label="Slide berikutnya"
-                onClick={() => goTo(current + 1)}
-                style={{
-                  position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-                  background: 'rgba(255,255,255,0.85)', border: 'none', borderRadius: '50%',
-                  width: 36, height: 36, cursor: 'pointer', display: 'flex',
-                  alignItems: 'center', justifyContent: 'center',
-                  boxShadow: '0 1px 4px rgba(0,0,0,0.18)', zIndex: 2,
-                  fontSize: 16, color: '#785e40',
-                }}
-              >â€º</button>
-            </>
-          )}
-        </div>
-
-        {/* Dot indicators */}
-        {total > 1 && (
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 12 }}>
-            {active.map((it, i) => (
-              <button
-                key={it.id}
-                type="button"
-                aria-label={`Design ${i + 1}`}
-                onClick={() => goTo(i)}
-                style={{
-                  width: i === current ? 24 : 8,
-                  height: 8,
-                  borderRadius: 4,
-                  border: 'none',
-                  cursor: 'pointer',
-                  background: i === current ? 'var(--brand-brown, #785e40)' : 'rgba(120,94,64,0.25)',
-                  transition: 'width 0.3s ease, background 0.3s ease',
-                  padding: 0,
-                }}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Thumbnail strip */}
-      {total > 1 && (
-        <div style={{
-          display: 'flex', gap: 10, marginTop: 16,
-          overflowX: 'auto', paddingBottom: 4,
-        }}>
-          {active.map((it, i) => (
-            <button
-              key={it.id}
-              type="button"
-              aria-label={it.title || `Design ${i + 1}`}
-              onClick={() => goTo(i)}
-              style={{
-                flex: '0 0 auto',
-                width: 80, height: 56,
-                borderRadius: 6,
-                overflow: 'hidden',
-                border: `2px solid ${i === current ? 'var(--brand-brown, #785e40)' : 'transparent'}`,
-                cursor: 'pointer',
-                padding: 0,
-                background: '#f3e9df',
-                opacity: i === current ? 1 : 0.65,
-                transition: 'opacity 0.2s, border-color 0.2s',
-              }}
-            >
-              {resolveImg(it.image_path) ? (
-                <img
-                  src={resolveImg(it.image_path)}
-                  alt={it.title || ''}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                />
-              ) : (
-                <div style={{ width: '100%', height: '100%', display: 'flex',
-                  alignItems: 'center', justifyContent: 'center', color: '#ccc', fontSize: 10 }}>
-                  â€”
-                </div>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Current item info */}
-      <div style={{ marginTop: 12, padding: '10px 14px', background: '#f9f5f1', borderRadius: 8,
-        fontSize: 13, color: '#4b5563', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <span style={{ fontWeight: 600, color: '#785e40' }}>#{current + 1} / {total}</span>
-        <span>{item.title || <em>Tanpa judul</em>}</span>
-        {item.link_url && (
-          <span style={{ marginLeft: 'auto', fontSize: 12, color: '#9ca3af',
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}>
-            ðŸ”— {item.link_url}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
 // â”€â”€ E. Full Homepage Preview â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Uses the exact same CSS classes as home.css + real ProductCard component
 // so the preview looks pixel-identical to what the customer sees.
@@ -1286,7 +1055,7 @@ function HomepageFullPreview() {
         padding: '9px 16px', background: 'var(--brand-brown, #785e40)', color: '#fff',
         fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8,
       }}>
-        <span>ðŸ  PREVIEW HOMEPAGE â€” tampilan customer</span>
+        <span>ðŸ  PREVIEW HOMEPAGE â€” tampilan customer</span>
         <span style={{ marginLeft: 'auto', fontWeight: 400, fontSize: 12, opacity: 0.75 }}>
           scroll untuk melihat seluruh halaman
         </span>
@@ -1384,7 +1153,7 @@ const TABS = [
   { id: 'hero',        label: 'Landing Page Banner' },
   { id: 'design',      label: 'Design Showcase' },
   { id: 'banners',     label: 'Category Banners' },
-  { id: 'fullpreview', label: 'ðŸ  Preview Homepage' },
+  { id: 'fullpreview', label: 'ðŸ  Preview Homepage' },
 ];
 
 export default function HomepageSection() {

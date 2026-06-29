@@ -29,7 +29,7 @@ import fc from 'fast-check';
  * @returns {Array<Object>} items with designDataUrl stripped
  */
 function sanitizeCartItems(localItems) {
-  return localItems.map(({ designDataUrl, ...rest }) => rest);
+  return localItems.map(({ designDataUrl: _ddu, ...rest }) => rest);
 }
 
 // ── Arbitraries ───────────────────────────────────────────────────────────────

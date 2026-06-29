@@ -48,7 +48,11 @@ router.post(
 );
 
 router.post('/refresh', ctrl.refresh);
-router.post('/logout',  authenticate, ctrl.logout);
-router.get('/me',       authenticate, ctrl.me);
+// Logout does NOT require a valid access token — the refresh cookie is enough
+// to identify and revoke the session. Requiring authenticate here would block
+// logout whenever the access token has already expired, leaving the refresh
+// token alive in the DB until it expires naturally.
+router.post('/logout', ctrl.logout);
+router.get('/me', authenticate, ctrl.me);
 
 export default router;

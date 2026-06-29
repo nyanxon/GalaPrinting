@@ -167,7 +167,7 @@ describe('Property 10: Touch device form input sizing', () => {
    * Validates: Requirements 12.3
    */
   describe('each form input type is covered by the pointer: coarse rule', () => {
-    for (const { selector, tagName, type } of FORM_INPUT_TYPES) {
+    for (const { selector, tagName: _tagName, type: _type } of FORM_INPUT_TYPES) {
       it(`${selector} is covered by the min-height: 44px rule`, () => {
         const mediaRules = getPointerCoarseRules();
         const coarseRule = mediaRules[0];
@@ -202,7 +202,7 @@ describe('Property 10: Touch device form input sizing', () => {
     fc.assert(
       fc.property(
         inputTypeArbitrary,
-        ({ tagName, type, selector }) => {
+        ({ tagName, type, selector: _selector }) => {
           let el;
           let unmount;
 

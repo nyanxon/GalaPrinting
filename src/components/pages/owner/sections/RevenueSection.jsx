@@ -5,7 +5,7 @@
  * table, export, and quick insights.
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   TrendingUp, TrendingDown, ShoppingCart, Users, DollarSign,
   AlertCircle, BarChart2, ArrowUpRight, ArrowDownRight,
@@ -20,7 +20,6 @@ import {
 import {
   listOrdersPaginated,
   getOrderById,
-  ORDER_STATUSES,
   STATUS_CONFIG,
 } from '../../../../services/orderService.js';
 import { listCategories } from '../../../../services/categoryService.js';
@@ -185,14 +184,14 @@ function exportPdf(metrics, monthly) {
 
 /* ── Main component ────────────────────────────────────────── */
 export default function RevenueSection() {
-  // Filter state
-  const [filters, setFilters] = useState({
+  // Filter state — lazy initializer so Date.now() is only called once on mount
+  const [filters, setFilters] = useState(() => ({
     preset: '30d',
     from: new Date(Date.now() - 29 * 86400000).toISOString().slice(0, 10),
     to:   new Date().toISOString().slice(0, 10),
     categoryId: '',
     status: '',
-  });
+  }));
 
   // Data state
   const [metrics,     setMetrics]     = useState(null);
@@ -206,6 +205,8 @@ export default function RevenueSection() {
   const [loading,     setLoading]     = useState(false);
   const [error,       setError]       = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
+  // Track minutes-since-last-update as state so Date.now() is never called during render
+  const [minutesAgo,  setMinutesAgo]  = useState(0);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [detailOpen,    setDetailOpen]    = useState(false);
   const [activeSeriesKeys, setActiveSeriesKeys] = useState(new Set(['revenue', 'profit', 'orders']));
@@ -214,6 +215,15 @@ export default function RevenueSection() {
   useEffect(() => {
     listCategories().then((cats) => setCategories(Array.isArray(cats) ? cats : [])).catch(() => {});
   }, []);
+
+  // Keep minutesAgo in sync with lastUpdated — recalculates every 30 s
+  useEffect(() => {
+    if (!lastUpdated) return;
+    const calc = () => setMinutesAgo(Math.round((Date.now() - lastUpdated.getTime()) / 60000));
+    calc();
+    const id = setInterval(calc, 30_000);
+    return () => clearInterval(id);
+  }, [lastUpdated]);
 
   // Main data fetch — re-runs whenever filters or orderPage change
   const fetchAll = useCallback(async () => {
@@ -356,7 +366,7 @@ export default function RevenueSection() {
         <h2 className="adm-section-title" style={{ margin: 0 }}>Revenue Dashboard</h2>
         {lastUpdated && !loading && (
           <span className="dfb-updated" aria-live="polite">
-            updated {Math.round((Date.now() - lastUpdated.getTime()) / 60000)}m ago
+            updated {minutesAgo}m ago
           </span>
         )}
       </div>

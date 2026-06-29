@@ -470,10 +470,8 @@ describe('Property 6: Promo apply-remove round trip', () => {
         fc.float({ min: 1, max: 1e7, noNaN: true }),
         fc.float({ min: 0, max: 100, noNaN: true }),
         (subtotal, fixedValue) => {
-          let promoDiscount = null;
-
           // Apply fixed promo
-          promoDiscount = applyFixedPromo(subtotal, fixedValue);
+          let promoDiscount = applyFixedPromo(subtotal, fixedValue);
           expect(getDisplayedSubtotal(subtotal, promoDiscount)).toBeCloseTo(promoDiscount.finalSubtotal, 5);
 
           // Remove promo

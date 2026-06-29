@@ -215,7 +215,7 @@ describe('Property 6: Navbar interactive element tap target on mobile', () => {
       fc.property(
         elementArbitrary,
         viewportArbitrary,
-        ({ selector, label, simulatedHeight, simulatedWidth }, viewportWidth) => {
+        ({ selector, label: _label, simulatedHeight, simulatedWidth }, viewportWidth) => {
           const className = selector.replace(/^\./, '');
           const el = document.createElement('button');
           el.className = className;

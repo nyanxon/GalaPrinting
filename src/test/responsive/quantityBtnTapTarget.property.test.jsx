@@ -200,7 +200,7 @@ describe('Property 9: Quantity button tap target on mobile', () => {
    * Validates: Requirements 6.4
    */
   it('quantity buttons meet tap target at boundary viewports 320 px and 767 px', () => {
-    for (const viewport of [320, 767]) {
+    for (const _viewport of [320, 767]) {
       const { container, unmount } = render(
         <div className="cart-item-actions">
           <button type="button">-</button>

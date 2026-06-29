@@ -54,7 +54,6 @@ import {
   listProductsPaginated,
   listCategories,
   addProduct,
-  updateProduct,
   deleteProduct,
 } from '../services/productService.js';
 import ProductsSection from '../components/pages/admin/sections/ProductsSection.jsx';

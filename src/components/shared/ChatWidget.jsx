@@ -112,7 +112,6 @@ function ChatWidget() {
   const [pendingFile, setPendingFile] = useState(null);
   const [fileError, setFileError] = useState('');
   const bodyRef = useRef(null);
-  const fileInputRef = useRef(null);
   const cwInputRef = useRef(null);
 
   const role = user?.role ?? null;
@@ -233,10 +232,6 @@ function ChatWidget() {
 
   function handleToggle() {
     setIsOpen((prev) => !prev);
-  }
-
-  function handleClose() {
-    setIsOpen(false);
   }
 
   function handleFileChange(files) {

@@ -52,7 +52,7 @@ function simulateListOrdersByCustomer(allOrders, customerId) {
  * Simulates the updateOrderStatus function — transitions status.
  * Does NOT call StorageService.delete (unfixed behavior for non-Cancelled).
  */
-async function simulateUpdateOrderStatus(order, newStatus, storageDeleteSpy) {
+async function simulateUpdateOrderStatus(order, newStatus, _storageDeleteSpy) {
   // Only call delete when Cancelled (this is the FIXED behavior we are NOT testing here)
   // For non-Cancelled transitions, delete is never called — this is the preserved behavior
   if (newStatus !== 'Cancelled') {
@@ -69,7 +69,7 @@ async function simulateUpdateOrderStatus(order, newStatus, storageDeleteSpy) {
  * Simulates the attachPaymentProof (service) success path.
  * Returns the updated order with the new proof path.
  */
-async function simulateAttachPaymentProof(order, newPath) {
+async function _simulateAttachPaymentProof(order, newPath) {
   order.payment_proof_path = newPath;
   return { ...order, ok: true };
 }

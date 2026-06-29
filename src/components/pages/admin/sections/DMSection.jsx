@@ -130,7 +130,6 @@ export default function DMSection() {
   const [staffSearchLoading, setStaffSearchLoading] = useState(false);
 
   const messagesEndRef = useRef(null);
-  const fileInputRef = useRef(null);
   const dmInputRef = useRef(null);
 
   /* ── Load DM conversations (Req 8.1, 8.2) ─────────────── */

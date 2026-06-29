@@ -66,7 +66,7 @@ function isLoggedIn() {
  * @param {string} [userId] - kept for signature compatibility (ignored in backend mode)
  * @returns {Promise<{ items: CartItem[] }>}
  */
-export async function getCart(userId) {
+export async function getCart(_userId) {
   if (isLoggedIn()) {
     try {
       const res = await api.get("/api/cart");
@@ -101,7 +101,7 @@ export async function getCart(userId) {
  * @param {{ productId: string, name: string, price: number, quantity?: number, color?: string, size?: string, material?: string, notes?: string, designFileName?: string, designDataUrl?: string, image?: string }} item
  * @returns {Promise<{ ok: boolean, message: string }>}
  */
-export async function addToCart(userId, item) {
+export async function addToCart(_userId, item) {
   if (isLoggedIn()) {
     try {
       await api.post("/api/cart/items", {
@@ -159,7 +159,7 @@ export async function addToCart(userId, item) {
  * @param {number} quantity
  * @returns {Promise<{ ok: boolean, message: string }>}
  */
-export async function updateCartItemQty(userId, itemId, quantity) {
+export async function updateCartItemQty(_userId, itemId, quantity) {
   if (isLoggedIn()) {
     try {
       await api.patch(`/api/cart/items/${itemId}`, { quantity: Math.max(1, Number(quantity || 1)) });
@@ -192,7 +192,7 @@ export async function updateCartItemQty(userId, itemId, quantity) {
  * @param {string} itemId
  * @returns {Promise<{ ok: boolean, message: string }>}
  */
-export async function removeFromCart(userId, itemId) {
+export async function removeFromCart(_userId, itemId) {
   if (isLoggedIn()) {
     try {
       await api.delete(`/api/cart/items/${itemId}`);
@@ -222,7 +222,7 @@ export async function removeFromCart(userId, itemId) {
  * @param {string} [userId]
  * @returns {Promise<void>}
  */
-export async function clearCart(userId) {
+export async function clearCart(_userId) {
   if (isLoggedIn()) {
     try {
       await api.delete("/api/cart");
@@ -252,7 +252,7 @@ export async function clearCart(userId) {
  * @param {CartItem[]} items  - items from localStorage cart
  * @returns {Promise<{ ok: boolean }>}
  */
-export async function syncCart(userId, items) {
+export async function syncCart(_userId, items) {
   if (!USE_BACKEND) return { ok: true };
   try {
     await api.post("/api/cart/sync", { items });
@@ -288,7 +288,7 @@ export async function syncCartOnLogin() {
   const localItems = loadLocalCart();
   if (localItems.length === 0) return;
   // Strip base64 design data — can be megabytes and exceeds the 1 MB body limit
-  const sanitized = localItems.map(({ designDataUrl, ...rest }) => rest);
+  const sanitized = localItems.map(({ designDataUrl: _ddu, ...rest }) => rest);
   await syncCart(undefined, sanitized);
 }
 

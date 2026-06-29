@@ -42,7 +42,7 @@ const DONUT_PALETTE = [
 /* ─────────────────────────────────────────────────────────── */
 /* ── Sparkline ──────────────────────────────────────────────  */
 /* ─────────────────────────────────────────────────────────── */
-function Sparkline({ data = [], color = DEFAULT_COLOR }) {
+function Sparkline({ data = [] }) {
   if (!data || data.length < 2) {
     return <span style={{ color: '#9b9b9b', fontSize: 11 }}>—</span>;
   }
@@ -435,15 +435,22 @@ function DonutChart({ data = [], title, formatValue = defaultFormat }) {
   const W     = 180;
   const H     = 180;
 
-  // Build SVG arc segments
-  let cumulative = 0;
-  const slices = data.map((d, i) => {
-    const color    = d.color || DONUT_PALETTE[i % DONUT_PALETTE.length];
+  // Build SVG arc segments using prefix sums — no external mutation inside map()
+  const angleData = data.map((d) => {
     const fraction = (d.value || 0) / total;
-    const angle    = fraction * 2 * Math.PI;
-    const startA   = cumulative - Math.PI / 2;
-    const endA     = startA + angle;
-    cumulative    += angle;
+    return { d, fraction, angle: fraction * 2 * Math.PI };
+  });
+
+  // Compute cumulative start angles via prefix sum (pure — no side effects)
+  const startAngles = angleData.reduce((acc, _item, i) => {
+    acc.push(i === 0 ? 0 : acc[i - 1] + angleData[i - 1].angle);
+    return acc;
+  }, []);
+
+  const slices = angleData.map(({ d, fraction, angle }, i) => {
+    const color   = d.color || DONUT_PALETTE[i % DONUT_PALETTE.length];
+    const startA  = startAngles[i] - Math.PI / 2;
+    const endA    = startA + angle;
 
     if (fraction < 0.001) return null; // skip invisible slices
 

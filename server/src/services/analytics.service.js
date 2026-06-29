@@ -24,7 +24,7 @@ const COMPLETED_STATUSES = ['Finished', 'In Delivery', 'Quality Checking', 'On P
  * @param {boolean} [includeJoin=false] - whether to include a JOIN clause for categoryId
  * @returns {{ whereClauses: string[], params: any[], joinClause: string }}
  */
-function buildFilterClauses(filters = {}, orderAlias = 'o', includeJoin = false) {
+function buildFilterClauses(filters = {}, orderAlias = 'o') {
   const { from, to, customerId, status } = filters;
   const whereClauses = [];
   const params = [];
@@ -100,8 +100,8 @@ export async function getRevenue(filters = {}) {
   );
 
   // Comparison period: same length of time immediately before the current window
-  let compParams = [];
-  let compWhere = '';
+  let compParams;
+  let compWhere;
   if (filters.from && filters.to) {
     const daysDiff = Math.round(
       (new Date(filters.to) - new Date(filters.from)) / (1000 * 60 * 60 * 24)
@@ -120,15 +120,7 @@ export async function getRevenue(filters = {}) {
     compWhere = compClauses.join(' ') + ' ' + compCatClause;
     compParams = [...compBaseParams, ...compCatP];
   } else {
-    // Default: compare to previous month
-    const { whereClauses: compClauses, params: compBaseParams } = buildFilterClauses(filters);
-    const { clause: compCatClause, params: compCatP } = buildCategoryClause(filters);
-    compWhere = compClauses.join(' ').replace(
-      /AND DATE\(o\.created_at\) >= \?/g, 'AND DATE(o.created_at) >= DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 2 MONTH), \'%Y-%m-01\')'
-    ).replace(
-      /AND DATE\(o\.created_at\) <= \?/g, 'AND DATE(o.created_at) <= LAST_DAY(DATE_SUB(NOW(), INTERVAL 1 MONTH))'
-    );
-    // Simpler: just always compute comparison for previous calendar month
+    // Default: compare to previous calendar month
     const { whereClauses: prevClauses, params: prevParams } = buildFilterClauses({
       status: filters.status,
       customerId: filters.customerId,

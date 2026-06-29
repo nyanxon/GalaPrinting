@@ -6,7 +6,6 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import placeholderImg from '../../../../assets/placeholder.svg';
 import DropZone from '../../../shared/DropZone.jsx';
 import {
   listProductsPaginated,
@@ -121,7 +120,9 @@ function parseImages(product) {
     try {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) urls = parsed;
-    } catch {}
+    } catch (_err) {
+      // Not valid JSON — fall through to single-URL fallback below
+    }
   }
 
   // 3. Fall back to single URL if JSON parse didn't yield an array

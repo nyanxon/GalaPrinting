@@ -21,7 +21,7 @@
  * test runner configured in server/src/tests/.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import fc from 'fast-check';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -101,25 +101,21 @@ async function unfixedCreateOrder(items, fakeDb) {
   const orderId = 'order-' + Math.random().toString(36).slice(2);
   const orderRow = { id: orderId, status: 'Waiting for Payment' };
 
-  // Simulate transaction: collect all operations, only commit if all succeed
+  // Simulate a transaction: collect all operations first, only commit if all succeed.
+  // If any item throws, the error propagates naturally — nothing is pushed to fakeDb.
   const pendingItems = [];
 
-  try {
-    // "Insert" order row (not committed yet)
-    for (const item of items) {
-      if (item._shouldFail) {
-        throw new Error('Simulated item insert failure');
-      }
-      pendingItems.push({ order_id: orderId, ...item });
+  for (const item of items) {
+    if (item._shouldFail) {
+      throw new Error('Simulated item insert failure');
     }
-    // All succeeded — commit
-    fakeDb.orders.push(orderRow);
-    fakeDb.orderItems.push(...pendingItems);
-    return { id: orderId };
-  } catch (err) {
-    // Rollback — nothing is added to fakeDb
-    throw err;
+    pendingItems.push({ order_id: orderId, ...item });
   }
+
+  // All items validated — commit
+  fakeDb.orders.push(orderRow);
+  fakeDb.orderItems.push(...pendingItems);
+  return { id: orderId };
 }
 
 /**

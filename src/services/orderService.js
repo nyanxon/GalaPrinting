@@ -250,7 +250,7 @@ function mapOrderItem(item) {
 export async function createOrderFromCart({ customer = {}, items, subtotal, orderType = "standard", promoCode, discountAmount }) {
   if (USE_BACKEND) {
     // Strip designDataUrl from items before sending (too large for JSON body)
-    const sanitizedItems = items.map(({ designDataUrl, designFile, ...rest }) => rest);
+    const sanitizedItems = items.map(({ designDataUrl: _ddu, designFile: _df, ...rest }) => rest);
     const order = await api.post("/api/orders", { customer, items: sanitizedItems, subtotal, orderType, promoCode: promoCode || null, discountAmount: Number(discountAmount) || 0 })
       .then((res) => mapOrder(res.data.data));
 

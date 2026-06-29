@@ -91,7 +91,7 @@ async function simulateGetAllConversationsBackend(mockApiGet) {
  *   2. POST /api/conversations/:id/messages with trimmed content
  */
 async function simulateSendTextMessageBackend(opts, mockApiPost) {
-  const { customerId, customerName, senderRole, content, convId } = opts;
+  const { customerId: _cid, customerName: _cname, senderRole, content, convId } = opts;
 
   // Step 1: createOrGetConversation (POST /api/conversations)
   // We pass convId directly to avoid testing that path here

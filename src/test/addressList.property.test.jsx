@@ -2,7 +2,6 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import * as fc from 'fast-check';
 
 // Mock addressService before importing AddressList
 vi.mock('../services/addressService.js', () => ({
@@ -14,20 +13,6 @@ vi.mock('../services/addressService.js', () => ({
 
 import { getAddresses } from '../services/addressService.js';
 import AddressList from '../components/profile/AddressList.jsx';
-
-/**
- * Arbitrary for a single address object matching the backend shape.
- */
-const addressArbitrary = fc.record({
-  id: fc.uuid(),
-  user_id: fc.uuid(),
-  title: fc.string({ minLength: 1, maxLength: 50 }).map((s) => s.trim()).filter((s) => s.length > 0),
-  name: fc.string({ minLength: 1, maxLength: 80 }).map((s) => s.trim()).filter((s) => s.length > 0),
-  phone: fc.stringMatching(/^[0-9]{8,15}$/),
-  full_address: fc.string({ minLength: 5, maxLength: 200 }).map((s) => s.trim()).filter((s) => s.length > 0),
-  created_at: fc.constant('2024-01-01T00:00:00.000Z'),
-  updated_at: fc.constant('2024-01-01T00:00:00.000Z'),
-});
 
 describe('Property 6: Address list renders all saved addresses', () => {
   /**

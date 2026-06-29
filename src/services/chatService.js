@@ -653,7 +653,7 @@ export async function sendMessage({ customerId, senderId, senderRole, type = "te
  * @param {string} convId
  * @param {"admin"|"owner"|"cs"} readerRole
  */
-export async function markAsRead(convId, readerRole) {
+export async function markAsRead(convId, _readerRole) {
   if (USE_BACKEND) {
     await api.patch(`/api/conversations/${convId}/read`);
     return;

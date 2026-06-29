@@ -80,7 +80,7 @@ function Navbar() {
     closeAllPopups();
     if (!wasOpen) {
       if (name === 'kategori') {
-        try { setCategories(await listCategories()); } catch {}
+        try { setCategories(await listCategories()); } catch (_err) { /* category load failure is non-fatal */ }
         setKategoriOpen(true);
       } else if (name === 'cart')    { setCartOpen(true); }
       else if (name === 'profile')   { setProfileOpen(true); }

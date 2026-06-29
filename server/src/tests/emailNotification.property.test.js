@@ -1,6 +1,6 @@
 // Feature: customer-profile-page, Property 11: email sent iff preference enabled
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 
 /**

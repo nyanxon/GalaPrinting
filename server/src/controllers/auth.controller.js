@@ -21,7 +21,12 @@ function setRefreshCookie(res, token) {
 }
 
 function clearRefreshCookie(res) {
-  res.clearCookie(REFRESH_COOKIE, { httpOnly: true, sameSite: 'strict' });
+  // Match the same attributes used when setting the cookie so browsers honour the deletion
+  res.clearCookie(REFRESH_COOKIE, {
+    httpOnly: true,
+    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+    secure: process.env.NODE_ENV === 'production',
+  });
 }
 
 // POST /api/auth/register

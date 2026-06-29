@@ -261,7 +261,7 @@ export async function uploadPaymentProof(req, res, next) {
     if (!req.file) {
       return res.status(422).json({ ok: false, message: 'File bukti pembayaran wajib diunggah.' });
     }
-    const { path: filePath, url } = await StorageService.save(req.file, 'payments');
+    const { path: filePath } = await StorageService.save(req.file, 'payments');
     const order = await svc.attachPaymentProof(req.params.id, filePath);
 
     try {

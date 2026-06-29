@@ -63,12 +63,15 @@ export async function recordProductView(productId) {
 
 /* ── Filter helpers (localStorage fallback) ──────────────── */
 
-function isSameMonth(isoDate, year, month) {
+// These helpers are only used by the localStorage fallback path (USE_BACKEND=false).
+// They are kept here intentionally so the fallback analytics implementation remains
+// self-contained without needing separate imports.
+function _isSameMonth(isoDate, year, month) {
   const d = new Date(isoDate);
   return d.getFullYear() === year && d.getMonth() === month;
 }
 
-function isSameYear(isoDate, year) {
+function _isSameYear(isoDate, year) {
   return new Date(isoDate).getFullYear() === year;
 }
 

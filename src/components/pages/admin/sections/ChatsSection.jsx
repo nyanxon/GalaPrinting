@@ -102,7 +102,6 @@ export default function ChatsSection() {
   const [customerSearchLoading, setCustomerSearchLoading] = useState(false);
 
   const messagesEndRef = useRef(null);
-  const fileInputRef = useRef(null);
   const chatInputRef = useRef(null);
 
   const loadConversations = useCallback(async () => {

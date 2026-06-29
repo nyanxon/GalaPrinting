@@ -127,9 +127,11 @@ async function exportUploads(setLoading) {
     // Use axios with responseType: 'blob' so we get raw binary
     const res = await api.get('/api/export/uploads', { responseType: 'blob' });
     downloadBlob(res.data, `BackupGALA (Photo) ${date}.zip`);
-    const msg = err.response?.status === 404
-      ? 'Tidak ada file upload yang ditemukan di server.\nPastikan folder persistent_uploads sudah memiliki file.'
-      : 'Gagal mengambil file upload dari server. Pastikan server berjalan dan Anda sudah login.';
+  } catch (err) {
+    const msg =
+      err.response?.status === 404
+        ? 'Tidak ada file upload yang ditemukan di server.\nPastikan folder persistent_uploads sudah memiliki file.'
+        : 'Gagal mengambil file upload dari server. Pastikan server berjalan dan Anda sudah login.';
     alert(msg);
   } finally {
     setLoading(false);

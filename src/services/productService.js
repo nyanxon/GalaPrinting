@@ -147,7 +147,9 @@ function normalizeProduct(raw) {
       if (Array.isArray(parsed) && parsed.length > 0) {
         imagePrimary = parsed[0];
       }
-    } catch {}
+    } catch (_err) {
+      // Not a valid JSON array — use the raw string as-is
+    }
   }
   // Resolve relative upload paths to absolute URLs (e.g. /uploads/products/xxx.jpg
   // needs to be prefixed with VITE_API_URL when running on a different origin)
@@ -169,7 +171,9 @@ function normalizeProduct(raw) {
         try {
           const parsed = JSON.parse(raw2);
           if (Array.isArray(parsed)) return parsed.map(resolveImg).filter(Boolean);
-        } catch {}
+        } catch (_err) {
+          // Not a JSON array — fall through to single-URL path below
+        }
       }
       if (raw2 && !raw2.includes('placeholder')) return [resolveImg(raw2)].filter(Boolean);
       return [];

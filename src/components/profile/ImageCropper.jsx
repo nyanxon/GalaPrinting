@@ -114,14 +114,6 @@ const errorStyle = {
   margin: 0,
 };
 
-const labelStyle = {
-  fontSize: '14px',
-  color: '#374151',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '8px',
-};
-
 const fileInputStyle = {
   display: 'none', // hidden — triggered by styled button
 };

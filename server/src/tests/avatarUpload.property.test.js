@@ -1,7 +1,7 @@
 // Feature: customer-profile-page, Property 4: non-image MIME type rejection
 // Feature: customer-profile-page, Property 5: avatar upload persists URL
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 
 // ── Property 4: Non-image MIME type rejection ─────────────────────────────────

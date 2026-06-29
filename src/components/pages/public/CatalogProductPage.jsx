@@ -46,6 +46,9 @@ function CatalogProductPage() {
 
   // Gallery
   const [activeIndex, setActiveIndex] = useState(0);
+  // Thumbnail window: always show exactly 3 (or fewer if < 3 images)
+  const THUMB_VISIBLE = 3;
+  const [thumbStart, setThumbStart] = useState(0);
   // Zoom state
   const [zoomActive, setZoomActive] = useState(false);
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
@@ -200,10 +203,6 @@ function CatalogProductPage() {
 
   const images = product?.images?.length > 0 ? product.images : (product?.image ? [product.image] : [placeholderImg]);
   const totalImages = images.length;
-
-  // Thumbnail window: always show exactly 3 (or fewer if < 3 images)
-  const THUMB_VISIBLE = 3;
-  const [thumbStart, setThumbStart] = useState(0);
 
   const goNext = useCallback(() => {
     setActiveIndex((i) => {

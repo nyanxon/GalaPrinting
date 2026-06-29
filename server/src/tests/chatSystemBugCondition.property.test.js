@@ -18,7 +18,7 @@
  *   C7 — actual customerName passed to createOrGetConversation
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import fc from 'fast-check';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -91,19 +91,6 @@ function fixedMarkAsReadCondition(user) {
 function fixedUnhandledChatFilter(conversation) {
   // Fixed: .filter((c) => (c.unreadCount ?? 0) > 0)
   return (conversation.unreadCount ?? 0) > 0;
-}
-
-/**
- * Mirrors the FIXED getMessagesByCustomer() backend branch.
- * Fix: passes the actual customerName (not "") to createOrGetConversation.
- * Returns the customerName argument that would be passed.
- */
-async function fixedGetMessagesByCustomerCapture(customerId, customerName, mockCreateOrGet) {
-  // Fixed: const conv = await createOrGetConversation(customerId, customerName || customerId);
-  let capturedCustomerName;
-  const effectiveName = customerName || customerId;
-  await mockCreateOrGet(customerId, effectiveName, (name) => { capturedCustomerName = name; });
-  return capturedCustomerName ?? effectiveName;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
