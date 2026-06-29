@@ -58,6 +58,9 @@ function Navbar() {
 
   const role    = user?.role ?? null;
   const isStaff = role !== null && STAFF_ROLES.includes(role);
+  // Admin users can browse the public homepage — show the full profile popup for them
+  // Other staff (cashier, cs, etc.) still get the simple staff nav bar
+  const showAsStaff = isStaff && role !== 'admin';
   const cartCount = items.length;
   const cartTotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
@@ -151,7 +154,7 @@ function Navbar() {
           </Link>
 
           {/* Center: kategori + search (guests/customers only) */}
-          {!isStaff && (
+          {!showAsStaff && (
             <div className="navbar-center">
               <div className="navbar-kategori-wrap" style={{ position: 'relative' }}>
                 <button
@@ -197,7 +200,7 @@ function Navbar() {
 
           {/* Nav actions */}
           <div className="nav-actions">
-            {isStaff ? (
+            {showAsStaff ? (
               <div className="nav-auth-group">
                 {STAFF_DASHBOARD[role] && (
                   <Link className="nav-dashboard-link" to={STAFF_DASHBOARD[role].path}>
@@ -316,6 +319,14 @@ function Navbar() {
                           <Link className="profile-popup-item" to="/profile" onClick={closeAllPopups} state={{ tab: 'notifications' }}>
                             <span>🔔</span> Notifikasi
                           </Link>
+                          {role === 'admin' && (
+                            <>
+                              <div className="profile-popup-divider" />
+                              <Link className="profile-popup-item profile-popup-admin-link" to="/admin" onClick={closeAllPopups}>
+                                <span>⚙️</span> Halaman Admin
+                              </Link>
+                            </>
+                          )}
                           <div className="profile-popup-divider" />
                           <button className="profile-popup-item profile-popup-logout" type="button" onClick={handleLogout}>
                             <span>🚪</span> Keluar
@@ -378,7 +389,7 @@ function Navbar() {
         </nav>
 
         {/* Secondary nav */}
-        {!isStaff && (
+        {!showAsStaff && (
           <div className="navbar-secondary">
             <NavLink to="/tentang-kami">Tentang Kami</NavLink>
             <NavLink to="/cara-order">Cara Order</NavLink>
@@ -389,7 +400,7 @@ function Navbar() {
       </div>
 
       {/* Mobile sidebar — rendered outside .container so it can be full-height fixed */}
-      {!isStaff && (
+      {!showAsStaff && (
         <>
           {/* Backdrop overlay */}
           <div

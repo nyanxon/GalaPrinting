@@ -244,6 +244,14 @@ export default function AdminDashboardPage() {
               <StaffAvatarButton />
               <div className="staff-header-auth">
                 <span className="staff-header-name">{userName}</span>
+                <button
+                  className="staff-homepage-btn"
+                  type="button"
+                  onClick={() => navigate('/')}
+                  title="Buka Homepage"
+                >
+                  🌐 Homepage
+                </button>
                 <button className="staff-logout-btn" type="button" onClick={handleLogout}>Keluar</button>
               </div>
             </div>

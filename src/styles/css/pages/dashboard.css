@@ -337,6 +337,23 @@
   background: rgba(120, 94, 64, 0.06);
 }
 
+.staff-homepage-btn {
+  font-size: 13px;
+  color: #fff;
+  background: #785e40;
+  border: 1px solid #785e40;
+  border-radius: 999px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+  white-space: nowrap;
+}
+
+.staff-homepage-btn:hover {
+  background: #5c4630;
+  border-color: #5c4630;
+}
+
 /* ── White card wrapper for section panels ───────────────── */
 .adm-card {
   background: #fff;

@@ -714,6 +714,16 @@
   color: #b91c1c;
 }
 
+.profile-popup-admin-link {
+  color: #785e40;
+  font-weight: 600;
+}
+
+.profile-popup-admin-link:hover {
+  background: #f5f0eb;
+  color: #5c4630;
+}
+
 /* Orders link (legacy — kept for mobile nav) */
 .nav-orders-link {
   display: inline-flex;
