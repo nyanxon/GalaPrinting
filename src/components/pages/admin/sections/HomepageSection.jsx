@@ -1,5 +1,5 @@
-/**
- * HomepageSection.jsx — Admin panel section for managing Homepage content.
+﻿/**
+ * HomepageSection.jsx â€” Admin panel section for managing Homepage content.
  *
  * Tabs:
  *   A. Landing Page Banner (hero)
@@ -7,10 +7,12 @@
  *   C. Category Banners   (per-category section banners)
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { showToast } from '../../../../core/toastEmitter.js';
 import { resolveApiUrl } from '../../../../core/httpClient.js';
 import DropZone from '../../../shared/DropZone.jsx';
+import ProductCard from '../../../shared/ProductCard.jsx';
+import '../../../../styles/css/pages/home.css';
 import {
   listAllHeroBanners,
   createHeroBanner,
@@ -43,7 +45,7 @@ async function fetchCategoriesWithIds() {
   }
 }
 
-// ── Small shared helpers ──────────────────────────────────────────────────────
+// â”€â”€ Small shared helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function resolveImg(url) {
   if (!url) return null;
@@ -60,7 +62,7 @@ async function doUpload(file) {
   }
 }
 
-// ── ImagePickerField ──────────────────────────────────────────────────────────
+// â”€â”€ ImagePickerField â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 /**
  * Reusable image-picker: shows current image preview + DropZone.
  * Calls onUrlChange(url) after upload completes.
@@ -101,14 +103,14 @@ function ImagePickerField({ label, currentUrl, onUrlChange, uploading, setUpload
         onFiles={handleFiles}
         disabled={uploading}
         compact
-        label={uploading ? 'Mengunggah…' : (preview ? 'Ganti gambar' : undefined)}
-        hint="JPG, PNG, WEBP · Maks. 10 MB"
+        label={uploading ? 'Mengunggahâ€¦' : (preview ? 'Ganti gambar' : undefined)}
+        hint="JPG, PNG, WEBP Â· Maks. 10 MB"
       />
     </div>
   );
 }
 
-// ── A. Hero Banners Tab (carousel — up to 8 slides) ──────────────────────────
+// â”€â”€ A. Hero Banners Tab (carousel â€” up to 8 slides) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function HeroBannerModal({ banner, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -164,7 +166,7 @@ function HeroBannerModal({ banner, onClose, onSaved }) {
           <h2 className="adm-modal-title" id="hb-modal-title">
             {banner ? 'Edit Banner' : 'Tambah Banner'}
           </h2>
-          <button className="adm-modal-close" type="button" aria-label="Tutup" onClick={onClose}>✕</button>
+          <button className="adm-modal-close" type="button" aria-label="Tutup" onClick={onClose}>âœ•</button>
         </div>
         <div className="adm-modal-body">
           <form className="adm-form" onSubmit={handleSubmit} noValidate>
@@ -237,7 +239,7 @@ function HeroBannerModal({ banner, onClose, onSaved }) {
             {error && <div className="adm-form-alert" role="alert">{error}</div>}
             <div className="adm-form-actions">
               <button className="adm-btn adm-btn--primary" type="submit" disabled={saving || uploading}>
-                {saving ? 'Menyimpan…' : (banner ? 'Simpan Perubahan' : 'Tambah Banner')}
+                {saving ? 'Menyimpanâ€¦' : (banner ? 'Simpan Perubahan' : 'Tambah Banner')}
               </button>
               <button className="adm-btn" type="button" onClick={onClose} disabled={saving}>Batal</button>
             </div>
@@ -291,7 +293,7 @@ function HeroTab() {
           <h2 className="adm-section-title">
             Landing Page Banner
             <span style={{ fontSize: 13, fontWeight: 400, color: '#6b7280', marginLeft: 8 }}>
-              (carousel · maks. 8 slide)
+              (carousel Â· maks. 8 slide)
             </span>
           </h2>
           <div className="adm-toolbar-right">
@@ -304,7 +306,7 @@ function HeroTab() {
         </div>
 
         {loading ? (
-          <p style={{ padding: 16, color: '#6b7280' }}>Memuat…</p>
+          <p style={{ padding: 16, color: '#6b7280' }}>Memuatâ€¦</p>
         ) : banners.length === 0 ? (
           <p style={{ padding: 16, color: '#6b7280' }}>
             Belum ada banner. Tambahkan slide pertama untuk carousel Homepage.
@@ -352,9 +354,9 @@ function HeroTab() {
                   )}
                   <div className="adm-actions" style={{ marginTop: 8 }}>
                     <button className="adm-btn" type="button" style={{ padding: '3px 8px', fontSize: 12 }}
-                      onClick={() => handleMove(idx, 'up')} disabled={idx === 0} aria-label="Pindah ke atas">↑</button>
+                      onClick={() => handleMove(idx, 'up')} disabled={idx === 0} aria-label="Pindah ke atas">â†‘</button>
                     <button className="adm-btn" type="button" style={{ padding: '3px 8px', fontSize: 12 }}
-                      onClick={() => handleMove(idx, 'down')} disabled={idx >= banners.length - 1} aria-label="Pindah ke bawah">↓</button>
+                      onClick={() => handleMove(idx, 'down')} disabled={idx >= banners.length - 1} aria-label="Pindah ke bawah">â†“</button>
                     <button className="adm-btn adm-btn--edit" type="button"
                       onClick={() => { setEditing(b); setModalOpen(true); }}>Edit</button>
                     <button className="adm-btn adm-btn--delete" type="button"
@@ -378,7 +380,7 @@ function HeroTab() {
   );
 }
 
-// ── B. Design Showcase Tab ────────────────────────────────────────────────────
+// â”€â”€ B. Design Showcase Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function DesignItemModal({ item, onClose, onSaved }) {
   const [form, setForm]           = useState({
@@ -433,7 +435,7 @@ function DesignItemModal({ item, onClose, onSaved }) {
           <h2 className="adm-modal-title" id="di-modal-title">
             {item ? 'Edit Design Item' : 'Tambah Design Item'}
           </h2>
-          <button className="adm-modal-close" type="button" aria-label="Tutup" onClick={onClose}>✕</button>
+          <button className="adm-modal-close" type="button" aria-label="Tutup" onClick={onClose}>âœ•</button>
         </div>
         <div className="adm-modal-body">
           <form className="adm-form" onSubmit={handleSubmit} noValidate>
@@ -468,7 +470,7 @@ function DesignItemModal({ item, onClose, onSaved }) {
             {error && <div className="adm-form-alert" role="alert">{error}</div>}
             <div className="adm-form-actions">
               <button className="adm-btn adm-btn--primary" type="submit" disabled={saving || uploading}>
-                {saving ? 'Menyimpan…' : (item ? 'Simpan Perubahan' : 'Tambah')}
+                {saving ? 'Menyimpanâ€¦' : (item ? 'Simpan Perubahan' : 'Tambah')}
               </button>
               <button className="adm-btn" type="button" onClick={onClose} disabled={saving}>Batal</button>
             </div>
@@ -544,7 +546,7 @@ function DesignShowcaseTab() {
         </div>
 
         {loading ? (
-          <p style={{ padding: 16, color: '#6b7280' }}>Memuat…</p>
+          <p style={{ padding: 16, color: '#6b7280' }}>Memuatâ€¦</p>
         ) : items.length === 0 ? (
           <p style={{ padding: 16, color: '#6b7280' }}>Belum ada design item.</p>
         ) : (
@@ -582,9 +584,9 @@ function DesignShowcaseTab() {
                   )}
                   <div className="adm-actions" style={{ marginTop: 8 }}>
                     <button className="adm-btn" type="button" style={{ padding: '3px 8px', fontSize: 12 }}
-                      onClick={() => handleMoveUp(idx)} disabled={idx === 0} aria-label="Pindah ke atas">↑</button>
+                      onClick={() => handleMoveUp(idx)} disabled={idx === 0} aria-label="Pindah ke atas">â†‘</button>
                     <button className="adm-btn" type="button" style={{ padding: '3px 8px', fontSize: 12 }}
-                      onClick={() => handleMoveDown(idx)} disabled={idx >= items.length - 1} aria-label="Pindah ke bawah">↓</button>
+                      onClick={() => handleMoveDown(idx)} disabled={idx >= items.length - 1} aria-label="Pindah ke bawah">â†“</button>
                     <button className="adm-btn adm-btn--edit" type="button"
                       onClick={() => { setEditing(item); setModalOpen(true); }}>Edit</button>
                     <button className="adm-btn adm-btn--delete" type="button"
@@ -608,7 +610,7 @@ function DesignShowcaseTab() {
   );
 }
 
-// ── C. Category Banners Tab ───────────────────────────────────────────────────
+// â”€â”€ C. Category Banners Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function CatBannerModal({ banner, categories, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -616,7 +618,7 @@ function CatBannerModal({ banner, categories, onClose, onSaved }) {
     title:      banner?.title        || '',
     imagePath:  banner?.image_path   || '',
     linkUrl:    banner?.link_url     || '',
-    ctaText:    banner?.cta_text     || 'Lihat Semua →',
+    ctaText:    banner?.cta_text     || 'Lihat Semua â†’',
   });
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving]       = useState(false);
@@ -637,7 +639,7 @@ function CatBannerModal({ banner, categories, onClose, onSaved }) {
         title:      form.title      || null,
         imagePath:  form.imagePath  || null,
         linkUrl:    form.linkUrl    || null,
-        ctaText:    form.ctaText    || 'Lihat Semua →',
+        ctaText:    form.ctaText    || 'Lihat Semua â†’',
       });
       showToast('Category banner disimpan.', 'success');
       onSaved();
@@ -656,7 +658,7 @@ function CatBannerModal({ banner, categories, onClose, onSaved }) {
           <h2 className="adm-modal-title" id="cb-modal-title">
             {banner ? 'Edit Category Banner' : 'Tambah Category Banner'}
           </h2>
-          <button className="adm-modal-close" type="button" aria-label="Tutup" onClick={onClose}>✕</button>
+          <button className="adm-modal-close" type="button" aria-label="Tutup" onClick={onClose}>âœ•</button>
         </div>
         <div className="adm-modal-body">
           <form className="adm-form" onSubmit={handleSubmit} noValidate>
@@ -664,7 +666,7 @@ function CatBannerModal({ banner, categories, onClose, onSaved }) {
               <label className="adm-label" htmlFor="cb-cat">Kategori</label>
               <select className="adm-input" id="cb-cat" name="categoryId"
                 value={form.categoryId} onChange={handleChange}>
-                <option value="">— Produk (tanpa kategori) —</option>
+                <option value="">â€” Produk (tanpa kategori) â€”</option>
                 {categories.map((c) => (
                   <option key={c.id || c} value={c.id || c}>{c.name || c}</option>
                 ))}
@@ -690,7 +692,7 @@ function CatBannerModal({ banner, categories, onClose, onSaved }) {
             <div className="adm-field">
               <label className="adm-label" htmlFor="cb-cta">Teks Tombol CTA</label>
               <input className="adm-input" id="cb-cta" name="ctaText"
-                value={form.ctaText} onChange={handleChange} placeholder="Lihat Semua →" />
+                value={form.ctaText} onChange={handleChange} placeholder="Lihat Semua â†’" />
             </div>
             {/* Preview */}
             <div style={{ marginBottom: 12 }}>
@@ -709,7 +711,7 @@ function CatBannerModal({ banner, categories, onClose, onSaved }) {
                 }}>
                   <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#fff',
                     textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>
-                    {form.title || '—'}
+                    {form.title || 'â€”'}
                   </p>
                   <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>
                     {form.ctaText}
@@ -720,7 +722,7 @@ function CatBannerModal({ banner, categories, onClose, onSaved }) {
             {error && <div className="adm-form-alert" role="alert">{error}</div>}
             <div className="adm-form-actions">
               <button className="adm-btn adm-btn--primary" type="submit" disabled={saving || uploading}>
-                {saving ? 'Menyimpan…' : 'Simpan'}
+                {saving ? 'Menyimpanâ€¦' : 'Simpan'}
               </button>
               <button className="adm-btn" type="button" onClick={onClose} disabled={saving}>Batal</button>
             </div>
@@ -779,7 +781,7 @@ function CatBannersTab() {
         </div>
 
         {loading ? (
-          <p style={{ padding: 16, color: '#6b7280' }}>Memuat…</p>
+          <p style={{ padding: 16, color: '#6b7280' }}>Memuatâ€¦</p>
         ) : banners.length === 0 ? (
           <p style={{ padding: 16, color: '#6b7280' }}>
             Belum ada category banner. Tambahkan banner untuk setiap section kategori di Homepage.
@@ -805,12 +807,12 @@ function CatBannersTab() {
                         <img src={b.imageUrl} alt="" style={{ width: 60, height: 40,
                           objectFit: 'cover', borderRadius: 4, border: '1px solid var(--border)' }}
                           onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                      ) : <span style={{ color: '#ccc', fontSize: 12 }}>—</span>}
+                      ) : <span style={{ color: '#ccc', fontSize: 12 }}>â€”</span>}
                     </td>
                     <td>{b.category_name || b.categoryName || '(Produk)'}</td>
-                    <td>{b.title || '—'}</td>
+                    <td>{b.title || 'â€”'}</td>
                     <td style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12 }}>
-                      {b.linkUrl || '—'}
+                      {b.linkUrl || 'â€”'}
                     </td>
                     <td style={{ fontSize: 12 }}>{b.ctaText}</td>
                     <td>
@@ -841,9 +843,9 @@ function CatBannersTab() {
   );
 }
 
-// ── Root HomepageSection with tab switching ───────────────────────────────────
+// â”€â”€ Root HomepageSection with tab switching â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// ── D. Design Preview Carousel (interactive preview for superadmin) ──────────
+// â”€â”€ D. Design Preview Carousel (interactive preview for superadmin) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function DesignPreviewCarousel() {
   const [items, setItems]     = useState([]);
@@ -878,7 +880,7 @@ function DesignPreviewCarousel() {
   function goTo(idx) { setCurrent((idx + total) % total); }
 
   if (loading) {
-    return <p style={{ padding: 16, color: '#6b7280' }}>Memuat…</p>;
+    return <p style={{ padding: 16, color: '#6b7280' }}>Memuatâ€¦</p>;
   }
 
   if (active.length === 0) {
@@ -972,7 +974,7 @@ function DesignPreviewCarousel() {
                   boxShadow: '0 1px 4px rgba(0,0,0,0.18)', zIndex: 2,
                   fontSize: 16, color: '#785e40',
                 }}
-              >‹</button>
+              >â€¹</button>
               <button
                 type="button"
                 aria-label="Slide berikutnya"
@@ -985,7 +987,7 @@ function DesignPreviewCarousel() {
                   boxShadow: '0 1px 4px rgba(0,0,0,0.18)', zIndex: 2,
                   fontSize: 16, color: '#785e40',
                 }}
-              >›</button>
+              >â€º</button>
             </>
           )}
         </div>
@@ -1050,7 +1052,7 @@ function DesignPreviewCarousel() {
               ) : (
                 <div style={{ width: '100%', height: '100%', display: 'flex',
                   alignItems: 'center', justifyContent: 'center', color: '#ccc', fontSize: 10 }}>
-                  —
+                  â€”
                 </div>
               )}
             </button>
@@ -1066,7 +1068,7 @@ function DesignPreviewCarousel() {
         {item.link_url && (
           <span style={{ marginLeft: 'auto', fontSize: 12, color: '#9ca3af',
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}>
-            🔗 {item.link_url}
+            ðŸ”— {item.link_url}
           </span>
         )}
       </div>
@@ -1074,22 +1076,148 @@ function DesignPreviewCarousel() {
   );
 }
 
-// ── E. Full Homepage Preview ──────────────────────────────────────────────────
+// â”€â”€ E. Full Homepage Preview â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Uses the exact same CSS classes as home.css + real ProductCard component
+// so the preview looks pixel-identical to what the customer sees.
 
-/**
- * HomepageFullPreview — renders a full-page preview of the customer homepage
- * inside the admin panel. Uses the same data sources as the real HomePage:
- * hero banners, design showcase, category banners, and products grouped by category.
- */
+const PER_SECTION = 8;
+
+function PreviewHeroCarousel({ slides }) {
+  const [current, setCurrent] = useState(0);
+  const [paused, setPaused]   = useState(false);
+  const timerRef = useRef(null);
+  const total = slides.length;
+
+  const goTo = useCallback((idx) => setCurrent((idx + total) % total), [total]);
+
+  useEffect(() => {
+    if (total <= 1 || paused) return;
+    timerRef.current = setInterval(() => setCurrent((p) => (p + 1) % total), 5000);
+    return () => clearInterval(timerRef.current);
+  }, [total, paused]);
+
+  useEffect(() => { setCurrent(0); }, [total]);
+
+  if (total === 0) {
+    return (
+      <section className="home-hero" aria-label="Hero banner">
+        <div className="home-hero-inner">
+          <p className="home-hero-label">LANDING PAGE</p>
+          <p className="home-hero-sub">4+ PAGE</p>
+        </div>
+      </section>
+    );
+  }
+
+  const slide = slides[current];
+  return (
+    <section
+      className="home-hero home-hero--carousel"
+      aria-label="Hero banner"
+      data-has-image={slide.image_path ? 'true' : 'false'}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      <div className="home-hero-slides">
+        {slides.map((s, i) => (
+          <div key={s.id}
+            className={`home-hero-slide${i === current ? ' home-hero-slide--active' : ''}`}
+            style={s.image_path ? { backgroundImage: `url(${resolveImg(s.image_path)})`,
+              backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
+            aria-hidden={i !== current} />
+        ))}
+      </div>
+      <div className="home-hero-content">
+        <div className="home-hero-inner">
+          {slide.title    && <p className="home-hero-label">{slide.title}</p>}
+          {slide.subtitle && <p className="home-hero-sub">{slide.subtitle}</p>}
+        </div>
+      </div>
+      {total > 1 && (
+        <>
+          <button className="home-hero-arrow home-hero-arrow--prev" type="button"
+            aria-label="Slide sebelumnya" onClick={() => goTo(current - 1)}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+          <button className="home-hero-arrow home-hero-arrow--next" type="button"
+            aria-label="Slide berikutnya" onClick={() => goTo(current + 1)}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+          <div className="home-hero-dots">
+            {slides.map((s, i) => (
+              <button key={s.id}
+                className={`home-hero-dot${i === current ? ' home-hero-dot--active' : ''}`}
+                type="button" aria-label={`Slide ${i + 1}`} onClick={() => goTo(i)} />
+            ))}
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
+function PreviewDesignShowcase({ items }) {
+  const visible = items.slice(0, 4);
+  return (
+    <div className="home-cat-grid">
+      {(visible.length > 0 ? visible : Array(4).fill(null)).map((item, i) => (
+        <div key={item?.id ?? i} className={`home-cat-item ${item ? 'home-cat-item--showcase' : 'home-cat-placeholder'}`}>
+          {item?.image_path && (
+            <img src={resolveImg(item.image_path)} alt={item?.title || ''} className="home-cat-item-img"
+              onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+          )}
+          {item?.title && <span className="home-cat-item-label">{item.title}</span>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PreviewProductSection({ products, category, reverse, bannerData }) {
+  const name    = bannerData?.title || category?.name || 'Produk';
+  const ctaText = bannerData?.cta_text || 'Lihat Semua â†’';
+  const bgImage = bannerData?.image_path ? `url(${resolveImg(bannerData.image_path)})` : undefined;
+
+  const bannerEl = (
+    <div className="home-section-banner-wrap">
+      <div className="home-section-banner">
+        <div className="home-section-banner-bg"
+          style={bgImage ? { backgroundImage: bgImage, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined} />
+        <div className="home-section-banner-label">
+          <span className="home-section-banner-name">{name}</span>
+          <span className="home-section-banner-cta">{ctaText}</span>
+        </div>
+      </div>
+    </div>
+  );
+
+  const gridEl = (
+    <div className="home-section-grid" data-cols="4">
+      {products.map((p) => <ProductCard key={p.id} product={p} />)}
+    </div>
+  );
+
+  return (
+    <section className={`home-product-section${reverse ? ' home-product-section--reverse' : ''}`}
+      aria-label={category?.name ?? 'Produk'}>
+      {reverse ? <>{gridEl}{bannerEl}</> : <>{bannerEl}{gridEl}</>}
+    </section>
+  );
+}
+
 function HomepageFullPreview() {
-  const [heroBanners, setHeroBanners]   = useState([]);
-  const [designItems, setDesignItems]   = useState([]);
-  const [catBanners, setCatBanners]     = useState({});
-  const [products, setProducts]         = useState([]);
-  const [categories, setCategories]     = useState([]);
-  const [loading, setLoading]           = useState(true);
-  const [heroIdx, setHeroIdx]           = useState(0);
-  const heroTimer = useRef(null);
+  const [heroBanners, setHeroBanners] = useState([]);
+  const [designItems, setDesignItems] = useState([]);
+  const [catBanners, setCatBanners]   = useState({});
+  const [products, setProducts]       = useState([]);
+  const [categories, setCategories]   = useState([]);
+  const [loading, setLoading]         = useState(true);
 
   useEffect(() => {
     async function load() {
@@ -1099,17 +1227,15 @@ function HomepageFullPreview() {
           listAllHeroBanners().catch(() => []),
           listAllDesignItems().catch(() => []),
           listCatBanners().catch(() => []),
-          api.get('/api/products?limit=100').catch(() => ({ data: { data: [] } })),
+          api.get('/api/products?limit=200').catch(() => ({ data: { data: [] } })),
           api.get('/api/categories').catch(() => ({ data: [] })),
         ]);
 
         setHeroBanners(Array.isArray(bannersData) ? bannersData.filter((b) => b.is_active) : []);
-        setDesignItems(Array.isArray(designData) ? designData.filter((d) => d.is_active).slice(0, 4) : []);
+        setDesignItems(Array.isArray(designData)  ? designData.filter((d) => d.is_active).slice(0, 4) : []);
 
-        // Build catBanners map
         const catBannerMap = {};
-        const rawCatBanners = Array.isArray(catBannersData) ? catBannersData : [];
-        rawCatBanners.forEach((b) => {
+        (Array.isArray(catBannersData) ? catBannersData : []).forEach((b) => {
           const key = b.category_id ?? b.categoryId ?? '__uncategorised__';
           catBannerMap[String(key)] = b;
         });
@@ -1131,26 +1257,15 @@ function HomepageFullPreview() {
     load();
   }, []);
 
-  // Auto-advance hero carousel
-  useEffect(() => {
-    if (heroBanners.length <= 1) return;
-    heroTimer.current = setInterval(() => {
-      setHeroIdx((prev) => (prev + 1) % heroBanners.length);
-    }, 5000);
-    return () => clearInterval(heroTimer.current);
-  }, [heroBanners.length]);
-
-  useEffect(() => { setHeroIdx(0); }, [heroBanners.length]);
-
   if (loading) {
     return (
       <div className="adm-card" style={{ padding: 32, textAlign: 'center', color: '#6b7280' }}>
-        <p>Memuat preview homepage…</p>
+        <p>Memuat preview homepageâ€¦</p>
       </div>
     );
   }
 
-  // Group products by category (same logic as real HomePage)
+  // Group products by category â€” same logic as real HomePage
   const grouped = categories
     .map((cat) => ({
       category: cat,
@@ -1159,263 +1274,115 @@ function HomepageFullPreview() {
     .filter((g) => g.products.length > 0);
 
   const categorisedIds = new Set(grouped.flatMap((g) => g.products.map((p) => p.id)));
-  const uncategorised = products.filter((p) => !categorisedIds.has(p.id));
+  const uncategorised  = products.filter((p) => !categorisedIds.has(p.id));
   if (uncategorised.length) grouped.push({ category: null, products: uncategorised });
 
-  const PER_SECTION = 8;
-
   return (
-    <div style={{ background: '#fff', borderRadius: 10, border: '2px solid var(--border)', overflow: 'hidden' }}>
-      {/* Label */}
+    <div style={{ border: '2px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+      {/* Admin label bar */}
       <div style={{
-        padding: '10px 16px', background: '#785e40', color: '#fff',
+        padding: '9px 16px', background: 'var(--brand-brown, #785e40)', color: '#fff',
         fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8,
       }}>
-        <span>🏠</span>
-        <span>PREVIEW HOMEPAGE — Tampilan customer</span>
-        <span style={{ marginLeft: 'auto', fontWeight: 400, fontSize: 12, opacity: 0.8 }}>
-          Skala 1:1 (scroll untuk melihat seluruh halaman)
+        <span>ðŸ  PREVIEW HOMEPAGE â€” tampilan customer</span>
+        <span style={{ marginLeft: 'auto', fontWeight: 400, fontSize: 12, opacity: 0.75 }}>
+          scroll untuk melihat seluruh halaman
         </span>
       </div>
 
-      {/* Preview body */}
-      <div style={{ padding: '0 0 32px', fontFamily: 'inherit', background: '#fafaf9' }}>
-
-        {/* ── Hero Carousel ── */}
-        {heroBanners.length === 0 ? (
-          <div style={{
-            height: 220, background: 'linear-gradient(135deg, #f3e9df 0%, #e8d5c4 100%)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexDirection: 'column', gap: 8, margin: '16px 16px 0',
-            borderRadius: 10, border: '1px solid var(--border)',
-          }}>
-            <p style={{ fontSize: 22, fontWeight: 900, color: '#785e40', margin: 0 }}>LANDING PAGE</p>
-            <p style={{ fontSize: 14, fontWeight: 700, color: '#9a7a5a', margin: 0 }}>4+ PAGE</p>
-          </div>
-        ) : (
-          <div style={{ position: 'relative', margin: '16px 16px 0', borderRadius: 10, overflow: 'hidden', height: 220 }}>
-            {heroBanners.map((b, i) => (
-              <div
-                key={b.id}
-                style={{
-                  position: 'absolute', inset: 0,
-                  opacity: i === heroIdx ? 1 : 0,
-                  transition: 'opacity 0.6s ease',
-                  background: b.image_path ? 'none' : 'linear-gradient(135deg, #f3e9df 0%, #e8d5c4 100%)',
-                  backgroundImage: b.image_path ? `url(${resolveImg(b.image_path)})` : undefined,
-                  backgroundSize: 'cover', backgroundPosition: 'center',
-                }}
-              >
-                {b.image_path && (
-                  <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.28)' }} />
-                )}
-                <div style={{
-                  position: 'absolute', inset: 0, display: 'flex',
-                  flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  {b.title && (
-                    <p style={{ fontSize: 26, fontWeight: 900, margin: 0,
-                      color: b.image_path ? '#fff' : '#1f1f1f',
-                      textShadow: b.image_path ? '0 2px 12px rgba(0,0,0,0.5)' : 'none' }}>
-                      {b.title}
-                    </p>
-                  )}
-                  {b.subtitle && (
-                    <p style={{ fontSize: 15, fontWeight: 600, margin: '4px 0 0',
-                      color: b.image_path ? 'rgba(255,255,255,0.9)' : '#555',
-                      textShadow: b.image_path ? '0 1px 6px rgba(0,0,0,0.4)' : 'none' }}>
-                      {b.subtitle}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
-            {/* Prev / Next */}
-            {heroBanners.length > 1 && (
-              <>
-                <button type="button" onClick={() => setHeroIdx((heroIdx - 1 + heroBanners.length) % heroBanners.length)}
-                  style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
-                    background: 'rgba(255,255,255,0.8)', border: 'none', borderRadius: '50%',
-                    width: 32, height: 32, cursor: 'pointer', fontSize: 18, color: '#785e40', zIndex: 2 }}>
-                  ‹
-                </button>
-                <button type="button" onClick={() => setHeroIdx((heroIdx + 1) % heroBanners.length)}
-                  style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-                    background: 'rgba(255,255,255,0.8)', border: 'none', borderRadius: '50%',
-                    width: 32, height: 32, cursor: 'pointer', fontSize: 18, color: '#785e40', zIndex: 2 }}>
-                  ›
-                </button>
-              </>
-            )}
-            {/* Dots */}
-            {heroBanners.length > 1 && (
-              <div style={{ position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)',
-                display: 'flex', gap: 6 }}>
-                {heroBanners.map((b, i) => (
-                  <button key={b.id} type="button" onClick={() => setHeroIdx(i)}
-                    style={{
-                      width: i === heroIdx ? 20 : 8, height: 8, borderRadius: 4, border: 'none',
-                      background: i === heroIdx ? '#fff' : 'rgba(255,255,255,0.5)',
-                      cursor: 'pointer', padding: 0, transition: 'width 0.3s',
-                    }} />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ── Design Showcase (4-grid) ── */}
-        <div style={{ margin: '16px 16px 0' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-            {(designItems.length > 0 ? designItems : Array(4).fill(null)).map((item, i) => (
-              <div key={item?.id ?? i} style={{
-                aspectRatio: '1/1', borderRadius: 8, overflow: 'hidden',
-                background: item?.image_path
-                  ? 'none'
-                  : `hsl(${30 + i * 15}, 40%, ${85 - i * 3}%)`,
-                backgroundImage: item?.image_path ? `url(${resolveImg(item.image_path)})` : undefined,
-                backgroundSize: 'cover', backgroundPosition: 'center',
-                display: 'flex', alignItems: 'flex-end',
-                border: '1px solid rgba(0,0,0,0.06)',
-              }}>
-                {item?.title && (
-                  <div style={{
-                    width: '100%', padding: '8px 10px',
-                    background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 100%)',
-                  }}>
-                    <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: '#fff',
-                      textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>
-                      {item.title}
-                    </p>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+      {/* â”€â”€ Exact same structure as public HomePage â”€â”€ */}
+      <main style={{ background: '#fff' }}>
+        {/* Hero carousel */}
+        <div className="container">
+          <PreviewHeroCarousel slides={heroBanners} />
         </div>
 
-        {/* ── Search bar placeholder ── */}
-        <div style={{ margin: '16px 16px 0', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 14, color: '#555' }}>
-            Hallo, <strong>Mau Pesan apa?</strong>
-          </span>
-          <div style={{
-            flex: 1, display: 'flex', border: '1px solid #d1d5db', borderRadius: 8,
-            overflow: 'hidden', background: '#fff', maxWidth: 400,
-          }}>
-            <input readOnly placeholder="Cari semua produk disini..."
-              style={{ flex: 1, border: 'none', outline: 'none', padding: '8px 12px', fontSize: 13, background: 'transparent' }} />
-            <button type="button" style={{ padding: '0 14px', background: '#785e40', border: 'none', cursor: 'default', color: '#fff' }}>
-              🔍
-            </button>
+        <div className="container">
+          {/* Design Showcase + Search */}
+          <section className="home-categories" aria-label="Design showcase">
+            <PreviewDesignShowcase items={designItems} />
+            <div className="home-search-row">
+              <span className="home-search-greeting">
+                Hallo, <strong>Mau Pesan apa?</strong>
+              </span>
+              <div className="home-search-input-wrap">
+                <input
+                  className="home-search-input"
+                  type="search"
+                  placeholder="Cari semua produk disini..."
+                  aria-label="Cari produk"
+                  readOnly
+                />
+                <button className="home-search-btn" type="button" aria-label="Cari">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8" />
+                    <path strokeLinecap="round" d="M21 21l-4.35-4.35" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          {/* Custom Order section */}
+          <section className="home-custom-order card" aria-label="Custom Order">
+            <div className="home-custom-drop">
+              <DropZone
+                accept=".jpg,.jpeg,.png,.pdf,.ai,.cdr,image/jpeg,image/png,application/pdf"
+                onFiles={() => {}}
+                label="Drop your design here"
+                hint="JPG, PNG, PDF, AI, CDR"
+              />
+            </div>
+            <div className="home-custom-info">
+              <h2 className="home-custom-title">Custom Order</h2>
+              <p className="home-custom-desc">
+                Silahkan masukkan design kamu ke dalam kotak yang telah disediakan.
+              </p>
+              <p className="home-custom-desc">
+                Kamu akan diminta untuk mengisi beberapa keterangan mengenai pesanan kamu.
+              </p>
+              <span className="btn home-custom-btn" style={{ cursor: 'default' }}>
+                Buat Pesanan
+              </span>
+            </div>
+          </section>
+
+          {/* Product sections grouped by category */}
+          <div id="home-product-sections">
+            {grouped.length === 0 ? (
+              <p className="muted" style={{ padding: '24px 0' }}>Belum ada produk.</p>
+            ) : (
+              grouped.map((group, idx) => {
+                const chunks = [];
+                for (let i = 0; i < group.products.length; i += PER_SECTION) {
+                  chunks.push(group.products.slice(i, i + PER_SECTION));
+                }
+                const bannerKey  = group.category?.id ? String(group.category.id) : '__uncategorised__';
+                const bannerData = catBanners[bannerKey] || null;
+                return chunks.map((chunk, chunkIdx) => (
+                  <PreviewProductSection
+                    key={`${group.category?.id ?? 'uncategorised'}-${chunkIdx}`}
+                    products={chunk}
+                    category={group.category}
+                    reverse={idx % 2 !== 0}
+                    bannerData={bannerData}
+                  />
+                ));
+              })
+            )}
           </div>
         </div>
-
-        {/* ── Category Banners + Product Sections ── */}
-        {grouped.length === 0 ? (
-          <div style={{ padding: '24px 16px', color: '#9ca3af', textAlign: 'center', fontSize: 13 }}>
-            Belum ada produk untuk ditampilkan.
-          </div>
-        ) : (
-          grouped.map((group, idx) => {
-            const chunks = [];
-            for (let i = 0; i < group.products.length; i += PER_SECTION) {
-              chunks.push(group.products.slice(i, i + PER_SECTION));
-            }
-            const bannerKey = group.category?.id ? String(group.category.id) : '__uncategorised__';
-            const bannerData = catBanners[bannerKey] || null;
-            const catName = bannerData?.title || group.category?.name || 'Produk';
-            const bgImage = bannerData?.image_path ? `url(${resolveImg(bannerData.image_path)})` : undefined;
-            const reverse = idx % 2 !== 0;
-
-            return chunks.map((chunk, chunkIdx) => (
-              <div
-                key={`${group.category?.id ?? 'uncategorised'}-${chunkIdx}`}
-                style={{
-                  display: 'flex', flexDirection: reverse ? 'row-reverse' : 'row',
-                  gap: 12, margin: '16px 16px 0', alignItems: 'stretch',
-                }}
-              >
-                {/* Category Banner */}
-                <div style={{
-                  flex: '0 0 160px', borderRadius: 10, overflow: 'hidden',
-                  background: bgImage ? 'none' : `hsl(${25 + idx * 20}, 45%, ${80 - idx * 5}%)`,
-                  backgroundImage: bgImage,
-                  backgroundSize: 'cover', backgroundPosition: 'center',
-                  minHeight: 180, position: 'relative', display: 'flex', alignItems: 'flex-end',
-                  border: '1px solid rgba(0,0,0,0.06)',
-                }}>
-                  <div style={{
-                    width: '100%', padding: '14px 12px',
-                    background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 100%)',
-                  }}>
-                    <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#fff',
-                      textShadow: '0 1px 6px rgba(0,0,0,0.4)' }}>
-                      {catName}
-                    </p>
-                    <p style={{ margin: '2px 0 0', fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.85)' }}>
-                      {bannerData?.cta_text || 'Lihat Semua →'}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Product grid */}
-                <div style={{
-                  flex: 1, display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 8,
-                }}>
-                  {chunk.map((p) => (
-                    <div key={p.id} style={{
-                      background: '#fff', borderRadius: 8, overflow: 'hidden',
-                      border: '1px solid rgba(0,0,0,0.06)',
-                      boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-                    }}>
-                      <div style={{ aspectRatio: '1/1', background: '#f3e9df', overflow: 'hidden' }}>
-                        {p.image ? (
-                          <img src={p.image} alt={p.name}
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                        ) : (
-                          <div style={{ width: '100%', height: '100%', display: 'flex',
-                            alignItems: 'center', justifyContent: 'center',
-                            color: '#c4a882', fontSize: 22 }}>
-                            🖼
-                          </div>
-                        )}
-                      </div>
-                      <div style={{ padding: '6px 8px' }}>
-                        <p style={{ margin: 0, fontSize: 11, fontWeight: 600,
-                          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                          color: '#1f1f1f' }}>
-                          {p.name}
-                        </p>
-                        {p.category && (
-                          <p style={{ margin: '1px 0 0', fontSize: 10, color: '#9ca3af' }}>{p.category}</p>
-                        )}
-                        {p.price != null && (
-                          <p style={{ margin: '2px 0 0', fontSize: 11, fontWeight: 700, color: '#785e40' }}>
-                            Rp {Number(p.price).toLocaleString('id-ID')}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ));
-          })
-        )}
-      </div>
+      </main>
     </div>
   );
 }
 
 const TABS = [
-  { id: 'hero',    label: 'Landing Page Banner' },
-  { id: 'design',  label: 'Design Showcase' },
-  { id: 'banners', label: 'Category Banners' },
-  { id: 'preview', label: '▶ Preview Design' },
-  { id: 'fullpreview', label: '🏠 Preview Homepage' },
+  { id: 'hero',        label: 'Landing Page Banner' },
+  { id: 'design',      label: 'Design Showcase' },
+  { id: 'banners',     label: 'Category Banners' },
+  { id: 'fullpreview', label: 'ðŸ  Preview Homepage' },
 ];
 
 export default function HomepageSection() {
@@ -1452,7 +1419,6 @@ export default function HomepageSection() {
       {activeTab === 'hero'        && <HeroTab />}
       {activeTab === 'design'      && <DesignShowcaseTab />}
       {activeTab === 'banners'     && <CatBannersTab />}
-      {activeTab === 'preview'     && <DesignPreviewCarousel />}
       {activeTab === 'fullpreview' && <HomepageFullPreview />}
     </div>
   );
