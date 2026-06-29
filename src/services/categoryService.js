@@ -124,6 +124,30 @@ export async function createCategory(name) {
 }
 
 /**
+ * Update a category name.
+ * @param {string} id
+ * @param {string} name
+ */
+export async function updateCategory(id, name) {
+  if (USE_BACKEND) {
+    try {
+      const res = await api.put(`/api/categories/${id}`, { name });
+      return { ok: true, data: res.data.data ?? res.data };
+    } catch (err) {
+      const message = err.response?.data?.message ?? 'Gagal mengubah kategori.';
+      return { ok: false, message };
+    }
+  }
+  ensureSeeded();
+  const categories = readJson(KEY, []);
+  const idx = categories.findIndex((c) => c.id === id);
+  if (idx === -1) return { ok: false, message: 'Kategori tidak ditemukan.' };
+  categories[idx] = { ...categories[idx], name };
+  writeJson(KEY, categories);
+  return { ok: true, data: categories[idx] };
+}
+
+/**
  * Delete a category by id.
  * @param {string} id
  */

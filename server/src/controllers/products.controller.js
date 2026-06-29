@@ -139,6 +139,22 @@ export async function createCategory(req, res, next) {
   }
 }
 
+export async function updateCategory(req, res, next) {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json({ ok: false, message: 'Validasi gagal.', errors: errors.mapped() });
+    }
+    const category = await svc.updateCategory(req.params.id, req.body.name);
+    if (!category) {
+      return res.status(404).json({ ok: false, message: 'Kategori tidak ditemukan.' });
+    }
+    return res.json({ ok: true, data: category });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function deleteCategory(req, res, next) {
   try {
     await svc.deleteCategory(req.params.id);

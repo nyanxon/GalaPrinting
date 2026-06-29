@@ -13,6 +13,7 @@ import { listConversations } from '../../../services/chatService.js';
 import OrdersSection from '../admin/sections/OrdersSection.jsx';
 import CustomersSection from '../admin/sections/CustomersSection.jsx';
 import ProductsSection from '../admin/sections/ProductsSection.jsx';
+import CategoriesSection from '../admin/sections/CategoriesSection.jsx';
 import ReviewsSection from '../admin/sections/ReviewsSection.jsx';
 import ChatsSection from '../admin/sections/ChatsSection.jsx';
 import PromoSection from '../admin/sections/PromoSection.jsx';
@@ -25,16 +26,17 @@ import logoImg from '../../../assets/logo.png';
 import '../../../styles/css/pages/dashboard.css';
 
 const OWNER_NAV = [
-  { id: 'dashboard',  label: 'DASHBOARD' },
-  { id: 'orders',     label: 'ORDERS' },
-  { id: 'customer',   label: 'CUSTOMER' },
-  { id: 'products',   label: 'PRODUCT' },
-  { id: 'review',     label: 'REVIEW' },
-  { id: 'chats',      label: 'CHATS' },
-  { id: 'promo',      label: 'PROMO' },
-  { id: 'revenue',    label: 'REVENUE' },
-  { id: 'reports',    label: 'REPORTS' },
-  { id: 'analytics',  label: 'ANALYTICS' },
+  { id: 'dashboard',   label: 'DASHBOARD' },
+  { id: 'orders',      label: 'ORDERS' },
+  { id: 'customer',    label: 'CUSTOMER' },
+  { id: 'products',    label: 'PRODUCT' },
+  { id: 'categories',  label: 'CATEGORIES' },
+  { id: 'review',      label: 'REVIEW' },
+  { id: 'chats',       label: 'CHATS' },
+  { id: 'promo',       label: 'PROMO' },
+  { id: 'revenue',     label: 'REVENUE' },
+  { id: 'reports',     label: 'REPORTS' },
+  { id: 'analytics',   label: 'ANALYTICS' },
 ];
 
 function ActivitySidebar({ onGoToOrders, onGoToChats }) {
@@ -158,16 +160,17 @@ export default function OwnerDashboardPage() {
 
   function renderSection() {
     switch (activeNav) {
-      case 'orders':    return <OrdersSection />;
-      case 'customer':  return <CustomersSection />;
-      case 'products':  return <ProductsSection />;
-      case 'review':    return <ReviewsSection />;
-      case 'chats':     return <ChatsSection />;
-      case 'promo':     return <PromoSection />;
-      case 'revenue':   return <RevenueSection />;
-      case 'reports':   return <ReportsSection />;
-      case 'analytics': return <AnalyticsSection />;
-      default:          return null;
+      case 'orders':      return <OrdersSection />;
+      case 'customer':    return <CustomersSection />;
+      case 'products':    return <ProductsSection />;
+      case 'categories':  return <CategoriesSection />;
+      case 'review':      return <ReviewsSection />;
+      case 'chats':       return <ChatsSection />;
+      case 'promo':       return <PromoSection />;
+      case 'revenue':     return <RevenueSection />;
+      case 'reports':     return <ReportsSection />;
+      case 'analytics':   return <AnalyticsSection />;
+      default:            return null;
     }
   }
 

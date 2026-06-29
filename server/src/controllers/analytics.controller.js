@@ -1,14 +1,35 @@
 /**
  * analytics.controller.js — Request handlers for analytics endpoints.
  *
+ * All protected endpoints now accept optional query params:
+ *   from       — YYYY-MM-DD, start of date range
+ *   to         — YYYY-MM-DD, end of date range
+ *   categoryId — UUID, filter by product category
+ *   customerId — UUID, filter by customer
+ *   status     — single order status string
+ *
  * Requirements: 12.1–12.7
  */
 
 import * as svc from '../services/analytics.service.js';
 
+/** Extract and validate filter params from req.query */
+function extractFilters(query) {
+  const filters = {};
+  const isoDate = /^\d{4}-\d{2}-\d{2}$/;
+
+  if (query.from && isoDate.test(query.from)) filters.from = query.from;
+  if (query.to   && isoDate.test(query.to))   filters.to   = query.to;
+  if (query.categoryId) filters.categoryId = String(query.categoryId);
+  if (query.customerId) filters.customerId = String(query.customerId);
+  if (query.status)     filters.status     = String(query.status);
+
+  return filters;
+}
+
 export async function getRevenue(req, res, next) {
   try {
-    const data = await svc.getRevenue();
+    const data = await svc.getRevenue(extractFilters(req.query));
     return res.json({ ok: true, data });
   } catch (err) {
     next(err);
@@ -17,7 +38,7 @@ export async function getRevenue(req, res, next) {
 
 export async function getMonthly(req, res, next) {
   try {
-    const data = await svc.getMonthlyStats();
+    const data = await svc.getMonthlyStats(extractFilters(req.query));
     return res.json({ ok: true, data });
   } catch (err) {
     next(err);
@@ -54,7 +75,7 @@ export async function getTopProductViews(req, res, next) {
 
 export async function getBestSellers(req, res, next) {
   try {
-    const data = await svc.getBestSellers();
+    const data = await svc.getBestSellers(extractFilters(req.query));
     return res.json({ ok: true, data });
   } catch (err) {
     next(err);

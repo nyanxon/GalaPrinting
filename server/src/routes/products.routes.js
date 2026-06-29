@@ -62,6 +62,14 @@ catRouter.post(
   catCtrl.createCategory
 );
 
+catRouter.put(
+  '/:id',
+  authenticate,
+  requireRole('admin', 'owner'),
+  [body('name').trim().notEmpty().withMessage('Nama kategori wajib diisi.')],
+  catCtrl.updateCategory
+);
+
 catRouter.delete(
   '/:id',
   authenticate,

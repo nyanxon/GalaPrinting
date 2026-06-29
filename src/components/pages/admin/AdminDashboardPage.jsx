@@ -17,21 +17,23 @@ import ChatsSection from './sections/ChatsSection.jsx';
 import DMSection from './sections/DMSection.jsx';
 import PromoSection from './sections/PromoSection.jsx';
 import HomepageSection from './sections/HomepageSection.jsx';
+import CategoriesSection from './sections/CategoriesSection.jsx';
 import ExportDataCards from '../../admin/ExportDataCards.jsx';
 import StaffAvatarButton from '../../shared/StaffAvatarButton.jsx';
 import logoImg from '../../../assets/logo.png';
 import '../../../styles/css/pages/dashboard.css';
 
 const ADMIN_NAV = [
-  { id: 'dashboard', label: 'DASHBOARD' },
-  { id: 'orders',    label: 'ORDERS' },
-  { id: 'customer',  label: 'CUSTOMER' },
-  { id: 'products',  label: 'PRODUCT' },
-  { id: 'review',    label: 'REVIEW' },
-  { id: 'chats',     label: 'CHATS' },
-  { id: 'dm',        label: 'DM' },
-  { id: 'promo',     label: 'PROMO' },
-  { id: 'homepage',  label: 'HOMEPAGE' },
+  { id: 'dashboard',   label: 'DASHBOARD' },
+  { id: 'orders',      label: 'ORDERS' },
+  { id: 'customer',    label: 'CUSTOMER' },
+  { id: 'products',    label: 'PRODUCT' },
+  { id: 'categories',  label: 'CATEGORIES' },
+  { id: 'review',      label: 'REVIEW' },
+  { id: 'chats',       label: 'CHATS' },
+  { id: 'dm',          label: 'DM' },
+  { id: 'promo',       label: 'PROMO' },
+  { id: 'homepage',    label: 'HOMEPAGE' },
 ];
 
 function ActivitySidebar({ onGoToOrders, onGoToChats }) {
@@ -161,15 +163,16 @@ export default function AdminDashboardPage() {
 
   function renderSection() {
     switch (activeNav) {
-      case 'orders':   return <OrdersSection />;
-      case 'customer': return <CustomersSection />;
-      case 'products': return <ProductsSection />;
-      case 'review':   return <ReviewsSection />;
-      case 'chats':    return <ChatsSection />;
-      case 'dm':       return <DMSection />;
-      case 'promo':    return <PromoSection />;
-      case 'homepage': return <HomepageSection />;
-      default:         return null;
+      case 'orders':      return <OrdersSection />;
+      case 'customer':    return <CustomersSection />;
+      case 'products':    return <ProductsSection />;
+      case 'categories':  return <CategoriesSection />;
+      case 'review':      return <ReviewsSection />;
+      case 'chats':       return <ChatsSection />;
+      case 'dm':          return <DMSection />;
+      case 'promo':       return <PromoSection />;
+      case 'homepage':    return <HomepageSection />;
+      default:            return null;
     }
   }
 

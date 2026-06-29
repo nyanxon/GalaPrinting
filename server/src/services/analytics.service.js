@@ -2,67 +2,261 @@
  * analytics.service.js — Analytics business logic.
  *
  * Requirements: 12.1–12.7
+ *
+ * All revenue/order queries now accept optional filter params:
+ *   from       — ISO date string (YYYY-MM-DD), inclusive
+ *   to         — ISO date string (YYYY-MM-DD), inclusive
+ *   categoryId — filter orders that contain items from this category
+ *   customerId — filter orders placed by a specific customer
+ *   status     — single order status string; if omitted, uses COMPLETED_STATUSES
  */
 
 import { query } from '../db/connection.js';
 
 const COMPLETED_STATUSES = ['Finished', 'In Delivery', 'Quality Checking', 'On Progress'];
 
-export async function getRevenue() {
-  const [totalRows] = await query(
-    `SELECT COALESCE(SUM(subtotal), 0) AS total
-     FROM orders
-     WHERE status IN (${COMPLETED_STATUSES.map(() => '?').join(',')})`,
-    COMPLETED_STATUSES
+/**
+ * Build a reusable WHERE fragment + params array from filter options.
+ * All returned clauses already include the leading AND keyword.
+ *
+ * @param {object} filters
+ * @param {string} [orderAlias='o'] - alias for the orders table
+ * @param {boolean} [includeJoin=false] - whether to include a JOIN clause for categoryId
+ * @returns {{ whereClauses: string[], params: any[], joinClause: string }}
+ */
+function buildFilterClauses(filters = {}, orderAlias = 'o', includeJoin = false) {
+  const { from, to, customerId, status } = filters;
+  const whereClauses = [];
+  const params = [];
+
+  if (status) {
+    whereClauses.push(`AND ${orderAlias}.status = ?`);
+    params.push(status);
+  } else {
+    whereClauses.push(
+      `AND ${orderAlias}.status IN (${COMPLETED_STATUSES.map(() => '?').join(',')})`
+    );
+    params.push(...COMPLETED_STATUSES);
+  }
+
+  if (from) {
+    whereClauses.push(`AND DATE(${orderAlias}.created_at) >= ?`);
+    params.push(from);
+  }
+
+  if (to) {
+    whereClauses.push(`AND DATE(${orderAlias}.created_at) <= ?`);
+    params.push(to);
+  }
+
+  if (customerId) {
+    whereClauses.push(`AND ${orderAlias}.customer_id = ?`);
+    params.push(customerId);
+  }
+
+  return { whereClauses, params };
+}
+
+/**
+ * Build a category-scoped sub-query clause.
+ * Returns empty string when categoryId is not set.
+ */
+function buildCategoryClause(filters = {}, orderAlias = 'o') {
+  if (!filters.categoryId) return { clause: '', params: [] };
+  // An order "belongs to" a category if any of its items belongs to a product in that category
+  const clause = `AND ${orderAlias}.id IN (
+    SELECT DISTINCT oi.order_id FROM order_items oi
+    JOIN products p ON oi.product_id = p.id
+    WHERE p.category_id = ?
+  )`;
+  return { clause, params: [filters.categoryId] };
+}
+
+// ─────────────────────────────────────────────────────────────
+
+export async function getRevenue(filters = {}) {
+  const { whereClauses, params: baseParams } = buildFilterClauses(filters);
+  const { clause: catClause, params: catParams } = buildCategoryClause(filters);
+
+  const w = whereClauses.join(' ') + ' ' + catClause;
+  const p = [...baseParams, ...catParams];
+
+  // Total aggregates
+  const [[agg]] = await query(
+    `SELECT
+       COALESCE(SUM(subtotal), 0)        AS total_revenue,
+       COALESCE(SUM(shipping_cost), 0)   AS total_shipping,
+       COALESCE(SUM(discount_amount), 0) AS total_discount,
+       COALESCE(SUM(tax_amount), 0)      AS total_tax,
+       COALESCE(SUM(refund_amount), 0)   AS total_refunds,
+       COALESCE(SUM(subtotal - discount_amount - refund_amount - shipping_cost), 0) AS total_profit,
+       COUNT(*)                           AS order_count,
+       COUNT(DISTINCT customer_id)        AS customer_count,
+       CASE WHEN COUNT(*) > 0
+         THEN COALESCE(SUM(subtotal), 0) / COUNT(*) ELSE 0 END AS aov
+     FROM orders o
+     WHERE 1=1 ${w}`,
+    p
   );
 
-  const [monthRows] = await query(
-    `SELECT COALESCE(SUM(subtotal), 0) AS total
-     FROM orders
-     WHERE status IN (${COMPLETED_STATUSES.map(() => '?').join(',')})
-       AND MONTH(created_at) = MONTH(NOW())
-       AND YEAR(created_at) = YEAR(NOW())`,
-    COMPLETED_STATUSES
+  // Comparison period: same length of time immediately before the current window
+  let compParams = [];
+  let compWhere = '';
+  if (filters.from && filters.to) {
+    const daysDiff = Math.round(
+      (new Date(filters.to) - new Date(filters.from)) / (1000 * 60 * 60 * 24)
+    ) + 1;
+    const compTo = new Date(new Date(filters.from).getTime() - 86400000).toISOString().slice(0, 10);
+    const compFrom = new Date(new Date(filters.from).getTime() - daysDiff * 86400000)
+      .toISOString()
+      .slice(0, 10);
+
+    const { whereClauses: compClauses, params: compBaseParams } = buildFilterClauses({
+      ...filters,
+      from: compFrom,
+      to: compTo,
+    });
+    const { clause: compCatClause, params: compCatP } = buildCategoryClause(filters);
+    compWhere = compClauses.join(' ') + ' ' + compCatClause;
+    compParams = [...compBaseParams, ...compCatP];
+  } else {
+    // Default: compare to previous month
+    const { whereClauses: compClauses, params: compBaseParams } = buildFilterClauses(filters);
+    const { clause: compCatClause, params: compCatP } = buildCategoryClause(filters);
+    compWhere = compClauses.join(' ').replace(
+      /AND DATE\(o\.created_at\) >= \?/g, 'AND DATE(o.created_at) >= DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 2 MONTH), \'%Y-%m-01\')'
+    ).replace(
+      /AND DATE\(o\.created_at\) <= \?/g, 'AND DATE(o.created_at) <= LAST_DAY(DATE_SUB(NOW(), INTERVAL 1 MONTH))'
+    );
+    // Simpler: just always compute comparison for previous calendar month
+    const { whereClauses: prevClauses, params: prevParams } = buildFilterClauses({
+      status: filters.status,
+      customerId: filters.customerId,
+    });
+    const { clause: prevCatClause, params: prevCatP } = buildCategoryClause(filters);
+    compWhere = prevClauses.join(' ')
+      + ` AND MONTH(o.created_at) = MONTH(DATE_SUB(NOW(), INTERVAL 1 MONTH))`
+      + ` AND YEAR(o.created_at) = YEAR(DATE_SUB(NOW(), INTERVAL 1 MONTH))`
+      + ' ' + prevCatClause;
+    compParams = [...prevParams, ...prevCatP];
+  }
+
+  const [[prevAgg]] = await query(
+    `SELECT
+       COALESCE(SUM(subtotal), 0)        AS total_revenue,
+       COALESCE(SUM(subtotal - discount_amount - refund_amount - shipping_cost), 0) AS total_profit,
+       COUNT(*)                           AS order_count,
+       COUNT(DISTINCT customer_id)        AS customer_count,
+       COALESCE(SUM(refund_amount), 0)    AS total_refunds,
+       CASE WHEN COUNT(*) > 0
+         THEN COALESCE(SUM(subtotal), 0) / COUNT(*) ELSE 0 END AS aov
+     FROM orders o
+     WHERE 1=1 ${compWhere}`,
+    compParams
   );
 
-  const [yearRows] = await query(
-    `SELECT COALESCE(SUM(subtotal), 0) AS total
-     FROM orders
-     WHERE status IN (${COMPLETED_STATUSES.map(() => '?').join(',')})
-       AND YEAR(created_at) = YEAR(NOW())`,
-    COMPLETED_STATUSES
-  );
-
+  // Revenue by day for trend chart
   const [byDayRows] = await query(
-    `SELECT DATE(created_at) AS date, COALESCE(SUM(subtotal), 0) AS revenue
-     FROM orders
-     WHERE status IN (${COMPLETED_STATUSES.map(() => '?').join(',')})
-       AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-     GROUP BY DATE(created_at)
+    `SELECT DATE(o.created_at) AS date,
+       COALESCE(SUM(o.subtotal), 0) AS revenue,
+       COALESCE(SUM(o.subtotal - o.discount_amount - o.refund_amount - o.shipping_cost), 0) AS profit,
+       COUNT(*) AS orders
+     FROM orders o
+     WHERE 1=1 ${w}
+       AND o.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+     GROUP BY DATE(o.created_at)
      ORDER BY date ASC`,
-    COMPLETED_STATUSES
+    p
+  );
+
+  // Revenue by category
+  const [byCategoryRows] = await query(
+    `SELECT
+       c.id AS category_id,
+       c.name AS category_name,
+       COALESCE(SUM(oi.price * oi.quantity), 0) AS revenue
+     FROM orders o
+     JOIN order_items oi ON oi.order_id = o.id
+     JOIN products p ON oi.product_id = p.id
+     JOIN categories c ON p.category_id = c.id
+     WHERE 1=1 ${w}
+     GROUP BY c.id, c.name
+     ORDER BY revenue DESC`,
+    p
+  );
+
+  // Revenue by payment method (sources)
+  const [bySourceRows] = await query(
+    `SELECT
+       COALESCE(payment_method, 'Tidak Diketahui') AS source,
+       COALESCE(SUM(subtotal), 0) AS revenue,
+       COUNT(*) AS orders
+     FROM orders o
+     WHERE 1=1 ${w}
+     GROUP BY payment_method
+     ORDER BY revenue DESC`,
+    p
+  );
+
+  // Returning customers: customers with >1 order in the filtered range
+  const [returningRows] = await query(
+    `SELECT COUNT(*) AS returning_customers FROM (
+       SELECT customer_id, COUNT(*) AS cnt
+       FROM orders o
+       WHERE 1=1 ${w} AND customer_id IS NOT NULL
+       GROUP BY customer_id
+       HAVING cnt > 1
+     ) AS multi_order_customers`,
+    p
   );
 
   return {
-    totalRevenue: parseFloat(totalRows[0].total),
-    thisMonth:    parseFloat(monthRows[0].total),
-    thisYear:     parseFloat(yearRows[0].total),
-    byDay:        byDayRows,
+    totalRevenue:         parseFloat(agg.total_revenue),
+    totalShipping:        parseFloat(agg.total_shipping),
+    totalDiscount:        parseFloat(agg.total_discount),
+    totalTax:             parseFloat(agg.total_tax),
+    totalRefunds:         parseFloat(agg.total_refunds),
+    totalProfit:          parseFloat(agg.total_profit),
+    orderCount:           parseInt(agg.order_count, 10),
+    customerCount:        parseInt(agg.customer_count, 10),
+    aov:                  parseFloat(agg.aov),
+    returningCustomers:   parseInt(returningRows[0]?.returning_customers ?? 0, 10),
+
+    // Previous period for comparison
+    prev: {
+      totalRevenue:  parseFloat(prevAgg.total_revenue),
+      totalProfit:   parseFloat(prevAgg.total_profit),
+      orderCount:    parseInt(prevAgg.order_count, 10),
+      customerCount: parseInt(prevAgg.customer_count, 10),
+      totalRefunds:  parseFloat(prevAgg.total_refunds),
+      aov:           parseFloat(prevAgg.aov),
+    },
+
+    byDay:       byDayRows,
+    byCategory:  byCategoryRows,
+    bySources:   bySourceRows,
   };
 }
 
-export async function getMonthlyStats() {
+export async function getMonthlyStats(filters = {}) {
+  const { whereClauses, params } = buildFilterClauses(filters);
+  const { clause: catClause, params: catParams } = buildCategoryClause(filters);
+
+  const w = whereClauses.join(' ') + ' ' + catClause;
+  const p = [...params, ...catParams];
+
   const [rows] = await query(
     `SELECT
-       DATE_FORMAT(created_at, '%Y-%m') AS month,
+       DATE_FORMAT(o.created_at, '%Y-%m') AS month,
        COUNT(*) AS order_count,
-       COALESCE(SUM(subtotal), 0) AS revenue
-     FROM orders
-     WHERE status IN (${COMPLETED_STATUSES.map(() => '?').join(',')})
-       AND created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
-     GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+       COALESCE(SUM(o.subtotal), 0) AS revenue,
+       COALESCE(SUM(o.subtotal - o.discount_amount - o.refund_amount - o.shipping_cost), 0) AS profit
+     FROM orders o
+     WHERE 1=1 ${w}
+       AND o.created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+     GROUP BY DATE_FORMAT(o.created_at, '%Y-%m')
      ORDER BY month ASC`,
-    COMPLETED_STATUSES
+    p
   );
   return rows;
 }
@@ -102,7 +296,13 @@ export async function getTopProductViews(limit = 5) {
   return rows;
 }
 
-export async function getBestSellers() {
+export async function getBestSellers(filters = {}) {
+  const { whereClauses, params } = buildFilterClauses(filters);
+  const { clause: catClause, params: catParams } = buildCategoryClause(filters);
+
+  const w = whereClauses.join(' ') + ' ' + catClause;
+  const p = [...params, ...catParams];
+
   const [rows] = await query(
     `SELECT
        oi.product_id,
@@ -114,11 +314,11 @@ export async function getBestSellers() {
      JOIN orders o ON oi.order_id = o.id
      LEFT JOIN products p ON oi.product_id = p.id
      LEFT JOIN categories c ON p.category_id = c.id
-     WHERE o.status IN (${COMPLETED_STATUSES.map(() => '?').join(',')})
+     WHERE 1=1 ${w}
      GROUP BY oi.product_id, oi.name, c.name
      ORDER BY qty DESC
      LIMIT 5`,
-    COMPLETED_STATUSES
+    p
   );
   return rows;
 }

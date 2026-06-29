@@ -244,6 +244,19 @@ export async function createCategory(name) {
 }
 
 /**
+ * Update a category name.
+ * @param {string} id
+ * @param {string} name
+ * @returns {Promise<object|null>}
+ */
+export async function updateCategory(id, name) {
+  const trimmed = String(name).trim();
+  await query('UPDATE categories SET name = ? WHERE id = ?', [trimmed, id]);
+  const [rows] = await query('SELECT * FROM categories WHERE id = ?', [id]);
+  return rows[0] || null;
+}
+
+/**
  * Delete a category by ID.
  */
 export async function deleteCategory(id) {

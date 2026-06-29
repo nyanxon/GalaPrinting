@@ -191,6 +191,10 @@ function mapOrder(row) {
     promoCode:          row.promo_code          ?? row.promoCode          ?? null,
     discountAmount:     Number(row.discount_amount ?? row.discountAmount ?? 0),
     adminNote:     row.admin_note    ?? row.adminNote    ?? "",
+    shippingCost:  Number(row.shipping_cost  ?? row.shippingCost  ?? 0),
+    taxAmount:     Number(row.tax_amount     ?? row.taxAmount     ?? 0),
+    refundAmount:  Number(row.refund_amount  ?? row.refundAmount  ?? 0),
+    paymentMethod: row.payment_method ?? row.paymentMethod ?? null,
     trackingNumber:row.tracking_number ?? row.trackingNumber ?? null,
     courierName:   row.courier_name  ?? row.courierName  ?? null,
     paymentProof:  row.payment_proof_path
