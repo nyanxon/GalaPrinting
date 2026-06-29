@@ -30,6 +30,7 @@ import {
   deleteCatBanner,
 } from '../../../../services/homepageService.js';
 import { api } from '../../../../core/httpClient.js';
+import { listProducts } from '../../../../services/productService.js';
 
 // Fetch categories as [{id, name}] objects (not the name-only array from productService)
 async function fetchCategoriesWithIds() {
@@ -1223,11 +1224,12 @@ function HomepageFullPreview() {
     async function load() {
       setLoading(true);
       try {
-        const [bannersData, designData, catBannersData, prodsRes, catsRes] = await Promise.all([
+        const [bannersData, designData, catBannersData, prods, catsRes] = await Promise.all([
           listAllHeroBanners().catch(() => []),
           listAllDesignItems().catch(() => []),
           listCatBanners().catch(() => []),
-          api.get('/api/products?limit=200').catch(() => ({ data: { data: [] } })),
+          // listProducts() uses normalizeProduct() which calls resolveApiUrl on image paths
+          listProducts().catch(() => []),
           api.get('/api/categories').catch(() => ({ data: [] })),
         ]);
 
@@ -1241,8 +1243,8 @@ function HomepageFullPreview() {
         });
         setCatBanners(catBannerMap);
 
-        const rawProds = prodsRes.data?.data ?? prodsRes.data?.items ?? prodsRes.data ?? [];
-        setProducts(Array.isArray(rawProds) ? rawProds : []);
+        // prods already has resolved image URLs from normalizeProduct()
+        setProducts(Array.isArray(prods) ? prods : []);
 
         const rawCats = catsRes.data?.data ?? catsRes.data?.items ?? catsRes.data ?? [];
         setCategories(Array.isArray(rawCats) ? rawCats.map((c) =>
