@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import placeholderImg from '../../../../assets/placeholder.svg';
+import DropZone from '../../../shared/DropZone.jsx';
 import {
   listProductsPaginated,
   addProduct,
@@ -205,8 +206,7 @@ function ProductModal({ product, categories, onClose, onSaved }) {
     });
   }
 
-  async function handleImageUpload(e) {
-    const files = Array.from(e.target.files || []);
+  async function handleImageUpload(files) {
     if (images.length + files.length > 8) {
       setImageError('Maksimal 8 foto diperbolehkan.');
       return;
@@ -587,13 +587,12 @@ function ProductModal({ product, categories, onClose, onSaved }) {
                 </div>
               )}
               {images.length < 8 && (
-                <input
-                  type="file"
+                <DropZone
                   accept="image/jpeg,image/png,image/webp"
                   multiple
-                  onChange={handleImageUpload}
-                  className="adm-input"
-                  aria-label="Upload foto produk"
+                  onFiles={handleImageUpload}
+                  label="Tambah foto produk"
+                  hint="JPG, PNG, WEBP · Maks. 10 MB per foto · Maks. 8 foto"
                 />
               )}
               {imageError && <p style={{ color: '#ef4444', fontSize: '13px', marginTop: '4px' }}>{imageError}</p>}

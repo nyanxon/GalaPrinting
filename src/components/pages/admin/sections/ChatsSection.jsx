@@ -18,6 +18,7 @@ import {
 } from '../../../../services/chatService.js';
 import EmojiPickerButton from '../../../shared/EmojiPickerButton.jsx';
 import ChatAvatar from '../../../shared/ChatAvatar.jsx';
+import DropZone from '../../../shared/DropZone.jsx';
 
 function formatTime(iso) {
   return new Date(iso).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
@@ -227,23 +228,20 @@ export default function ChatsSection() {
     setActiveConvId(convId);
     setPendingFile(null);
     setSendError('');
-    if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
-  function handleFileChange(e) {
-    const file = e.target.files?.[0];
+  function handleFileChange(files) {
+    const file = files?.[0];
     if (!file) return;
 
     const ALLOWED = new Set(['pdf', 'png', 'jpg', 'jpeg', 'zip']);
     const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
     if (!ALLOWED.has(ext)) {
       setSendError('Format tidak didukung. Gunakan PDF, PNG, JPG, JPEG, atau ZIP.');
-      e.target.value = '';
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
       setSendError('Ukuran file maksimal 5 MB.');
-      e.target.value = '';
       return;
     }
     setSendError('');
@@ -252,7 +250,6 @@ export default function ChatsSection() {
 
   function handleRemoveFile() {
     setPendingFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
   async function handleSend() {
@@ -277,7 +274,6 @@ export default function ChatsSection() {
         return;
       }
       setPendingFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = '';
       loadMessages();
       loadConversations();
       return;
@@ -503,24 +499,14 @@ export default function ChatsSection() {
                   onEmojiSelect={(emoji) => setInputText((prev) => prev + emoji)}
                   inputRef={chatInputRef}
                 />
-                <label
-                  className="chat-file-label"
-                  htmlFor="chat-file-input"
-                  title="Kirim file"
-                  style={{ cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center' }}
-                >
-                  📎
-                </label>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  id="chat-file-input"
-                  className="cw-file-hidden"
+                <DropZone
                   accept=".pdf,.png,.jpg,.jpeg,.zip"
-                  aria-label="Upload file"
-                  onChange={handleFileChange}
-                  style={{ display: 'none' }}
-                />
+                  onFiles={handleFileChange}
+                  compact
+                  className="chat-dz-attach"
+                >
+                  <span className="chat-file-label" title="Kirim file" style={{ fontSize: '18px', display: 'flex', alignItems: 'center', padding: '0 4px' }}>📎</span>
+                </DropZone>
                 <button
                   className="chat-send-btn"
                   type="button"

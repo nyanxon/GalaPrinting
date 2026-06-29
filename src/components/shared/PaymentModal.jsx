@@ -1,5 +1,6 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import Modal from './Modal.jsx';
+import DropZone from './DropZone.jsx';
 import { formatCurrency } from '../../core/helpers.js';
 
 /* ── QRIS SVG placeholder ────────────────────────────────── */
@@ -41,22 +42,6 @@ const QRIS_SVG = (
   </svg>
 );
 
-const ALLOWED_TYPES = new Set([
-  'image/jpeg',
-  'image/png',
-  'image/gif',
-  'image/webp',
-  'image/bmp',
-  'image/tiff',
-  'image/heic',
-  'image/heif',
-  'application/pdf',
-]);
-const ALLOWED_EXTS = new Set([
-  'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'tif', 'heic', 'heif', 'pdf',
-]);
-const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
-
 /**
  * PaymentModal component
  *
@@ -81,10 +66,8 @@ function PaymentModal({ isOpen, onClose, order, subtotal: subtotalProp, onPaymen
   const [previewDataUrl, setPreviewDataUrl] = useState(null);
   const [isImageFile, setIsImageFile] = useState(false);
   const [fileError, setFileError] = useState('');
-  const [isDragging, setIsDragging] = useState(false);
   const [copyLabel, setCopyLabel] = useState('📋 Salin');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const fileInputRef = useRef(null);
 
   // Reset to step 1 when modal closes
   function handleClose() {
@@ -93,7 +76,6 @@ function PaymentModal({ isOpen, onClose, order, subtotal: subtotalProp, onPaymen
     setPreviewDataUrl(null);
     setIsImageFile(false);
     setFileError('');
-    setIsDragging(false);
     setIsSubmitting(false);
     onClose();
   }
@@ -108,24 +90,15 @@ function PaymentModal({ isOpen, onClose, order, subtotal: subtotalProp, onPaymen
     setTimeout(() => setCopyLabel('📋 Salin'), 2000);
   }
 
-  function processFile(file) {
+  function handleFiles(files) {
+    const file = files?.[0];
     if (!file) return;
     setFileError('');
     const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
-    if (!ALLOWED_TYPES.has(file.type) && !ALLOWED_EXTS.has(ext)) {
-      setFileError('Format tidak didukung. Gunakan JPG, PNG, GIF, WEBP, BMP, HEIC, atau PDF.');
-      return;
-    }
-    if (file.size > MAX_SIZE) {
-      setFileError('Ukuran file maksimal 10 MB.');
-      return;
-    }
-
-    setProofFile(file);
     const imgExt = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'tif', 'heic', 'heif']);
     const isImg = file.type.startsWith('image/') || imgExt.has(ext);
     setIsImageFile(isImg);
-
+    setProofFile(file);
     if (isImg) {
       const reader = new FileReader();
       reader.onload = (e) => setPreviewDataUrl(e.target.result);
@@ -135,40 +108,11 @@ function PaymentModal({ isOpen, onClose, order, subtotal: subtotalProp, onPaymen
     }
   }
 
-  function handleFileChange(e) {
-    const file = e.target.files?.[0];
-    if (file) processFile(file);
-  }
-
   function handleRemoveFile() {
     setProofFile(null);
     setPreviewDataUrl(null);
     setIsImageFile(false);
     setFileError('');
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  }
-
-  function handleDragOver(e) {
-    e.preventDefault();
-    setIsDragging(true);
-  }
-
-  function handleDragLeave() {
-    setIsDragging(false);
-  }
-
-  function handleDrop(e) {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer?.files?.[0];
-    if (file) {
-      if (fileInputRef.current) {
-        const dt = new DataTransfer();
-        dt.items.add(file);
-        fileInputRef.current.files = dt.files;
-      }
-      processFile(file);
-    }
   }
 
   function handleSubmitProof(e) {
@@ -356,31 +300,14 @@ function PaymentModal({ isOpen, onClose, order, subtotal: subtotalProp, onPaymen
 
               {/* Upload area with drag & drop */}
               {!proofFile && (
-                <div
-                  className={`co-proof-upload-area${isDragging ? ' co-proof-drop-area--over' : ''}`}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                >
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    id="co-proof-file"
-                    className="co-proof-file-input"
-                    accept="image/*,.pdf,.jpg,.jpeg,.png,.gif,.webp,.bmp,.tiff,.heic"
-                    aria-label="Upload bukti pembayaran"
-                    onChange={handleFileChange}
-                  />
-                  <label htmlFor="co-proof-file" className="co-proof-upload-label">
-                    <div className="co-proof-upload-icon">📎</div>
-                    <div className="co-proof-upload-text">
-                      <strong>Klik untuk pilih file</strong> atau drag &amp; drop di sini
-                    </div>
-                    <div className="co-proof-upload-hint">
-                      JPG, PNG, GIF, WEBP, BMP, HEIC, PDF — Maks. 10 MB
-                    </div>
-                  </label>
-                </div>
+                <DropZone
+                  accept="image/*,.pdf,.jpg,.jpeg,.png,.gif,.webp,.bmp,.tiff,.heic"
+                  maxSize={10 * 1024 * 1024}
+                  onFiles={handleFiles}
+                  label={<><strong>Klik untuk pilih file</strong> atau drag &amp; drop di sini</>}
+                  hint="JPG, PNG, GIF, WEBP, BMP, HEIC, PDF — Maks. 10 MB"
+                  className="co-proof-upload-area"
+                />
               )}
 
               {/* File preview */}

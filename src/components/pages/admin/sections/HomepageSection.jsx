@@ -10,6 +10,7 @@
 import { useState, useEffect } from 'react';
 import { showToast } from '../../../../core/toastEmitter.js';
 import { resolveApiUrl } from '../../../../core/httpClient.js';
+import DropZone from '../../../shared/DropZone.jsx';
 import {
   listAllHeroBanners,
   createHeroBanner,
@@ -61,7 +62,7 @@ async function doUpload(file) {
 
 // ── ImagePickerField ──────────────────────────────────────────────────────────
 /**
- * Reusable image-picker: shows current image preview + file input.
+ * Reusable image-picker: shows current image preview + DropZone.
  * Calls onUrlChange(url) after upload completes.
  */
 function ImagePickerField({ label, currentUrl, onUrlChange, uploading, setUploading }) {
@@ -71,8 +72,8 @@ function ImagePickerField({ label, currentUrl, onUrlChange, uploading, setUpload
     setPreview(resolveImg(currentUrl) || '');
   }, [currentUrl]);
 
-  async function handleFile(e) {
-    const file = e.target.files?.[0];
+  async function handleFiles(files) {
+    const file = files[0];
     if (!file) return;
     setUploading(true);
     const url = await doUpload(file);
@@ -95,15 +96,14 @@ function ImagePickerField({ label, currentUrl, onUrlChange, uploading, setUpload
           onError={(e) => { e.currentTarget.style.display = 'none'; }}
         />
       )}
-      <input
-        type="file"
+      <DropZone
         accept="image/jpeg,image/png,image/webp"
-        className="adm-input"
-        onChange={handleFile}
+        onFiles={handleFiles}
         disabled={uploading}
-        aria-label={label}
+        compact
+        label={uploading ? 'Mengunggah…' : (preview ? 'Ganti gambar' : undefined)}
+        hint="JPG, PNG, WEBP · Maks. 10 MB"
       />
-      {uploading && <p style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>Mengunggah…</p>}
     </div>
   );
 }

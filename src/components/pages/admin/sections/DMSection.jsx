@@ -21,6 +21,7 @@ import {
 import { api } from '../../../../core/httpClient.js';
 import EmojiPickerButton from '../../../shared/EmojiPickerButton.jsx';
 import ChatAvatar from '../../../shared/ChatAvatar.jsx';
+import DropZone from '../../../shared/DropZone.jsx';
 
 /* ── Helpers ─────────────────────────────────────────────── */
 
@@ -254,18 +255,16 @@ export default function DMSection() {
     setActiveConvId(convId);
     setPendingFile(null);
     setSendError('');
-    if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
   /* ── File input handling (Req 8.7, 9.3, 9.4) ────────────── */
-  function handleFileChange(e) {
-    const file = e.target.files?.[0];
+  function handleFileChange(files) {
+    const file = files?.[0];
     if (!file) return;
 
     const validation = validateFile(file);
     if (!validation.ok) {
       setSendError(validation.message);
-      e.target.value = '';
       return;
     }
     setSendError('');
@@ -274,7 +273,6 @@ export default function DMSection() {
 
   function handleRemoveFile() {
     setPendingFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
   /* ── Send message (Req 8.7, 8.10) ───────────────────────── */
@@ -291,7 +289,6 @@ export default function DMSection() {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         setPendingFile(null);
-        if (fileInputRef.current) fileInputRef.current.value = '';
         loadMessages();
         loadDMConversations();
       } catch (err) {
@@ -575,24 +572,14 @@ export default function DMSection() {
                   onEmojiSelect={(emoji) => setInputText((prev) => prev + emoji)}
                   inputRef={dmInputRef}
                 />
-                <label
-                  className="chat-file-label"
-                  htmlFor="dm-file-input"
-                  title="Kirim file"
-                  style={{ cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center' }}
-                >
-                  📎
-                </label>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  id="dm-file-input"
-                  className="cw-file-hidden"
+                <DropZone
                   accept=".pdf,.png,.jpg,.jpeg,.zip"
-                  aria-label="Upload file"
-                  onChange={handleFileChange}
-                  style={{ display: 'none' }}
-                />
+                  onFiles={handleFileChange}
+                  compact
+                  className="chat-dz-attach"
+                >
+                  <span className="chat-file-label" title="Kirim file" style={{ fontSize: '18px', display: 'flex', alignItems: 'center', padding: '0 4px' }}>📎</span>
+                </DropZone>
                 <button className="chat-send-btn" type="button" onClick={handleSend}>
                   Kirim
                 </button>

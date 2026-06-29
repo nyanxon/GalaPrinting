@@ -14,6 +14,7 @@ import { CartContext } from '../../context/CartContext.jsx';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import { getProductById, resolveVariantPrice } from '../../../services/productService.js';
 import { listReviews } from '../../../services/reviewService.js';
+import DropZone from '../../shared/DropZone.jsx';
 import placeholderImg from '../../../assets/placeholder.svg';
 import '../../../styles/css/pages/catalogProduct.css';
 
@@ -86,8 +87,6 @@ function CatalogProductPage() {
 
   const roundedRating = Math.round(averageRating);
 
-  const fileInputRef = useRef(null);
-
   useEffect(() => {
     async function load() {
       try {
@@ -134,8 +133,8 @@ function CatalogProductPage() {
     load();
   }, [id]);
 
-  function handleFileChange(e) {
-    const f = e.target.files?.[0];
+  function handleFileChange(files) {
+    const f = files?.[0] ?? null;
     if (!f) { setDesignFile(null); setDesignDataUrl(null); setDesignReadReady(true); return; }
     setDesignFile(f);
     setDesignReadReady(false);
@@ -531,34 +530,15 @@ function CatalogProductPage() {
                 (JPG, JPEG, PNG)
               </span>
             </div>
-            <label className="btn upload-file-btn" htmlFor="product-file-input">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth="2"
-                aria-hidden="true"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12V4m0 0L8 8m4-4l4 4" />
-              </svg>
-              {designFile ? 'Ganti File' : 'Upload File'}
-            </label>
-            <input
-              type="file"
-              id="product-file-input"
-              accept=".jpg,.jpeg,.png"
-              data-design
-              className="visually-hidden"
-              aria-label="Upload file desain"
-              onChange={handleFileChange}
-              ref={fileInputRef}
-            />
 
-            {/* Design preview box */}
-            {designDataUrl ? (
+            {!designDataUrl ? (
+              <DropZone
+                accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                onFiles={handleFileChange}
+                label="Upload desain kamu"
+                hint="JPG, JPEG, PNG · Maks. 10 MB"
+              />
+            ) : (
               <div className="design-preview-box">
                 <img
                   src={designDataUrl}
@@ -574,17 +554,11 @@ function CatalogProductPage() {
                     onClick={() => {
                       setDesignFile(null);
                       setDesignDataUrl(null);
-                      if (fileInputRef.current) fileInputRef.current.value = '';
                     }}
                   >
                     ✕ Hapus
                   </button>
                 </div>
-              </div>
-            ) : (
-              <div className="design-preview-empty">
-                <span>🖼️</span>
-                <span>Preview desain akan muncul di sini</span>
               </div>
             )}
           </div>

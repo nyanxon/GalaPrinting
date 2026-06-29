@@ -11,6 +11,7 @@ import {
 } from '../../services/chatService.js';
 import { USE_BACKEND } from '../../core/httpClient.js';
 import EmojiPickerButton from './EmojiPickerButton.jsx';
+import DropZone from './DropZone.jsx';
 
 /**
  * Staff roles — widget is hidden for these users (they use the dashboard).
@@ -238,15 +239,14 @@ function ChatWidget() {
     setIsOpen(false);
   }
 
-  function handleFileChange(e) {
-    const file = e.target.files?.[0];
+  function handleFileChange(files) {
+    const file = files?.[0];
     if (!file) return;
 
     const validation = validateFile(file);
     if (!validation.ok) {
       setFileError(validation.message);
       setPendingFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
@@ -256,7 +256,6 @@ function ChatWidget() {
 
   function handleRemoveFile() {
     setPendingFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
   async function handleSend() {
@@ -278,7 +277,6 @@ function ChatWidget() {
         return;
       }
       setPendingFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = '';
       loadMessages();
       return;
     }
@@ -424,18 +422,14 @@ function ChatWidget() {
                   onEmojiSelect={(emoji) => setInputText((prev) => prev + emoji)}
                   inputRef={cwInputRef}
                 />
-                <label className="cw-file-btn" htmlFor="cw-file-input" title="Kirim file (PDF, PNG, JPG, ZIP)">
-                  📎
-                </label>
-                <input
-                  type="file"
-                  id="cw-file-input"
-                  className="cw-file-hidden"
+                <DropZone
                   accept=".pdf,.png,.jpg,.jpeg,.zip"
-                  aria-label="Upload file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                />
+                  onFiles={handleFileChange}
+                  compact
+                  className="chat-dz-attach"
+                >
+                  <span className="cw-file-btn" title="Kirim file (PDF, PNG, JPG, ZIP)" style={{ display: 'flex', alignItems: 'center', padding: '0 4px' }}>📎</span>
+                </DropZone>
                 <button
                   className="cw-send"
                   id="cw-send"

@@ -11,6 +11,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import ProductCard from '../../shared/ProductCard.jsx';
+import DropZone from '../../shared/DropZone.jsx';
 import { listProducts } from '../../../services/productService.js';
 import { listCategories } from '../../../services/categoryService.js';
 import {
@@ -310,9 +311,7 @@ function HomePage() {
   const [searchQuery, setSearchQuery]     = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showDropdown, setShowDropdown]   = useState(false);
-  // Drop zone state
-  const [droppedFile, setDroppedFile] = useState(null);
-  const [isDragOver, setIsDragOver]   = useState(false);
+  const [droppedFile, setDroppedFile]     = useState(null);
   const navigate     = useNavigate();
   const dropdownRef  = useRef(null);
 
@@ -396,45 +395,18 @@ function HomePage() {
     if (e.key === 'Enter') handleSearchSubmit(e);
   }
 
-  // ── Drop zone handlers ──────────────────────────────────────────────────────
-  function processDropFile(file) {
+  // ── Drop zone: handle dropped/selected design file ──────────────────────────
+  function handleDesignFile(files) {
+    const file = files?.[0];
     if (!file) return;
     const isImage = file.type.startsWith('image/');
     if (isImage) {
       const reader = new FileReader();
-      reader.onload = (evt) => {
-        setDroppedFile({ name: file.name, previewUrl: evt.target.result });
-      };
+      reader.onload = (evt) => setDroppedFile({ name: file.name, previewUrl: evt.target.result });
       reader.readAsDataURL(file);
     } else {
       setDroppedFile({ name: file.name, previewUrl: null });
     }
-  }
-
-  function handleDropZoneFileChange(e) {
-    const file = e.target.files?.[0];
-    if (file) processDropFile(file);
-  }
-
-  function handleDropZoneDragOver(e) {
-    e.preventDefault();
-    setIsDragOver(true);
-  }
-
-  function handleDropZoneDragLeave() {
-    setIsDragOver(false);
-  }
-
-  function handleDropZoneDrop(e) {
-    e.preventDefault();
-    setIsDragOver(false);
-    const file = e.dataTransfer?.files?.[0];
-    if (file) processDropFile(file);
-  }
-
-  function handleDropZoneClear(e) {
-    e.preventDefault();
-    setDroppedFile(null);
   }
 
   return (
@@ -534,15 +506,7 @@ function HomePage() {
 
         {/* ── Custom Order ── */}
         <section className="home-custom-order card" aria-label="Custom Order">
-          <div
-            className={`home-custom-drop${isDragOver ? ' home-custom-drop--over' : ''}`}
-            id="home-drop-zone"
-            role="region"
-            aria-label="Drop design area"
-            onDragOver={handleDropZoneDragOver}
-            onDragLeave={handleDropZoneDragLeave}
-            onDrop={handleDropZoneDrop}
-          >
+          <div className="home-custom-drop" id="home-drop-zone">
             {droppedFile ? (
               <div className="home-custom-drop-preview">
                 {droppedFile.previewUrl ? (
@@ -559,23 +523,18 @@ function HomePage() {
                   className="home-custom-drop-clear"
                   type="button"
                   aria-label="Hapus file"
-                  onClick={handleDropZoneClear}
+                  onClick={() => setDroppedFile(null)}
                 >
                   ✕
                 </button>
               </div>
             ) : (
-              <>
-                <span className="home-custom-drop-label">Drop your design here</span>
-                <input
-                  type="file"
-                  accept=".jpg,.jpeg,.png,.pdf,.ai,.cdr"
-                  className="home-custom-file-input"
-                  id="home-file-input"
-                  aria-label="Upload design file"
-                  onChange={handleDropZoneFileChange}
-                />
-              </>
+              <DropZone
+                accept=".jpg,.jpeg,.png,.pdf,.ai,.cdr,image/jpeg,image/png,application/pdf"
+                onFiles={handleDesignFile}
+                label="Drop your design here"
+                hint="JPG, PNG, PDF, AI, CDR"
+              />
             )}
           </div>
           <div className="home-custom-info">
