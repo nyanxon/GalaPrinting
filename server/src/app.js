@@ -47,9 +47,21 @@ export function createApp() {
   app.use(helmet());
 
   // ── CORS ──────────────────────────────────────────────────────────────────
+  // Support multiple origins (comma-separated in CLIENT_ORIGIN env var).
+  // e.g. CLIENT_ORIGIN=https://galaprintofficialbali.co.id,http://localhost:5173
+  const allowedOrigins = config.clientOrigin
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+
   app.use(
     cors({
-      origin: config.clientOrigin,
+      origin: (origin, callback) => {
+        // Allow requests with no origin (curl, Postman, server-to-server)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        callback(new Error(`CORS: origin ${origin} not allowed`));
+      },
       credentials: true,
     })
   );
@@ -80,8 +92,36 @@ export function createApp() {
   app.use('/uploads', express.static(uploadsAbsPath));
   console.log(`[app] Serving uploads from: ${uploadsAbsPath}`);
 
+  // ── API routes ────────────────────────────────────────────────────────────
+  // IMPORTANT: API routes must be registered BEFORE any static/SPA middleware
+  // so that requests to /api/* are never intercepted by express.static.
+  //
+  // Prevent browsers from caching dynamic API responses.
+  // Individual routes that serve genuinely static/slow-changing data can
+  // override this with an explicit max-age (e.g. GET /api/categories).
+  app.use('/api', (_req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    next();
+  });
+
+  app.use('/api/auth',          authRoutes);
+  app.use('/api/products',      productRoutes);
+  app.use('/api/categories',    categoryRoutes);
+  app.use('/api/orders',        orderRoutes);
+  app.use('/api/cart',          cartRoutes);
+  app.use('/api/conversations',  chatRoutes);
+  app.use('/api/reviews',       reviewRoutes);
+  app.use('/api/analytics',     analyticsRoutes);
+  app.use('/api/users',         userRoutes);
+  app.use('/api/promo',         promoRoutes);
+  app.use('/api/profile',       profileRoutes);
+  app.use('/api/addresses',     addressRoutes);
+  app.use('/api/export',        exportRoutes);
+  app.use('/api/homepage',      homepageRoutes);
+
   // ── Serve React frontend build ───────────────────────────────────────────────
   // In production on Hostinger, backend serves both API and frontend.
+  // Registered AFTER API routes so static middleware never shadows /api/*.
   //
   // Cache strategy (3 tiers):
   //
@@ -138,30 +178,6 @@ export function createApp() {
   } else {
     console.warn('[app] Frontend dist directory not found. API only mode.');
   }
-
-  // ── API routes ────────────────────────────────────────────────────────────
-  // Prevent browsers from caching dynamic API responses.
-  // Individual routes that serve genuinely static/slow-changing data can
-  // override this with an explicit max-age (e.g. GET /api/categories).
-  app.use('/api', (_req, res, next) => {
-    res.set('Cache-Control', 'no-store');
-    next();
-  });
-
-  app.use('/api/auth',          authRoutes);
-  app.use('/api/products',      productRoutes);
-  app.use('/api/categories',    categoryRoutes);
-  app.use('/api/orders',        orderRoutes);
-  app.use('/api/cart',          cartRoutes);
-  app.use('/api/conversations',  chatRoutes);
-  app.use('/api/reviews',       reviewRoutes);
-  app.use('/api/analytics',     analyticsRoutes);
-  app.use('/api/users',         userRoutes);
-  app.use('/api/promo',         promoRoutes);
-  app.use('/api/profile',       profileRoutes);
-  app.use('/api/addresses',     addressRoutes);
-  app.use('/api/export',        exportRoutes);
-  app.use('/api/homepage',      homepageRoutes);
 
   // ── SPA catch-all — serve index.html for all non-API routes ──────────────────
   // Must be declared AFTER API routes.
