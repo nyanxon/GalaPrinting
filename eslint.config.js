@@ -35,10 +35,11 @@ export default defineConfig([
   },
 
   // ── Backend (Node.js globals) ───────────────────────────────────────────────
-  // The server/ directory uses Node built-ins (process, crypto, Buffer, etc.)
-  // and must not be linted with browser globals.
+  // The server/ directory and Vite/build config files run in Node — they use
+  // Node built-ins (process, crypto, Buffer, etc.) and must not be linted
+  // with browser globals.
   {
-    files: ['server/**/*.js'],
+    files: ['server/**/*.js', 'vite.config.js', 'vite.config.ts', 'eslint.config.js'],
     extends: [js.configs.recommended, prettier],
     languageOptions: {
       globals: globals.node,

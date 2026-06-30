@@ -81,15 +81,73 @@ export function createApp() {
   console.log(`[app] Serving uploads from: ${uploadsAbsPath}`);
 
   // ── Serve React frontend build ───────────────────────────────────────────────
-  // In production on Hostinger, backend serves both API and frontend
+  // In production on Hostinger, backend serves both API and frontend.
+  //
+  // Cache strategy (3 tiers):
+  //
+  //   1. /assets/* (hashed filenames — e.g. index-DXjVJfel.js)
+  //      Cache-Control: public, max-age=31536000, immutable
+  //      Safe because the hash in the filename guarantees a new URL whenever
+  //      the content changes. These files never go stale.
+  //
+  //   2. index.html
+  //      Cache-Control: no-cache
+  //      The browser must revalidate on every navigation. This ensures that
+  //      after a deploy, users immediately get the new HTML which references
+  //      the new hashed asset filenames.
+  //
+  //   3. Everything else in dist/ (favicon.svg, gala-logo2.svg, icons.svg)
+  //      Cache-Control: public, max-age=604800 (7 days)
+  //      These change infrequently. If they need updating, rename the file
+  //      or add a query-string version param.
+  //
   if (finalDistPath && fs.existsSync(finalDistPath)) {
     console.log(`[app] Serving frontend from: ${finalDistPath}`);
-    app.use(express.static(finalDistPath));
+
+    // Tier 1 — hashed assets: cache 1 year, immutable
+    app.use(
+      '/assets',
+      express.static(path.join(finalDistPath, 'assets'), {
+        maxAge: '1y',
+        immutable: true,
+        // etag/lastModified are redundant for immutable assets but harmless
+      })
+    );
+
+    // Tier 2 — index.html: no-cache (browser revalidates every request)
+    // Served explicitly so we can set the header before falling through to
+    // the catch-all static middleware.
+    app.get('/', (_req, res) => {
+      res.set('Cache-Control', 'no-cache');
+      res.sendFile(path.join(finalDistPath, 'index.html'));
+    });
+
+    // Tier 3 — everything else in dist/ (favicon, public images): 7 days
+    app.use(
+      express.static(finalDistPath, {
+        maxAge: '7d',
+        setHeaders(res, filePath) {
+          // Override: index.html must never be served with a long-lived cache
+          // even when reached via a sub-path through the SPA catch-all below.
+          if (path.basename(filePath) === 'index.html') {
+            res.set('Cache-Control', 'no-cache');
+          }
+        },
+      })
+    );
   } else {
     console.warn('[app] Frontend dist directory not found. API only mode.');
   }
 
   // ── API routes ────────────────────────────────────────────────────────────
+  // Prevent browsers from caching dynamic API responses.
+  // Individual routes that serve genuinely static/slow-changing data can
+  // override this with an explicit max-age (e.g. GET /api/categories).
+  app.use('/api', (_req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    next();
+  });
+
   app.use('/api/auth',          authRoutes);
   app.use('/api/products',      productRoutes);
   app.use('/api/categories',    categoryRoutes);
@@ -106,13 +164,15 @@ export function createApp() {
   app.use('/api/homepage',      homepageRoutes);
 
   // ── SPA catch-all — serve index.html for all non-API routes ──────────────────
-  // Must be declared AFTER API routes
+  // Must be declared AFTER API routes.
+  // index.html gets no-cache so the fresh HTML is always fetched on navigation.
   if (finalDistPath && fs.existsSync(path.join(finalDistPath, 'index.html'))) {
     app.get('*', (req, res) => {
       // Don't intercept API routes
       if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
         return res.status(404).json({ ok: false, message: 'Endpoint tidak ditemukan.' });
       }
+      res.set('Cache-Control', 'no-cache');
       res.sendFile(path.join(finalDistPath, 'index.html'));
     });
   }

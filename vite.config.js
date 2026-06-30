@@ -10,6 +10,23 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
 
+    build: {
+      // Explicit asset filenames — content-hashed so they can be cached forever.
+      // The hash changes when file content changes, making stale caches impossible.
+      rollupOptions: {
+        output: {
+          // JS chunks: assets/[name]-[hash].js
+          entryFileNames: 'assets/[name]-[hash].js',
+          chunkFileNames: 'assets/[name]-[hash].js',
+          // CSS and other assets: assets/[name]-[hash][extname]
+          assetFileNames: 'assets/[name]-[hash][extname]',
+        },
+      },
+      // Raise the inline threshold to 0 so no assets get inlined into HTML
+      // (keeps all assets as separately-cacheable files with hashes)
+      assetsInlineLimit: 0,
+    },
+
     server: {
       allowedHosts: 'all',
       proxy: {
