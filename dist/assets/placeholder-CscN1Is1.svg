@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600" role="img" aria-label="Placeholder">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#EDC8AE" stop-opacity="0.65"/>
+      <stop offset="1" stop-color="#785E40" stop-opacity="0.15"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" rx="28" fill="url(#g)"/>
+  <rect x="40" y="40" width="720" height="520" rx="22" fill="#ffffff" fill-opacity="0.55" stroke="#785E40" stroke-opacity="0.35" stroke-width="4"/>
+  <g fill="#785E40" fill-opacity="0.8">
+    <path d="M254 394l85-103 65 79 46-56 96 120H254z"/>
+    <circle cx="317" cy="253" r="28"/>
+  </g>
+  <text x="400" y="465" text-anchor="middle" font-family="ui-sans-serif, system-ui, Segoe UI, Arial" font-size="26" fill="#1f1f1f" fill-opacity="0.8">
+    GALA PRINTING
+  </text>
+</svg>

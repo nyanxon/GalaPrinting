@@ -3,7 +3,8 @@ node_modules/
 server/node_modules/
 
 # ── Build output ───────────────────────────────────────────────────────────────
-dist/
+# dist/ is intentionally tracked so Hostinger can serve the pre-built frontend
+# without a CI/CD build step. Run `npm run build` locally and commit dist/.
 dist-ssr/
 
 # ── Environment variables — NEVER commit secrets ──────────────────────────────
