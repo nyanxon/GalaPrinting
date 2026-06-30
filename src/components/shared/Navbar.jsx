@@ -58,9 +58,9 @@ function Navbar() {
 
   const role    = user?.role ?? null;
   const isStaff = role !== null && STAFF_ROLES.includes(role);
-  // Admin users can browse the public homepage — show the full profile popup for them
+  // Admin and owner users can browse the public homepage — show the full profile popup for them
   // Other staff (cashier, cs, etc.) still get the simple staff nav bar
-  const showAsStaff = isStaff && role !== 'admin';
+  const showAsStaff = isStaff && role !== 'admin' && role !== 'owner';
   const cartCount = items.length;
   const cartTotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
@@ -324,6 +324,14 @@ function Navbar() {
                               <div className="profile-popup-divider" />
                               <Link className="profile-popup-item profile-popup-admin-link" to="/admin" onClick={closeAllPopups}>
                                 <span>⚙️</span> Halaman Admin
+                              </Link>
+                            </>
+                          )}
+                          {role === 'owner' && (
+                            <>
+                              <div className="profile-popup-divider" />
+                              <Link className="profile-popup-item profile-popup-admin-link" to="/owner" onClick={closeAllPopups}>
+                                <span>👑</span> Halaman Owner
                               </Link>
                             </>
                           )}

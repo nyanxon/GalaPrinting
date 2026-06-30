@@ -17,6 +17,7 @@ import CategoriesSection from '../admin/sections/CategoriesSection.jsx';
 import ReviewsSection from '../admin/sections/ReviewsSection.jsx';
 import ChatsSection from '../admin/sections/ChatsSection.jsx';
 import PromoSection from '../admin/sections/PromoSection.jsx';
+import HomepageSection from '../admin/sections/HomepageSection.jsx';
 import RevenueSection from './sections/RevenueSection.jsx';
 import ReportsSection from './sections/ReportsSection.jsx';
 import AnalyticsSection from './sections/AnalyticsSection.jsx';
@@ -34,6 +35,7 @@ const OWNER_NAV = [
   { id: 'review',      label: 'REVIEW' },
   { id: 'chats',       label: 'CHATS' },
   { id: 'promo',       label: 'PROMO' },
+  { id: 'homepage',    label: 'HOMEPAGE' },
   { id: 'revenue',     label: 'REVENUE' },
   { id: 'reports',     label: 'REPORTS' },
   { id: 'analytics',   label: 'ANALYTICS' },
@@ -167,6 +169,7 @@ export default function OwnerDashboardPage() {
       case 'review':      return <ReviewsSection />;
       case 'chats':       return <ChatsSection />;
       case 'promo':       return <PromoSection />;
+      case 'homepage':    return <HomepageSection />;
       case 'revenue':     return <RevenueSection />;
       case 'reports':     return <ReportsSection />;
       case 'analytics':   return <AnalyticsSection />;
@@ -218,6 +221,14 @@ export default function OwnerDashboardPage() {
               <StaffAvatarButton />
               <div className="staff-header-auth">
                 <span className="staff-header-name">{userName}</span>
+                <button
+                  className="staff-homepage-btn"
+                  type="button"
+                  onClick={() => navigate('/')}
+                  title="Buka Homepage"
+                >
+                  Homepage
+                </button>
                 <button className="staff-logout-btn" type="button" onClick={handleLogout}>Keluar</button>
               </div>
             </div>
