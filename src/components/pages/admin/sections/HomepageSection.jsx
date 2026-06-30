@@ -294,7 +294,7 @@ function HeroTab() {
           <h2 className="adm-section-title">
             Landing Page Banner
             <span style={{ fontSize: 13, fontWeight: 400, color: '#6b7280', marginLeft: 8 }}>
-              (carousel Â· maks. 8 slide)
+              (carousel · maks. 8 slide)
             </span>
           </h2>
           <div className="adm-toolbar-right">
@@ -307,7 +307,7 @@ function HeroTab() {
         </div>
 
         {loading ? (
-          <p style={{ padding: 16, color: '#6b7280' }}>Memuatâ€¦</p>
+          <p style={{ padding: 16, color: '#6b7280' }}>Memuat…</p>
         ) : banners.length === 0 ? (
           <p style={{ padding: 16, color: '#6b7280' }}>
             Belum ada banner. Tambahkan slide pertama untuk carousel Homepage.

@@ -116,10 +116,9 @@ export default function DashboardFilterBar({
     close();
   }
 
-  function handleCustomApply(close) {
+  function handleCustomApply() {
     if (customFrom && customTo) {
       onChange({ preset: 'custom', from: customFrom, to: customTo });
-      close();
     }
   }
 
@@ -153,35 +152,6 @@ export default function DashboardFilterBar({
                   {p.label}
                 </button>
               ))}
-              {preset === 'custom' && (
-                <div className="dfb-custom-range">
-                  <input
-                    type="date"
-                    className="dfb-date-input"
-                    value={customFrom}
-                    max={customTo || undefined}
-                    onChange={(e) => setCustomFrom(e.target.value)}
-                    aria-label="Dari tanggal"
-                  />
-                  <span className="dfb-date-sep">—</span>
-                  <input
-                    type="date"
-                    className="dfb-date-input"
-                    value={customTo}
-                    min={customFrom || undefined}
-                    onChange={(e) => setCustomTo(e.target.value)}
-                    aria-label="Sampai tanggal"
-                  />
-                  <button
-                    type="button"
-                    className="dfb-apply-btn"
-                    disabled={!customFrom || !customTo}
-                    onClick={() => handleCustomApply(close)}
-                  >
-                    Terapkan
-                  </button>
-                </div>
-              )}
             </div>
           )}
         </Dropdown>
@@ -241,6 +211,37 @@ export default function DashboardFilterBar({
             </>
           )}
         </Dropdown>
+
+        {/* Inline custom date range — shown only when preset === 'custom' */}
+        {preset === 'custom' && (
+          <div className="dfb-custom-range dfb-custom-range--inline">
+            <input
+              type="date"
+              className="dfb-date-input"
+              value={customFrom}
+              max={customTo || undefined}
+              onChange={(e) => setCustomFrom(e.target.value)}
+              aria-label="Dari tanggal"
+            />
+            <span className="dfb-date-sep">—</span>
+            <input
+              type="date"
+              className="dfb-date-input"
+              value={customTo}
+              min={customFrom || undefined}
+              onChange={(e) => setCustomTo(e.target.value)}
+              aria-label="Sampai tanggal"
+            />
+            <button
+              type="button"
+              className="dfb-apply-btn"
+              disabled={!customFrom || !customTo}
+              onClick={handleCustomApply}
+            >
+              Terapkan
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="dfb-bar-right">

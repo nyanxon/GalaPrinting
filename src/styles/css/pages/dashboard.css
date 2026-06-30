@@ -4714,6 +4714,23 @@
   margin-top: 4px;
 }
 
+/* Inline variant — rendered directly in the filter bar row */
+.dfb-custom-range--inline {
+  flex-direction: row;
+  align-items: center;
+  padding: 0;
+  border-top: none;
+  margin-top: 0;
+  gap: 6px;
+  border-left: 1px solid #e5e5e5;
+  padding-left: 10px;
+  margin-left: 2px;
+}
+
+.dfb-custom-range--inline .dfb-date-input {
+  width: auto;
+}
+
 .dfb-date-sep { text-align: center; font-size: 12px; color: #9b9b9b; }
 
 .dfb-date-input {
