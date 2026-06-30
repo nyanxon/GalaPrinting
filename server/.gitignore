@@ -1,8 +1,21 @@
-# Environment variables — never commit secrets
+# ── Environment variables — NEVER commit secrets ──────────────────────────────
 .env
+.env.*
+!.env.example
+!.env.*.example
 
-# Uploaded files — back up separately before any server migration
+# ── Uploaded files ─────────────────────────────────────────────────────────────
+# Persistent uploads live outside the project root on Hostinger.
+# Never commit user-generated files to source control.
 uploads/
 
-# Node.js dependencies
+# ── Node.js dependencies ───────────────────────────────────────────────────────
 node_modules/
+
+# ── Test coverage reports ──────────────────────────────────────────────────────
+coverage/
+*.lcov
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+logs/

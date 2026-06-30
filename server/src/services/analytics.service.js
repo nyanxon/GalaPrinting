@@ -331,3 +331,74 @@ export async function recordProductView(productId) {
     [productId]
   );
 }
+
+// ── Revenue reset ─────────────────────────────────────────────────────────────
+
+/**
+ * Delete all revenue data from the database and reset the order sequence counter.
+ *
+ * Deletion order respects FK constraints:
+ *   order_history  (FK → orders CASCADE — but we delete explicitly for the count)
+ *   order_items    (FK → orders CASCADE — same)
+ *   orders
+ *   analytics_visits
+ *   analytics_product_views
+ *   order_sequence.last_seq → reset to 0
+ *
+ * Wrapped in a single transaction — if anything fails, nothing is deleted.
+ *
+ * @param {{ actorId: string, note?: string }} opts
+ * @returns {Promise<{ ordersDeleted: number, visitsDeleted: number, viewsDeleted: number }>}
+ */
+import { pool } from '../db/connection.js';
+import { randomUUID } from 'crypto';
+
+export async function resetAllRevenueData({ actorId, note = null }) {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    // Disable FK checks so we can truncate in any order inside the transaction
+    await conn.execute('SET FOREIGN_KEY_CHECKS = 0');
+
+    // Count rows before deletion so we can log them
+    const [[{ ordersDeleted }]]  = await conn.execute('SELECT COUNT(*) AS ordersDeleted FROM orders');
+    const [[{ visitsDeleted }]]  = await conn.execute('SELECT COUNT(*) AS visitsDeleted FROM analytics_visits');
+    const [[{ viewsDeleted }]]   = await conn.execute('SELECT COUNT(*) AS viewsDeleted  FROM analytics_product_views');
+
+    // Delete all revenue-related data
+    await conn.execute('DELETE FROM order_history');
+    await conn.execute('DELETE FROM order_items');
+    await conn.execute('DELETE FROM orders');
+    await conn.execute('DELETE FROM analytics_visits');
+    await conn.execute('DELETE FROM analytics_product_views');
+
+    // Reset order sequence so numbering starts from 1 again
+    await conn.execute('UPDATE order_sequence SET last_seq = 0 WHERE id = 1');
+
+    // Re-enable FK checks
+    await conn.execute('SET FOREIGN_KEY_CHECKS = 1');
+
+    // Write an audit log entry (this table is never reset)
+    await conn.execute(
+      `INSERT INTO revenue_reset_log (id, performed_by, orders_deleted, visits_deleted, views_deleted, note)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [randomUUID(), actorId || null, ordersDeleted, visitsDeleted, viewsDeleted, note || null]
+    );
+
+    await conn.commit();
+
+    return {
+      ordersDeleted:  Number(ordersDeleted),
+      visitsDeleted:  Number(visitsDeleted),
+      viewsDeleted:   Number(viewsDeleted),
+    };
+  } catch (err) {
+    await conn.rollback();
+    // Make sure FK checks are always re-enabled even on rollback
+    try { await conn.execute('SET FOREIGN_KEY_CHECKS = 1'); } catch {}
+    throw err;
+  } finally {
+    conn.release();
+  }
+}

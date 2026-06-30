@@ -103,3 +103,19 @@ export async function recordProductView(req, res, next) {
     next(err);
   }
 }
+
+export async function resetRevenueData(req, res, next) {
+  try {
+    const note = typeof req.body?.note === 'string' ? req.body.note.trim().slice(0, 500) : null;
+    const result = await svc.resetAllRevenueData({ actorId: req.user.id, note });
+
+    console.log(
+      `[analytics] Revenue reset by user ${req.user.id} (${req.user.name}): ` +
+      `${result.ordersDeleted} orders, ${result.visitsDeleted} visits, ${result.viewsDeleted} product views deleted.`
+    );
+
+    return res.json({ ok: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+}

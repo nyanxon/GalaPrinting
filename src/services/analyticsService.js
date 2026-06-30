@@ -418,3 +418,27 @@ export async function getBestSellers(n = 5, filters = {}) {
     .sort((a, b) => b.qty - a.qty)
     .slice(0, n);
 }
+
+// ── Revenue reset ─────────────────────────────────────────────────────────────
+
+/**
+ * Delete all revenue data (orders, analytics visits/views) and reset the
+ * order sequence counter.
+ *
+ * Owner-only. Requires USE_BACKEND=true.
+ *
+ * @param {{ note?: string }} [opts]
+ * @returns {Promise<{ ok: boolean, data?: { ordersDeleted, visitsDeleted, viewsDeleted }, message?: string }>}
+ */
+export async function resetRevenueData({ note = '' } = {}) {
+  if (!USE_BACKEND) {
+    return { ok: false, message: 'Reset hanya tersedia dalam mode backend.' };
+  }
+  try {
+    const res = await api.post('/api/analytics/reset', { note: note || null });
+    return { ok: true, data: res.data.data };
+  } catch (err) {
+    const message = err.response?.data?.message || 'Gagal mereset data revenue.';
+    return { ok: false, message };
+  }
+}

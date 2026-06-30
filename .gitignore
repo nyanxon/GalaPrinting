@@ -1,5 +1,32 @@
-# Logs
-logs
+# ── Dependencies ──────────────────────────────────────────────────────────────
+node_modules/
+server/node_modules/
+
+# ── Build output ───────────────────────────────────────────────────────────────
+dist/
+dist-ssr/
+
+# ── Environment variables — NEVER commit secrets ──────────────────────────────
+# All .env variants are excluded. Use .env.example as the documented template.
+.env
+.env.*
+# Allow example/template files (no real secrets)
+!.env.example
+!.env.*.example
+
+# ── Uploaded files ─────────────────────────────────────────────────────────────
+# User-generated uploads are not part of source control.
+# Back them up separately before any server migration.
+uploads/
+server/uploads/
+
+# ── Test coverage reports ──────────────────────────────────────────────────────
+coverage/
+server/coverage/
+*.lcov
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -7,18 +34,47 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# ── OS / Editor artefacts ─────────────────────────────────────────────────────
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# ── IDE workspace config (VS Code) ────────────────────────────────────────────
+# Keep only shared extension recommendations; exclude personal/machine settings.
+.vscode/*
+!.vscode/extensions.json
+
+# ── Kiro IDE workspace files ──────────────────────────────────────────────────
+# Exclude machine-local IDE state but keep spec documents (requirements, design, tasks).
+.kiro/*
+!.kiro/specs/
+
+# ── Binary / archive artefacts ────────────────────────────────────────────────
+# These have no place in source control. Distribute migrations as .sql files.
+*.rar
+*.zip
+*.tar
+*.tar.gz
+
+# ── SSL / TLS certificates and private keys ───────────────────────────────────
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# ── Database dumps and backups ────────────────────────────────────────────────
+# Schema migrations live in server/src/db/migrations/ as numbered .sql files.
+# Full dumps and backups should never be committed.
+*.sql.gz
+*.dump
+*.bak
+all_migrations.sql
+
+# ── Vite local overrides ──────────────────────────────────────────────────────
+vite.config.local.ts
+vite.config.local.js

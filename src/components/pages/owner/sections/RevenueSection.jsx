@@ -8,7 +8,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   TrendingUp, TrendingDown, ShoppingCart, Users, DollarSign,
-  AlertCircle, BarChart2, ArrowUpRight, ArrowDownRight,
+  AlertCircle, BarChart2, ArrowUpRight, ArrowDownRight, Trash2,
 } from 'lucide-react';
 import Chart, { Sparkline } from '../../../charts/Chart.jsx';
 import DashboardFilterBar from '../DashboardFilterBar.jsx';
@@ -16,6 +16,7 @@ import {
   getRevenueMetrics,
   getMonthlyStats,
   getBestSellers,
+  resetRevenueData,
 } from '../../../../services/analyticsService.js';
 import {
   listOrdersPaginated,
@@ -182,6 +183,158 @@ function exportPdf(metrics, monthly) {
   if (win) { win.document.write(lines); win.document.close(); win.print(); }
 }
 
+/* ── ResetRevenueModal ─────────────────────────────────────── */
+
+/**
+ * Two-step confirmation modal for the destructive revenue reset action.
+ *
+ * Step 1: Displays what will be deleted with a stern warning.
+ * Step 2: User must type the word "RESET" exactly before the confirm button enables.
+ */
+function ResetRevenueModal({ onClose, onConfirmed }) {
+  const [typedWord, setTypedWord]   = useState('');
+  const [note, setNote]             = useState('');
+  const [resetting, setResetting]   = useState(false);
+  const [error, setError]           = useState('');
+
+  const confirmed = typedWord === 'RESET';
+
+  async function handleReset() {
+    if (!confirmed) return;
+    setResetting(true);
+    setError('');
+    try {
+      const result = await resetRevenueData({ note });
+      if (!result.ok) {
+        setError(result.message || 'Reset gagal.');
+        return;
+      }
+      onConfirmed(result.data);
+    } catch (err) {
+      setError(err?.message || 'Terjadi kesalahan tak terduga.');
+    } finally {
+      setResetting(false);
+    }
+  }
+
+  return (
+    <div className="adm-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="reset-modal-title">
+      <div className="adm-modal" style={{ maxWidth: 520 }}>
+
+        {/* Header */}
+        <div className="adm-modal-header" style={{ background: '#fef2f2', borderBottom: '1px solid #fecaca' }}>
+          <h2 className="adm-modal-title" id="reset-modal-title" style={{ color: '#b91c1c', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Trash2 size={18} aria-hidden="true" />
+            Hapus Semua Data Revenue
+          </h2>
+          <button className="adm-modal-close" type="button" aria-label="Tutup" onClick={onClose} disabled={resetting}>
+            ✕
+          </button>
+        </div>
+
+        <div className="adm-modal-body">
+          {/* Warning block */}
+          <div style={{
+            background: '#fef2f2',
+            border: '1px solid #fecaca',
+            borderRadius: 8,
+            padding: '12px 16px',
+            marginBottom: 20,
+          }}>
+            <p style={{ fontWeight: 700, color: '#b91c1c', margin: '0 0 8px' }}>
+              ⚠️ Tindakan ini tidak dapat dibatalkan.
+            </p>
+            <p style={{ margin: '0 0 8px', fontSize: 13, color: '#374151' }}>
+              Data berikut akan dihapus permanen:
+            </p>
+            <ul style={{ margin: '0 0 8px', paddingLeft: 20, fontSize: 13, color: '#374151', lineHeight: 1.8 }}>
+              <li>Semua <strong>pesanan</strong> (orders, order items, riwayat status)</li>
+              <li>Semua data <strong>kunjungan website</strong> (analytics_visits)</li>
+              <li>Semua data <strong>tampilan produk</strong> (analytics_product_views)</li>
+              <li>Nomor urut pesanan akan <strong>direset ke awal</strong></li>
+            </ul>
+            <p style={{ margin: 0, fontSize: 13, color: '#6b7280' }}>
+              Data yang <strong>tidak</strong> dihapus: produk, kategori, pelanggan, ulasan, promo, percakapan.
+            </p>
+          </div>
+
+          {/* Optional reason */}
+          <div className="adm-field" style={{ marginBottom: 16 }}>
+            <label className="adm-label" htmlFor="reset-note">
+              Alasan reset <span style={{ color: '#9ca3af', fontWeight: 400 }}>(opsional, maks. 500 karakter)</span>
+            </label>
+            <textarea
+              id="reset-note"
+              className="adm-input"
+              rows={2}
+              maxLength={500}
+              placeholder="Misalnya: awal periode baru, migrasi sistem…"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              disabled={resetting}
+              style={{ resize: 'vertical', fontFamily: 'inherit' }}
+            />
+          </div>
+
+          {/* Confirmation word */}
+          <div className="adm-field" style={{ marginBottom: 20 }}>
+            <label className="adm-label" htmlFor="reset-confirm-word">
+              Ketik <strong style={{ color: '#b91c1c', letterSpacing: 1 }}>RESET</strong> untuk mengkonfirmasi:
+            </label>
+            <input
+              id="reset-confirm-word"
+              className="adm-input"
+              type="text"
+              placeholder="RESET"
+              value={typedWord}
+              onChange={(e) => setTypedWord(e.target.value)}
+              disabled={resetting}
+              autoComplete="off"
+              spellCheck={false}
+              style={{ fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' }}
+            />
+          </div>
+
+          {error && (
+            <div className="adm-form-alert" role="alert" style={{ marginBottom: 16 }}>
+              {error}
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="adm-form-actions">
+            <button
+              type="button"
+              className="adm-btn"
+              onClick={onClose}
+              disabled={resetting}
+            >
+              Batal
+            </button>
+            <button
+              type="button"
+              onClick={handleReset}
+              disabled={!confirmed || resetting}
+              style={{
+                background: confirmed ? '#b91c1c' : '#e5e7eb',
+                color: confirmed ? '#fff' : '#9ca3af',
+                border: 'none',
+                borderRadius: 6,
+                padding: '8px 20px',
+                fontWeight: 700,
+                cursor: confirmed && !resetting ? 'pointer' : 'not-allowed',
+                transition: 'background 0.15s',
+              }}
+            >
+              {resetting ? 'Menghapus…' : '🗑️ Hapus Semua Data'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ── Main component ────────────────────────────────────────── */
 export default function RevenueSection() {
   // Filter state — lazy initializer so Date.now() is only called once on mount
@@ -210,6 +363,10 @@ export default function RevenueSection() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [detailOpen,    setDetailOpen]    = useState(false);
   const [activeSeriesKeys, setActiveSeriesKeys] = useState(new Set(['revenue', 'profit', 'orders']));
+
+  // Reset modal
+  const [resetOpen,    setResetOpen]    = useState(false);
+  const [resetResult,  setResetResult]  = useState(null);
 
   // Load categories once
   useEffect(() => {
@@ -364,11 +521,35 @@ export default function RevenueSection() {
       {/* ── Header row ── */}
       <div className="rev-section-header">
         <h2 className="adm-section-title" style={{ margin: 0 }}>Revenue Dashboard</h2>
-        {lastUpdated && !loading && (
-          <span className="dfb-updated" aria-live="polite">
-            updated {minutesAgo}m ago
-          </span>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {lastUpdated && !loading && (
+            <span className="dfb-updated" aria-live="polite">
+              updated {minutesAgo}m ago
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => { setResetResult(null); setResetOpen(true); }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              background: 'none',
+              border: '1px solid #fca5a5',
+              color: '#b91c1c',
+              borderRadius: 6,
+              padding: '5px 12px',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+            title="Hapus semua data revenue (tidak dapat dibatalkan)"
+          >
+            <Trash2 size={13} aria-hidden="true" />
+            Reset Data
+          </button>
+        </div>
       </div>
 
       {/* ── Filter bar ── */}
@@ -634,6 +815,70 @@ export default function RevenueSection() {
         onClose={() => setDetailOpen(false)}
         order={selectedOrder}
       />
+
+      {/* ── Revenue Reset Modal ── */}
+      {resetOpen && (
+        <ResetRevenueModal
+          onClose={() => setResetOpen(false)}
+          onConfirmed={(data) => {
+            setResetOpen(false);
+            setResetResult(data);
+            // Reload dashboard data so charts reflect the cleared state
+            fetchAll();
+          }}
+        />
+      )}
+
+      {/* ── Reset success banner ── */}
+      {resetResult && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: 'fixed',
+            bottom: 24,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: '#166534',
+            color: '#fff',
+            borderRadius: 8,
+            padding: '12px 24px',
+            fontSize: 14,
+            fontWeight: 600,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            maxWidth: 480,
+            textAlign: 'center',
+          }}
+        >
+          <span>✅</span>
+          <span>
+            Reset berhasil — {resetResult.ordersDeleted} pesanan,{' '}
+            {resetResult.visitsDeleted} kunjungan, dan{' '}
+            {resetResult.viewsDeleted} tampilan produk dihapus.
+          </span>
+          <button
+            type="button"
+            onClick={() => setResetResult(null)}
+            aria-label="Tutup notifikasi"
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#fff',
+              cursor: 'pointer',
+              fontSize: 18,
+              lineHeight: 1,
+              padding: 0,
+              marginLeft: 4,
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
     </div>
   );
 }
