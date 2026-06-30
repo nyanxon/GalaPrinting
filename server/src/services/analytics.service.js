@@ -11,7 +11,8 @@
  *   status     — single order status string; if omitted, uses COMPLETED_STATUSES
  */
 
-import { query } from '../db/connection.js';
+import { query, pool } from '../db/connection.js';
+import { randomUUID } from 'crypto';
 
 const COMPLETED_STATUSES = ['Finished', 'In Delivery', 'Quality Checking', 'On Progress'];
 
@@ -338,7 +339,7 @@ export async function recordProductView(productId) {
  * Delete all revenue data from the database and reset the order sequence counter.
  *
  * Deletion order respects FK constraints:
- *   order_history  (FK → orders CASCADE — but we delete explicitly for the count)
+ *   order_history  (FK → orders CASCADE — deleted explicitly for the row count)
  *   order_items    (FK → orders CASCADE — same)
  *   orders
  *   analytics_visits
@@ -350,9 +351,6 @@ export async function recordProductView(productId) {
  * @param {{ actorId: string, note?: string }} opts
  * @returns {Promise<{ ordersDeleted: number, visitsDeleted: number, viewsDeleted: number }>}
  */
-import { pool } from '../db/connection.js';
-import { randomUUID } from 'crypto';
-
 export async function resetAllRevenueData({ actorId, note = null }) {
   const conn = await pool.getConnection();
   try {
@@ -396,7 +394,7 @@ export async function resetAllRevenueData({ actorId, note = null }) {
   } catch (err) {
     await conn.rollback();
     // Make sure FK checks are always re-enabled even on rollback
-    try { await conn.execute('SET FOREIGN_KEY_CHECKS = 1'); } catch {}
+    try { await conn.execute('SET FOREIGN_KEY_CHECKS = 1'); } catch (_err) { /* ignore — FK checks will reset on next connection */ }
     throw err;
   } finally {
     conn.release();
