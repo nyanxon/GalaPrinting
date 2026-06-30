@@ -3237,9 +3237,24 @@
   overflow: hidden;
 }
 
-/* Chat card keeps its own internal scroll */
-.staff-content .adm-card--chat {
-  overflow: hidden;
+/* Chat card keeps its own internal scroll — must stay height-constrained */
+.staff-content .adm-card--chat,
+.staff-content #adm-panel > .adm-card--chat {
+  flex: 1 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  overflow: hidden !important;
+}
+
+/* All section dashboard cards (Revenue, Analytics, Reports, Orders, etc.)
+   inside #adm-panel must NOT be height-constrained — they should grow
+   naturally so staff-content can scroll them.
+   Chat is still excluded because it uses adm-card--chat. */
+.staff-content #adm-panel > * {
+  flex: none;
+  height: auto;
+  min-height: unset;
+  overflow: visible;
 }
 
 /* Offline / CS custom order form cards — allow full scroll */
