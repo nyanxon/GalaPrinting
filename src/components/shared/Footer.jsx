@@ -37,21 +37,30 @@ function Footer() {
             <div className="footer-social">
               <strong className="footer-social-title">Social Media</strong>
               <div className="footer-social-icons">
-                <a href="#" className="footer-social-link" aria-label="Facebook">
-                  {/* Facebook */}
-                  <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
-                    <rect width="24" height="24" rx="6" fill="#1877F2"/>
-                    <path d="M16 8h-2a1 1 0 00-1 1v2h3l-.5 3H13v7h-3v-7H8v-3h2V9a4 4 0 014-4h2v3z" fill="#fff"/>
+                <a href="https://wa.me/6282177882929" className="footer-social-link" aria-label="WhatsApp">
+                  {/* WhatsApp */}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="28"
+                    height="28"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <rect width="24" height="24" rx="6" fill="#25D366" />
+                    <path
+                      fill="#fff"
+                      d="M12 5a7 7 0 0 0-6.06 10.5L5 19l3.64-.95A7 7 0 1 0 12 5zm3.98 9.78c-.17.48-.98.91-1.35.97-.35.06-.79.09-1.28-.07-.3-.1-.69-.23-1.19-.45-2.09-.9-3.45-3.1-3.56-3.25-.11-.15-.85-1.13-.85-2.15 0-1.02.53-1.52.72-1.73.19-.21.42-.26.56-.26h.4c.13 0 .3-.05.46.34.17.41.57 1.39.62 1.49.05.1.08.22.02.35-.06.13-.09.21-.18.32-.09.11-.19.25-.27.33-.09.09-.18.19-.08.37.1.18.46.76.99 1.23.68.61 1.25.8 1.43.89.18.09.28.08.39-.05.11-.13.45-.52.57-.69.12-.17.24-.14.4-.08.17.06 1.06.5 1.24.59.18.09.3.13.34.21.05.08.05.47-.12.95z"
+                    />
                   </svg>
                 </a>
-                <a href="#" className="footer-social-link" aria-label="TikTok">
+                <a href="https://www.tiktok.com/@galaprintbali" className="footer-social-link" aria-label="TikTok">
                   {/* TikTok */}
                   <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
                     <rect width="24" height="24" rx="6" fill="#010101"/>
                     <path d="M16.5 4h-2v8.5a2 2 0 11-2-2 2 2 0 01.5.07V8.07A4.5 4.5 0 1015 12.5V7.5a6 6 0 003.5 1.1V6.1A4 4 0 0116.5 4z" fill="#fff"/>
                   </svg>
                 </a>
-                <a href="#" className="footer-social-link" aria-label="Instagram">
+                <a href="https://www.instagram.com/galaprint.bali" className="footer-social-link" aria-label="Instagram">
                   {/* Instagram */}
                   <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
                     <defs>
@@ -68,7 +77,7 @@ function Footer() {
                     <circle cx="16" cy="8" r="1" fill="#fff"/>
                   </svg>
                 </a>
-                <a href="#" className="footer-social-link" aria-label="YouTube">
+                <a href="https://www.youtube.com/@GalaPrinting" className="footer-social-link" aria-label="YouTube">
                   {/* YouTube */}
                   <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
                     <rect width="24" height="24" rx="6" fill="#FF0000"/>
