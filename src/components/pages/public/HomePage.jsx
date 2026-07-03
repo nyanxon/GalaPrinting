@@ -10,6 +10,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import ProductCard from '../../shared/ProductCard.jsx';
 import DropZone from '../../shared/DropZone.jsx';
 import { listProducts } from '../../../services/productService.js';
@@ -117,6 +118,7 @@ function ProductSection({ products, category, reverse, bannerData }) {
  * Falls back to a solid-colour placeholder when no slides are configured.
  */
 function HeroCarousel({ slides }) {
+  const { t } = useTranslation();
   const [current, setCurrent] = useState(0);
   const [paused, setPaused]   = useState(false);
   const timerRef = useRef(null);
@@ -144,8 +146,8 @@ function HeroCarousel({ slides }) {
     return (
       <section className="home-hero" aria-label="Hero banner">
         <div className="home-hero-inner">
-          <p className="home-hero-label">LANDING PAGE</p>
-          <p className="home-hero-sub">4+ PAGE</p>
+          <p className="home-hero-label">{t('home.heroLabel')}</p>
+          <p className="home-hero-sub">{t('home.heroSub')}</p>
         </div>
       </section>
     );
@@ -203,7 +205,7 @@ function HeroCarousel({ slides }) {
           <button
             className="home-hero-arrow home-hero-arrow--prev"
             type="button"
-            aria-label="Slide sebelumnya"
+            aria-label={t('orderStatus.prevSlide')}
             onClick={() => goTo(current - 1)}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
@@ -215,7 +217,7 @@ function HeroCarousel({ slides }) {
           <button
             className="home-hero-arrow home-hero-arrow--next"
             type="button"
-            aria-label="Slide berikutnya"
+            aria-label={t('orderStatus.nextSlide')}
             onClick={() => goTo(current + 1)}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
@@ -229,7 +231,7 @@ function HeroCarousel({ slides }) {
 
       {/* Dot indicators */}
       {total > 1 && (
-        <div className="home-hero-dots" role="tablist" aria-label="Pilih slide">
+        <div className="home-hero-dots" role="tablist" aria-label={t('orderStatus.selectSlide')}>
           {slides.map((s, i) => (
             <button
               key={s.id}
@@ -303,6 +305,7 @@ function DesignShowcase({ items }) {
 }
 
 function HomePage() {
+  const { t } = useTranslation();
   const [products, setProducts]           = useState([]);
   const [categories, setCategories]       = useState([]);
   const [heroBanners, setHeroBanners]     = useState([]);
@@ -422,14 +425,14 @@ function HomePage() {
           <DesignShowcase items={designItems} />
           <div className="home-search-row">
             <span className="home-search-greeting">
-              Hallo, <strong>Mau Pesan apa?</strong>
+              {t('home.greeting')}, <strong>{t('home.whatToPrint')}</strong>
             </span>
             <div className="home-search-input-wrap" ref={dropdownRef}>
               <input
                 className="home-search-input"
                 type="search"
-                placeholder="Cari semua produk disini..."
-                aria-label="Cari produk"
+                placeholder={t('home.searchPlaceholder')}
+                aria-label={t('home.searchPlaceholder')}
                 data-home-search
                 value={searchQuery}
                 onChange={handleSearchChange}
@@ -438,7 +441,7 @@ function HomePage() {
               <button
                 className="home-search-btn"
                 type="button"
-                aria-label="Cari"
+                aria-label={t('home.searchButton')}
                 onClick={handleSearchSubmit}
               >
                 <svg
@@ -462,7 +465,7 @@ function HomePage() {
                   <div className="home-search-dropdown">
                     {searchResults.length === 0 ? (
                       <div className="home-search-dropdown-empty">
-                        Tidak ada produk yang cocok dengan &quot;<strong>{searchQuery}</strong>&quot;.
+                        {t('home.noResults')} &quot;<strong>{searchQuery}</strong>&quot;.
                       </div>
                     ) : (
                       <>
@@ -522,7 +525,7 @@ function HomePage() {
                 <button
                   className="home-custom-drop-clear"
                   type="button"
-                  aria-label="Hapus file"
+                  aria-label={t('home.removeFile')}
                   onClick={() => setDroppedFile(null)}
                 >
                   ✕
@@ -532,21 +535,21 @@ function HomePage() {
               <DropZone
                 accept=".jpg,.jpeg,.png,.pdf,.ai,.cdr,image/jpeg,image/png,application/pdf"
                 onFiles={handleDesignFile}
-                label="Drop your design here"
-                hint="JPG, PNG, PDF, AI, CDR"
+                label={t('home.dropDesignHere')}
+                hint={t('home.fileHint')}
               />
             )}
           </div>
           <div className="home-custom-info">
-            <h2 className="home-custom-title">Custom Order</h2>
+            <h2 className="home-custom-title">{t('home.customOrder')}</h2>
             <p className="home-custom-desc">
-              Silahkan masukkan design kamu ke dalam kotak yang telah disediakan.
+              {t('home.customOrderDesc')}
             </p>
             <p className="home-custom-desc">
-              Kamu akan diminta untuk mengisi beberapa keterangan mengenai pesanan kamu.
+              {t('home.customOrderDesc2')}
             </p>
             <Link className="btn home-custom-btn" to="/cara-order">
-              Buat Pesanan
+              {t('home.createOrder')}
             </Link>
           </div>
         </section>
@@ -555,7 +558,7 @@ function HomePage() {
         <div id="home-product-sections" data-product-sections>
           {groups.length === 0 ? (
             <p className="muted" style={{ padding: '24px 0' }}>
-              Belum ada produk.
+              {t('home.noProducts')}
             </p>
           ) : (
             groups.map((group, idx) => {

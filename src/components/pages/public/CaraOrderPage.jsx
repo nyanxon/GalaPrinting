@@ -6,56 +6,58 @@
  */
 
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import '../../../styles/css/pages/caraOrder.css';
 
 function CaraOrderPage() {
+  const { t } = useTranslation();
+
   return (
     <main className="container content-page">
-      <h1 className="page-title">Cara Order</h1>
-      <p className="muted">Langkah singkat untuk pesan produk printing di Gala Printing.</p>
+      <h1 className="page-title">{t('howToOrder.title')}</h1>
+      <p className="muted">{t('howToOrder.subtitle')}</p>
 
       <section className="card" style={{ marginTop: '16px' }}>
         <div className="card-body">
           <div className="steps">
             <div className="step">
-              <div className="step-title">Pilih produk</div>
-              <div className="muted">Buka halaman Produk lalu pilih item yang kamu mau.</div>
+              <div className="step-title">{t('howToOrder.step1')}</div>
+              <div className="muted">{t('howToOrder.step1Desc')}</div>
             </div>
             <div className="step">
-              <div className="step-title">Atur opsi</div>
-              <div className="muted">Pilih bahan, warna, ukuran print, jumlah, dan isi keterangan bila perlu.</div>
+              <div className="step-title">{t('howToOrder.step2')}</div>
+              <div className="muted">{t('howToOrder.step2Desc')}</div>
             </div>
             <div className="step">
-              <div className="step-title">Upload desain</div>
-              <div className="muted">Upload file desain (JPG/JPEG/PNG). Di mock ini kami simpan nama filenya dulu.</div>
+              <div className="step-title">{t('howToOrder.step3')}</div>
+              <div className="muted">{t('howToOrder.step3Desc')}</div>
             </div>
             <div className="step">
-              <div className="step-title">Tambah ke keranjang</div>
-              <div className="muted">Klik &quot;Tambah ke Keranjang&quot;, lalu cek ringkasan belanja kamu.</div>
+              <div className="step-title">{t('howToOrder.step4')}</div>
+              <div className="muted">{t('howToOrder.step4Desc')}</div>
             </div>
             <div className="step">
-              <div className="step-title">Checkout</div>
-              <div className="muted">Klik Checkout (Mock). Sistem akan membuat nomor transaksi untuk cek status.</div>
+              <div className="step-title">{t('howToOrder.step5')}</div>
+              <div className="muted">{t('howToOrder.step5Desc')}</div>
             </div>
             <div className="step">
-              <div className="step-title">Cek status order</div>
-              <div className="muted">Masukkan nomor transaksi di halaman Status Order.</div>
+              <div className="step-title">{t('howToOrder.step6')}</div>
+              <div className="muted">{t('howToOrder.step6Desc')}</div>
             </div>
           </div>
 
           <div className="form-actions" style={{ marginTop: '14px' }}>
-            <Link className="btn primary" to="/products">Mulai Belanja</Link>
-            <Link className="btn" to="/status">Cek Status Order</Link>
+            <Link className="btn primary" to="/products">{t('howToOrder.startShopping')}</Link>
+            <Link className="btn" to="/status">{t('howToOrder.checkStatus')}</Link>
           </div>
         </div>
       </section>
 
       <section className="card" style={{ marginTop: '16px' }}>
         <div className="card-body">
-          <h2 className="section-title">Catatan</h2>
+          <h2 className="section-title">{t('howToOrder.noteTitle')}</h2>
           <div className="muted">
-            Saat backend sudah tersedia, alur checkout akan dilengkapi dengan alamat pengiriman, metode pembayaran,
-            dan notifikasi otomatis.
+            {t('howToOrder.noteDesc')}
           </div>
         </div>
       </section>

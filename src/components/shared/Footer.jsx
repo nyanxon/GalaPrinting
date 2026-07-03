@@ -1,16 +1,9 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { APP } from '../../core/config.js';
 
-/**
- * Footer component
- *
- * Renders the site footer equivalent to vanilla footer.js.
- * Preserves all aria-* and role attributes.
- * Uses Link from react-router-dom for internal links.
- *
- * Requirements: 6.2, 15.1, 15.2
- */
 function Footer() {
+  const { t } = useTranslation();
   const year = new Date().getFullYear();
 
   return (
@@ -23,21 +16,21 @@ function Footer() {
             <div className="footer-left">
               <strong className="footer-brand">{APP.name}</strong>
               <div className="footer-links" aria-label="Tautan footer">
-                <Link to="/products">Produk</Link>
-                <Link to="/cara-order">Cara Order</Link>
-                <Link to="/portfolio">Portofolio</Link>
-                <Link to="/tentang-kami">Tentang Kami</Link>
+                <Link to="/products">{t('footer.products')}</Link>
+                <Link to="/cara-order">{t('footer.howToOrder')}</Link>
+                <Link to="/portfolio">{t('footer.portfolio')}</Link>
+                <Link to="/tentang-kami">{t('footer.about')}</Link>
               </div>
               <div className="muted footer-tagline">
-                Cetak apa saja: kartu nama, brosur, banner, stiker, dan custom order.
+                {t('footer.tagline')}
               </div>
             </div>
 
             {/* Right: social media */}
             <div className="footer-social">
-              <strong className="footer-social-title">Social Media</strong>
+              <strong className="footer-social-title">{t('footer.socialMedia')}</strong>
               <div className="footer-social-icons">
-                <a href="https://wa.me/6282177882929" className="footer-social-link" aria-label="WhatsApp">
+                <a href="https://wa.me/6282177882929" className="footer-social-link" aria-label="WhatsApp" target="_blank" rel="noopener noreferrer">
                   {/* WhatsApp */}
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -53,14 +46,14 @@ function Footer() {
                     />
                   </svg>
                 </a>
-                <a href="https://www.tiktok.com/@galaprintbali" className="footer-social-link" aria-label="TikTok">
+                <a href="https://www.tiktok.com/@galaprintbali" className="footer-social-link" aria-label="TikTok" target="_blank" rel="noopener noreferrer">
                   {/* TikTok */}
                   <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
                     <rect width="24" height="24" rx="6" fill="#010101"/>
                     <path d="M16.5 4h-2v8.5a2 2 0 11-2-2 2 2 0 01.5.07V8.07A4.5 4.5 0 1015 12.5V7.5a6 6 0 003.5 1.1V6.1A4 4 0 0116.5 4z" fill="#fff"/>
                   </svg>
                 </a>
-                <a href="https://www.instagram.com/galaprint.bali" className="footer-social-link" aria-label="Instagram">
+                <a href="https://www.instagram.com/galaprint.bali" className="footer-social-link" aria-label="Instagram" target="_blank" rel="noopener noreferrer">
                   {/* Instagram */}
                   <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
                     <defs>
@@ -77,7 +70,7 @@ function Footer() {
                     <circle cx="16" cy="8" r="1" fill="#fff"/>
                   </svg>
                 </a>
-                <a href="https://www.youtube.com/@GalaPrinting" className="footer-social-link" aria-label="YouTube">
+                <a href="https://www.youtube.com/@GalaPrinting" className="footer-social-link" aria-label="YouTube" target="_blank" rel="noopener noreferrer">
                   {/* YouTube */}
                   <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
                     <rect width="24" height="24" rx="6" fill="#FF0000"/>
@@ -90,8 +83,8 @@ function Footer() {
           </div>
 
           <div className="footer-bottom">
-            <span>© {year} {APP.name}. All rights reserved.</span>
-            <span className="muted">Bahasa: Indonesia</span>
+            <span>© {year} {APP.name}. {t('footer.copyright')}</span>
+            <span className="muted">{t('footer.language')}</span>
           </div>
 
         </div>

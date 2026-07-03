@@ -1,5 +1,6 @@
 import { useContext, useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../context/AuthContext.jsx';
 import { CartContext } from '../context/CartContext.jsx';
 import { logout, login, getCurrentUser } from '../../services/authService.js';
@@ -7,6 +8,7 @@ import { listCategories } from '../../services/categoryService.js';
 import { formatCurrency } from '../../core/helpers.js';
 import { resolveApiUrl } from '../../core/httpClient.js';
 import logoImg from '../../assets/logo.png';
+import LanguageSwitcher from './LanguageSwitcher.jsx';
 
 const STAFF_ROLES = ['admin', 'owner', 'cashier', 'cs', 'operational', 'qc', 'offline'];
 
@@ -36,6 +38,7 @@ function NavLink({ to, children }) {
 }
 
 function Navbar() {
+  const { t } = useTranslation();
   const { user, updateUser } = useContext(AuthContext);
   const { items } = useContext(CartContext);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -164,14 +167,14 @@ function Navbar() {
                   aria-expanded={kategoriOpen}
                   onClick={(e) => { e.stopPropagation(); togglePopup('kategori'); }}
                 >
-                  Kategori <span className="navbar-kategori-arrow">▾</span>
+                  {t('nav.category')} <span className="navbar-kategori-arrow">▾</span>
                 </button>
                 {kategoriOpen && (
-                  <div className="navbar-popup kategori-popup" id="kategori-popup" role="listbox" aria-label="Daftar kategori">
+                  <div className="navbar-popup kategori-popup" id="kategori-popup" role="listbox" aria-label={t('nav.category')}>
                     <div className="navbar-popup-arrow" />
                     <div className="kategori-popup-list">
                       {categories.length === 0 ? (
-                        <div className="kategori-popup-item muted">Belum ada kategori</div>
+                        <div className="kategori-popup-item muted">{t('home.noCategory')}</div>
                       ) : (
                         categories.map((cat) => (
                           <Link key={cat.id} className="kategori-popup-item" to={`/products?cat=${encodeURIComponent(cat.name)}`} onClick={closeAllPopups}>
@@ -188,8 +191,8 @@ function Navbar() {
                 <input
                   className="navbar-search-input"
                   type="search"
-                  placeholder="Cari Produk"
-                  aria-label="Cari produk"
+                  placeholder={t('nav.searchProduct')}
+                  aria-label={t('nav.searchProduct')}
                   value={searchValue}
                   onChange={(e) => setSearchValue(e.target.value)}
                   onKeyDown={handleSearchKeyDown}
@@ -208,7 +211,7 @@ function Navbar() {
                   </Link>
                 )}
                 <button className="btn ghost nav-auth-btn" type="button" onClick={handleLogout}>
-                  Keluar
+                  {t('nav.logout')}
                 </button>
               </div>
             ) : (
@@ -218,7 +221,7 @@ function Navbar() {
                   <button
                     className="nav-cart-icon"
                     type="button"
-                    aria-label={`Keranjang${cartCount > 0 ? `, ${cartCount} item` : ''}`}
+                    aria-label={`${t('cart.title')}${cartCount > 0 ? `, ${cartCount} item` : ''}`}
                     onClick={(e) => { e.stopPropagation(); togglePopup('cart'); }}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
@@ -232,28 +235,28 @@ function Navbar() {
                       <div className="navbar-popup-arrow" />
                       <div className="cart-popup-body">
                         {items.length === 0 ? (
-                          <p className="cart-popup-empty">Keranjang masih kosong.</p>
+                          <p className="cart-popup-empty">{t('cart.empty')}</p>
                         ) : (
                           <>
-                            <p className="cart-popup-total-label">Total : {items.length} Barang</p>
+                            <p className="cart-popup-total-label">{t('cart.total')} : {items.length} {t('cart.items')}</p>
                             <div className="cart-popup-items">
                               {items.map((item) => (
                                 <div key={item.id} className="cart-popup-item">
                                   <span className="cart-popup-item-name">{item.name}</span>
                                   <span className="cart-popup-item-price">{formatCurrency(item.price * item.quantity)}</span>
-                                  <span className="cart-popup-item-qty">Qty: {item.quantity}</span>
+                                  <span className="cart-popup-item-qty">{t('cart.quantity')}: {item.quantity}</span>
                                 </div>
                               ))}
                             </div>
                             <div className="cart-popup-total-row">
-                              <span>Total Harga :</span>
+                              <span>{t('cart.totalPrice')} :</span>
                               <span>{formatCurrency(cartTotal)}</span>
                             </div>
                           </>
                         )}
                       </div>
                       <Link className="cart-popup-cta" to="/cart" onClick={closeAllPopups}>
-                        Lihat Daftar Belanja
+                        {t('cart.viewCart')}
                       </Link>
                     </div>
                   )}
@@ -266,7 +269,7 @@ function Navbar() {
                       <button
                         className="nav-avatar-btn"
                         type="button"
-                        aria-label="Menu profil"
+                        aria-label={t('nav.profileMenu')}
                         aria-haspopup="true"
                         aria-expanded={profileOpen}
                         onClick={(e) => { e.stopPropagation(); togglePopup('profile'); }}
@@ -308,22 +311,22 @@ function Navbar() {
                           <div className="profile-popup-divider" />
                           {/* Menu items */}
                           <Link className="profile-popup-item" to="/profile" onClick={closeAllPopups}>
-                            <span>👤</span> Profil
+                            <span>👤</span> {t('nav.myProfile')}
                           </Link>
                           <Link className="profile-popup-item" to="/my-orders" onClick={closeAllPopups}>
-                            <span>📦</span> Pesanan Saya
+                            <span>📦</span> {t('nav.myOrders')}
                           </Link>
                           <Link className="profile-popup-item" to="/profile" onClick={() => { closeAllPopups(); }} state={{ tab: 'addresses' }}>
-                            <span>📍</span> Daftar Alamat
+                            <span>📍</span> {t('nav.addresses')}
                           </Link>
                           <Link className="profile-popup-item" to="/profile" onClick={closeAllPopups} state={{ tab: 'notifications' }}>
-                            <span>🔔</span> Notifikasi
+                            <span>🔔</span> {t('nav.notifications')}
                           </Link>
                           {role === 'admin' && (
                             <>
                               <div className="profile-popup-divider" />
                               <Link className="profile-popup-item profile-popup-admin-link" to="/admin" onClick={closeAllPopups}>
-                                <span>⚙️</span> Halaman Admin
+                                <span>⚙️</span> {t('nav.adminPage')}
                               </Link>
                             </>
                           )}
@@ -331,13 +334,13 @@ function Navbar() {
                             <>
                               <div className="profile-popup-divider" />
                               <Link className="profile-popup-item profile-popup-admin-link" to="/owner" onClick={closeAllPopups}>
-                                <span>👑</span> Halaman Owner
+                                <span>👑</span> {t('nav.ownerPage')}
                               </Link>
                             </>
                           )}
                           <div className="profile-popup-divider" />
                           <button className="profile-popup-item profile-popup-logout" type="button" onClick={handleLogout}>
-                            <span>🚪</span> Keluar
+                            <span>🚪</span> {t('nav.logout')}
                           </button>
                         </div>
                       )}
@@ -348,7 +351,7 @@ function Navbar() {
                       <button
                         className="nav-avatar-btn"
                         type="button"
-                        aria-label="Masuk"
+                        aria-label={t('nav.login')}
                         aria-haspopup="true"
                         aria-expanded={loginOpen}
                         onClick={(e) => { e.stopPropagation(); togglePopup('login'); }}
@@ -365,20 +368,20 @@ function Navbar() {
                           <div className="navbar-popup-arrow login-popup-arrow" />
                           <form className="login-popup-form" onSubmit={handleLoginSubmit} noValidate>
                             {loginError && <div className="login-popup-alert" role="alert">{loginError}</div>}
-                            <input className="login-popup-input" type="email" name="email" placeholder="Username / Email" autoComplete="email" required aria-label="Email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} />
-                            <input className="login-popup-input" type="password" name="password" placeholder="Password" autoComplete="current-password" required aria-label="Password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} />
+                            <input className="login-popup-input" type="email" name="email" placeholder={t('auth.username')} autoComplete="email" required aria-label="Email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} />
+                            <input className="login-popup-input" type="password" name="password" placeholder={t('auth.password')} autoComplete="current-password" required aria-label="Password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} />
                             <div className="login-popup-row">
                               <label className="login-popup-remember">
-                                <input type="checkbox" name="remember" /> Ingat saya?
+                                <input type="checkbox" name="remember" /> {t('auth.rememberMe')}
                               </label>
-                              <Link to="/register" className="login-popup-forgot" onClick={closeAllPopups}>Lupa Password?</Link>
+                              <Link to="/register" className="login-popup-forgot" onClick={closeAllPopups}>{t('auth.forgotPassword')}</Link>
                             </div>
                             <button className="login-popup-submit" type="submit" disabled={loginSubmitting}>
-                              {loginSubmitting ? 'Memproses...' : 'Masuk'}
+                              {loginSubmitting ? t('auth.processing') : t('auth.loginButton')}
                             </button>
                             <p className="login-popup-register-hint">
-                              Belum punya akun?{' '}
-                              <Link to="/register" className="login-popup-forgot" onClick={closeAllPopups}>Daftar di sini</Link>
+                              {t('auth.noAccount')}{' '}
+                              <Link to="/register" className="login-popup-forgot" onClick={closeAllPopups}>{t('auth.registerHere')}</Link>
                             </p>
                           </form>
                         </div>
@@ -390,19 +393,21 @@ function Navbar() {
             )}
 
             {/* Mobile menu toggle */}
-            <button className="nav-toggle" type="button" aria-label="Buka menu" aria-expanded={mobileOpen} onClick={() => setMobileOpen((prev) => !prev)}>
+            <button className="nav-toggle" type="button" aria-label={t('nav.openMenu')} aria-expanded={mobileOpen} onClick={() => setMobileOpen((prev) => !prev)}>
               ☰
             </button>
           </div>
+          {/* Language Switcher — desktop */}
+          <LanguageSwitcher />
         </nav>
 
         {/* Secondary nav */}
         {!showAsStaff && (
           <div className="navbar-secondary">
-            <NavLink to="/tentang-kami">Tentang Kami</NavLink>
-            <NavLink to="/cara-order">Cara Order</NavLink>
-            <NavLink to="/status">Status Order</NavLink>
-            <NavLink to="/portfolio">Portfolio</NavLink>
+            <NavLink to="/tentang-kami">{t('nav.about')}</NavLink>
+            <NavLink to="/cara-order">{t('nav.howToOrder')}</NavLink>
+            <NavLink to="/status">{t('nav.orderStatus')}</NavLink>
+            <NavLink to="/portfolio">{t('nav.portfolio')}</NavLink>
           </div>
         )}
       </div>
@@ -432,27 +437,32 @@ function Navbar() {
               <button
                 className="nav-sidebar-close"
                 type="button"
-                aria-label="Tutup menu"
+                aria-label={t('nav.closeMenu')}
                 onClick={() => setMobileOpen(false)}
               >
                 ✕
               </button>
             </div>
 
+            {/* Language Switcher in mobile sidebar */}
+            <div className="nav-sidebar-lang">
+              <LanguageSwitcher />
+            </div>
+
             <div className="nav-sidebar-links">
-              <Link to="/" onClick={() => setMobileOpen(false)}>Beranda</Link>
-              <Link to="/products" onClick={() => setMobileOpen(false)}>Produk</Link>
-              <Link to="/portfolio" onClick={() => setMobileOpen(false)}>Portfolio</Link>
-              <Link to="/cara-order" onClick={() => setMobileOpen(false)}>Cara Order</Link>
-              <Link to="/tentang-kami" onClick={() => setMobileOpen(false)}>Tentang Kami</Link>
-              <Link to="/status" onClick={() => setMobileOpen(false)}>Status Order</Link>
-              {user && <Link to="/my-orders" onClick={() => setMobileOpen(false)}>Pesanan Saya</Link>}
-              {user && <Link to="/profile" onClick={() => setMobileOpen(false)}>Profil Saya</Link>}
-              {user && <Link to="/cart" onClick={() => setMobileOpen(false)}>Keranjang ({cartCount})</Link>}
-              {!user && <Link to="/register" onClick={() => setMobileOpen(false)}>Login / Daftar</Link>}
+              <Link to="/" onClick={() => setMobileOpen(false)}>{t('nav.home')}</Link>
+              <Link to="/products" onClick={() => setMobileOpen(false)}>{t('nav.products')}</Link>
+              <Link to="/portfolio" onClick={() => setMobileOpen(false)}>{t('nav.portfolio')}</Link>
+              <Link to="/cara-order" onClick={() => setMobileOpen(false)}>{t('nav.howToOrder')}</Link>
+              <Link to="/tentang-kami" onClick={() => setMobileOpen(false)}>{t('nav.about')}</Link>
+              <Link to="/status" onClick={() => setMobileOpen(false)}>{t('nav.orderStatus')}</Link>
+              {user && <Link to="/my-orders" onClick={() => setMobileOpen(false)}>{t('nav.myOrders')}</Link>}
+              {user && <Link to="/profile" onClick={() => setMobileOpen(false)}>{t('nav.myProfile')}</Link>}
+              {user && <Link to="/cart" onClick={() => setMobileOpen(false)}>{t('nav.cart')} ({cartCount})</Link>}
+              {!user && <Link to="/register" onClick={() => setMobileOpen(false)}>{t('nav.register')}</Link>}
               {user && (
                 <button className="nav-mobile-logout" type="button" onClick={handleLogout}>
-                  Keluar
+                  {t('nav.logout')}
                 </button>
               )}
             </div>

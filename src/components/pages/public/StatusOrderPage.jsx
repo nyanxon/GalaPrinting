@@ -8,6 +8,7 @@
 
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import { findOrder, ORDER_STATUSES, STATUS_CONFIG } from '../../../services/orderService.js';
 import { addReview } from '../../../services/reviewService.js';
@@ -26,6 +27,7 @@ function fmtDate(iso) {
 const STANDARD_STEPS = ORDER_STATUSES.filter((s) => s !== 'Cancelled');
 
 function TimelineStep({ label, entry, isCurrent, isPast }) {
+  const { t } = useTranslation();
   const cfg = STATUS_CONFIG[label] || { icon: '○' };
   const done = Boolean(entry?.at) || isPast;
   const time = entry?.at ? fmtDate(entry.at) : null;
@@ -41,8 +43,8 @@ function TimelineStep({ label, entry, isCurrent, isPast }) {
         {time
           ? <div className="so-step-time">{time}</div>
           : done
-            ? <div className="so-step-time">Selesai</div>
-            : <div className="so-step-time so-step-time--pending">Menunggu</div>
+            ? <div className="so-step-time">{t('orderStatus.completed')}</div>
+            : <div className="so-step-time so-step-time--pending">{t('orderStatus.pending')}</div>
         }
       </div>
     </div>
@@ -52,6 +54,7 @@ function TimelineStep({ label, entry, isCurrent, isPast }) {
 // ── Per-item review card ──────────────────────────────────────────────────────
 
 function ItemReviewCard({ item, user, orderId }) {
+  const { t } = useTranslation();
   const [rating, setRating]       = useState(5);
   const [comment, setComment]     = useState('');
   const [photoFile, setPhotoFile] = useState(null);
@@ -80,11 +83,11 @@ function ItemReviewCard({ item, user, orderId }) {
     if (!file) return;
     const allowed = ['image/jpeg', 'image/png', 'image/webp'];
     if (!allowed.includes(file.type)) {
-      setError('Foto harus berformat JPG, PNG, atau WEBP.');
+      setError(t('orderStatus.photoHint'));
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setError('Ukuran foto maksimal 5 MB.');
+      setError(t('orderStatus.photoHint'));
       return;
     }
     setPhotoFile(file);
@@ -103,7 +106,7 @@ function ItemReviewCard({ item, user, orderId }) {
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
-    if (!comment.trim()) { setError('Komentar tidak boleh kosong.'); return; }
+    if (!comment.trim()) { setError(t('orderStatus.errorReviewComment')); return; }
 
     setSubmitting(true);
     try {
@@ -135,7 +138,7 @@ function ItemReviewCard({ item, user, orderId }) {
       }
       setSubmitted(true);
     } catch (err) {
-      const msg = err?.response?.data?.message || 'Gagal mengirim ulasan. Silakan coba lagi.';
+      const msg = err?.response?.data?.message || t('orderStatus.errorReviewFailed');
       if (err?.response?.status === 409) {
         setAlreadyReviewed(true);
       } else {
@@ -155,7 +158,7 @@ function ItemReviewCard({ item, user, orderId }) {
           <span className="so-review-item-name">{item.name}</span>
           <span className="so-review-item-qty">×{item.quantity || 1}</span>
         </div>
-        <div className="so-review-success">✅ Ulasan sudah dikirim untuk item ini.</div>
+        <div className="so-review-success">✅ {t('orderStatus.alreadyReviewed')}</div>
       </div>
     );
   }
@@ -167,7 +170,7 @@ function ItemReviewCard({ item, user, orderId }) {
           <span className="so-review-item-name">{item.name}</span>
           <span className="so-review-item-qty">×{item.quantity || 1}</span>
         </div>
-        <div className="so-review-success">✅ Ulasan berhasil dikirim!</div>
+        <div className="so-review-success">✅ {t('orderStatus.reviewSuccess')}</div>
       </div>
     );
   }
@@ -192,7 +195,7 @@ function ItemReviewCard({ item, user, orderId }) {
               type="button"
               className={`so-star-btn${n <= rating ? ' so-star-btn--active' : ''}`}
               onClick={() => setRating(n)}
-              aria-label={`${n} bintang`}
+              aria-label={`${n} ${t('orderStatus.rating')}`}
             >
               ★
             </button>
@@ -204,7 +207,7 @@ function ItemReviewCard({ item, user, orderId }) {
         <textarea
           className="so-review-textarea"
           rows={3}
-          placeholder="Bagaimana pengalaman Anda dengan produk ini?"
+          placeholder={t('orderStatus.reviewPlaceholder')}
           value={comment}
           onChange={(e) => { setComment(e.target.value); setError(''); }}
           disabled={submitting}
@@ -219,8 +222,8 @@ function ItemReviewCard({ item, user, orderId }) {
                   borderRadius: 8, border: '1px solid #e5e7eb', display: 'block' }} />
               <button type="button" className="so-review-photo-remove"
                 onClick={removePhoto} disabled={submitting}
-                aria-label="Hapus foto">
-                ✕ Hapus foto
+                aria-label={t('orderStatus.removePhoto')}>
+                ✕ {t('orderStatus.removePhoto')}
               </button>
             </div>
           ) : (
@@ -234,9 +237,9 @@ function ItemReviewCard({ item, user, orderId }) {
                 style={{ display: 'none' }}
               />
               <span className="so-review-photo-btn">
-                📷 Tambah Foto (opsional)
+                📷 {t('orderStatus.addPhoto')}
               </span>
-              <span style={{ fontSize: 11, color: '#9ca3af', marginLeft: 6 }}>JPG, PNG, WEBP · Maks. 5 MB</span>
+              <span style={{ fontSize: 11, color: '#9ca3af', marginLeft: 6 }}>{t('orderStatus.photoHint')}</span>
             </label>
           )}
         </div>
@@ -248,7 +251,7 @@ function ItemReviewCard({ item, user, orderId }) {
           className="so-review-submit-btn"
           disabled={submitting}
         >
-          {submitting ? 'Mengirim…' : 'Kirim Ulasan'}
+          {submitting ? t('orderStatus.submitting') : t('orderStatus.submitReview')}
         </button>
       </form>
     </div>
@@ -258,6 +261,7 @@ function ItemReviewCard({ item, user, orderId }) {
 // ── Order detail ──────────────────────────────────────────────────────────────
 
 function OrderDetail({ order, onReset, user, scrollToReview }) {
+  const { t } = useTranslation();
   const reviewSectionRef = useRef(null);
   const currentStepIdx = STANDARD_STEPS.indexOf(order.status);
   const cfg = STATUS_CONFIG[order.status] || { icon: '○', badge: '' };
@@ -289,13 +293,13 @@ function OrderDetail({ order, onReset, user, scrollToReview }) {
         <div>
           <div className="so-order-number">{order.orderNumber}</div>
           <div className="so-order-date">
-            Dibuat: {new Date(order.createdAt).toLocaleString('id-ID', {
+            {t('orderStatus.created')}: {new Date(order.createdAt).toLocaleString('id-ID', {
               day: '2-digit', month: 'long', year: 'numeric',
               hour: '2-digit', minute: '2-digit',
             })}
           </div>
           {order.updatedAt && (
-            <div className="so-order-updated">Terakhir diperbarui: {fmtDate(order.updatedAt)}</div>
+            <div className="so-order-updated">{t('orderStatus.lastUpdated')}: {fmtDate(order.updatedAt)}</div>
           )}
         </div>
         <span className={`so-status-badge ${cfg.badge}`}>
@@ -307,7 +311,7 @@ function OrderDetail({ order, onReset, user, scrollToReview }) {
         <div className="so-admin-note">
           <span className="so-admin-note-icon">📝</span>
           <div>
-            <div className="so-admin-note-label">Catatan dari Admin</div>
+            <div className="so-admin-note-label">{t('orderStatus.adminNote')}</div>
             <div className="so-admin-note-text">{order.adminNote}</div>
           </div>
         </div>
@@ -315,14 +319,14 @@ function OrderDetail({ order, onReset, user, scrollToReview }) {
 
       {order.status === 'In Delivery' && (
         <div className="so-courier-box">
-          <div className="so-courier-title">🚚 Pengiriman</div>
+          <div className="so-courier-title">🚚 {t('orderStatus.delivery')}</div>
           <p className="so-courier-desc">
-            Pesanan Anda sedang dalam pengiriman. Integrasi kurir akan segera tersedia.
+            {t('orderStatus.deliveryDesc')}
           </p>
           {order.trackingNumber && (
             <div className="so-courier-num">
               {order.courierName && <span className="so-courier-badge">{order.courierName} </span>}
-              No. Resi: <strong>{order.trackingNumber}</strong>
+              {t('orderStatus.trackingNumber')}: <strong>{order.trackingNumber}</strong>
             </div>
           )}
         </div>
@@ -331,7 +335,7 @@ function OrderDetail({ order, onReset, user, scrollToReview }) {
       <div className="so-result-body">
         {/* ── Left: timeline ── */}
         <div className="so-left">
-          <h3 className="so-section-label">Tracking</h3>
+          <h3 className="so-section-label">{t('orderStatus.tracking')}</h3>
           <div className="so-timeline">
             {STANDARD_STEPS.map((label, i) => (
               <TimelineStep
@@ -357,32 +361,32 @@ function OrderDetail({ order, onReset, user, scrollToReview }) {
         {/* ── Right: recipient + items + totals ── */}
         <div className="so-right">
           {/* Info Penerima */}
-          <h3 className="so-section-label">Info Penerima</h3>
+          <h3 className="so-section-label">{t('orderStatus.recipientInfo')}</h3>
           <div className="so-address-card" style={{ marginBottom: '20px' }}>
             {order.customer?.addressTitle && (
               <div className="so-address-card-title">📍 {order.customer.addressTitle}</div>
             )}
             <div className="so-address-card-body">
               <div className="so-customer-row">
-                <span className="so-customer-key">Nama</span>
+                <span className="so-customer-key">{t('orderStatus.name')}</span>
                 <span>{order.customer?.name || '—'}</span>
               </div>
               <div className="so-customer-row">
-                <span className="so-customer-key">Telepon</span>
+                <span className="so-customer-key">{t('orderStatus.phone')}</span>
                 <span>{order.customer?.phone || order.customerPhone || '—'}</span>
               </div>
               <div className="so-customer-row">
-                <span className="so-customer-key">Alamat</span>
+                <span className="so-customer-key">{t('orderStatus.address')}</span>
                 <span>{order.customer?.address || '—'}</span>
               </div>
             </div>
           </div>
 
           {/* Rincian Pesanan */}
-          <h3 className="so-section-label">Rincian Pesanan ({items.length} item)</h3>
+          <h3 className="so-section-label">{t('orderStatus.orderDetails')} ({items.length} {t('orderStatus.item')})</h3>
           <div className="so-items">
             {items.length === 0 ? (
-              <p className="so-empty">Tidak ada item.</p>
+              <p className="so-empty">{t('orderStatus.noItems')}</p>
             ) : (
               items.map((item, idx) => (
                 <div key={idx} className="so-item-card">
@@ -396,7 +400,7 @@ function OrderDetail({ order, onReset, user, scrollToReview }) {
                     </span>
                   </div>
                   <div className="so-item-unit-price">
-                    {item.quantity > 1 && <span>{formatCurrency(item.price || 0)} / pcs</span>}
+                    {item.quantity > 1 && <span>{formatCurrency(item.price || 0)} {t('orderStatus.unitPrice')}</span>}
                   </div>
                   {(item.color || item.size || item.material) && (
                     <div className="so-item-attrs">
@@ -413,7 +417,7 @@ function OrderDetail({ order, onReset, user, scrollToReview }) {
 
           {/* Subtotal */}
           <div className="so-total-row">
-            <span>Subtotal</span>
+            <span>{t('orderStatus.subtotal')}</span>
             <strong>{formatCurrency(order.subtotal)}</strong>
           </div>
 
@@ -424,7 +428,7 @@ function OrderDetail({ order, onReset, user, scrollToReview }) {
                 <span>🏷️</span>
                 <div>
                   <div className="so-promo-code">{order.promoCode || order.promo_code}</div>
-                  <div className="so-promo-label">Kode Promo</div>
+                  <div className="so-promo-label">{t('orderStatus.promoCode')}</div>
                 </div>
               </div>
               <span className="so-promo-discount">
@@ -434,7 +438,7 @@ function OrderDetail({ order, onReset, user, scrollToReview }) {
           )}
           {(order.promoCode || order.promo_code) && (
             <div className="so-total-row so-total-row--final">
-              <span>Total Akhir</span>
+              <span>{t('orderStatus.finalTotal')}</span>
               <strong>
                 {formatCurrency(
                   (order.subtotal || 0) - Number(order.discountAmount ?? order.discount_amount ?? 0)
@@ -446,7 +450,7 @@ function OrderDetail({ order, onReset, user, scrollToReview }) {
           {/* Alasan Pembatalan */}
           {order.status === 'Cancelled' && (order.cancellationReason || order.cancellation_reason) && (
             <div className="so-cancellation-reason">
-              <div className="so-cancellation-title">❌ Alasan Pembatalan</div>
+              <div className="so-cancellation-title">❌ {t('orderStatus.cancellationReason')}</div>
               <div className="so-cancellation-text">
                 {order.cancellationReason || order.cancellation_reason}
               </div>
@@ -457,10 +461,10 @@ function OrderDetail({ order, onReset, user, scrollToReview }) {
           {canReview && items.length > 0 && (
             <div className="so-review-section" id="ulasan" ref={reviewSectionRef}>
               <h3 className="so-section-label" style={{ marginTop: '28px' }}>
-                ⭐ Tulis Ulasan
+                ⭐ {t('orderStatus.writeReview')}
               </h3>
               <p className="so-review-intro">
-                Pesanan Anda telah selesai. Berikan ulasan untuk setiap produk yang Anda beli.
+                {t('orderStatus.reviewIntro')}
               </p>
               <div className="so-review-list">
                 {items.map((item, idx) => (
@@ -479,7 +483,7 @@ function OrderDetail({ order, onReset, user, scrollToReview }) {
 
       <div className="so-result-footer">
         <button className="so-back-btn" type="button" onClick={onReset} data-reset>
-          ← Cek Order Lain
+          ← {t('orderStatus.checkOtherOrder')}
         </button>
       </div>
     </div>
@@ -489,6 +493,7 @@ function OrderDetail({ order, onReset, user, scrollToReview }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 function StatusOrderPage() {
+  const { t } = useTranslation();
   const { user } = useContext(AuthContext);
   const [searchParams] = useSearchParams();
   const [orderNumber, setOrderNumber] = useState('');
@@ -509,19 +514,19 @@ function StatusOrderPage() {
 
   function runLookup(num, ph) {
     if (!num.trim()) {
-      setErrorMessage('Nomor transaksi tidak boleh kosong.');
+      setErrorMessage(t('orderStatus.errorOrderNumber'));
       setFoundOrder(null);
       return;
     }
     if (!user && !ph.trim()) {
-      setErrorMessage('Nomor telepon wajib diisi.');
+      setErrorMessage(t('orderStatus.errorPhone'));
       setFoundOrder(null);
       return;
     }
     Promise.resolve(findOrder({ orderNumber: num.trim(), phone: ph.trim() }))
       .then((order) => {
         if (!order) {
-          setErrorMessage('Order tidak ditemukan. Pastikan nomor transaksi dan nomor telepon sudah benar.');
+          setErrorMessage(t('orderStatus.errorNotFound'));
           setFoundOrder(null);
         } else {
           setFoundOrder(order);
@@ -529,7 +534,7 @@ function StatusOrderPage() {
         }
       })
       .catch(() => {
-        setErrorMessage('Terjadi kesalahan. Silakan coba lagi.');
+        setErrorMessage(t('orderStatus.errorGeneral'));
         setFoundOrder(null);
       });
   }
@@ -553,32 +558,31 @@ function StatusOrderPage() {
           <OrderDetail order={foundOrder} onReset={handleReset} user={user} scrollToReview={scrollToReview} />
         ) : (
           <div className="so-lookup-wrap">
-            <h1 className="so-title">Status Order</h1>
+            <h1 className="so-title">{t('orderStatus.title')}</h1>
             <p className="so-desc">
-              Masukkan nomor transaksi dan nomor telepon yang terdaftar untuk
-              melihat status pesanan Anda.
+              {t('orderStatus.subtitle')}
             </p>
             <form className="so-form" onSubmit={handleSubmit} noValidate data-status-form>
               <div className="so-field">
-                <label className="so-label" htmlFor="so-order">Nomor Transaksi</label>
+                <label className="so-label" htmlFor="so-order">{t('orderStatus.orderNumber')}</label>
                 <input
                   className={`so-input${errorMessage ? ' so-input--error' : ''}`}
                   id="so-order"
                   name="orderNumber"
-                  placeholder="GALA-260427-083"
+                  placeholder={t('orderStatus.orderNumberPlaceholder')}
                   value={orderNumber}
                   onChange={(e) => setOrderNumber(e.target.value)}
                   required
                 />
               </div>
               <div className="so-field">
-                <label className="so-label" htmlFor="so-phone">Nomor Telepon</label>
+                <label className="so-label" htmlFor="so-phone">{t('orderStatus.phone')}</label>
                 <input
                   className={`so-input${errorMessage ? ' so-input--error' : ''}`}
                   id="so-phone"
                   name="phone"
                   type="tel"
-                  placeholder="08xxxxxxxxxx"
+                  placeholder={t('orderStatus.phonePlaceholder')}
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                 />
@@ -587,12 +591,12 @@ function StatusOrderPage() {
                 <div className="so-not-found-box" id="so-not-found" role="alert">
                   <span className="so-not-found-icon">🔍</span>
                   <div>
-                    <div className="so-not-found-title">Order Tidak Ditemukan</div>
+                    <div className="so-not-found-title">{t('orderStatus.notFoundTitle')}</div>
                     <div className="so-not-found-msg">{errorMessage}</div>
                   </div>
                 </div>
               )}
-              <button className="so-submit-btn" type="submit">Cek Status Order</button>
+              <button className="so-submit-btn" type="submit">{t('orderStatus.checkButton')}</button>
             </form>
           </div>
         )}

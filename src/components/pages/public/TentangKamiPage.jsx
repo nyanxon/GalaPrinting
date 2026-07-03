@@ -6,23 +6,23 @@
  */
 
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import '../../../styles/css/pages/tentangKami.css';
 
 function TentangKamiPage() {
+  const { t } = useTranslation();
+
   return (
     <main className="container content-page">
-      <h1 className="page-title">Tentang Kami</h1>
-      <p className="muted">Kenalan dengan Gala Printing dan cara kami bantu kebutuhan cetakmu.</p>
+      <h1 className="page-title">{t('about.title')}</h1>
+      <p className="muted">{t('about.subtitle')}</p>
 
       <section className="hero stack" aria-label="Ringkasan">
-        <h2 className="section-title">Gala Printing</h2>
-        <p>
-          Kami melayani berbagai kebutuhan printing: stiker, brosur, kartu nama, banner, dan
-          <strong> custom order</strong>. Fokus kami adalah hasil rapi, proses jelas, dan komunikasi cepat.
-        </p>
+        <h2 className="section-title">{t('about.companyName')}</h2>
+        <p>{t('about.description')}</p>
         <div className="form-actions">
-          <Link className="btn primary" to="/products">Lihat Produk</Link>
-          <Link className="btn" to="/cara-order">Cara Order</Link>
+          <Link className="btn primary" to="/products">{t('about.viewProducts')}</Link>
+          <Link className="btn" to="/cara-order">{t('about.howToOrder')}</Link>
         </div>
       </section>
 
@@ -30,20 +30,20 @@ function TentangKamiPage() {
         <div className="kpi">
           <div className="card">
             <div className="card-body">
-              <div className="card-title">Bisa Custom</div>
-              <div className="card-subtitle">Upload desain sendiri atau konsultasi dulu.</div>
+              <div className="card-title">{t('about.canCustom')}</div>
+              <div className="card-subtitle">{t('about.canCustomDesc')}</div>
             </div>
           </div>
           <div className="card">
             <div className="card-body">
-              <div className="card-title">Proses Jelas</div>
-              <div className="card-subtitle">Cek status order dengan nomor transaksi.</div>
+              <div className="card-title">{t('about.clearProcess')}</div>
+              <div className="card-subtitle">{t('about.clearProcessDesc')}</div>
             </div>
           </div>
           <div className="card">
             <div className="card-body">
-              <div className="card-title">Beragam Produk</div>
-              <div className="card-subtitle">Dari kebutuhan bisnis sampai event.</div>
+              <div className="card-title">{t('about.variedProducts')}</div>
+              <div className="card-subtitle">{t('about.variedProductsDesc')}</div>
             </div>
           </div>
         </div>
@@ -51,19 +51,19 @@ function TentangKamiPage() {
 
       <section className="card" style={{ marginTop: '16px' }}>
         <div className="card-body">
-          <h2 className="section-title">Pertanyaan umum</h2>
+          <h2 className="section-title">{t('about.faqTitle')}</h2>
           <div className="stack">
             <div>
-              <strong>Apakah bisa order dengan desain saya sendiri?</strong>
-              <div className="muted">Bisa. Di halaman detail produk ada fitur upload file (mock).</div>
+              <strong>{t('about.faqQ1')}</strong>
+              <div className="muted">{t('about.faqA1')}</div>
             </div>
             <div>
-              <strong>Kalau belum punya desain?</strong>
-              <div className="muted">Tulis kebutuhan di &quot;Keterangan&quot; dan nanti kita atur alurnya saat backend siap.</div>
+              <strong>{t('about.faqQ2')}</strong>
+              <div className="muted">{t('about.faqA2')}</div>
             </div>
             <div>
-              <strong>Bagaimana cek status?</strong>
-              <div className="muted">Masuk ke halaman Status Order lalu masukkan nomor transaksi.</div>
+              <strong>{t('about.faqQ3')}</strong>
+              <div className="muted">{t('about.faqA3')}</div>
             </div>
           </div>
         </div>

@@ -2,7 +2,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider, AuthNavigationHandler } from './components/context/AuthContext.jsx';
 import { CartProvider } from './components/context/CartContext.jsx';
 import { CartContext } from './components/context/CartContext.jsx';
-import { useContext } from 'react';
+import { useContext, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import PublicLayout from './components/layout/PublicLayout.jsx';
 import RoleGuard from './components/guards/RoleGuard.jsx';
 import Toast from './components/shared/Toast.jsx';
@@ -91,6 +92,13 @@ function CartWarningBanner() {
  * Requirements: 1.1, 1.3, 2.1, 2.2, 2.3, 2.4, 6.8
  */
 function App() {
+  const { i18n } = useTranslation();
+
+  // SEO: Update <html lang> attribute when language changes
+  useEffect(() => {
+    document.documentElement.lang = i18n.language;
+  }, [i18n.language]);
+
   return (
     <AuthProvider>
       <CartProvider>

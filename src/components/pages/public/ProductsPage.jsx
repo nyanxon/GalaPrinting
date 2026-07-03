@@ -10,6 +10,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import ProductCard from '../../shared/ProductCard.jsx';
 import { listProducts } from '../../../services/productService.js';
 import { listCategories } from '../../../services/categoryService.js';
@@ -17,6 +18,7 @@ import { debounce } from '../../../core/helpers.js';
 import '../../../styles/css/pages/products.css';
 
 function ProductsPage() {
+  const { t } = useTranslation();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [activeCategory, setActiveCategory] = useState('');
@@ -79,12 +81,12 @@ function ProductsPage() {
 
   return (
     <main className="container catalog-page">
-      <h1 className="catalog-title">Katalog Produk</h1>
+      <h1 className="catalog-title">{t('products.title')}</h1>
 
       <div className="catalog-layout">
         {/* Sidebar: Category Tree — matches vanilla .catalog-sidebar */}
-        <aside className="catalog-sidebar" aria-label="Filter kategori">
-          <nav className="catalog-cat-tree" data-cat-tree aria-label="Kategori produk">
+        <aside className="catalog-sidebar" aria-label={t('products.filterLabel')}>
+          <nav className="catalog-cat-tree" data-cat-tree aria-label={t('products.categoryLabel')}>
             {categories.map((cat) => {
               const isActive = cat.name === activeCategory;
               const subCats  = cat.subCategories || [];
@@ -142,7 +144,7 @@ function ProductsPage() {
         </aside>
 
         {/* Product Grid Area — matches vanilla .catalog-grid-area */}
-        <section className="catalog-grid-area" aria-label="Daftar produk">
+        <section className="catalog-grid-area" aria-label={t('products.productList')}>
           {/* Search bar + filter controls */}
           <form
             className="catalog-search-form"
@@ -153,20 +155,20 @@ function ProductsPage() {
             <input
               className="catalog-search-input"
               type="search"
-              placeholder="Cari produk..."
+              placeholder={t('products.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
-              aria-label="Cari produk"
+              aria-label={t('products.searchPlaceholder')}
               style={{ flex: 1, minWidth: '160px', padding: '9px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', outline: 'none' }}
             />
-            <button className="btn" type="submit">Cari</button>
+            <button className="btn" type="submit">{t('products.searchButton')}</button>
             {hasFilters && (
               <button
                 className="btn btn--ghost"
                 type="button"
                 onClick={handleClearFilters}
               >
-                Reset
+                {t('products.reset')}
               </button>
             )}
           </form>
@@ -176,13 +178,13 @@ function ProductsPage() {
             <div
               style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', fontSize: '14px', color: 'var(--muted)' }}
             >
-              <span>Kategori: <strong style={{ color: 'var(--brand-brown)' }}>{activeCategory}</strong></span>
+              <span>{t('products.category')}: <strong style={{ color: 'var(--brand-brown)' }}>{activeCategory}</strong></span>
               <button
                 className="btn btn--ghost"
                 type="button"
                 style={{ padding: '2px 8px', fontSize: '12px' }}
                 onClick={() => handleCategoryClick(activeCategory)}
-                aria-label={`Hapus filter ${activeCategory}`}
+                aria-label={`${t('products.removeFilter')} ${activeCategory}`}
               >
                 ✕
               </button>
@@ -197,8 +199,8 @@ function ProductsPage() {
                 style={{ gridColumn: '1/-1', padding: '16px 0' }}
               >
                 {searchQuery.trim()
-                  ? `Tidak ada produk yang cocok dengan "${searchQuery}".`
-                  : 'Tidak ada produk ditemukan.'}
+                  ? `${t('products.noResultsFor')} "${searchQuery}".`
+                  : t('products.noProducts')}
               </p>
             ) : (
               filteredProducts.map((product) => (
