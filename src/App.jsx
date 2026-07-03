@@ -96,7 +96,9 @@ function App() {
 
   // SEO: Update <html lang> attribute when language changes
   useEffect(() => {
-    document.documentElement.lang = i18n.language;
+    // Map 'bal' ke kode BCP-47 yang valid untuk Bali language
+    const langMap = { id: 'id', en: 'en', bal: 'ban' };
+    document.documentElement.lang = langMap[i18n.language] || i18n.language;
   }, [i18n.language]);
 
   return (

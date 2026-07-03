@@ -397,7 +397,8 @@ function Navbar() {
               ☰
             </button>
           </div>
-          {/* Language Switcher — desktop */}
+
+          {/* Language Switcher — both desktop & mobile */}
           <LanguageSwitcher />
         </nav>
 
@@ -442,11 +443,6 @@ function Navbar() {
               >
                 ✕
               </button>
-            </div>
-
-            {/* Language Switcher in mobile sidebar */}
-            <div className="nav-sidebar-lang">
-              <LanguageSwitcher />
             </div>
 
             <div className="nav-sidebar-links">

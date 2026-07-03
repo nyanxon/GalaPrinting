@@ -1,89 +1,48 @@
 /**
  * LanguageSwitcher.jsx
  *
- * Komponen untuk ganti bahasa (ID ⇄ EN).
- * - Menampilkan toggle/dropdown bahasa dengan flag emoji
- * - Menyimpan pilihan di localStorage via i18next
- * - Mengubah <html lang> secara otomatis
- * - Style minimal yang menyatu dengan navbar
+ * Komponen ganti bahasa: ID | EN | BAL
+ * - Format: tombol berteks kode bahasa dengan chevron (▾) di tombol aktif
+ * - Layout: pill berisi 3 opsi yang tersegmentasi
+ * - Tidak menggunakan dropdown — langsung klik untuk ganti bahasa
+ * - Mobile responsive dengan breakpoint navbar
  */
 
 import { useTranslation } from 'react-i18next';
-import { useState, useEffect, useRef } from 'react';
 
 const LANGUAGES = [
-  { code: 'id', label: 'Indonesia', flag: '🇮🇩' },
-  { code: 'en', label: 'English', flag: '🇬🇧' },
+  { code: 'id',  label: 'ID' },
+  { code: 'en',  label: 'EN' },
+  { code: 'bal', label: 'BAL' },
 ];
 
 function LanguageSwitcher() {
   const { i18n } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const wrapperRef = useRef(null);
-
-  const currentLang = LANGUAGES.find((l) => l.code === i18n.language) || LANGUAGES[0];
+  const active = i18n.language;
 
   function handleChange(code) {
-    i18n.changeLanguage(code);
-    setOpen(false);
+    if (code !== active) {
+      i18n.changeLanguage(code);
+    }
   }
 
-  // Close dropdown on outside click
-  useEffect(() => {
-    function handleClickOutside(e) {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, []);
-
-  // Close dropdown on Escape
-  useEffect(() => {
-    function handleKeyDown(e) {
-      if (e.key === 'Escape') setOpen(false);
-    }
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
   return (
-    <div className="lang-switcher" ref={wrapperRef} style={{ position: 'relative' }}>
-      <button
-        className="lang-switcher-btn"
-        type="button"
-        aria-label="Change language"
-        aria-haspopup="true"
-        aria-expanded={open}
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen((prev) => !prev);
-        }}
-      >
-        <span className="lang-flag">{currentLang.flag}</span>
-        <span className="lang-code">{currentLang.code.toUpperCase()}</span>
-        <span className="lang-arrow">▾</span>
-      </button>
-
-      {open && (
-        <div className="lang-dropdown" role="listbox" aria-label="Select language">
-          {LANGUAGES.map((lang) => (
-            <button
-              key={lang.code}
-              className={`lang-dropdown-item${lang.code === i18n.language ? ' active' : ''}`}
-              type="button"
-              role="option"
-              aria-selected={lang.code === i18n.language}
-              onClick={() => handleChange(lang.code)}
-            >
-              <span className="lang-flag">{lang.flag}</span>
-              <span className="lang-label">{lang.label}</span>
-              {lang.code === i18n.language && <span className="lang-check">✓</span>}
-            </button>
-          ))}
-        </div>
-      )}
+    <div className="lang-switcher" aria-label="Pilih bahasa" role="group">
+      {LANGUAGES.map((lang, idx) => (
+        <button
+          key={lang.code}
+          type="button"
+          className={`lang-option${lang.code === active ? ' lang-option--active' : ''}${idx === 0 ? ' lang-option--first' : ''}${idx === LANGUAGES.length - 1 ? ' lang-option--last' : ''}`}
+          onClick={() => handleChange(lang.code)}
+          aria-pressed={lang.code === active}
+          aria-label={`Bahasa ${lang.label}`}
+        >
+          {lang.label}
+          {lang.code === active && (
+            <span className="lang-chevron" aria-hidden="true">▾</span>
+          )}
+        </button>
+      ))}
     </div>
   );
 }

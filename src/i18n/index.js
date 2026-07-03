@@ -14,14 +14,16 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 
 import idTranslation from './locales/id/translation.json';
 import enTranslation from './locales/en/translation.json';
+import balTranslation from './locales/bal/translation.json';
 
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     resources: {
-      id: { translation: idTranslation },
-      en: { translation: enTranslation },
+      id:  { translation: idTranslation },
+      en:  { translation: enTranslation },
+      bal: { translation: balTranslation },
     },
     // Urutan deteksi: localStorage dulu, lalu browser navigator
     detection: {
@@ -30,11 +32,10 @@ i18n
       caches: ['localStorage'],
     },
     fallbackLng: 'id',
-    supportedLngs: ['id', 'en'],
+    supportedLngs: ['id', 'en', 'bal'],
     interpolation: {
       escapeValue: false, // React sudah aman dari XSS
     },
-    // Jangan throw error jika key tidak ditemukan
     saveMissing: false,
     debug: false,
   });
