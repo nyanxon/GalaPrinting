@@ -5,7 +5,6 @@ import { AuthContext } from '../context/AuthContext.jsx';
 import { CartContext } from '../context/CartContext.jsx';
 import { logout, login, getCurrentUser } from '../../services/authService.js';
 import { listCategories } from '../../services/categoryService.js';
-// import { listProducts } from '../../services/productService.js'; // No longer needed — removed popup
 import { formatCurrency } from '../../core/helpers.js';
 import { resolveApiUrl } from '../../core/httpClient.js';
 import logoImg from '../../assets/logo.png';
@@ -59,11 +58,7 @@ function Navbar() {
   const [searchValue, setSearchValue] = useState('');
   const [categories, setCategories]   = useState([]);
 
-  // Produk Kami popup (secondary nav) — REMOVED, now just a direct link
-  // const [produkKamiOpen, setProdukKamiOpen]       = useState(false);
-  // const [produkKamiList, setProdukKamiList]       = useState([]);
-  // const [produkKamiLoading, setProdukKamiLoading] = useState(false);
-  // const produkKamiRef = useRef(null);
+
 
   const headerRef = useRef(null);
 
@@ -80,10 +75,7 @@ function Navbar() {
     setCartOpen(false);
     setProfileOpen(false);
     setLoginOpen(false);
-    // setProdukKamiOpen(false); // Removed — no longer a popup
   }
-
-  // toggleProdukKami removed — now just a Link to /products
 
   async function togglePopup(name) {
     const wasOpen =
@@ -105,11 +97,8 @@ function Navbar() {
   useEffect(() => {
     function handleDocClick(e) {
       if (headerRef.current && !headerRef.current.contains(e.target)) {
-        // Only close kategori and profile on outside click.
-        // Login and cart popups stay open until the user explicitly toggles them.
         setKategoriOpen(false);
         setProfileOpen(false);
-        // setProdukKamiOpen(false); // Removed — no longer a popup
       }
     }
     document.addEventListener('click', handleDocClick);
@@ -119,10 +108,8 @@ function Navbar() {
   useEffect(() => {
     function handleKeyDown(e) {
       if (e.key === 'Escape') {
-        // Only close kategori and profile with Escape — login and cart need explicit toggle.
         setKategoriOpen(false);
         setProfileOpen(false);
-        // setProdukKamiOpen(false); // Removed — no longer a popup
       }
     }
     document.addEventListener('keydown', handleKeyDown);
