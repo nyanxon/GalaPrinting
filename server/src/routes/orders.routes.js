@@ -40,7 +40,7 @@ router.patch('/:id/delivery-method', authenticate, requireRole('qc', 'cs', 'admi
 router.patch('/:id/pickup',          authenticate, requireRole('qc', 'admin'), ctrl.setPickupInfo);
 
 // Invoice untuk order (customer & staff bisa lihat)
-router.get('/:orderId/invoice', authenticate, ctrl.getInvoiceByOrder);
+router.get('/:orderId/invoice', authenticate, getInvoiceByOrder);
 
 // Payment proof upload (customer)
 router.post(

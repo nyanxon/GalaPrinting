@@ -6,7 +6,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon src/server.js",
-    "start": "node index.js",
+    "start": "node start.js",
     "migrate": "node src/db/migrate.js",
     "test": "vitest run"
   },
