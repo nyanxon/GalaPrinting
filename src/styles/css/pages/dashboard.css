@@ -4813,3 +4813,253 @@
 
 .dfb-updated { font-size: 12px; color: #9b9b9b; }
 .dfb-loading { font-size: 12px; color: #9b9b9b; font-style: italic; }
+
+
+/* ══════════════════════════════════════════════════════════
+   OFFLINE ORDER SECTION (Cashier inline form)
+   ══════════════════════════════════════════════════════════ */
+
+/* Input error state */
+.adm-input--error {
+  border-color: #dc2626 !important;
+  background: #fef2f2 !important;
+}
+
+.offline-field-error {
+  font-size: 11px;
+  color: #b91c1c;
+  margin-top: 3px;
+  display: block;
+}
+
+/* Form layout */
+.offline-form {
+  padding: 0 4px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.offline-form-section {
+  background: #faf8f5;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+
+.offline-form-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 12px;
+}
+
+.offline-form-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.offline-form-section-header .offline-form-section-title {
+  margin-bottom: 0;
+}
+
+.offline-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.offline-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.offline-form-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.offline-required {
+  color: #b91c1c;
+}
+
+/* Items table */
+.offline-items-header {
+  display: grid;
+  grid-template-columns: 2fr 1.4fr 0.6fr 1fr 32px;
+  gap: 8px;
+  padding: 6px 4px;
+  border-bottom: 2px solid #e5e7eb;
+  margin-bottom: 4px;
+}
+
+.offline-items-col {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.offline-item-row {
+  display: grid;
+  grid-template-columns: 2fr 1.4fr 0.6fr 1fr 32px;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 6px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.offline-item-row:last-of-type {
+  border-bottom: none;
+}
+
+.offline-item-subtotal {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  padding-top: 10px;
+  display: block;
+}
+
+.offline-item-remove {
+  background: none;
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+  color: #b91c1c;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 6px 8px;
+  line-height: 1;
+  margin-top: 4px;
+  transition: background 0.15s;
+}
+
+.offline-item-remove:hover {
+  background: #fee2e2;
+}
+
+.offline-subtotal-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 4px 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+  border-top: 2px solid #e5e7eb;
+  margin-top: 8px;
+}
+
+/* Form actions */
+.offline-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+/* Success / receipt card */
+.offline-success-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 24px;
+  text-align: center;
+  gap: 8px;
+}
+
+.offline-success-icon {
+  font-size: 48px;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.offline-success-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 12px;
+}
+
+.offline-receipt-mini {
+  background: #faf8f5;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px 20px;
+  width: 100%;
+  max-width: 420px;
+  text-align: left;
+}
+
+.offline-receipt-mini-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: #374151;
+  padding: 4px 0;
+}
+
+.offline-receipt-mini-row--total {
+  font-size: 15px;
+  padding-top: 6px;
+}
+
+.offline-receipt-mini-key {
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.offline-receipt-mini-val {
+  color: #111827;
+  font-weight: 500;
+}
+
+.offline-receipt-mini-divider {
+  border: none;
+  border-top: 1px dashed #d1d5db;
+  margin: 8px 0;
+}
+
+.offline-status-badge {
+  background: #ffedd5;
+  color: #9a3412;
+  border-radius: 99px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.offline-reset-btn {
+  margin-top: 16px;
+  padding: 10px 28px;
+  font-size: 14px;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .offline-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .offline-items-header,
+  .offline-item-row {
+    grid-template-columns: 1fr;
+  }
+
+  .offline-items-col--price,
+  .offline-items-col--qty,
+  .offline-items-col--sub,
+  .offline-items-col--del {
+    display: none;
+  }
+}
