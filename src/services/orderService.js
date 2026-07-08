@@ -203,6 +203,10 @@ function mapOrder(row) {
     items:    Array.isArray(row.items)   ? row.items.map(mapOrderItem) : [],
     history:  Array.isArray(row.history) ? row.history : [],
     timeline: Array.isArray(row.timeline)? row.timeline : [],
+    approvals: Array.isArray(row.approvals) ? row.approvals : [],
+    deliveryMethod: row.delivery_method ?? row.deliveryMethod ?? 'delivery',
+    pickupLocation: row.pickup_location ?? row.pickupLocation ?? null,
+    pickupReadyAt:  row.pickup_ready_at  ?? row.pickupReadyAt  ?? null,
     createdAt: row.created_at ?? row.createdAt,
     updatedAt: row.updated_at ?? row.updatedAt,
   };

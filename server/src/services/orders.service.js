@@ -10,6 +10,7 @@ import { StorageService } from '../utils/storage.js';
 import { incrementUsage, recordUsageLog } from './promo.service.js';
 import { sendOrderNotification, sendNewOrderAdminAlert } from './email.service.js';
 import { getPreferences } from './notifications.service.js';
+import { assertNotLocked, recordApproval, APPROVAL_STAGE_FOR_STATUS } from './orderApprovals.service.js';
 
 // ── Status transition rules ───────────────────────────────────────────────────
 
@@ -418,7 +419,7 @@ export async function findOrder({ orderNumber, phone }) {
 }
 
 /**
- * Get a single order with its items and history.
+ * Get a single order with its items, history, and approvals.
  */
 export async function getOrderById(id) {
   const [orders] = await query('SELECT * FROM orders WHERE id = ?', [id]);
@@ -426,19 +427,34 @@ export async function getOrderById(id) {
 
   const order = orders[0];
 
-  // Run items and history queries in parallel
-  const [[items], [history]] = await Promise.all([
+  // Run items, history, and approvals queries in parallel
+  const [[items], [history], [approvals]] = await Promise.all([
     query('SELECT * FROM order_items WHERE order_id = ? ORDER BY created_at ASC', [id]),
     query('SELECT * FROM order_history WHERE order_id = ? ORDER BY created_at ASC', [id]),
+    query(
+      `SELECT oa.*, u.name AS approver_name_live
+       FROM order_approvals oa
+       LEFT JOIN users u ON u.id = oa.approved_by
+       WHERE oa.order_id = ? ORDER BY oa.approved_at ASC`,
+      [id]
+    ),
   ]);
 
-  return { ...order, items, history };
+  return { ...order, items, history, approvals };
 }
 
 /**
  * Advance an order to a new status, enforcing role-based transition rules.
+ * Fitur 1: cek approval lock sebelum update — tolak 403 jika tahap sudah di-ACC.
+ *
+ * @param {string} id
+ * @param {string} newStatus
+ * @param {string} actorId
+ * @param {string} actorRole
+ * @param {string|null} cancellationReason
+ * @param {string|null} actorName  Nama admin (untuk approval record snapshot)
  */
-export async function updateOrderStatus(id, newStatus, actorId, actorRole, cancellationReason) {
+export async function updateOrderStatus(id, newStatus, actorId, actorRole, cancellationReason, actorName) {
   const order = await getOrderById(id);
   if (!order) {
     const err = new Error('Pesanan tidak ditemukan.');
@@ -455,6 +471,11 @@ export async function updateOrderStatus(id, newStatus, actorId, actorRole, cance
     throw err;
   }
 
+  // Fitur 1: cek apakah tahap ini sudah di-lock (sudah di-approve sebelumnya)
+  if (newStatus !== 'Cancelled') {
+    await assertNotLocked(id, newStatus);
+  }
+
   const prevStatus = order.status;
   if (newStatus === 'Cancelled') {
     await query('UPDATE orders SET status = ?, cancellation_reason = ? WHERE id = ?', [newStatus, cancellationReason || null, id]);
@@ -462,6 +483,11 @@ export async function updateOrderStatus(id, newStatus, actorId, actorRole, cance
     await query('UPDATE orders SET status = ? WHERE id = ?', [newStatus, id]);
   }
   await insertHistoryEntry(id, prevStatus, newStatus, actorId, cancellationReason);
+
+  // Fitur 1: simpan approval record untuk stage ini
+  if (newStatus !== 'Cancelled' && APPROVAL_STAGE_FOR_STATUS[newStatus]) {
+    await recordApproval(id, newStatus, actorId, actorRole, actorName || actorRole);
+  }
 
   // Delete uploaded files when an order is cancelled (fix C6a)
   if (newStatus === 'Cancelled') {
@@ -506,6 +532,7 @@ export async function updateAdminNote(id, note) {
 
 /**
  * Set tracking number and courier; auto-advance to "In Delivery" if applicable.
+ * Fitur 3: hanya berlaku untuk delivery — kalau pickup, update lokasi & jadwal.
  */
 export async function setTrackingNumber(id, trackingNumber, courierName, actorId) {
   const order = await getOrderById(id);
@@ -526,6 +553,44 @@ export async function setTrackingNumber(id, trackingNumber, courierName, actorId
     await insertHistoryEntry(id, 'Quality Checking', 'In Delivery', actorId);
   }
 
+  return getOrderById(id);
+}
+
+/**
+ * Set pickup info untuk delivery_method = pickup_factory / pickup_store.
+ * @param {string} id
+ * @param {{ pickup_location: string, pickup_ready_at?: Date }} opts
+ */
+export async function setPickupInfo(id, opts) {
+  const order = await getOrderById(id);
+  if (!order) {
+    const err = new Error('Pesanan tidak ditemukan.');
+    err.status = 404;
+    throw err;
+  }
+
+  await query(
+    'UPDATE orders SET pickup_location = ?, pickup_ready_at = ? WHERE id = ?',
+    [opts.pickup_location || null, opts.pickup_ready_at || null, id]
+  );
+
+  return getOrderById(id);
+}
+
+/**
+ * Update delivery_method pada order.
+ * @param {string} id
+ * @param {'delivery'|'pickup_factory'|'pickup_store'} method
+ */
+export async function setDeliveryMethod(id, method) {
+  const allowed = ['delivery', 'pickup_factory', 'pickup_store'];
+  if (!allowed.includes(method)) {
+    const err = new Error('delivery_method tidak valid.');
+    err.status = 422;
+    throw err;
+  }
+
+  await query('UPDATE orders SET delivery_method = ? WHERE id = ?', [method, id]);
   return getOrderById(id);
 }
 

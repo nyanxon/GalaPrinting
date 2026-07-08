@@ -1,6 +1,18 @@
 import { readJson, writeJson, remove } from "../core/storage.js";
 import { USE_BACKEND, api, setAccessToken, clearSession } from "../core/httpClient.js";
 import { syncCartOnLogin } from "./cartService.js";
+import { initSocket, disconnectSocket } from "../core/socket.js";
+
+// Daftarkan socket handlers segera setelah module load
+// (registerSocketHandlers dipanggil dari chatService — ini adalah pengganti / tambahan)
+// Untuk admin dashboard (Fitur 5), kita inisialisasi socket langsung di sini.
+function _socketConnectHandler(token) {
+  if (token) initSocket(token);
+}
+
+function _socketDisconnectHandler() {
+  disconnectSocket();
+}
 
 // ---------------------------------------------------------------------------
 // localStorage keys (used when USE_BACKEND=false)
@@ -28,10 +40,10 @@ export function getSession()  { return readJson(SESSION_KEY, null); }
 // ---------------------------------------------------------------------------
 
 /** @type {(() => void) | null} */
-let _socketConnect = null;
+let _socketConnect = _socketConnectHandler;
 
 /** @type {(() => void) | null} */
-let _socketDisconnect = null;
+let _socketDisconnect = _socketDisconnectHandler;
 
 /**
  * Register socket lifecycle callbacks.

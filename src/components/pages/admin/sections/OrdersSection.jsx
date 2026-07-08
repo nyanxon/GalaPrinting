@@ -1,8 +1,7 @@
 /**
  * OrdersSection.jsx — Paginated orders table with status select dropdown.
- * Equivalent to vanilla admin/sections/ordersSection.js
- *
- * Requirements: 9.2, 16.4
+ * Fitur 1: menampilkan approval badge "Sudah di-ACC oleh [nama] pada [tgl]"
+ *          dan memblokir update status untuk tahap yang sudah di-approve.
  */
 
 import { useState, useEffect, useContext, useCallback } from 'react';
@@ -21,6 +20,17 @@ import OrderDetailModal from '../../../shared/OrderDetailModal.jsx';
 import { showToast } from '../../../../core/toastEmitter.js';
 
 const PAGE_SIZE = 10;
+
+/**
+ * Fitur 1: Cek apakah status saat ini sudah di-lock (sudah di-approve sebelumnya).
+ * Jika iya, return objek approval; jika tidak, return null.
+ * @param {object} order
+ * @returns {{ approved_name: string, approved_at: string } | null}
+ */
+function getApprovalForCurrentStatus(order) {
+  if (!Array.isArray(order.approvals) || order.approvals.length === 0) return null;
+  return order.approvals.find((a) => a.stage === order.status) || null;
+}
 
 function PaginationBar({ page, totalPages, total, limit, onPageChange }) {
   if (totalPages <= 1) return null;
@@ -257,6 +267,10 @@ export default function OrdersSection() {
                   order.orderType || 'standard'
                 );
 
+                // Fitur 1: cek apakah status ini sudah di-approve/locked
+                const approvalInfo = getApprovalForCurrentStatus(order);
+                const isLocked = Boolean(approvalInfo);
+
                 return (
                   <tr key={order.id}>
                     <td>
@@ -299,7 +313,19 @@ export default function OrdersSection() {
                       )}
                     </td>
                     <td>
-                      {allowed.length > 0 ? (
+                      {/* Fitur 1: tampilkan badge ACC jika sudah di-lock, jika tidak tampilkan dropdown */}
+                      {isLocked ? (
+                        <div>
+                          <span className={`order-status-badge ${cfg.badge}`} style={{ display: 'block', marginBottom: '6px' }}>
+                            {cfg.icon} {order.status}
+                          </span>
+                          <span className="adm-approved-badge" title={`Di-ACC oleh ${approvalInfo.approved_name || approvalInfo.approver_name_live || 'admin'}`}>
+                            ✅ Di-ACC: {approvalInfo.approved_name || approvalInfo.approver_name_live || 'Admin'}
+                            <br />
+                            <small>{new Date(approvalInfo.approved_at).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</small>
+                          </span>
+                        </div>
+                      ) : allowed.length > 0 ? (
                         <select
                           className="adm-status-select"
                           value={order.status}
@@ -372,6 +398,11 @@ export default function OrdersSection() {
         isOpen={detailOpen}
         onClose={() => setDetailOpen(false)}
         order={selectedOrder}
+        actorRole={actorRole}
+        onOrderUpdated={(updated) => {
+          setSelectedOrder(updated);
+          fetchOrders().then((data) => { if (data) setResult(data); });
+        }}
       />
 
       {/* ── Cancellation Reason Dialog ── */}

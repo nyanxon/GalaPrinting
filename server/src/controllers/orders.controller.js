@@ -223,7 +223,7 @@ export async function updateOrderStatus(req, res, next) {
     }
     const current = await svc.getOrderById(req.params.id);
     const previousStatus = current?.status;
-    const order = await svc.updateOrderStatus(req.params.id, newStatus, req.user.id, req.user.role, cancellationReason);
+    const order = await svc.updateOrderStatus(req.params.id, newStatus, req.user.id, req.user.role, cancellationReason, req.user.name);
     emitOrderStatusChanged(order, previousStatus);
     return res.json({ ok: true, data: order });
   } catch (err) {
@@ -250,6 +250,41 @@ export async function setTracking(req, res, next) {
       return res.status(422).json({ ok: false, message: 'Nomor resi wajib diisi.' });
     }
     const order = await svc.setTrackingNumber(req.params.id, trackingNumber, courierName, req.user.id);
+    return res.json({ ok: true, data: order });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * PATCH /:id/delivery-method — set metode pengiriman (Fitur 3)
+ */
+export async function setDeliveryMethod(req, res, next) {
+  try {
+    const { delivery_method } = req.body;
+    if (!delivery_method) {
+      return res.status(422).json({ ok: false, message: 'delivery_method wajib diisi.' });
+    }
+    const order = await svc.setDeliveryMethod(req.params.id, delivery_method);
+    return res.json({ ok: true, data: order });
+  } catch (err) {
+    if (err.status === 422 || err.status === 404) {
+      return res.status(err.status).json({ ok: false, message: err.message });
+    }
+    next(err);
+  }
+}
+
+/**
+ * PATCH /:id/pickup — set info lokasi & jadwal pickup (Fitur 3)
+ */
+export async function setPickupInfo(req, res, next) {
+  try {
+    const { pickup_location, pickup_ready_at } = req.body;
+    if (!pickup_location) {
+      return res.status(422).json({ ok: false, message: 'pickup_location wajib diisi.' });
+    }
+    const order = await svc.setPickupInfo(req.params.id, { pickup_location, pickup_ready_at });
     return res.json({ ok: true, data: order });
   } catch (err) {
     next(err);

@@ -1,12 +1,16 @@
+import { useState, useEffect } from 'react';
 import Modal from './Modal.jsx';
 import { formatCurrency } from '../../core/helpers.js';
 import { api, resolveApiUrl } from '../../core/httpClient.js';
+import DeliveryMethodPanel from './DeliveryMethodPanel.jsx';
 
 /**
  * OrderDetailModal — detail pesanan untuk admin, subadmin, dan owner.
  * Menampilkan: info customer, produk yang dibeli, file desain customer,
- * total, catatan admin, tracking, dan riwayat status.
- * Bukti pembayaran TIDAK ditampilkan di sini (sudah ada di tabel).
+ * total, catatan admin, tracking, riwayat status, dan metode pengambilan.
+ *
+ * Fitur 1: tampilkan approval audit trail.
+ * Fitur 3: tampilkan DeliveryMethodPanel untuk QC/admin di stage relevan.
  */
 
 const STATUS_CONFIG = {
@@ -21,21 +25,16 @@ const STATUS_CONFIG = {
   'Cancelled':                  { label: 'Dibatalkan',                 color: '#991b1b', bg: '#fee2e2' },
 };
 
-/**
- * Resolve design file URL from an order item.
- * Handles both backend (designFileUrl) and localStorage (designDataUrl) modes.
- */
+// Stages di mana QC/admin bisa set delivery method (Fitur 3)
+const DELIVERY_METHOD_STAGES = ['Quality Checking', 'In Delivery', 'Finished'];
+
 function resolveDesignUrl(item) {
-  if (item.designFileUrl) return item.designFileUrl;
-  if (item.designDataUrl) return item.designDataUrl;
+  if (item.designFileUrl)  return item.designFileUrl;
+  if (item.designDataUrl)  return item.designDataUrl;
   if (item.designFileName) return resolveApiUrl(item.designFileName);
   return null;
 }
 
-/**
- * Download a file from a URL via fetch (handles cross-origin + auth).
- * Falls back to opening in a new tab if fetch fails.
- */
 async function downloadFile(url, fileName) {
   try {
     const res = await api.get(url, { responseType: 'blob' });
@@ -49,19 +48,39 @@ async function downloadFile(url, fileName) {
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
   } catch {
-    // Fallback: open in new tab
     window.open(url, '_blank', 'noopener,noreferrer');
   }
 }
 
-function OrderDetailModal({ isOpen, onClose, order }) {
-  if (!order) return null;
+/**
+ * @param {{ isOpen: boolean, onClose: fn, order: object, actorRole?: string, onOrderUpdated?: fn }} props
+ */
+function OrderDetailModal({ isOpen, onClose, order, actorRole, onOrderUpdated }) {
+  // Keep a local copy so DeliveryMethodPanel can update it in-place
+  const [localOrder, setLocalOrder] = useState(order);
 
-  const items    = order.items || [];
-  const subtotal = order.subtotal ?? order.total
-    ?? items.reduce((s, i) => s + (i.price * (i.quantity || 1)), 0);
-  const cfg = STATUS_CONFIG[order.status]
-    || { label: order.status || '—', color: '#1f1f1f', bg: '#f0f0f0' };
+  // Sync when parent passes a different order object
+  useEffect(() => {
+    if (order) setLocalOrder(order);
+  }, [order]);
+
+  if (!localOrder) return null;
+
+  const o       = localOrder;
+  const items   = o.items || [];
+  const subtotal = Number(o.subtotal ?? o.total
+    ?? items.reduce((s, i) => s + (Number(i.price) * (i.quantity || 1)), 0));
+  const cfg = STATUS_CONFIG[o.status] || { label: o.status || '—', color: '#1f1f1f', bg: '#f0f0f0' };
+
+  // Fitur 3
+  const showDeliveryPanel =
+    DELIVERY_METHOD_STAGES.includes(o.status) &&
+    (actorRole === 'qc' || actorRole === 'admin' || actorRole === 'owner');
+
+  function handleDeliverySaved(updatedOrder) {
+    setLocalOrder(updatedOrder);
+    if (onOrderUpdated) onOrderUpdated(updatedOrder);
+  }
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
@@ -72,10 +91,10 @@ function OrderDetailModal({ isOpen, onClose, order }) {
           <div>
             <h2 className="odm-title">Detail Pesanan</h2>
             <code className="odm-order-num">
-              {order.orderNumber || order.order_number || `#${order.id?.slice(0, 8)}`}
+              {o.orderNumber || o.order_number || `#${o.id?.slice(0, 8)}`}
             </code>
-            {order.source === 'custom'  && <span className="odm-source-badge odm-source-badge--custom">Custom Order</span>}
-            {order.source === 'offline' && <span className="odm-source-badge odm-source-badge--offline">Offline Order</span>}
+            {o.source === 'custom'  && <span className="odm-source-badge odm-source-badge--custom">Custom Order</span>}
+            {o.source === 'offline' && <span className="odm-source-badge odm-source-badge--offline">Offline Order</span>}
           </div>
           <button className="odm-close" type="button" aria-label="Tutup" onClick={onClose}>✕</button>
         </div>
@@ -88,9 +107,9 @@ function OrderDetailModal({ isOpen, onClose, order }) {
             <span className="odm-status-badge" style={{ background: cfg.bg, color: cfg.color }}>
               {cfg.label}
             </span>
-            {(order.createdAt || order.created_at) && (
+            {(o.createdAt || o.created_at) && (
               <span className="odm-meta-date">
-                {new Date(order.createdAt || order.created_at).toLocaleDateString('id-ID', {
+                {new Date(o.createdAt || o.created_at).toLocaleDateString('id-ID', {
                   day: '2-digit', month: 'long', year: 'numeric',
                 })}
               </span>
@@ -101,27 +120,27 @@ function OrderDetailModal({ isOpen, onClose, order }) {
           <div className="odm-section">
             <div className="odm-section-title">👤 Informasi Customer</div>
             <div className="odm-info-grid">
-              {(order.customerName || order.customer_name || order.customer?.name) && (
+              {(o.customerName || o.customer_name || o.customer?.name) && (
                 <div className="odm-info-row">
                   <span className="odm-info-label">Nama</span>
                   <span className="odm-info-value">
-                    {order.customerName || order.customer_name || order.customer?.name}
+                    {o.customerName || o.customer_name || o.customer?.name}
                   </span>
                 </div>
               )}
-              {(order.customerPhone || order.customer_phone || order.customer?.phone) && (
+              {(o.customerPhone || o.customer_phone || o.customer?.phone) && (
                 <div className="odm-info-row">
                   <span className="odm-info-label">Telepon</span>
                   <span className="odm-info-value">
-                    {order.customerPhone || order.customer_phone || order.customer?.phone}
+                    {o.customerPhone || o.customer_phone || o.customer?.phone}
                   </span>
                 </div>
               )}
-              {(order.customerAddress || order.customer_address || order.customer?.address) && (
+              {(o.customerAddress || o.customer_address || o.customer?.address) && (
                 <div className="odm-info-row">
                   <span className="odm-info-label">Alamat</span>
                   <span className="odm-info-value">
-                    {order.customerAddress || order.customer_address || order.customer?.address}
+                    {o.customerAddress || o.customer_address || o.customer?.address}
                   </span>
                 </div>
               )}
@@ -143,15 +162,12 @@ function OrderDetailModal({ isOpen, onClose, order }) {
 
                   return (
                     <div key={item.id || idx} className="odm-item-card">
-                      {/* Nama + subtotal */}
                       <div className="odm-item-header">
                         <span className="odm-item-name">{item.name}</span>
                         <span className="odm-item-subtotal">
-                          {formatCurrency(item.price * (item.quantity || 1))}
+                          {formatCurrency(Number(item.price) * (item.quantity || 1))}
                         </span>
                       </div>
-
-                      {/* Qty × harga + atribut */}
                       <div className="odm-item-meta">
                         <span className="odm-item-qty">
                           {item.quantity || 1} pcs × {formatCurrency(item.price)}
@@ -160,13 +176,7 @@ function OrderDetailModal({ isOpen, onClose, order }) {
                         {item.size     && <span className="odm-item-tag">📐 {item.size}</span>}
                         {item.material && <span className="odm-item-tag">🧱 {item.material}</span>}
                       </div>
-
-                      {/* Catatan */}
-                      {item.notes && (
-                        <div className="odm-item-notes">📝 {item.notes}</div>
-                      )}
-
-                      {/* File desain */}
+                      {item.notes && <div className="odm-item-notes">📝 {item.notes}</div>}
                       <div className="odm-item-design">
                         <div className="odm-item-design-label">🎨 File Desain</div>
                         {designUrl ? (
@@ -182,25 +192,16 @@ function OrderDetailModal({ isOpen, onClose, order }) {
                               <div className="odm-design-icon">📄</div>
                             )}
                             <div className="odm-design-footer">
-                              <span className="odm-design-name" title={fileName}>
-                                📎 {fileName}
-                              </span>
+                              <span className="odm-design-name" title={fileName}>📎 {fileName}</span>
                               <div className="odm-file-actions">
                                 {isImage && (
-                                  <a
-                                    className="odm-file-btn odm-file-btn--view"
-                                    href={designUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
+                                  <a className="odm-file-btn odm-file-btn--view"
+                                    href={designUrl} target="_blank" rel="noopener noreferrer">
                                     🔍 Lihat
                                   </a>
                                 )}
-                                <button
-                                  className="odm-file-btn odm-file-btn--dl"
-                                  type="button"
-                                  onClick={() => downloadFile(designUrl, fileName)}
-                                >
+                                <button className="odm-file-btn odm-file-btn--dl" type="button"
+                                  onClick={() => downloadFile(designUrl, fileName)}>
                                   ⬇️ Download
                                 </button>
                               </div>
@@ -217,89 +218,155 @@ function OrderDetailModal({ isOpen, onClose, order }) {
             )}
           </div>
 
-          {/* ── Total ── */}
+          {/* ── Subtotal ── */}
           <div className="odm-total-row">
             <span className="odm-total-label">Subtotal</span>
             <span className="odm-total-value">{formatCurrency(subtotal)}</span>
           </div>
 
           {/* ── Promo / Diskon ── */}
-          {(order.promoCode || order.promo_code) && (
+          {(o.promoCode || o.promo_code) && (
             <div className="odm-promo-row">
               <div className="odm-promo-left">
                 <span className="odm-promo-icon">🏷️</span>
                 <div>
-                  <div className="odm-promo-code">{order.promoCode || order.promo_code}</div>
+                  <div className="odm-promo-code">{o.promoCode || o.promo_code}</div>
                   <div className="odm-promo-label">Kode Promo</div>
                 </div>
               </div>
               <span className="odm-promo-discount">
-                -{formatCurrency(order.discountAmount ?? order.discount_amount ?? 0)}
+                -{formatCurrency(o.discountAmount ?? o.discount_amount ?? 0)}
               </span>
             </div>
           )}
 
-          {/* ── Total Akhir (after discount) ── */}
-          {(order.promoCode || order.promo_code) && (
+          {(o.promoCode || o.promo_code) && (
             <div className="odm-total-row odm-total-row--final">
               <span className="odm-total-label">Total Akhir</span>
               <span className="odm-total-value">
-                {formatCurrency(
-                  subtotal - Number(order.discountAmount ?? order.discount_amount ?? 0)
-                )}
+                {formatCurrency(subtotal - Number(o.discountAmount ?? o.discount_amount ?? 0))}
               </span>
             </div>
           )}
 
           {/* ── Catatan Admin ── */}
-          {(order.adminNote || order.admin_note) && (
+          {(o.adminNote || o.admin_note) && (
             <div className="odm-section">
               <div className="odm-section-title">📋 Catatan Admin</div>
-              <div className="odm-note-box">{order.adminNote || order.admin_note}</div>
+              <div className="odm-note-box">{o.adminNote || o.admin_note}</div>
             </div>
           )}
 
           {/* ── Alasan Pembatalan ── */}
-          {order.status === 'Cancelled' && (order.cancellationReason || order.cancellation_reason) && (
+          {o.status === 'Cancelled' && (o.cancellationReason || o.cancellation_reason) && (
             <div className="odm-section">
               <div className="odm-section-title">❌ Alasan Pembatalan</div>
-              <div className="odm-note-box">{order.cancellationReason || order.cancellation_reason}</div>
+              <div className="odm-note-box">{o.cancellationReason || o.cancellation_reason}</div>
             </div>
           )}
 
-          {/* ── Info Pengiriman ── */}
-          {(order.trackingNumber || order.tracking_number) && (
+          {/* ── Info Pengiriman (tracking) ── */}
+          {(o.trackingNumber || o.tracking_number) && (
             <div className="odm-section">
               <div className="odm-section-title">🚚 Info Pengiriman</div>
               <div className="odm-info-grid">
                 <div className="odm-info-row">
                   <span className="odm-info-label">Kurir</span>
-                  <span className="odm-info-value">
-                    {order.courierName || order.courier_name || '—'}
-                  </span>
+                  <span className="odm-info-value">{o.courierName || o.courier_name || '—'}</span>
                 </div>
                 <div className="odm-info-row">
                   <span className="odm-info-label">No. Resi</span>
                   <span className="odm-info-value odm-tracking-num">
-                    {order.trackingNumber || order.tracking_number}
+                    {o.trackingNumber || o.tracking_number}
                   </span>
                 </div>
               </div>
             </div>
           )}
 
+          {/* ── Fitur 3: Metode Pengambilan (read-only view) ── */}
+          {(o.deliveryMethod || o.delivery_method) && (
+            <div className="odm-section">
+              <div className="odm-section-title">📦 Metode Pengambilan</div>
+              <div className="odm-info-grid">
+                <div className="odm-info-row">
+                  <span className="odm-info-label">Metode</span>
+                  <span className="odm-info-value">
+                    {(() => {
+                      const m = o.deliveryMethod || o.delivery_method;
+                      const labels = {
+                        delivery:       '🚚 Pengiriman Kurir',
+                        pickup_factory: '🏭 Ambil di Pabrik',
+                        pickup_store:   '🏪 Ambil di Toko',
+                      };
+                      return labels[m] || m;
+                    })()}
+                  </span>
+                </div>
+                {(o.pickupLocation || o.pickup_location) && (
+                  <div className="odm-info-row">
+                    <span className="odm-info-label">Lokasi Pickup</span>
+                    <span className="odm-info-value">{o.pickupLocation || o.pickup_location}</span>
+                  </div>
+                )}
+                {(o.pickupReadyAt || o.pickup_ready_at) && (
+                  <div className="odm-info-row">
+                    <span className="odm-info-label">Siap Diambil</span>
+                    <span className="odm-info-value">
+                      {new Date(o.pickupReadyAt || o.pickup_ready_at).toLocaleString('id-ID', {
+                        day: '2-digit', month: 'long', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit',
+                      })}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── Fitur 3: Panel set delivery method (QC/admin saja) ── */}
+          {showDeliveryPanel && (
+            <DeliveryMethodPanel order={o} onSaved={handleDeliverySaved} />
+          )}
+
+          {/* ── Fitur 1: Approval audit trail ── */}
+          {Array.isArray(o.approvals) && o.approvals.length > 0 && (
+            <div className="odm-section">
+              <div className="odm-section-title">✅ Riwayat Approval</div>
+              <div className="odm-history-list">
+                {o.approvals.map((ap, idx) => (
+                  <div key={ap.id || idx} className="odm-history-item">
+                    <div className="odm-history-dot" style={{ background: '#166534' }} />
+                    <div className="odm-history-content">
+                      <span className="odm-history-status">
+                        <strong>{ap.stage}</strong>
+                        {' '}&mdash; di-ACC oleh{' '}
+                        <strong>{ap.approved_name || ap.approver_name_live || ap.approved_role}</strong>
+                        {' '}({ap.approved_role})
+                      </span>
+                      {ap.approved_at && (
+                        <span className="odm-history-time">
+                          {new Date(ap.approved_at).toLocaleString('id-ID')}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* ── Riwayat Status ── */}
-          {Array.isArray(order.history) && order.history.length > 0 && (
+          {Array.isArray(o.history) && o.history.length > 0 && (
             <div className="odm-section">
               <div className="odm-section-title">🕐 Riwayat Status</div>
               <div className="odm-history-list">
-                {order.history.map((h, idx) => (
+                {o.history.map((h, idx) => (
                   <div key={h.id || idx} className="odm-history-item">
                     <div className="odm-history-dot" />
                     <div className="odm-history-content">
                       <span className="odm-history-status">
-                        {(h.from_status || h.from)
-                          ? `${h.from_status || h.from} → ` : ''}
+                        {(h.from_status || h.from) ? `${h.from_status || h.from} → ` : ''}
                         <strong>{h.to_status || h.to || h.type}</strong>
                       </span>
                       {(h.created_at || h.at) && (

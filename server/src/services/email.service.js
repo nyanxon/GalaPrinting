@@ -324,6 +324,73 @@ export async function sendNewOrderAdminAlert(order) {
 }
 
 /**
+ * Kirim email invoice PDF ke customer setelah invoice paid.
+ * @param {{ invoice: object, pdfBuffer: Buffer }} opts
+ */
+export async function sendInvoiceEmail({ invoice, pdfBuffer }) {
+  if (!resendClient) return;
+  const to = invoice.customer_email;
+  if (!to) return;
+
+  const statusLabel = invoice.payment_status === 'paid' ? 'Lunas' : invoice.payment_status === 'partial' ? 'Partial' : 'Belum Bayar';
+  const subject = `Invoice ${escHtml(invoice.invoice_number)} — Gala Printing`;
+
+  const body = `
+  <tr><td style="padding:32px;">
+    <h2 style="margin:0 0 12px;color:#111827;font-size:20px;">Invoice Pembayaran</h2>
+    <p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.6;">
+      Halo <strong>${escHtml(invoice.customer_name || 'Pelanggan')}</strong>,<br/>
+      Berikut adalah invoice untuk pesanan Anda di Gala Printing.
+      File PDF terlampir pada email ini.
+    </p>
+    <table width="100%" cellpadding="0" cellspacing="0"
+           style="border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;margin-bottom:24px;">
+      <tr style="background:#faf8f5;">
+        <td style="padding:10px 16px;color:#6b7280;font-size:13px;font-weight:600;width:42%;">No. Invoice</td>
+        <td style="padding:10px 16px;font-size:14px;font-weight:600;">${escHtml(invoice.invoice_number)}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 16px;color:#6b7280;font-size:13px;font-weight:600;border-top:1px solid #e5e7eb;">No. Pesanan</td>
+        <td style="padding:10px 16px;font-size:14px;border-top:1px solid #e5e7eb;">${escHtml(invoice.order_number || '—')}</td>
+      </tr>
+      <tr style="background:#faf8f5;">
+        <td style="padding:10px 16px;color:#6b7280;font-size:13px;font-weight:600;border-top:1px solid #e5e7eb;">Total</td>
+        <td style="padding:10px 16px;font-size:14px;font-weight:700;border-top:1px solid #e5e7eb;">${formatIDR(invoice.total)}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 16px;color:#6b7280;font-size:13px;font-weight:600;border-top:1px solid #e5e7eb;">Status</td>
+        <td style="padding:10px 16px;font-size:14px;border-top:1px solid #e5e7eb;">${statusLabel}</td>
+      </tr>
+    </table>
+    <p style="margin:0;color:#6b7280;font-size:13px;line-height:1.6;">
+      File PDF invoice terlampir. Simpan sebagai bukti pembayaran Anda.<br/>
+      Terima kasih telah berbelanja di Gala Printing.
+    </p>
+  </td></tr>`;
+
+  try {
+    // Kirim dengan attachment PDF via Resend
+    if (!resendClient) return;
+    await resendClient.emails.send({
+      from: config.email.fromEmail,
+      to,
+      subject,
+      html: baseWrapper(body),
+      attachments: [
+        {
+          filename: `invoice-${invoice.invoice_number}.pdf`,
+          content: pdfBuffer.toString('base64'),
+        },
+      ],
+    });
+    console.log(`[email] Invoice PDF sent → ${to}`);
+  } catch (err) {
+    console.error('[email] Invoice email failed:', err.message);
+    // Fire-and-forget
+  }
+}
+
+/**
  * Send promo announcement to a customer. Fire-and-forget.
  */
 export async function sendPromoNotification(promoData) {

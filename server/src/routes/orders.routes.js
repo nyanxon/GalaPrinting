@@ -9,6 +9,7 @@ import { authenticate } from '../middleware/auth.js';
 import { requireRole } from '../middleware/requireRole.js';
 import { uploadPayment, uploadDesign } from '../middleware/upload.js';
 import * as ctrl from '../controllers/orders.controller.js';
+import { getInvoiceByOrder } from '../controllers/invoice.controller.js';
 
 const router = Router();
 
@@ -32,9 +33,14 @@ router.get('/',          authenticate, requireRole(...STAFF_ROLES), ctrl.listOrd
 router.get('/:id',       authenticate, ctrl.getOrder);
 
 // Status transitions (staff)
-router.patch('/:id/status',   authenticate, requireRole(...STAFF_ROLES), ctrl.updateOrderStatus);
-router.patch('/:id/note',     authenticate, requireRole('admin', 'cs'), ctrl.updateAdminNote);
-router.patch('/:id/tracking', authenticate, requireRole('qc', 'admin'), ctrl.setTracking);
+router.patch('/:id/status',          authenticate, requireRole(...STAFF_ROLES), ctrl.updateOrderStatus);
+router.patch('/:id/note',            authenticate, requireRole('admin', 'cs'), ctrl.updateAdminNote);
+router.patch('/:id/tracking',        authenticate, requireRole('qc', 'admin'), ctrl.setTracking);
+router.patch('/:id/delivery-method', authenticate, requireRole('qc', 'cs', 'admin'), ctrl.setDeliveryMethod);
+router.patch('/:id/pickup',          authenticate, requireRole('qc', 'admin'), ctrl.setPickupInfo);
+
+// Invoice untuk order (customer & staff bisa lihat)
+router.get('/:orderId/invoice', authenticate, ctrl.getInvoiceByOrder);
 
 // Payment proof upload (customer)
 router.post(

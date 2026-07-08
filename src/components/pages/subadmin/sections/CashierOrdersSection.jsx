@@ -21,6 +21,7 @@ import { formatCurrency } from '../../../../core/helpers.js';
 import OrderDetailModal from '../../../shared/OrderDetailModal.jsx';
 import { showToast } from '../../../../core/toastEmitter.js';
 import { resolveApiUrl } from '../../../../core/httpClient.js';
+import { createInvoice, getInvoiceByOrderId, openInvoicePdf } from '../../../../services/invoiceService.js';
 
 const CASHIER_STATUSES = ['Waiting for Payment', 'Payment Accepted'];
 
@@ -88,6 +89,9 @@ export default function CashierOrdersSection() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [detailOpen, setDetailOpen]   = useState(false);
   const [noteValues, setNoteValues]   = useState({});
+  // Fitur 2: track invoice status per order
+  const [invoiceMap, setInvoiceMap]   = useState({}); // orderId → invoice|null|'loading'
+  const [creatingInvoice, setCreatingInvoice] = useState(null); // orderId
 
   // Cancellation dialog state
   const [cancelDialogOpen, setCancelDialogOpen]       = useState(false);
@@ -127,6 +131,19 @@ export default function CashierOrdersSection() {
     window.addEventListener('gala:orders-updated', handler);
     return () => window.removeEventListener('gala:orders-updated', handler);
   }, [fetchOrders]);
+
+  // Fitur 2: cek invoice untuk setiap order Payment Accepted
+  useEffect(() => {
+    orders.forEach((order) => {
+      if (order.status !== 'Payment Accepted') return;
+      if (invoiceMap[order.id] !== undefined) return; // sudah di-fetch
+      setInvoiceMap((prev) => ({ ...prev, [order.id]: 'loading' }));
+      getInvoiceByOrderId(order.id)
+        .then((inv) => setInvoiceMap((prev) => ({ ...prev, [order.id]: inv })))
+        .catch(() => setInvoiceMap((prev) => ({ ...prev, [order.id]: null })));
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders]);
 
   async function handleAdvance(orderId, nextStatus) {
     const res = await updateOrderStatus(orderId, nextStatus, actorRole);
@@ -189,6 +206,20 @@ export default function CashierOrdersSection() {
     setCancelTargetOrderId(null);
     setCancelReason('');
     setCancelReasonErr('');
+  }
+
+  // Fitur 2: buat invoice dari order
+  async function handleCreateInvoice(orderId) {
+    setCreatingInvoice(orderId);
+    try {
+      const inv = await createInvoice({ order_id: orderId });
+      setInvoiceMap((prev) => ({ ...prev, [orderId]: inv }));
+      showToast(`Invoice ${inv.invoice_number} berhasil dibuat.`, 'success');
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Gagal membuat invoice.', 'error');
+    } finally {
+      setCreatingInvoice(null);
+    }
   }
 
   return (
@@ -305,6 +336,36 @@ export default function CashierOrdersSection() {
                         >
                           🔍 Detail
                         </button>
+
+                        {/* Fitur 2: Invoice button — tampil untuk Payment Accepted */}
+                        {order.status === 'Payment Accepted' && (
+                          <div style={{ marginTop: '4px' }}>
+                            {invoiceMap[order.id] === 'loading' ? (
+                              <span className="adm-date">Mengecek invoice…</span>
+                            ) : invoiceMap[order.id] ? (
+                              <button
+                                className="adm-btn adm-btn--secondary"
+                                type="button"
+                                style={{ fontSize: '11px', padding: '4px 8px' }}
+                                onClick={() => openInvoicePdf(invoiceMap[order.id].id)}
+                                title={`Invoice ${invoiceMap[order.id].invoice_number}`}
+                              >
+                                🧾 {invoiceMap[order.id].invoice_number}
+                              </button>
+                            ) : (
+                              <button
+                                className="adm-btn adm-btn--thermal"
+                                type="button"
+                                style={{ fontSize: '11px', padding: '4px 8px' }}
+                                disabled={creatingInvoice === order.id}
+                                onClick={() => handleCreateInvoice(order.id)}
+                                title="Buat invoice untuk order ini"
+                              >
+                                {creatingInvoice === order.id ? 'Membuat…' : '➕ Invoice'}
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <div className="adm-date" style={{ marginTop: '4px' }}>
                         {new Date(order.createdAt).toLocaleDateString('id-ID')}

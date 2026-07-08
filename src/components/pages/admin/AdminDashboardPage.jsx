@@ -9,6 +9,8 @@ import { AuthContext } from '../../context/AuthContext.jsx';
 import { logout } from '../../../services/authService.js';
 import { listAllOrders } from '../../../services/orderService.js';
 import { listConversations } from '../../../services/chatService.js';
+import { getSocket } from '../../../core/socket.js';
+import { useAdminSound } from '../../../hooks/useAdminSound.js';
 import OrdersSection from './sections/OrdersSection.jsx';
 import CustomersSection from './sections/CustomersSection.jsx';
 import ProductsSection from './sections/ProductsSection.jsx';
@@ -18,6 +20,7 @@ import DMSection from './sections/DMSection.jsx';
 import PromoSection from './sections/PromoSection.jsx';
 import HomepageSection from './sections/HomepageSection.jsx';
 import CategoriesSection from './sections/CategoriesSection.jsx';
+import InvoiceSection from './sections/InvoiceSection.jsx';
 import ExportDataCards from '../../admin/ExportDataCards.jsx';
 import StaffAvatarButton from '../../shared/StaffAvatarButton.jsx';
 import logoImg from '../../../assets/logo.png';
@@ -26,6 +29,7 @@ import '../../../styles/css/pages/dashboard.css';
 const ADMIN_NAV = [
   { id: 'dashboard',   label: 'DASHBOARD' },
   { id: 'orders',      label: 'ORDERS' },
+  { id: 'invoices',    label: 'INVOICES' },
   { id: 'customer',    label: 'CUSTOMER' },
   { id: 'products',    label: 'PRODUCT' },
   { id: 'categories',  label: 'CATEGORIES' },
@@ -154,6 +158,17 @@ export default function AdminDashboardPage() {
   const userName    = user?.name || 'Admin';
   const isDashboard = activeNav === 'dashboard';
 
+  // Fitur 5: suara notifikasi
+  const socket = getSocket();
+  const { muted, toggleMute, unlockAudio } = useAdminSound(socket);
+
+  // Unlock audio on first mount (kalau sudah ada interaksi)
+  useEffect(() => {
+    // Unlock saat komponen mount — user sudah login jadi sudah ada interaksi
+    const timer = setTimeout(() => { unlockAudio(); }, 300);
+    return () => clearTimeout(timer);
+  }, [unlockAudio]);
+
   function handleNavClick(navId) {
     setActiveNav(navId);
     setSidebarOpen(false); // close drawer on mobile after selection
@@ -171,6 +186,7 @@ export default function AdminDashboardPage() {
   function renderSection() {
     switch (activeNav) {
       case 'orders':      return <OrdersSection />;
+      case 'invoices':    return <InvoiceSection />;
       case 'customer':    return <CustomersSection />;
       case 'products':    return <ProductsSection />;
       case 'categories':  return <CategoriesSection />;
@@ -249,6 +265,26 @@ export default function AdminDashboardPage() {
 
             <div className="staff-header-right">
               <StaffAvatarButton />
+              {/* Fitur 5: toggle mute/unmute sound notifikasi */}
+              <button
+                className="staff-sound-btn"
+                type="button"
+                onClick={() => { toggleMute(); unlockAudio(); }}
+                title={muted ? 'Aktifkan suara notifikasi' : 'Matikan suara notifikasi'}
+                aria-label={muted ? 'Aktifkan suara' : 'Matikan suara'}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  padding: '6px 10px',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  lineHeight: 1,
+                }}
+              >
+                {muted ? '🔇' : '🔔'}
+              </button>
               <div className="staff-header-auth">
                 <span className="staff-header-name">{userName}</span>
                 <button

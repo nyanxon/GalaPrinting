@@ -30,6 +30,7 @@ import profileRoutes   from './routes/profile.routes.js';
 import addressRoutes   from './routes/addresses.routes.js';
 import exportRoutes    from './routes/export.routes.js';
 import homepageRoutes  from './routes/homepage.routes.js';
+import invoiceRoutes   from './routes/invoice.routes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Try multiple possible dist paths for different deployment structures
@@ -118,6 +119,7 @@ export function createApp() {
   app.use('/api/addresses',     addressRoutes);
   app.use('/api/export',        exportRoutes);
   app.use('/api/homepage',      homepageRoutes);
+  app.use('/api/invoices',      invoiceRoutes);
 
   // ── Serve React frontend build ───────────────────────────────────────────────
   // In production on Hostinger, backend serves both API and frontend.
