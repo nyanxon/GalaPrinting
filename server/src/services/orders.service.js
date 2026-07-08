@@ -8,7 +8,7 @@ import { randomUUID } from 'crypto';
 import { query, pool } from '../db/connection.js';
 import { StorageService } from '../utils/storage.js';
 import { incrementUsage, recordUsageLog } from './promo.service.js';
-import { sendOrderNotification } from './email.service.js';
+import { sendOrderNotification, sendNewOrderAdminAlert } from './email.service.js';
 import { getPreferences } from './notifications.service.js';
 
 // ── Status transition rules ───────────────────────────────────────────────────
@@ -323,7 +323,12 @@ export async function createOrder({ customer, items, subtotal, source = 'online'
     conn.release();
   }
 
-  return getOrderById(id);
+  const createdOrder = await getOrderById(id);
+
+  // Fire-and-forget admin alert for new orders
+  sendNewOrderAdminAlert(createdOrder).catch(() => {});
+
+  return createdOrder;
 }
 
 /**

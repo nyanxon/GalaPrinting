@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom';
 import Navbar from '../shared/Navbar.jsx';
 import Footer from '../shared/Footer.jsx';
 import ChatWidget from '../shared/ChatWidget.jsx';
+import EmailVerificationBanner from '../shared/EmailVerificationBanner.jsx';
 
 /**
  * PublicLayout component
@@ -16,6 +17,7 @@ function PublicLayout() {
   return (
     <>
       <Navbar />
+      <EmailVerificationBanner />
       <Outlet />
       <Footer />
       <ChatWidget />

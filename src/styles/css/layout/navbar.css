@@ -743,97 +743,158 @@
   color: var(--brand-brown, #785E40);
 }
 
-/* ── Language Switcher (Pill Layout) ───────────────────── */
+/* ── Language Switcher (Dropdown) ───────────────────────── */
 .lang-switcher {
-  display: inline-flex;
-  align-items: center;
-  background: #fff;
-  border: 1px solid var(--border, #e0e0e0);
-  border-radius: 8px;
-  overflow: hidden;
+  position: relative;
   flex-shrink: 0;
-  height: 36px;
-  /* Pemisah visual dari nav-actions */
   margin-left: 6px;
 }
 
-.lang-option {
+/* Trigger button */
+.lang-trigger {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 3px;
+  gap: 5px;
   padding: 0 10px;
-  height: 100%;
-  background: transparent;
-  border: none;
-  border-right: 1px solid var(--border, #e0e0e0);
+  height: 36px;
+  background: #fff;
+  border: 1px solid var(--border, #e0e0e0);
+  border-radius: 8px;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0.5px;
-  color: #6b6b6b;
+  color: #1f1f1f;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-  min-width: 42px;  /* Touch target mobile (44px sangat aman di sini) */
   white-space: nowrap;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  min-width: 58px;
+  justify-content: space-between;
 }
 
-.lang-option:last-child {
-  border-right: none;
+.lang-trigger:hover,
+.lang-trigger--open {
+  border-color: var(--brand-brown, #785E40);
+  color: var(--brand-brown, #785E40);
+  background: rgba(120, 94, 64, 0.04);
 }
 
-.lang-option:hover:not(.lang-option--active) {
-  background: rgba(120, 94, 64, 0.08);
+.lang-trigger-label {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.lang-trigger-chevron {
+  color: #888;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.lang-trigger-chevron--up {
+  transform: rotate(180deg);
   color: var(--brand-brown, #785E40);
 }
 
-.lang-option--active {
-  background: var(--brand-brown, #785E40);
-  color: #fff;
+/* Dropdown list */
+.lang-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 1000;
+  background: #fff;
+  border: 1px solid #333;
+  border-radius: 10px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.14);
+  min-width: 148px;
+  overflow: hidden;
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+}
+
+/* Arrow pointer */
+.lang-dropdown::before {
+  content: '';
+  position: absolute;
+  top: -7px;
+  right: 14px;
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border-left: 1px solid #333;
+  border-top: 1px solid #333;
+  transform: rotate(45deg);
+}
+
+.lang-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1f1f1f;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  list-style: none;
+  user-select: none;
+}
+
+.lang-dropdown-item:hover {
+  background: #f5f0eb;
+  color: var(--brand-brown, #785E40);
+}
+
+.lang-dropdown-item--active {
+  color: var(--brand-brown, #785E40);
+  font-weight: 700;
+  background: rgba(120, 94, 64, 0.05);
+}
+
+.lang-dropdown-item--active:hover {
+  background: rgba(120, 94, 64, 0.1);
+}
+
+.lang-dropdown-code {
+  font-size: 11px;
   font-weight: 800;
-  cursor: default;
+  letter-spacing: 0.5px;
+  min-width: 28px;
+  color: inherit;
 }
 
-.lang-chevron {
-  font-size: 9px;
-  line-height: 1;
-  opacity: 0.85;
+.lang-dropdown-name {
+  flex: 1;
+  font-size: 13px;
+  color: inherit;
 }
 
-/* ── Mobile: kompresikan agar tidak overflow ─────────────── */
+.lang-dropdown-check {
+  flex-shrink: 0;
+  color: var(--brand-brown, #785E40);
+}
+
+/* Mobile */
 @media (max-width: 919px) {
-  .lang-switcher {
+  .lang-trigger {
     height: 32px;
+    padding: 0 9px;
+    min-width: 52px;
+    font-size: 11px;
+  }
+
+  .lang-switcher {
     margin-left: 4px;
   }
-
-  .lang-option {
-    padding: 0 8px;
-    font-size: 11px;
-    min-width: 36px;
-  }
 }
 
-/* ── Sangat sempit (< 380px): sembunyikan teks BAL jadi BAL pendek ─ */
 @media (max-width: 379px) {
-  .lang-option {
+  .lang-trigger {
     padding: 0 7px;
-    font-size: 10px;
-    min-width: 32px;
+    min-width: 46px;
   }
 }
 
-/* Hapus style dropdown lama (jika ada sisa) */
-.lang-switcher-btn,
-.lang-dropdown,
-.lang-dropdown-item,
-.lang-flag,
-.lang-code,
-.lang-arrow,
-.lang-label,
-.lang-check,
-.nav-sidebar-lang {
-  display: none !important;
-}
 
 
 

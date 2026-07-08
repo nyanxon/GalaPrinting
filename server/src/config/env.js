@@ -59,7 +59,9 @@ export const config = {
 
   email: {
     resendApiKey: process.env.RESEND_API_KEY || null,
-    fromEmail: process.env.RESEND_FROM_EMAIL || 'noreply@galaprinting.com',
+    fromEmail: process.env.RESEND_FROM_EMAIL || 'noreply@galaprintofficialbali.co.id',
+    adminEmail: process.env.ADMIN_EMAIL || null,
+    frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
   },
 
   get isDev() {

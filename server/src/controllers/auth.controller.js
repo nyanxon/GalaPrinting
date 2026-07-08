@@ -13,7 +13,7 @@ const COOKIE_OPTIONS = {
   httpOnly: true,
   sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
   secure: process.env.NODE_ENV === 'production',
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 };
 
 function setRefreshCookie(res, token) {
@@ -21,13 +21,14 @@ function setRefreshCookie(res, token) {
 }
 
 function clearRefreshCookie(res) {
-  // Match the same attributes used when setting the cookie so browsers honour the deletion
   res.clearCookie(REFRESH_COOKIE, {
     httpOnly: true,
     sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
     secure: process.env.NODE_ENV === 'production',
   });
 }
+
+// ── Existing endpoints ────────────────────────────────────────────────────────
 
 // POST /api/auth/register
 export async function register(req, res, next) {
@@ -42,7 +43,12 @@ export async function register(req, res, next) {
     const { accessToken, refreshToken } = await authService.createTokenPair(user.id);
 
     setRefreshCookie(res, refreshToken);
-    return res.status(201).json({ ok: true, accessToken, user });
+    return res.status(201).json({
+      ok: true,
+      accessToken,
+      user,
+      emailVerificationSent: true,
+    });
   } catch (err) {
     next(err);
   }
@@ -63,7 +69,6 @@ export async function login(req, res, next) {
       return res.status(401).json({ ok: false, message: 'Email atau password salah.' });
     }
 
-    // Check soft-deleted
     if (user.deleted_at) {
       return res.status(401).json({ ok: false, message: 'Akun tidak aktif.' });
     }
@@ -71,9 +76,14 @@ export async function login(req, res, next) {
     const { accessToken, refreshToken } = await authService.createTokenPair(user.id);
     setRefreshCookie(res, refreshToken);
 
-    // Return user without password_hash
     const { password_hash: _, ...safeUser } = user;
-    return res.json({ ok: true, accessToken, user: safeUser });
+    return res.json({
+      ok: true,
+      accessToken,
+      user: safeUser,
+      // Inform the client if the email is not yet verified (soft warning, not a block)
+      emailVerified: Boolean(user.is_email_verified),
+    });
   } catch (err) {
     next(err);
   }
@@ -103,9 +113,7 @@ export async function refresh(req, res, next) {
 export async function logout(req, res, next) {
   try {
     const token = req.cookies?.[REFRESH_COOKIE];
-    if (token) {
-      await authService.revokeRefreshToken(token);
-    }
+    if (token) await authService.revokeRefreshToken(token);
     clearRefreshCookie(res);
     return res.json({ ok: true, message: 'Berhasil keluar.' });
   } catch (err) {
@@ -117,10 +125,65 @@ export async function logout(req, res, next) {
 export async function me(req, res, next) {
   try {
     const user = await authService.getUserById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ ok: false, message: 'User tidak ditemukan.' });
-    }
+    if (!user) return res.status(404).json({ ok: false, message: 'User tidak ditemukan.' });
     return res.json({ ok: true, user });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ── Email Verification ────────────────────────────────────────────────────────
+
+// GET /api/auth/verify-email?token=xxx
+export async function verifyEmail(req, res, next) {
+  try {
+    const { token } = req.query;
+    const result = await authService.verifyEmail(token);
+    return res.status(result.ok ? 200 : 400).json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// POST /api/auth/resend-verification
+// Requires authentication — user must be logged in to request a resend
+export async function resendVerification(req, res, next) {
+  try {
+    const result = await authService.resendVerificationEmail(req.user.id);
+    return res.status(result.ok ? 200 : 400).json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ── Forgot / Reset Password ───────────────────────────────────────────────────
+
+// POST /api/auth/forgot-password
+export async function forgotPassword(req, res, next) {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json({ ok: false, message: 'Email tidak valid.' });
+    }
+    const { email } = req.body;
+    const result = await authService.forgotPassword(email);
+    // Always 200 to prevent user enumeration
+    return res.json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// POST /api/auth/reset-password
+export async function resetPassword(req, res, next) {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json({ ok: false, message: 'Password minimal 6 karakter.' });
+    }
+    const { token, password } = req.body;
+    const result = await authService.resetPassword(token, password);
+    return res.status(result.ok ? 200 : 400).json(result);
   } catch (err) {
     next(err);
   }

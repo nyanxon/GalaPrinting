@@ -64,50 +64,30 @@ function RegisterPage() {
     e.preventDefault();
     setRegisterAlert(null);
 
-    // Validasi semua field wajib sebelum kirim ke server
     const { name, phone, gender, dob_day, dob_month, dob_year, email, password } = registerData;
 
-    if (!name.trim()) {
-      setRegisterAlert({ message: 'Nama lengkap wajib diisi.', type: 'error' });
-      return;
-    }
-    if (!phone.trim()) {
-      setRegisterAlert({ message: 'Nomor handphone wajib diisi.', type: 'error' });
-      return;
-    }
-    if (!gender) {
-      setRegisterAlert({ message: 'Jenis kelamin wajib dipilih.', type: 'error' });
-      return;
-    }
-    if (!dob_day || !dob_month || !dob_year) {
-      setRegisterAlert({ message: 'Tanggal lahir wajib diisi lengkap (tanggal, bulan, dan tahun).', type: 'error' });
-      return;
-    }
-    if (!email.trim()) {
-      setRegisterAlert({ message: 'Email wajib diisi.', type: 'error' });
-      return;
-    }
-    if (!password || password.length < 6) {
-      setRegisterAlert({ message: 'Password minimal 6 karakter.', type: 'error' });
-      return;
-    }
+    if (!name.trim()) { setRegisterAlert({ message: 'Nama lengkap wajib diisi.', type: 'error' }); return; }
+    if (!phone.trim()) { setRegisterAlert({ message: 'Nomor handphone wajib diisi.', type: 'error' }); return; }
+    if (!gender) { setRegisterAlert({ message: 'Jenis kelamin wajib dipilih.', type: 'error' }); return; }
+    if (!dob_day || !dob_month || !dob_year) { setRegisterAlert({ message: 'Tanggal lahir wajib diisi lengkap.', type: 'error' }); return; }
+    if (!email.trim()) { setRegisterAlert({ message: 'Email wajib diisi.', type: 'error' }); return; }
+    if (!password || password.length < 6) { setRegisterAlert({ message: 'Password minimal 6 karakter.', type: 'error' }); return; }
 
     setRegisterSubmitting(true);
     try {
       const dob = `${dob_year}-${String(dob_month).padStart(2, '0')}-${String(dob_day).padStart(2, '0')}`;
       const res = await Promise.resolve(registerCustomer({
-        name: name.trim(),
-        email: email.trim(),
-        phone: phone.trim(),
-        password,
-        gender,
-        dob,
+        name: name.trim(), email: email.trim(), phone: phone.trim(), password, gender, dob,
       }));
       if (!res.ok) {
         setRegisterAlert({ message: res.message, type: 'error' });
         return;
       }
-      setRegisterAlert({ message: res.message, type: 'info' });
+      // Show email-sent notice before redirecting
+      setRegisterAlert({
+        message: `Registrasi berhasil! Email verifikasi telah dikirim ke ${email.trim()}. Cek inbox Anda.`,
+        type: 'info',
+      });
       updateUser(await Promise.resolve(getCurrentUser()));
       navigate('/');
     } finally {
@@ -384,6 +364,17 @@ function RegisterPage() {
                   value={loginData.password}
                   onChange={handleLoginChange}
                 />
+              </div>
+              {/* Lupa Password link */}
+              <div style={{ textAlign: 'right', marginBottom: 12, marginTop: -4 }}>
+                <a
+                  href="/forgot-password"
+                  className="register-link"
+                  style={{ fontSize: 13 }}
+                  onClick={(e) => { e.preventDefault(); navigate('/forgot-password'); }}
+                >
+                  Lupa password?
+                </a>
               </div>
               <button className="btn register-submit-btn" type="submit" disabled={loginSubmitting}>
                 {loginSubmitting ? 'Memproses...' : 'MASUK'}

@@ -306,3 +306,95 @@ export async function deleteUser(userId) {
 }
 
 // (seedStaffUsers removed) Staff accounts are now provided by the backend database.
+
+// ---------------------------------------------------------------------------
+// Email Verification
+// ---------------------------------------------------------------------------
+
+/**
+ * Verify email using token from URL query param.
+ * GET /api/auth/verify-email?token=xxx
+ * @param {string} token
+ * @returns {Promise<{ ok: boolean, message: string }>}
+ */
+export async function verifyEmail(token) {
+  if (!USE_BACKEND) {
+    return { ok: true, message: 'Email berhasil diverifikasi (mode lokal).' };
+  }
+  try {
+    const res = await api.get(`/api/auth/verify-email?token=${encodeURIComponent(token)}`);
+    return res.data;
+  } catch (err) {
+    return {
+      ok: false,
+      message: err.response?.data?.message || 'Verifikasi gagal. Link mungkin sudah kedaluwarsa.',
+    };
+  }
+}
+
+/**
+ * Resend verification email for the currently logged-in user.
+ * POST /api/auth/resend-verification
+ * @returns {Promise<{ ok: boolean, message: string }>}
+ */
+export async function resendVerificationEmail() {
+  if (!USE_BACKEND) {
+    return { ok: true, message: 'Email verifikasi dikirim (mode lokal).' };
+  }
+  try {
+    const res = await api.post('/api/auth/resend-verification');
+    return res.data;
+  } catch (err) {
+    return {
+      ok: false,
+      message: err.response?.data?.message || 'Gagal mengirim ulang email verifikasi.',
+    };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Forgot / Reset Password
+// ---------------------------------------------------------------------------
+
+/**
+ * Request a password reset email.
+ * POST /api/auth/forgot-password
+ * @param {string} email
+ * @returns {Promise<{ ok: boolean, message: string }>}
+ */
+export async function forgotPassword(email) {
+  if (!USE_BACKEND) {
+    return { ok: true, message: 'Jika email terdaftar, link reset telah dikirim.' };
+  }
+  try {
+    const res = await api.post('/api/auth/forgot-password', { email });
+    return res.data;
+  } catch (err) {
+    return {
+      ok: false,
+      message: err.response?.data?.message || 'Gagal memproses permintaan. Coba lagi nanti.',
+    };
+  }
+}
+
+/**
+ * Reset password using token from URL query param.
+ * POST /api/auth/reset-password
+ * @param {string} token
+ * @param {string} password
+ * @returns {Promise<{ ok: boolean, message: string }>}
+ */
+export async function resetPassword(token, password) {
+  if (!USE_BACKEND) {
+    return { ok: true, message: 'Password berhasil direset (mode lokal).' };
+  }
+  try {
+    const res = await api.post('/api/auth/reset-password', { token, password });
+    return res.data;
+  } catch (err) {
+    return {
+      ok: false,
+      message: err.response?.data?.message || 'Reset password gagal. Link mungkin sudah kedaluwarsa.',
+    };
+  }
+}

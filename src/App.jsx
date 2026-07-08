@@ -22,6 +22,9 @@ import CaraOrderPage from './components/pages/public/CaraOrderPage.jsx';
 import PortfolioPage from './components/pages/public/PortfolioPage.jsx';
 import TentangKamiPage from './components/pages/public/TentangKamiPage.jsx';
 import ProfilePage from './components/pages/public/ProfilePage.jsx';
+import VerifyEmailPage from './components/pages/public/VerifyEmailPage.jsx';
+import ForgotPasswordPage from './components/pages/public/ForgotPasswordPage.jsx';
+import ResetPasswordPage from './components/pages/public/ResetPasswordPage.jsx';
 
 // Staff pages
 import AdminDashboardPage from './components/pages/admin/AdminDashboardPage.jsx';
@@ -123,6 +126,9 @@ function App() {
               <Route path="/portfolio"      element={<PortfolioPage />} />
               <Route path="/tentang-kami"   element={<TentangKamiPage />} />
               <Route path="/profile"        element={<ProfilePage />} />
+              <Route path="/verify-email"   element={<VerifyEmailPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password"  element={<ResetPasswordPage />} />
             </Route>
 
             {/* Staff routes — no public shell, role-guarded */}
