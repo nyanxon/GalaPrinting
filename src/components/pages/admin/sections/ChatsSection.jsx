@@ -239,8 +239,8 @@ export default function ChatsSection() {
       setSendError('Format tidak didukung. Gunakan PDF, PNG, JPG, JPEG, atau ZIP.');
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setSendError('Ukuran file maksimal 5 MB.');
+    if (file.size > 100 * 1024 * 1024) { // 100 MB (updated from 5 MB)
+      setSendError('Ukuran file maksimal 100 MB.');
       return;
     }
     setSendError('');

@@ -34,9 +34,11 @@ function ProfilePage() {
   const [profileError, setProfileError] = useState('');
 
   const isCustomer = !loading && user?.role === 'customer';
+  const isAdminOrOwner = !loading && (user?.role === 'admin' || user?.role === 'owner');
 
   useEffect(() => {
-    if (!isCustomer) return;
+    // Allow customer, admin, and owner to access profile
+    if (!isCustomer && !isAdminOrOwner) return;
 
     let cancelled = false;
     setProfileLoading(true);
@@ -49,13 +51,13 @@ function ProfilePage() {
       .finally(() => { if (!cancelled) setProfileLoading(false); });
 
     return () => { cancelled = true; };
-  }, [isCustomer]);
+  }, [isCustomer, isAdminOrOwner]);
 
   if (loading) {
     return <main><div className="pf-loading">Memuat...</div></main>;
   }
 
-  if (!user || user.role !== 'customer') {
+  if (!user || (user.role !== 'customer' && user.role !== 'admin' && user.role !== 'owner')) {
     return <Navigate to="/register" replace />;
   }
 

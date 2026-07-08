@@ -18,12 +18,12 @@ const ALLOWED_MIME = {
 };
 
 const MAX_SIZE = {
-  design:  20 * 1024 * 1024, // 20 MB
-  payment: 10 * 1024 * 1024, // 10 MB
-  chat:     5 * 1024 * 1024, //  5 MB
-  avatar:   5 * 1024 * 1024, //  5 MB
-  product: 10 * 1024 * 1024, // 10 MB
-  review:   5 * 1024 * 1024, //  5 MB
+  design:  100 * 1024 * 1024, // 100 MB (updated from 20 MB)
+  payment: 100 * 1024 * 1024, // 100 MB (updated from 10 MB)
+  chat:    100 * 1024 * 1024, // 100 MB (updated from 5 MB)
+  avatar:  100 * 1024 * 1024, // 100 MB (updated from 5 MB)
+  product: 100 * 1024 * 1024, // 100 MB (updated from 10 MB)
+  review:  100 * 1024 * 1024, // 100 MB (updated from 5 MB)
 };
 
 function buildUpload(type) {

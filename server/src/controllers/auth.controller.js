@@ -35,7 +35,9 @@ export async function register(req, res, next) {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(422).json({ ok: false, message: 'Silahkan masukkan Email dan Password.', errors: errors.mapped() });
+      const mapped = errors.mapped();
+      const firstMsg = Object.values(mapped)[0]?.msg || 'Silahkan masukkan Email dan Password.';
+      return res.status(422).json({ ok: false, message: firstMsg, errors: mapped });
     }
 
     const { name, email, phone, password, gender, dob } = req.body;
@@ -59,7 +61,9 @@ export async function login(req, res, next) {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(422).json({ ok: false, message: 'Silahkan masukkan Email dan Password.', errors: errors.mapped() });
+      const mapped = errors.mapped();
+      const firstMsg = Object.values(mapped)[0]?.msg || 'Silahkan masukkan Email dan Password.';
+      return res.status(422).json({ ok: false, message: firstMsg, errors: mapped });
     }
 
     const { email, password } = req.body;

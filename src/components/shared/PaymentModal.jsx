@@ -302,10 +302,10 @@ function PaymentModal({ isOpen, onClose, order, subtotal: subtotalProp, onPaymen
               {!proofFile && (
                 <DropZone
                   accept="image/*,.pdf,.jpg,.jpeg,.png,.gif,.webp,.bmp,.tiff,.heic"
-                  maxSize={10 * 1024 * 1024}
+                  maxSize={100 * 1024 * 1024} // 100 MB (updated from 10 MB)
                   onFiles={handleFiles}
                   label={<><strong>Klik untuk pilih file</strong> atau drag &amp; drop di sini</>}
-                  hint="JPG, PNG, GIF, WEBP, BMP, HEIC, PDF — Maks. 10 MB"
+                  hint="JPG, PNG, GIF, WEBP, BMP, HEIC, PDF — Maks. 100 MB"
                   className="co-proof-upload-area"
                 />
               )}

@@ -5,7 +5,7 @@ import { uploadAvatar } from '../../services/profileService.js';
 import { showToast } from '../../core/toastEmitter.js';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100 MB (updated from 5 MB)
 
 // ---------------------------------------------------------------------------
 // Helpers

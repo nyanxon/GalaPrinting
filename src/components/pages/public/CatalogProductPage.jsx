@@ -164,8 +164,8 @@ function CatalogProductPage() {
         setAlertMsg('Format file harus JPG/JPEG/PNG.');
         return;
       }
-      if (designFile.size > 10 * 1024 * 1024) {
-        setAlertMsg('Ukuran file maksimal 10MB.');
+      if (designFile.size > 100 * 1024 * 1024) { // 100 MB (updated from 10 MB)
+        setAlertMsg('Ukuran file maksimal 100MB.');
         return;
       }
       if (!designReadReady) {

@@ -86,7 +86,7 @@ function ItemReviewCard({ item, user, orderId }) {
       setError(t('orderStatus.photoHint'));
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > 100 * 1024 * 1024) { // 100 MB (updated from 5 MB)
       setError(t('orderStatus.photoHint'));
       return;
     }

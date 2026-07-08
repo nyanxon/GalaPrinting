@@ -20,7 +20,7 @@
 import { useState, useRef } from 'react';
 import '../../styles/css/shared/dropzone.css';
 
-const DEFAULT_MAX_SIZE = 10 * 1024 * 1024; // 10 MB
+const DEFAULT_MAX_SIZE = 100 * 1024 * 1024; // 100 MB (updated from 10 MB)
 
 function bytesToMB(bytes) {
   return (bytes / (1024 * 1024)).toFixed(0);

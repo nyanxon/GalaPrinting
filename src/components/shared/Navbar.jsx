@@ -5,7 +5,7 @@ import { AuthContext } from '../context/AuthContext.jsx';
 import { CartContext } from '../context/CartContext.jsx';
 import { logout, login, getCurrentUser } from '../../services/authService.js';
 import { listCategories } from '../../services/categoryService.js';
-import { listProducts } from '../../services/productService.js';
+// import { listProducts } from '../../services/productService.js'; // No longer needed — removed popup
 import { formatCurrency } from '../../core/helpers.js';
 import { resolveApiUrl } from '../../core/httpClient.js';
 import logoImg from '../../assets/logo.png';
@@ -59,11 +59,11 @@ function Navbar() {
   const [searchValue, setSearchValue] = useState('');
   const [categories, setCategories]   = useState([]);
 
-  // Produk Kami popup (secondary nav)
-  const [produkKamiOpen, setProdukKamiOpen]       = useState(false);
-  const [produkKamiList, setProdukKamiList]       = useState([]);
-  const [produkKamiLoading, setProdukKamiLoading] = useState(false);
-  const produkKamiRef = useRef(null);
+  // Produk Kami popup (secondary nav) — REMOVED, now just a direct link
+  // const [produkKamiOpen, setProdukKamiOpen]       = useState(false);
+  // const [produkKamiList, setProdukKamiList]       = useState([]);
+  // const [produkKamiLoading, setProdukKamiLoading] = useState(false);
+  // const produkKamiRef = useRef(null);
 
   const headerRef = useRef(null);
 
@@ -80,34 +80,10 @@ function Navbar() {
     setCartOpen(false);
     setProfileOpen(false);
     setLoginOpen(false);
-    setProdukKamiOpen(false);
+    // setProdukKamiOpen(false); // Removed — no longer a popup
   }
 
-  async function toggleProdukKami(e) {
-    e.stopPropagation();
-    if (produkKamiOpen) {
-      setProdukKamiOpen(false);
-      return;
-    }
-    // Tutup popup lain
-    setKategoriOpen(false);
-    setCartOpen(false);
-    setProfileOpen(false);
-    setLoginOpen(false);
-    // Load produk jika belum ada
-    if (produkKamiList.length === 0) {
-      setProdukKamiLoading(true);
-      try {
-        const prods = await listProducts();
-        setProdukKamiList(prods.slice(0, 12)); // Tampilkan maks 12 produk
-      } catch (_err) {
-        setProdukKamiList([]);
-      } finally {
-        setProdukKamiLoading(false);
-      }
-    }
-    setProdukKamiOpen(true);
-  }
+  // toggleProdukKami removed — now just a Link to /products
 
   async function togglePopup(name) {
     const wasOpen =
@@ -133,7 +109,7 @@ function Navbar() {
         // Login and cart popups stay open until the user explicitly toggles them.
         setKategoriOpen(false);
         setProfileOpen(false);
-        setProdukKamiOpen(false);
+        // setProdukKamiOpen(false); // Removed — no longer a popup
       }
     }
     document.addEventListener('click', handleDocClick);
@@ -146,7 +122,7 @@ function Navbar() {
         // Only close kategori and profile with Escape — login and cart need explicit toggle.
         setKategoriOpen(false);
         setProfileOpen(false);
-        setProdukKamiOpen(false);
+        // setProdukKamiOpen(false); // Removed — no longer a popup
       }
     }
     document.addEventListener('keydown', handleKeyDown);
@@ -411,7 +387,7 @@ function Navbar() {
                               <label className="login-popup-remember">
                                 <input type="checkbox" name="remember" /> {t('auth.rememberMe')}
                               </label>
-                              <Link to="/register" className="login-popup-forgot" onClick={closeAllPopups}>{t('auth.forgotPassword')}</Link>
+                              <Link to="/forgot-password" className="login-popup-forgot" onClick={closeAllPopups}>{t('auth.forgotPassword')}</Link>
                             </div>
                             <button className="login-popup-submit" type="submit" disabled={loginSubmitting}>
                               {loginSubmitting ? t('auth.processing') : t('auth.loginButton')}
@@ -444,70 +420,8 @@ function Navbar() {
           <div className="navbar-secondary">
             <NavLink to="/tentang-kami">{t('nav.about')}</NavLink>
 
-            {/* ── Produk Kami button + mega-dropdown ── */}
-            <div className="navbar-secondary-produk" ref={produkKamiRef} style={{ position: 'relative' }}>
-              <button
-                className={`navbar-secondary-produk-btn${produkKamiOpen ? ' active' : ''}`}
-                type="button"
-                aria-haspopup="true"
-                aria-expanded={produkKamiOpen}
-                onClick={toggleProdukKami}
-              >
-                {t('nav.ourProducts')}
-                <span className={`produk-arrow${produkKamiOpen ? ' open' : ''}`} aria-hidden="true">▾</span>
-              </button>
-
-              {produkKamiOpen && (
-                <div className="produk-kami-popup" role="dialog" aria-label={t('nav.ourProductsLabel')}>
-                  <div className="navbar-popup-arrow produk-kami-arrow" />
-
-                  {produkKamiLoading ? (
-                    <div className="produk-kami-loading">{t('nav.loadingProducts')}</div>
-                  ) : produkKamiList.length === 0 ? (
-                    <div className="produk-kami-loading">{t('home.noProducts')}</div>
-                  ) : (
-                    <>
-                      <div className="produk-kami-grid">
-                        {produkKamiList.map((prod) => (
-                          <Link
-                            key={prod.id}
-                            className="produk-kami-item"
-                            to={`/products/${encodeURIComponent(prod.id)}`}
-                            onClick={() => setProdukKamiOpen(false)}
-                          >
-                            <div className="produk-kami-img-wrap">
-                              <img
-                                src={prod.image || placeholderImg}
-                                alt={prod.name}
-                                className="produk-kami-img"
-                                onError={(e) => { e.currentTarget.src = placeholderImg; }}
-                                loading="lazy"
-                              />
-                            </div>
-                            <div className="produk-kami-info">
-                              <span className="produk-kami-name">{prod.name}</span>
-                              {prod.category && (
-                                <span className="produk-kami-cat">{prod.category}</span>
-                              )}
-                              <span className="produk-kami-price">
-                                {prod.price > 0 ? formatCurrency(prod.price) : '—'}
-                              </span>
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
-                      <Link
-                        className="produk-kami-footer"
-                        to="/products"
-                        onClick={() => setProdukKamiOpen(false)}
-                      >
-                        {t('nav.viewAllProducts')} →
-                      </Link>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
+            {/* ── Produk Kami — now a direct link to /products ── */}
+            <NavLink to="/products">{t('nav.ourProducts')}</NavLink>
 
             <NavLink to="/cara-order">{t('nav.howToOrder')}</NavLink>
             <NavLink to="/status">{t('nav.orderStatus')}</NavLink>
@@ -552,67 +466,8 @@ function Navbar() {
               <Link to="/" onClick={() => setMobileOpen(false)}>{t('nav.home')}</Link>
               <Link to="/tentang-kami" onClick={() => setMobileOpen(false)}>{t('nav.about')}</Link>
 
-              {/* Produk Kami — accordion di mobile */}
-              <div
-                className="nav-sidebar-produk-header"
-                role="button"
-                tabIndex={0}
-                aria-expanded={produkKamiOpen}
-                onClick={async () => {
-                  if (!produkKamiOpen && produkKamiList.length === 0) {
-                    setProdukKamiLoading(true);
-                    try {
-                      const prods = await listProducts();
-                      setProdukKamiList(prods.slice(0, 12));
-                    } catch (_e) { setProdukKamiList([]); }
-                    finally { setProdukKamiLoading(false); }
-                  }
-                  setProdukKamiOpen((prev) => !prev);
-                }}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.currentTarget.click(); }}
-              >
-                <span>{t('nav.ourProducts')}</span>
-                <span className={`nav-sidebar-produk-arrow${produkKamiOpen ? ' open' : ''}`} aria-hidden="true">▾</span>
-              </div>
-              <div className={`nav-sidebar-produk-list${produkKamiOpen ? ' open' : ''}`}>
-                {produkKamiLoading ? (
-                  <div className="produk-kami-loading">{t('nav.loadingProducts')}</div>
-                ) : (
-                  <>
-                    <div className="nav-sidebar-produk-grid">
-                      {produkKamiList.map((prod) => (
-                        <Link
-                          key={prod.id}
-                          className="nav-sidebar-produk-item"
-                          to={`/products/${encodeURIComponent(prod.id)}`}
-                          onClick={() => { setMobileOpen(false); setProdukKamiOpen(false); }}
-                        >
-                          <img
-                            src={prod.image || placeholderImg}
-                            alt={prod.name}
-                            className="nav-sidebar-produk-img"
-                            onError={(e) => { e.currentTarget.src = placeholderImg; }}
-                            loading="lazy"
-                          />
-                          <div>
-                            <div className="nav-sidebar-produk-name">{prod.name}</div>
-                            {prod.price > 0 && (
-                              <div className="nav-sidebar-produk-price">{formatCurrency(prod.price)}</div>
-                            )}
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                    <Link
-                      className="nav-sidebar-produk-all"
-                      to="/products"
-                      onClick={() => { setMobileOpen(false); setProdukKamiOpen(false); }}
-                    >
-                      {t('nav.viewAllProducts')} →
-                    </Link>
-                  </>
-                )}
-              </div>
+              {/* Produk Kami — now a direct link in mobile too */}
+              <Link to="/products" onClick={() => setMobileOpen(false)}>{t('nav.ourProducts')}</Link>
 
               <Link to="/products" onClick={() => setMobileOpen(false)}>{t('nav.products')}</Link>
               <Link to="/portfolio" onClick={() => setMobileOpen(false)}>{t('nav.portfolio')}</Link>
