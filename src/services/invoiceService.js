@@ -113,10 +113,23 @@ export async function sendInvoiceEmail(id) {
 
 /**
  * Download / buka PDF invoice di tab baru.
+ * Fetch menggunakan axios agar Authorization header ikut dikirim (token tidak invalid).
  * @param {string} id
  */
-export function openInvoicePdf(id) {
-  window.open(`/api/invoices/${id}/pdf`, '_blank', 'noopener,noreferrer');
+export async function openInvoicePdf(id) {
+  try {
+    const res = await api.get(`/api/invoices/${id}/pdf`, { responseType: 'blob' });
+    const blob = new Blob([res.data], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const win = window.open(url, '_blank', 'noopener,noreferrer');
+    // Revoke setelah dibuka agar tidak bocor memori
+    if (win) {
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+    }
+  } catch (err) {
+    console.error('[invoice] Failed to open PDF:', err.message);
+    throw err;
+  }
 }
 
 /**

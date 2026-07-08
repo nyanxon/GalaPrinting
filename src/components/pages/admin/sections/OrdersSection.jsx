@@ -18,6 +18,7 @@ import {
 import { formatCurrency } from '../../../../core/helpers.js';
 import OrderDetailModal from '../../../shared/OrderDetailModal.jsx';
 import { showToast } from '../../../../core/toastEmitter.js';
+import { getSocket } from '../../../../core/socket.js';
 
 const PAGE_SIZE = 10;
 
@@ -127,6 +128,30 @@ export default function OrdersSection() {
     }
     window.addEventListener('gala:orders-updated', handler);
     return () => window.removeEventListener('gala:orders-updated', handler);
+  }, [fetchOrders]);
+
+  // Real-time: listen socket order:new & order:status_changed agar tidak perlu refresh manual
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    function handleOrderNew() {
+      // Refresh list — order baru masuk
+      fetchOrders().then((data) => { if (data) setResult(data); });
+    }
+
+    function handleOrderStatusChanged() {
+      // Refresh list supaya status terbaru tampil
+      fetchOrders().then((data) => { if (data) setResult(data); });
+    }
+
+    socket.on('order:new', handleOrderNew);
+    socket.on('order:status_changed', handleOrderStatusChanged);
+
+    return () => {
+      socket.off('order:new', handleOrderNew);
+      socket.off('order:status_changed', handleOrderStatusChanged);
+    };
   }, [fetchOrders]);
 
   async function handleStatusChange(orderId, newStatus) {

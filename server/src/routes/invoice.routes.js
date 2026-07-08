@@ -11,7 +11,7 @@ const router = Router();
 
 // Cashier & admin bisa list/create/update invoice
 const INVOICE_ROLES = ['cashier', 'admin', 'owner'];
-const VIEW_ROLES = ['cashier', 'admin', 'owner', 'cs', 'operational', 'qc'];
+const VIEW_ROLES = ['cashier', 'admin', 'owner', 'cs', 'operational', 'qc', 'offline'];
 
 router.get('/',         authenticate, requireRole(...VIEW_ROLES), ctrl.listInvoices);
 router.post('/',        authenticate, requireRole(...INVOICE_ROLES), ctrl.createInvoice);

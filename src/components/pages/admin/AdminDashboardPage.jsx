@@ -73,6 +73,8 @@ function ActivitySidebar({ onGoToOrders, onGoToChats }) {
 
   useEffect(() => {
     loadActivity();
+
+    // Custom window events
     function handleOrdersUpdate() { loadActivity(); }
     function handleChatUpdate()   { loadActivity(); }
     function handleStorage(e) {
@@ -81,10 +83,22 @@ function ActivitySidebar({ onGoToOrders, onGoToChats }) {
     window.addEventListener('gala:orders-updated', handleOrdersUpdate);
     window.addEventListener('gala:chat-updated', handleChatUpdate);
     window.addEventListener('storage', handleStorage);
+
+    // Socket real-time: refresh saat order baru atau status berubah
+    const socket = getSocket();
+    if (socket) {
+      socket.on('order:new', handleOrdersUpdate);
+      socket.on('order:status_changed', handleOrdersUpdate);
+    }
+
     return () => {
       window.removeEventListener('gala:orders-updated', handleOrdersUpdate);
       window.removeEventListener('gala:chat-updated', handleChatUpdate);
       window.removeEventListener('storage', handleStorage);
+      if (socket) {
+        socket.off('order:new', handleOrdersUpdate);
+        socket.off('order:status_changed', handleOrdersUpdate);
+      }
     };
   }, []);
 

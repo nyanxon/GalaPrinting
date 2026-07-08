@@ -3029,6 +3029,42 @@
   border-radius: 0 0 20px 20px;
 }
 
+/* ── Invoice in Order Detail ─────────────────────────────── */
+.odm-invoice-box {
+  background: #faf8f5;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.odm-invoice-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #374151;
+}
+
+.odm-invoice-label {
+  font-weight: 600;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.odm-invoice-value {
+  font-size: 13px;
+  color: #111827;
+}
+
+.odm-invoice-update {
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid #e5e7eb;
+}
+
 /* ── Lightbox ────────────────────────────────────────────── */
 .odm-lightbox {
   position: fixed;

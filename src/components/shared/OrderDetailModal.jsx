@@ -3,6 +3,8 @@ import Modal from './Modal.jsx';
 import { formatCurrency } from '../../core/helpers.js';
 import { api, resolveApiUrl } from '../../core/httpClient.js';
 import DeliveryMethodPanel from './DeliveryMethodPanel.jsx';
+import { getInvoiceByOrderId, updateInvoicePaymentStatus, openInvoicePdf } from '../../services/invoiceService.js';
+import { showToast } from '../../core/toastEmitter.js';
 
 /**
  * OrderDetailModal — detail pesanan untuk admin, subadmin, dan owner.
@@ -58,11 +60,45 @@ async function downloadFile(url, fileName) {
 function OrderDetailModal({ isOpen, onClose, order, actorRole, onOrderUpdated }) {
   // Keep a local copy so DeliveryMethodPanel can update it in-place
   const [localOrder, setLocalOrder] = useState(order);
+  const [invoice, setInvoice]       = useState(null);
+  const [invoiceLoading, setInvoiceLoading] = useState(false);
+  const [invoiceStatusUpdating, setInvoiceStatusUpdating] = useState(false);
+  const [invoiceNewStatus, setInvoiceNewStatus] = useState('');
+  const [invoiceNewMethod, setInvoiceNewMethod] = useState('');
 
   // Sync when parent passes a different order object
   useEffect(() => {
-    if (order) setLocalOrder(order);
+    if (order) {
+      setLocalOrder(order);
+      setInvoice(null);
+      // Fetch invoice for this order
+      setInvoiceLoading(true);
+      getInvoiceByOrderId(order.id)
+        .then((inv) => {
+          setInvoice(inv);
+          if (inv) {
+            setInvoiceNewStatus(inv.payment_status);
+            setInvoiceNewMethod(inv.payment_method || '');
+          }
+        })
+        .catch(() => setInvoice(null))
+        .finally(() => setInvoiceLoading(false));
+    }
   }, [order]);
+
+  async function handleInvoiceStatusUpdate() {
+    if (!invoice || invoice.locked) return;
+    setInvoiceStatusUpdating(true);
+    try {
+      const updated = await updateInvoicePaymentStatus(invoice.id, invoiceNewStatus, invoiceNewMethod);
+      setInvoice(updated);
+      showToast(`Status pembayaran invoice diperbarui: ${updated.payment_status}`, 'success');
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Gagal update status invoice.', 'error');
+    } finally {
+      setInvoiceStatusUpdating(false);
+    }
+  }
 
   if (!localOrder) return null;
 
@@ -380,6 +416,80 @@ function OrderDetailModal({ isOpen, onClose, order, actorRole, onOrderUpdated })
               </div>
             </div>
           )}
+
+          {/* ── Invoice ── */}
+          <div className="odm-section">
+            <div className="odm-section-title">🧾 Invoice</div>
+            {invoiceLoading ? (
+              <div style={{ color: '#6b7280', fontSize: '13px' }}>Memuat invoice…</div>
+            ) : invoice ? (
+              <div className="odm-invoice-box">
+                <div className="odm-invoice-row">
+                  <span className="odm-invoice-label">No. Invoice</span>
+                  <code className="odm-invoice-value">{invoice.invoice_number}</code>
+                </div>
+                <div className="odm-invoice-row">
+                  <span className="odm-invoice-label">Total</span>
+                  <span className="odm-invoice-value"><strong>{formatCurrency(invoice.total)}</strong></span>
+                </div>
+                <div className="odm-invoice-row">
+                  <span className="odm-invoice-label">Status Bayar</span>
+                  <span className="odm-invoice-value">
+                    {(() => {
+                      const sc = { paid: { label: 'Lunas', color: '#166534', bg: '#dcfce7' }, unpaid: { label: 'Belum Bayar', color: '#b91c1c', bg: '#fee2e2' }, partial: { label: 'Partial', color: '#92400e', bg: '#fef3c7' } };
+                      const s = sc[invoice.payment_status] || { label: invoice.payment_status, color: '#333', bg: '#eee' };
+                      return <span style={{ background: s.bg, color: s.color, padding: '2px 10px', borderRadius: '99px', fontSize: '12px', fontWeight: 700 }}>{s.label}</span>;
+                    })()}
+                  </span>
+                </div>
+                {invoice.payment_method && (
+                  <div className="odm-invoice-row">
+                    <span className="odm-invoice-label">Metode Bayar</span>
+                    <span className="odm-invoice-value">{invoice.payment_method}</span>
+                  </div>
+                )}
+                {!invoice.locked && (actorRole === 'admin' || actorRole === 'cashier' || actorRole === 'owner') && (
+                  <div className="odm-invoice-update">
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                      <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', fontWeight: 600 }}>
+                        Status
+                        <select className="adm-input" style={{ fontSize: '13px', padding: '6px 10px' }} value={invoiceNewStatus} onChange={(e) => setInvoiceNewStatus(e.target.value)}>
+                          <option value="unpaid">Belum Bayar</option>
+                          <option value="partial">Partial</option>
+                          <option value="paid">Lunas</option>
+                        </select>
+                      </label>
+                      <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', fontWeight: 600 }}>
+                        Metode Bayar
+                        <select className="adm-input" style={{ fontSize: '13px', padding: '6px 10px' }} value={invoiceNewMethod} onChange={(e) => setInvoiceNewMethod(e.target.value)}>
+                          <option value="">— Pilih —</option>
+                          <option value="Transfer Bank">Transfer Bank</option>
+                          <option value="QRIS">QRIS</option>
+                          <option value="Tunai">Tunai</option>
+                          <option value="COD">COD</option>
+                        </select>
+                      </label>
+                      <button type="button" className="adm-btn adm-btn--primary" style={{ padding: '6px 14px', fontSize: '13px', alignSelf: 'flex-end' }} onClick={handleInvoiceStatusUpdate} disabled={invoiceStatusUpdating}>
+                        {invoiceStatusUpdating ? 'Menyimpan…' : 'Simpan'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {invoice.locked && <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '6px' }}>🔒 Invoice sudah lunas dan terkunci.</div>}
+                <div style={{ marginTop: '10px' }}>
+                  <button type="button" className="adm-btn adm-btn--secondary" style={{ fontSize: '13px', padding: '6px 14px' }}
+                    onClick={async () => {
+                      try { await openInvoicePdf(invoice.id); }
+                      catch { showToast('Gagal membuka PDF invoice.', 'error'); }
+                    }}>
+                    📄 PDF Invoice
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ color: '#9ca3af', fontSize: '13px' }}>Invoice belum tersedia untuk pesanan ini.</div>
+            )}
+          </div>
 
         </div>
 

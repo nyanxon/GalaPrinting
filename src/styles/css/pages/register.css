@@ -96,7 +96,15 @@
 
 .register-input.error {
   border-color: #DC2626;
-  background: #FEE2E2;
+  background-color: #FEE2E2;
+  text-decoration: none !important;
+}
+
+.register-input.error option,
+.register-input.error option:disabled {
+  background-color: #fff;
+  color: #111;
+  text-decoration: none !important;
 }
 
 .register-field-hint {
@@ -132,6 +140,7 @@
 }
 
 .register-input.error.register-select {
+  background-color: #FEE2E2;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23DC2626' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 

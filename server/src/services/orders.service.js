@@ -329,6 +329,11 @@ export async function createOrder({ customer, items, subtotal, source = 'online'
   // Fire-and-forget admin alert for new orders
   sendNewOrderAdminAlert(createdOrder).catch(() => {});
 
+  // Auto-create invoice for every new order (fire-and-forget)
+  autoCreateInvoice(createdOrder).catch((err) => {
+    console.error('[orders] Auto-create invoice failed:', err.message);
+  });
+
   return createdOrder;
 }
 
@@ -620,4 +625,66 @@ export async function attachPaymentProof(id, proofPath) {
  */
 export async function attachDesignFile(itemId, filePath) {
   await query('UPDATE order_items SET design_file_path = ? WHERE id = ?', [filePath, itemId]);
+}
+
+// ── Auto-invoice helper ────────────────────────────────────────────────────────
+
+/**
+ * Otomatis buat invoice untuk order baru yang baru saja dibuat.
+ * Dipanggil fire-and-forget dari createOrder().
+ * Tidak throw — semua error dicatch di caller.
+ * @param {object} order  Hasil dari getOrderById()
+ */
+async function autoCreateInvoice(order) {
+  // Cek apakah sudah ada invoice untuk order ini
+  const [[existing]] = await query('SELECT id FROM invoices WHERE order_id = ?', [order.id]);
+  if (existing) return; // Sudah ada, skip
+
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    // Generate invoice number
+    const [[row]] = await conn.execute('SELECT last_seq FROM invoice_sequence WHERE id = 1 FOR UPDATE');
+    const newSeq = row.last_seq + 1;
+    await conn.execute('UPDATE invoice_sequence SET last_seq = ? WHERE id = 1', [newSeq]);
+    const seq = String(newSeq).padStart(6, '0');
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const invoiceNumber = `INV/${yyyy}/${mm}/${seq}`;
+
+    const id = randomUUID();
+    const subtotal = Number(order.subtotal || 0);
+    const discountAmount = Number(order.discount_amount || 0);
+    const taxAmount = 0;
+    const total = subtotal - discountAmount + taxAmount;
+
+    await conn.execute(
+      `INSERT INTO invoices
+         (id, invoice_number, order_id, customer_id, subtotal, discount_amount, tax_amount, total, payment_status, payment_method, notes, created_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id,
+        invoiceNumber,
+        order.id,
+        order.customer_id || null,
+        subtotal,
+        discountAmount,
+        taxAmount,
+        total,
+        'unpaid',
+        null,
+        null,
+        null, // auto-generated — no creator
+      ]
+    );
+
+    await conn.commit();
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
 }

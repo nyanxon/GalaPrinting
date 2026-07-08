@@ -1,21 +1,22 @@
 /**
  * InvoiceSection.jsx — Panel invoice untuk cashier & admin.
  *
- * Fitur 2: list invoice, buat invoice dari order, update payment status.
+ * Fitur 2: list invoice, update payment status.
  * Fitur 3: tampilkan delivery method di detail order.
  * Fitur 4: tombol Print Resi (termal) & Download/Kirim PDF A4.
+ * Fitur offline: tombol "➕ Order Offline" untuk input pesanan toko.
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import {
   listInvoices,
-  createInvoice,
   getInvoiceById,
   updateInvoicePaymentStatus,
   updateInvoice,
   sendInvoiceEmail,
   openInvoicePdf,
 } from '../../../../services/invoiceService.js';
+import { api } from '../../../../core/httpClient.js';
 import { showToast } from '../../../../core/toastEmitter.js';
 import { formatCurrency } from '../../../../core/helpers.js';
 import ThermalReceiptModal from '../../../shared/ThermalReceiptModal.jsx';
@@ -49,35 +50,59 @@ function PaginationBar({ page, totalPages, total, limit, onPageChange }) {
   );
 }
 
-// ── Create Invoice Modal ──────────────────────────────────────────────────────
+// ── Create Offline Order Modal ────────────────────────────────────────────────
 
-function CreateInvoiceModal({ onClose, onCreated }) {
-  const [orderId, setOrderId]       = useState('');
-  const [discount, setDiscount]     = useState('0');
-  const [tax, setTax]               = useState('0');
-  const [method, setMethod]         = useState('');
-  const [notes, setNotes]           = useState('');
-  const [loading, setLoading]       = useState(false);
-  const [error, setError]           = useState('');
+function CreateOfflineOrderModal({ onClose, onCreated }) {
+  const [customerName, setCustomerName]   = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [customerAddress, setCustomerAddress] = useState('');
+  const [adminNote, setAdminNote]         = useState('');
+  const [items, setItems]                 = useState([{ name: '', price: '', quantity: 1 }]);
+  const [loading, setLoading]             = useState(false);
+  const [error, setError]                 = useState('');
+
+  function addItem() {
+    setItems((prev) => [...prev, { name: '', price: '', quantity: 1 }]);
+  }
+
+  function removeItem(idx) {
+    setItems((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  function updateItem(idx, field, value) {
+    setItems((prev) => prev.map((item, i) => i === idx ? { ...item, [field]: value } : item));
+  }
+
+  const subtotal = items.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 1), 0);
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!orderId.trim()) { setError('Order ID wajib diisi.'); return; }
+    if (!customerName.trim()) { setError('Nama customer wajib diisi.'); return; }
+    if (items.some((it) => !it.name.trim() || !it.price)) { setError('Semua item harus memiliki nama dan harga.'); return; }
+
     setLoading(true);
     setError('');
     try {
-      const inv = await createInvoice({
-        order_id:        orderId.trim(),
-        discount_amount: Number(discount) || 0,
-        tax_amount:      Number(tax) || 0,
-        payment_method:  method || null,
-        notes:           notes || null,
+      const validItems = items.map((it) => ({
+        name: it.name.trim(),
+        price: Number(it.price),
+        quantity: Number(it.quantity) || 1,
+      }));
+
+      const res = await api.post('/api/orders/offline', {
+        customerName: customerName.trim(),
+        customerPhone: customerPhone.trim(),
+        customerAddress: customerAddress.trim(),
+        adminNote: adminNote.trim(),
+        items: validItems,
+        subtotal,
       });
-      showToast(`Invoice ${inv.invoice_number} berhasil dibuat.`, 'success');
-      onCreated(inv);
+
+      showToast(`Order offline berhasil dibuat: ${res.data.data.order_number}`, 'success');
+      onCreated(res.data.data);
       onClose();
     } catch (err) {
-      setError(err.response?.data?.message || 'Gagal membuat invoice.');
+      setError(err.response?.data?.message || 'Gagal membuat order offline.');
     } finally {
       setLoading(false);
     }
@@ -85,52 +110,73 @@ function CreateInvoiceModal({ onClose, onCreated }) {
 
   return (
     <div className="inv-modal-overlay" onClick={onClose}>
-      <div className="inv-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="inv-modal inv-modal--wide" onClick={(e) => e.stopPropagation()}>
         <div className="inv-modal-header">
-          <h3>➕ Buat Invoice Baru</h3>
+          <h3>🏪 Input Order Offline / Toko</h3>
           <button type="button" className="inv-modal-close" onClick={onClose}>✕</button>
         </div>
         <form onSubmit={handleSubmit} className="inv-form">
-          <label className="inv-label">
-            No. Order / Order ID <span style={{ color: '#b91c1c' }}>*</span>
-            <input
-              className="adm-input"
-              type="text"
-              placeholder="Paste Order ID dari halaman Orders…"
-              value={orderId}
-              onChange={(e) => setOrderId(e.target.value)}
-              required
-            />
-          </label>
-          <div className="inv-form-row">
-            <label className="inv-label">
-              Diskon (Rp)
-              <input className="adm-input" type="number" min="0" value={discount} onChange={(e) => setDiscount(e.target.value)} />
-            </label>
-            <label className="inv-label">
-              Pajak (Rp)
-              <input className="adm-input" type="number" min="0" value={tax} onChange={(e) => setTax(e.target.value)} />
+          {/* Data Customer */}
+          <div style={{ background: '#faf8f5', borderRadius: '8px', padding: '14px', marginBottom: '4px' }}>
+            <div className="inv-section-title" style={{ marginBottom: '10px' }}>Data Customer</div>
+            <div className="inv-form-row">
+              <label className="inv-label">
+                Nama Customer <span style={{ color: '#b91c1c' }}>*</span>
+                <input className="adm-input" type="text" placeholder="Nama customer…" value={customerName} onChange={(e) => setCustomerName(e.target.value)} required />
+              </label>
+              <label className="inv-label">
+                No. Telepon
+                <input className="adm-input" type="tel" placeholder="0812xxxx…" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
+              </label>
+            </div>
+            <label className="inv-label" style={{ marginTop: '10px' }}>
+              Alamat
+              <input className="adm-input" type="text" placeholder="Alamat customer (opsional)…" value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} />
             </label>
           </div>
+
+          {/* Item Pesanan */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <div className="inv-section-title" style={{ marginBottom: 0 }}>Item Pesanan</div>
+              <button type="button" className="adm-btn" style={{ padding: '4px 12px', fontSize: '12px' }} onClick={addItem}>+ Tambah Item</button>
+            </div>
+            {items.map((item, idx) => (
+              <div key={idx} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: '8px', marginBottom: '8px', alignItems: 'flex-end' }}>
+                <label className="inv-label">
+                  {idx === 0 && <>Nama Produk <span style={{ color: '#b91c1c' }}>*</span></>}
+                  <input className="adm-input" type="text" placeholder="Nama produk/jasa…" value={item.name} onChange={(e) => updateItem(idx, 'name', e.target.value)} required />
+                </label>
+                <label className="inv-label">
+                  {idx === 0 && <>Harga Satuan <span style={{ color: '#b91c1c' }}>*</span></>}
+                  <input className="adm-input" type="number" min="0" placeholder="0" value={item.price} onChange={(e) => updateItem(idx, 'price', e.target.value)} required />
+                </label>
+                <label className="inv-label">
+                  {idx === 0 && 'Qty'}
+                  <input className="adm-input" type="number" min="1" value={item.quantity} onChange={(e) => updateItem(idx, 'quantity', e.target.value)} />
+                </label>
+                <div style={{ paddingBottom: '2px' }}>
+                  {items.length > 1 && (
+                    <button type="button" className="adm-btn" style={{ padding: '6px 10px', color: '#b91c1c', border: '1px solid #fca5a5' }} onClick={() => removeItem(idx)}>✕</button>
+                  )}
+                </div>
+              </div>
+            ))}
+            <div style={{ textAlign: 'right', fontSize: '14px', fontWeight: 700, color: '#111827', marginTop: '4px' }}>
+              Subtotal: {formatCurrency(subtotal)}
+            </div>
+          </div>
+
           <label className="inv-label">
-            Metode Pembayaran
-            <select className="adm-input" value={method} onChange={(e) => setMethod(e.target.value)}>
-              <option value="">— Pilih —</option>
-              <option value="Transfer Bank">Transfer Bank</option>
-              <option value="QRIS">QRIS</option>
-              <option value="Tunai">Tunai</option>
-              <option value="COD">COD</option>
-            </select>
+            Catatan Admin
+            <textarea className="adm-input" rows={2} value={adminNote} onChange={(e) => setAdminNote(e.target.value)} placeholder="Catatan internal (opsional)…" style={{ resize: 'vertical' }} />
           </label>
-          <label className="inv-label">
-            Catatan
-            <textarea className="adm-input" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Catatan tambahan…" style={{ resize: 'vertical' }} />
-          </label>
+
           {error && <p className="inv-error">{error}</p>}
           <div className="inv-form-actions">
             <button type="button" className="adm-btn" onClick={onClose}>Batal</button>
             <button type="submit" className="adm-btn adm-btn--primary" disabled={loading}>
-              {loading ? 'Membuat…' : 'Buat Invoice'}
+              {loading ? 'Menyimpan…' : '💾 Simpan Order Offline'}
             </button>
           </div>
         </form>
@@ -334,7 +380,13 @@ function InvoiceDetailModal({ invoiceId, onClose, onUpdated }) {
             <button
               type="button"
               className="adm-btn adm-btn--secondary"
-              onClick={() => openInvoicePdf(invoice.id)}
+              onClick={async () => {
+                try {
+                  await openInvoicePdf(invoice.id);
+                } catch {
+                  showToast('Gagal membuka PDF invoice.', 'error');
+                }
+              }}
               title="Buka/download PDF invoice A4"
             >
               📄 PDF A4
@@ -369,7 +421,7 @@ export default function InvoiceSection() {
   const [result, setResult]           = useState({ items: [], total: 0, page: 1, limit: PAGE_SIZE, totalPages: 1 });
   const [page, setPage]               = useState(1);
   const [filterStatus, setFilterStatus] = useState('');
-  const [createOpen, setCreateOpen]   = useState(false);
+  const [offlineOpen, setOfflineOpen] = useState(false);
   const [detailId, setDetailId]       = useState(null);
 
   const fetchInvoices = useCallback(async () => {
@@ -413,9 +465,9 @@ export default function InvoiceSection() {
           <button
             type="button"
             className="adm-btn adm-btn--primary"
-            onClick={() => setCreateOpen(true)}
+            onClick={() => setOfflineOpen(true)}
           >
-            ➕ Buat Invoice
+            🏪 Order Offline
           </button>
         </div>
       </div>
@@ -483,10 +535,10 @@ export default function InvoiceSection() {
         onPageChange={setPage}
       />
 
-      {createOpen && (
-        <CreateInvoiceModal
-          onClose={() => setCreateOpen(false)}
-          onCreated={handleCreated}
+      {offlineOpen && (
+        <CreateOfflineOrderModal
+          onClose={() => setOfflineOpen(false)}
+          onCreated={() => { handleCreated(); }}
         />
       )}
 
