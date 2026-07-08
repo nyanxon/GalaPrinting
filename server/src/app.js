@@ -13,7 +13,6 @@ import morgan from 'morgan';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-
 import { config } from './config/env.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -43,6 +42,30 @@ export function createApp() {
 
   // Trust Hostinger's reverse proxy so express-rate-limit and req.ip work correctly
   app.set('trust proxy', 1);
+
+  // ── Diagnostic endpoint (no auth, no DB) — remove after debugging ────────
+  app.get('/diag', (_req, res) => {
+    res.json({
+      ok: true,
+      node: process.version,
+      env: process.env.NODE_ENV,
+      port: process.env.PORT,
+      cwd: process.cwd(),
+      uptime: process.uptime(),
+      ts: new Date().toISOString(),
+    });
+  });
+
+  // ── Read startup-diag.log ─────────────────────────────────────────────────
+  app.get('/diag/log', (_req, res) => {
+    try {
+      const logPath = new URL('../../startup-diag.log', import.meta.url).pathname;
+      const content = fs.existsSync(logPath) ? fs.readFileSync(logPath, 'utf8') : '(no log file)';
+      res.type('text/plain').send(content);
+    } catch (err) {
+      res.type('text/plain').send('Error reading log: ' + err.message);
+    }
+  });
 
   // ── Security headers ──────────────────────────────────────────────────────
   app.use(helmet());
