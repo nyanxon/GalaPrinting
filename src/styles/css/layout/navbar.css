@@ -461,12 +461,24 @@
 .login-popup-form { display: flex; flex-direction: column; gap: 10px; }
 
 .login-popup-alert {
-  background: rgba(255,99,71,0.12);
-  border: 1px solid rgba(255,99,71,0.3);
+  background: #FEE2E2;
+  border: 1px solid #DC2626;
   border-radius: 6px;
-  padding: 8px 12px;
+  padding: 10px 12px;
   font-size: 13px;
-  color: #c0392b;
+  color: #991B1B;
+  animation: slideDown 0.25s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .login-popup-input {

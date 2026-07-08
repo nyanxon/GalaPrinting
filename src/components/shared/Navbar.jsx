@@ -133,6 +133,18 @@ function Navbar() {
   async function handleLoginSubmit(e) {
     e.preventDefault();
     setLoginError('');
+    
+    // Validasi frontend
+    const missingFields = [];
+    if (!loginEmail.trim()) missingFields.push('Email');
+    if (!loginPassword) missingFields.push('Password');
+    
+    if (missingFields.length > 0) {
+      const fieldList = missingFields.join(' dan ');
+      setLoginError(`Silahkan mengisi ${fieldList}`);
+      return;
+    }
+    
     setLoginSubmitting(true);
     try {
       const res = await Promise.resolve(login({ email: loginEmail, password: loginPassword }));
@@ -368,8 +380,8 @@ function Navbar() {
                           <div className="navbar-popup-arrow login-popup-arrow" />
                           <form className="login-popup-form" onSubmit={handleLoginSubmit} noValidate>
                             {loginError && <div className="login-popup-alert" role="alert">{loginError}</div>}
-                            <input className="login-popup-input" type="email" name="email" placeholder={t('auth.username')} autoComplete="email" required aria-label="Email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} />
-                            <input className="login-popup-input" type="password" name="password" placeholder={t('auth.password')} autoComplete="current-password" required aria-label="Password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} />
+                            <input className="login-popup-input" type="email" name="email" placeholder={t('auth.username')} autoComplete="email" required aria-label="Email" value={loginEmail} onChange={(e) => { setLoginEmail(e.target.value); if (loginError) setLoginError(''); }} />
+                            <input className="login-popup-input" type="password" name="password" placeholder={t('auth.password')} autoComplete="current-password" required aria-label="Password" value={loginPassword} onChange={(e) => { setLoginPassword(e.target.value); if (loginError) setLoginError(''); }} />
                             <div className="login-popup-row">
                               <label className="login-popup-remember">
                                 <input type="checkbox" name="remember" /> {t('auth.rememberMe')}

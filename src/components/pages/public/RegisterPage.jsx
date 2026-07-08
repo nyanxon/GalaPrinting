@@ -58,6 +58,8 @@ function RegisterPage() {
   function handleRegisterChange(e) {
     const { name, value } = e.target;
     setRegisterData((prev) => ({ ...prev, [name]: value }));
+    // Hilangkan error saat user mulai mengetik
+    if (registerAlert) setRegisterAlert(null);
   }
 
   async function handleRegisterSubmit(e) {
@@ -66,12 +68,34 @@ function RegisterPage() {
 
     const { name, phone, gender, dob_day, dob_month, dob_year, email, password } = registerData;
 
-    if (!name.trim()) { setRegisterAlert({ message: 'Nama lengkap wajib diisi.', type: 'error' }); return; }
-    if (!phone.trim()) { setRegisterAlert({ message: 'Nomor handphone wajib diisi.', type: 'error' }); return; }
-    if (!gender) { setRegisterAlert({ message: 'Jenis kelamin wajib dipilih.', type: 'error' }); return; }
-    if (!dob_day || !dob_month || !dob_year) { setRegisterAlert({ message: 'Tanggal lahir wajib diisi lengkap.', type: 'error' }); return; }
-    if (!email.trim()) { setRegisterAlert({ message: 'Email wajib diisi.', type: 'error' }); return; }
-    if (!password || password.length < 6) { setRegisterAlert({ message: 'Password minimal 6 karakter.', type: 'error' }); return; }
+    // Validasi frontend
+    const missingFields = [];
+    if (!name.trim()) missingFields.push('Nama Lengkap');
+    if (!phone.trim()) missingFields.push('Nomor Handphone');
+    if (!gender) missingFields.push('Jenis Kelamin');
+    if (!dob_day || !dob_month || !dob_year) missingFields.push('Tanggal Lahir');
+    if (!email.trim()) missingFields.push('Email');
+    if (!password) missingFields.push('Password');
+    
+    if (missingFields.length > 0) {
+      // Gabungkan dengan koma, tapi "dan" untuk yang terakhir
+      let fieldList;
+      if (missingFields.length === 1) {
+        fieldList = missingFields[0];
+      } else if (missingFields.length === 2) {
+        fieldList = missingFields.join(' dan ');
+      } else {
+        const lastField = missingFields.pop();
+        fieldList = missingFields.join(', ') + ', dan ' + lastField;
+      }
+      setRegisterAlert({ message: `Silahkan mengisi ${fieldList}`, type: 'error' });
+      return;
+    }
+    
+    if (password.length < 6) { 
+      setRegisterAlert({ message: 'Password minimal 6 karakter', type: 'error' }); 
+      return; 
+    }
 
     setRegisterSubmitting(true);
     try {
@@ -98,11 +122,25 @@ function RegisterPage() {
   function handleLoginChange(e) {
     const { name, value } = e.target;
     setLoginData((prev) => ({ ...prev, [name]: value }));
+    // Hilangkan error saat user mulai mengetik
+    if (loginAlert) setLoginAlert(null);
   }
 
   async function handleLoginSubmit(e) {
     e.preventDefault();
     setLoginAlert(null);
+    
+    // Validasi frontend
+    const missingFields = [];
+    if (!loginData.email.trim()) missingFields.push('Email');
+    if (!loginData.password) missingFields.push('Password');
+    
+    if (missingFields.length > 0) {
+      const fieldList = missingFields.join(' dan ');
+      setLoginAlert({ message: `Silahkan mengisi ${fieldList}`, type: 'error' });
+      return;
+    }
+    
     setLoginSubmitting(true);
     try {
       const res = await Promise.resolve(login({ email: loginData.email, password: loginData.password }));
