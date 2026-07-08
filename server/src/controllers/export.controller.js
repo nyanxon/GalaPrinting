@@ -154,6 +154,7 @@ const EXPORT_TABLES = [
   'orders',
   'order_items',
   'order_history',
+  'order_approvals',
   'cart_items',
   'conversations',
   'messages',
@@ -164,6 +165,8 @@ const EXPORT_TABLES = [
   'promo_codes',
   'addresses',
   'notifications',
+  'invoices',
+  'invoice_sequence',
 ];
 
 /**

@@ -1,8 +1,8 @@
 /**
  * CashierDashboardPage.jsx — Dashboard for the Cashier (Kasir) role.
  *
- * Responsibilities: Verify payments and confirm incoming orders.
- * Visible order statuses: "Waiting for Payment", "Payment Accepted"
+ * Fitur 1: Semua pesanan tampil di list, tidak hilang setelah status berubah.
+ * Fitur 2: Menu Invoice — buat, lihat, update status bayar, print resi & PDF.
  *
  * Requirements: 11.1, 11.2, 13.4
  */
@@ -10,19 +10,22 @@
 import '../../../styles/css/pages/dashboard.css';
 import SubAdminLayout from './SubAdminLayout.jsx';
 import CashierOrdersSection from './sections/CashierOrdersSection.jsx';
+import InvoiceSection from '../admin/sections/InvoiceSection.jsx';
 import ChatsSection from '../admin/sections/ChatsSection.jsx';
 import DMSection from '../admin/sections/DMSection.jsx';
 
 const NAV_ITEMS = [
-  { id: 'orders', label: '📋 Pesanan' },
-  { id: 'chat',   label: '💬 Chat Customer' },
-  { id: 'dm',     label: '📨 Pesan Staff' },
+  { id: 'orders',   label: '📋 Pesanan' },
+  { id: 'invoices', label: '🧾 Invoice' },
+  { id: 'chat',     label: '💬 Chat Customer' },
+  { id: 'dm',       label: '📨 Pesan Staff' },
 ];
 
 const SECTIONS = {
-  orders: <CashierOrdersSection />,
-  chat:   <ChatsSection />,
-  dm:     <DMSection />,
+  orders:   <CashierOrdersSection />,
+  invoices: <InvoiceSection />,
+  chat:     <ChatsSection />,
+  dm:       <DMSection />,
 };
 
 export default function CashierDashboardPage() {

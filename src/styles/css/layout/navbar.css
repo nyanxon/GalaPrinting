@@ -460,6 +460,12 @@
 
 .login-popup-form { display: flex; flex-direction: column; gap: 10px; }
 
+.login-popup-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .login-popup-alert {
   background: #FEE2E2;
   border: 1px solid #DC2626;
@@ -490,9 +496,22 @@
   width: 100%;
   color: #1f1f1f;
   background: #fff;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
 }
 
 .login-popup-input:focus { border-color: var(--brand-brown); }
+
+.login-popup-input.error {
+  border-color: #DC2626;
+  background: #FEE2E2;
+}
+
+.login-popup-error {
+  font-size: 12px;
+  color: #991B1B;
+  padding-left: 4px;
+  animation: slideDown 0.25s ease-out;
+}
 
 .login-popup-row {
   display: flex;

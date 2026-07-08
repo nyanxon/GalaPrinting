@@ -1,14 +1,19 @@
 /**
  * SubAdminLayout.jsx — Shared sidebar shell and section-switching layout for
  * sub-admin roles: cashier | cs | operational | qc
+ *
+ * Fitur 4: Sound notifikasi (order:new & order:status_changed) dengan toggle mute.
+ *
  * Requirements: 11.2
  */
 
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import { logout } from '../../../services/authService.js';
 import { STAFF_ROLES } from '../../../core/config.js';
+import { getSocket } from '../../../core/socket.js';
+import { useAdminSound } from '../../../hooks/useAdminSound.js';
 import StaffAvatarButton from '../../shared/StaffAvatarButton.jsx';
 import logoImg from '../../../assets/logo.png';
 import '../../../styles/css/pages/dashboard.css';
@@ -33,6 +38,16 @@ export default function SubAdminLayout({ navItems, sections, title }) {
   const userName  = user?.name || roleInfo.label || role;
   const roleDesc  = ROLE_DESCRIPTIONS[role] ?? '';
   const sidebarBg = roleInfo.color ?? '#785E40';
+
+  // Fitur 4: sound notifikasi
+  const socket = getSocket();
+  const { muted, toggleMute, unlockAudio } = useAdminSound(socket);
+
+  // Unlock audio setelah mount (user sudah login = ada interaksi sebelumnya)
+  useEffect(() => {
+    const t = setTimeout(() => { unlockAudio(); }, 300);
+    return () => clearTimeout(t);
+  }, [unlockAudio]);
 
   function handleNavClick(navId) {
     setActiveNav(navId);
@@ -104,6 +119,25 @@ export default function SubAdminLayout({ navItems, sections, title }) {
 
             <div className="staff-header-right">
               <StaffAvatarButton />
+              {/* Fitur 4: toggle mute/unmute sound notifikasi */}
+              <button
+                type="button"
+                onClick={() => { toggleMute(); unlockAudio(); }}
+                title={muted ? 'Aktifkan suara notifikasi' : 'Matikan suara notifikasi'}
+                aria-label={muted ? 'Aktifkan suara' : 'Matikan suara'}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  padding: '6px 10px',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  lineHeight: 1,
+                }}
+              >
+                {muted ? '🔇' : '🔔'}
+              </button>
               <div className="staff-header-auth">
                 <span className="staff-header-name">{userName}</span>
                 <button className="staff-logout-btn" type="button" onClick={handleLogout}>Keluar</button>

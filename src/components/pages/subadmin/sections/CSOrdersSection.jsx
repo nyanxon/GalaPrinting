@@ -1,16 +1,14 @@
 /**
- * CSOrdersSection.jsx — Orders filtered to design-related statuses for CS role.
+ * CSOrdersSection.jsx — Orders untuk CS role.
  *
- * CS responsibilities: design consultation and design approval confirmation.
- * Visible statuses: "Payment Accepted", "Waiting for Design Approval", "Design Accepted"
+ * Fitur 1: CS sekarang melihat SEMUA order (tidak difilter per status).
+ * Kolom "Status Saya" menunjukkan apakah order butuh aksi CS, sudah selesai, atau belum sampai.
  *
  * Requirements: 11.1, 13.4
  */
 
 import SubAdminOrdersSection from './SubAdminOrdersSection.jsx';
 
-const CS_STATUSES = ['Payment Accepted', 'Waiting for Design Approval', 'Design Accepted'];
-
 export default function CSOrdersSection() {
-  return <SubAdminOrdersSection visibleStatuses={CS_STATUSES} />;
+  return <SubAdminOrdersSection />;
 }

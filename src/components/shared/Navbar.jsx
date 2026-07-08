@@ -53,6 +53,7 @@ function Navbar() {
   const [loginEmail, setLoginEmail]         = useState('');
   const [loginPassword, setLoginPassword]   = useState('');
   const [loginError, setLoginError]         = useState('');
+  const [loginFieldErrors, setLoginFieldErrors] = useState({});
   const [loginSubmitting, setLoginSubmitting] = useState(false);
 
   const [searchValue, setSearchValue] = useState('');
@@ -133,15 +134,15 @@ function Navbar() {
   async function handleLoginSubmit(e) {
     e.preventDefault();
     setLoginError('');
+    setLoginFieldErrors({});
     
     // Validasi frontend
-    const missingFields = [];
-    if (!loginEmail.trim()) missingFields.push('Email');
-    if (!loginPassword) missingFields.push('Password');
+    const errors = {};
+    if (!loginEmail.trim()) errors.email = 'Email wajib diisi';
+    if (!loginPassword) errors.password = 'Password wajib diisi';
     
-    if (missingFields.length > 0) {
-      const fieldList = missingFields.join(' dan ');
-      setLoginError(`Silahkan mengisi ${fieldList}`);
+    if (Object.keys(errors).length > 0) {
+      setLoginFieldErrors(errors);
       return;
     }
     
@@ -380,8 +381,42 @@ function Navbar() {
                           <div className="navbar-popup-arrow login-popup-arrow" />
                           <form className="login-popup-form" onSubmit={handleLoginSubmit} noValidate>
                             {loginError && <div className="login-popup-alert" role="alert">{loginError}</div>}
-                            <input className="login-popup-input" type="email" name="email" placeholder={t('auth.username')} autoComplete="email" required aria-label="Email" value={loginEmail} onChange={(e) => { setLoginEmail(e.target.value); if (loginError) setLoginError(''); }} />
-                            <input className="login-popup-input" type="password" name="password" placeholder={t('auth.password')} autoComplete="current-password" required aria-label="Password" value={loginPassword} onChange={(e) => { setLoginPassword(e.target.value); if (loginError) setLoginError(''); }} />
+                            <div className="login-popup-field">
+                              <input 
+                                className={`login-popup-input${loginFieldErrors.email ? ' error' : ''}`}
+                                type="email" 
+                                name="email" 
+                                placeholder={t('auth.username')} 
+                                autoComplete="email" 
+                                required 
+                                aria-label="Email" 
+                                value={loginEmail} 
+                                onChange={(e) => { 
+                                  setLoginEmail(e.target.value); 
+                                  if (loginFieldErrors.email) setLoginFieldErrors((prev) => ({ ...prev, email: null }));
+                                  if (loginError) setLoginError('');
+                                }} 
+                              />
+                              {loginFieldErrors.email && <span className="login-popup-error">{loginFieldErrors.email}</span>}
+                            </div>
+                            <div className="login-popup-field">
+                              <input 
+                                className={`login-popup-input${loginFieldErrors.password ? ' error' : ''}`}
+                                type="password" 
+                                name="password" 
+                                placeholder={t('auth.password')} 
+                                autoComplete="current-password" 
+                                required 
+                                aria-label="Password" 
+                                value={loginPassword} 
+                                onChange={(e) => { 
+                                  setLoginPassword(e.target.value); 
+                                  if (loginFieldErrors.password) setLoginFieldErrors((prev) => ({ ...prev, password: null }));
+                                  if (loginError) setLoginError('');
+                                }} 
+                              />
+                              {loginFieldErrors.password && <span className="login-popup-error">{loginFieldErrors.password}</span>}
+                            </div>
                             <div className="login-popup-row">
                               <label className="login-popup-remember">
                                 <input type="checkbox" name="remember" /> {t('auth.rememberMe')}

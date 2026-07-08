@@ -41,11 +41,13 @@ function RegisterPage() {
     password: '',
   });
   const [registerAlert, setRegisterAlert] = useState(null);
+  const [registerFieldErrors, setRegisterFieldErrors] = useState({});
   const [registerSubmitting, setRegisterSubmitting] = useState(false);
 
   // Login form state
   const [loginData, setLoginData] = useState({ email: '', password: '' });
   const [loginAlert, setLoginAlert] = useState(null);
+  const [loginFieldErrors, setLoginFieldErrors] = useState({});
   const [loginSubmitting, setLoginSubmitting] = useState(false);
 
   // If already logged in, redirect
@@ -59,42 +61,34 @@ function RegisterPage() {
     const { name, value } = e.target;
     setRegisterData((prev) => ({ ...prev, [name]: value }));
     // Hilangkan error saat user mulai mengetik
+    if (registerFieldErrors[name]) {
+      setRegisterFieldErrors((prev) => ({ ...prev, [name]: null }));
+    }
     if (registerAlert) setRegisterAlert(null);
   }
 
   async function handleRegisterSubmit(e) {
     e.preventDefault();
     setRegisterAlert(null);
+    setRegisterFieldErrors({});
 
     const { name, phone, gender, dob_day, dob_month, dob_year, email, password } = registerData;
 
     // Validasi frontend
-    const missingFields = [];
-    if (!name.trim()) missingFields.push('Nama Lengkap');
-    if (!phone.trim()) missingFields.push('Nomor Handphone');
-    if (!gender) missingFields.push('Jenis Kelamin');
-    if (!dob_day || !dob_month || !dob_year) missingFields.push('Tanggal Lahir');
-    if (!email.trim()) missingFields.push('Email');
-    if (!password) missingFields.push('Password');
+    const errors = {};
+    if (!name.trim()) errors.name = 'Nama lengkap wajib diisi';
+    if (!phone.trim()) errors.phone = 'Nomor handphone wajib diisi';
+    if (!gender) errors.gender = 'Jenis kelamin wajib dipilih';
+    if (!dob_day) errors.dob_day = 'Tanggal lahir wajib diisi';
+    if (!dob_month) errors.dob_month = 'Bulan lahir wajib diisi';
+    if (!dob_year) errors.dob_year = 'Tahun lahir wajib diisi';
+    if (!email.trim()) errors.email = 'Email wajib diisi';
+    if (!password) errors.password = 'Password wajib diisi';
+    else if (password.length < 6) errors.password = 'Password minimal 6 karakter';
     
-    if (missingFields.length > 0) {
-      // Gabungkan dengan koma, tapi "dan" untuk yang terakhir
-      let fieldList;
-      if (missingFields.length === 1) {
-        fieldList = missingFields[0];
-      } else if (missingFields.length === 2) {
-        fieldList = missingFields.join(' dan ');
-      } else {
-        const lastField = missingFields.pop();
-        fieldList = missingFields.join(', ') + ', dan ' + lastField;
-      }
-      setRegisterAlert({ message: `Silahkan mengisi ${fieldList}`, type: 'error' });
+    if (Object.keys(errors).length > 0) {
+      setRegisterFieldErrors(errors);
       return;
-    }
-    
-    if (password.length < 6) { 
-      setRegisterAlert({ message: 'Password minimal 6 karakter', type: 'error' }); 
-      return; 
     }
 
     setRegisterSubmitting(true);
@@ -123,21 +117,24 @@ function RegisterPage() {
     const { name, value } = e.target;
     setLoginData((prev) => ({ ...prev, [name]: value }));
     // Hilangkan error saat user mulai mengetik
+    if (loginFieldErrors[name]) {
+      setLoginFieldErrors((prev) => ({ ...prev, [name]: null }));
+    }
     if (loginAlert) setLoginAlert(null);
   }
 
   async function handleLoginSubmit(e) {
     e.preventDefault();
     setLoginAlert(null);
+    setLoginFieldErrors({});
     
     // Validasi frontend
-    const missingFields = [];
-    if (!loginData.email.trim()) missingFields.push('Email');
-    if (!loginData.password) missingFields.push('Password');
+    const errors = {};
+    if (!loginData.email.trim()) errors.email = 'Email wajib diisi';
+    if (!loginData.password) errors.password = 'Password wajib diisi';
     
-    if (missingFields.length > 0) {
-      const fieldList = missingFields.join(' dan ');
-      setLoginAlert({ message: `Silahkan mengisi ${fieldList}`, type: 'error' });
+    if (Object.keys(errors).length > 0) {
+      setLoginFieldErrors(errors);
       return;
     }
     
@@ -207,7 +204,7 @@ function RegisterPage() {
               {/* Nama Lengkap */}
               <div className="register-field">
                 <input
-                  className="register-input"
+                  className={`register-input${registerFieldErrors.name ? ' error' : ''}`}
                   name="name"
                   type="text"
                   placeholder="Nama Lengkap"
@@ -217,13 +214,17 @@ function RegisterPage() {
                   value={registerData.name}
                   onChange={handleRegisterChange}
                 />
-                <span className="register-field-hint">Masukkan Nama Lengkap Anda</span>
+                {registerFieldErrors.name ? (
+                  <span className="register-field-error">{registerFieldErrors.name}</span>
+                ) : (
+                  <span className="register-field-hint">Masukkan Nama Lengkap Anda</span>
+                )}
               </div>
 
               {/* Nomor Handphone */}
               <div className="register-field">
                 <input
-                  className="register-input"
+                  className={`register-input${registerFieldErrors.phone ? ' error' : ''}`}
                   name="phone"
                   type="tel"
                   placeholder="Nomor Handphone"
@@ -233,13 +234,17 @@ function RegisterPage() {
                   value={registerData.phone}
                   onChange={handleRegisterChange}
                 />
-                <span className="register-field-hint">Pastikan Nomor Handphone Aktif</span>
+                {registerFieldErrors.phone ? (
+                  <span className="register-field-error">{registerFieldErrors.phone}</span>
+                ) : (
+                  <span className="register-field-hint">Pastikan Nomor Handphone Aktif</span>
+                )}
               </div>
 
               {/* Jenis Kelamin */}
               <div className="register-field">
                 <select
-                  className="register-input register-select"
+                  className={`register-input register-select${registerFieldErrors.gender ? ' error' : ''}`}
                   name="gender"
                   required
                   aria-label="Jenis Kelamin"
@@ -250,14 +255,18 @@ function RegisterPage() {
                   <option value="L">Laki-laki</option>
                   <option value="P">Perempuan</option>
                 </select>
-                <span className="register-field-hint">Pilih Jenis Kelamin</span>
+                {registerFieldErrors.gender ? (
+                  <span className="register-field-error">{registerFieldErrors.gender}</span>
+                ) : (
+                  <span className="register-field-hint">Pilih Jenis Kelamin</span>
+                )}
               </div>
 
               {/* Tanggal Lahir */}
               <div className="register-field">
                 <div className="register-dob-row">
                   <select
-                    className="register-input register-select register-dob-select"
+                    className={`register-input register-select register-dob-select${registerFieldErrors.dob_day ? ' error' : ''}`}
                     name="dob_day"
                     required
                     aria-label="Tanggal lahir"
@@ -270,7 +279,7 @@ function RegisterPage() {
                     ))}
                   </select>
                   <select
-                    className="register-input register-select register-dob-select"
+                    className={`register-input register-select register-dob-select${registerFieldErrors.dob_month ? ' error' : ''}`}
                     name="dob_month"
                     required
                     aria-label="Bulan lahir"
@@ -283,7 +292,7 @@ function RegisterPage() {
                     ))}
                   </select>
                   <select
-                    className="register-input register-select register-dob-select"
+                    className={`register-input register-select register-dob-select${registerFieldErrors.dob_year ? ' error' : ''}`}
                     name="dob_year"
                     required
                     aria-label="Tahun lahir"
@@ -296,13 +305,19 @@ function RegisterPage() {
                     ))}
                   </select>
                 </div>
-                <span className="register-field-hint">Pilih Tanggal Lahir</span>
+                {(registerFieldErrors.dob_day || registerFieldErrors.dob_month || registerFieldErrors.dob_year) ? (
+                  <span className="register-field-error">
+                    {registerFieldErrors.dob_day || registerFieldErrors.dob_month || registerFieldErrors.dob_year}
+                  </span>
+                ) : (
+                  <span className="register-field-hint">Pilih Tanggal Lahir</span>
+                )}
               </div>
 
               {/* Email */}
               <div className="register-field">
                 <input
-                  className="register-input"
+                  className={`register-input${registerFieldErrors.email ? ' error' : ''}`}
                   name="email"
                   type="email"
                   placeholder="Email (Username)"
@@ -312,13 +327,17 @@ function RegisterPage() {
                   value={registerData.email}
                   onChange={handleRegisterChange}
                 />
-                <span className="register-field-hint">Masukkan Email untuk Username</span>
+                {registerFieldErrors.email ? (
+                  <span className="register-field-error">{registerFieldErrors.email}</span>
+                ) : (
+                  <span className="register-field-hint">Masukkan Email untuk Username</span>
+                )}
               </div>
 
               {/* Password */}
               <div className="register-field">
                 <input
-                  className="register-input"
+                  className={`register-input${registerFieldErrors.password ? ' error' : ''}`}
                   name="password"
                   type="password"
                   placeholder="Password"
@@ -328,7 +347,11 @@ function RegisterPage() {
                   value={registerData.password}
                   onChange={handleRegisterChange}
                 />
-                <span className="register-field-hint">Minimal 6 Karakter kombinasi Angka dan Huruf</span>
+                {registerFieldErrors.password ? (
+                  <span className="register-field-error">{registerFieldErrors.password}</span>
+                ) : (
+                  <span className="register-field-hint">Minimal 6 Karakter kombinasi Angka dan Huruf</span>
+                )}
               </div>
 
               <button className="btn register-submit-btn" type="submit" disabled={registerSubmitting}>
@@ -379,7 +402,7 @@ function RegisterPage() {
             >
               <div className="register-field">
                 <input
-                  className="register-input"
+                  className={`register-input${loginFieldErrors.email ? ' error' : ''}`}
                   type="email"
                   name="email"
                   placeholder="Email (Username)"
@@ -389,10 +412,11 @@ function RegisterPage() {
                   value={loginData.email}
                   onChange={handleLoginChange}
                 />
+                {loginFieldErrors.email && <span className="register-field-error">{loginFieldErrors.email}</span>}
               </div>
               <div className="register-field">
                 <input
-                  className="register-input"
+                  className={`register-input${loginFieldErrors.password ? ' error' : ''}`}
                   type="password"
                   name="password"
                   placeholder="Password"
@@ -402,6 +426,7 @@ function RegisterPage() {
                   value={loginData.password}
                   onChange={handleLoginChange}
                 />
+                {loginFieldErrors.password && <span className="register-field-error">{loginFieldErrors.password}</span>}
               </div>
               {/* Lupa Password link */}
               <div style={{ textAlign: 'right', marginBottom: 12, marginTop: -4 }}>

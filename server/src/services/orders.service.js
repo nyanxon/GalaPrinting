@@ -337,7 +337,9 @@ export async function createOrder({ customer, items, subtotal, source = 'online'
  */
 export async function listOrders({ page = 1, limit = 20, status } = {}) {
   const pageNum  = Math.max(1, parseInt(page, 10) || 1);
-  const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+  // Staff can request up to 2000 orders at once (for "list all" views).
+  // The default 20 cap stays for paginated views.
+  const limitNum = Math.min(2000, Math.max(1, parseInt(limit, 10) || 20));
   const offset   = (pageNum - 1) * limitNum;
 
   const conditions = [];
