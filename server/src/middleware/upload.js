@@ -9,12 +9,12 @@ import multer from 'multer';
 import os from 'os';
 
 const ALLOWED_MIME = {
-  design:  ['image/jpeg', 'image/png', 'application/pdf'],
-  payment: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/tiff', 'image/heic', 'application/pdf'],
-  chat:    ['image/jpeg', 'image/png', 'application/pdf', 'application/zip'],
+  design:  ['image/jpeg', 'image/png', 'application/pdf', 'application/zip', 'application/x-zip-compressed'],
+  payment: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/tiff', 'image/heic', 'application/pdf', 'application/zip', 'application/x-zip-compressed'],
+  chat:    ['image/jpeg', 'image/png', 'application/pdf', 'application/zip', 'application/x-zip-compressed'],
   avatar:  ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
   product: ['image/jpeg', 'image/png', 'image/webp'],
-  review:  ['image/jpeg', 'image/png', 'image/webp'],
+  review:  ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
 };
 
 const MAX_SIZE = {

@@ -533,7 +533,7 @@ function HomePage() {
               </div>
             ) : (
               <DropZone
-                accept=".jpg,.jpeg,.png,.pdf,.ai,.cdr,image/jpeg,image/png,application/pdf"
+                accept=".jpg,.jpeg,.png,.pdf,.zip,.ai,.cdr,image/jpeg,image/png,application/pdf,application/zip"
                 onFiles={handleDesignFile}
                 label={t('home.dropDesignHere')}
                 hint={t('home.fileHint')}

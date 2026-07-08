@@ -33,6 +33,7 @@ const BRAND_COLOR   = '#785E40';
 const YEAR          = new Date().getFullYear();
 
 function baseWrapper(bodyHtml) {
+  const logoUrl = `${config.email.frontendUrl}/gala-logo2.svg`;
   return `<!DOCTYPE html>
 <html lang="id">
 <head>
@@ -46,13 +47,25 @@ function baseWrapper(bodyHtml) {
              style="background:#fff;border-radius:10px;overflow:hidden;max-width:600px;width:100%;">
         <!-- Header -->
         <tr>
-          <td style="background:${BRAND_COLOR};padding:24px 32px;">
-            <h1 style="margin:0;color:#fff;font-size:22px;font-weight:700;letter-spacing:-0.3px;">
-              Gala Printing
-            </h1>
-            <p style="margin:4px 0 0;color:rgba(255,255,255,0.8);font-size:13px;">
-              galaprintofficialbali.co.id
-            </p>
+          <td style="background:${BRAND_COLOR};padding:20px 32px;">
+            <table cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="vertical-align:middle;padding-right:14px;">
+                  <img src="${logoUrl}" alt="Gala Printing logo"
+                       width="48" height="48"
+                       style="display:block;border-radius:6px;object-fit:contain;"
+                       onerror="this.style.display='none'" />
+                </td>
+                <td style="vertical-align:middle;">
+                  <h1 style="margin:0;color:#fff;font-size:22px;font-weight:700;letter-spacing:-0.3px;">
+                    Gala Printing
+                  </h1>
+                  <p style="margin:3px 0 0;color:rgba(255,255,255,0.8);font-size:13px;">
+                    galaprintofficialbali.co.id
+                  </p>
+                </td>
+              </tr>
+            </table>
           </td>
         </tr>
         <!-- Body -->
@@ -62,7 +75,7 @@ function baseWrapper(bodyHtml) {
           <td style="background:#faf8f5;padding:16px 32px;border-top:1px solid #ede9e4;">
             <p style="margin:0;color:#9ca3af;font-size:12px;text-align:center;">
               &copy; ${YEAR} Gala Printing. Semua hak dilindungi.<br/>
-              Jl. Contoh No. 1, Denpasar, Bali — noreply@galaprintofficialbali.co.id
+              Jl. Tibung Sari Gg. Camplung No.5X, Kwanji, Dalung, Kuta Utara, Badung Regency, Bali — noreply@galaprintofficialbali.co.id
             </p>
           </td>
         </tr>

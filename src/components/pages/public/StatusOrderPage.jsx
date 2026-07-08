@@ -81,7 +81,7 @@ function ItemReviewCard({ item, user, orderId }) {
   function handlePhotoChange(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
     if (!allowed.includes(file.type)) {
       setError(t('orderStatus.photoHint'));
       return;
@@ -231,7 +231,7 @@ function ItemReviewCard({ item, user, orderId }) {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/webp"
+                accept="image/jpeg,image/png,image/webp,application/pdf"
                 onChange={handlePhotoChange}
                 disabled={submitting}
                 style={{ display: 'none' }}

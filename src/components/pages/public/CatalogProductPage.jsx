@@ -160,8 +160,8 @@ function CatalogProductPage() {
       return;
     }
     if (designFile) {
-      if (!['image/jpeg', 'image/png'].includes(designFile.type)) {
-        setAlertMsg('Format file harus JPG/JPEG/PNG.');
+      if (!['image/jpeg', 'image/png', 'application/pdf', 'application/zip', 'application/x-zip-compressed'].includes(designFile.type)) {
+        setAlertMsg('Format file harus JPG, PNG, PDF, atau ZIP.');
         return;
       }
       if (designFile.size > 100 * 1024 * 1024) { // 100 MB (updated from 10 MB)
@@ -532,10 +532,10 @@ function CatalogProductPage() {
 
             {!designDataUrl ? (
               <DropZone
-                accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                accept=".jpg,.jpeg,.png,.pdf,.zip,image/jpeg,image/png,application/pdf,application/zip"
                 onFiles={handleFileChange}
                 label="Upload desain kamu"
-                hint="JPG, JPEG, PNG · Maks. 10 MB"
+                hint="JPG, PNG, PDF, ZIP · Maks. 100 MB"
               />
             ) : (
               <div className="design-preview-box">
