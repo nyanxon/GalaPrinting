@@ -30,7 +30,19 @@ export async function ensureHomepageTables() {
     // Seed the default placeholder row (IGNORE = no-op if it already exists)
     await query(`
       INSERT IGNORE INTO homepage_hero (id, title, subtitle, image_path, cta_url, sort_order, is_active)
-      VALUES ('00000000-0000-0000-0000-000000000001', 'LANDING PAGE', '4+ PAGE', NULL, NULL, 0, 0)
+      VALUES ('00000000-0000-0000-0000-000000000001', NULL, NULL, NULL, NULL, 0, 0)
+    `);
+
+    // Clear the old placeholder text from the seed row if it still has the
+    // default "LANDING PAGE / 4+ PAGE" dummy content — replace with NULL so
+    // the hero falls back to the empty/no-content state instead of showing
+    // the placeholder text to end users.
+    await query(`
+      UPDATE homepage_hero
+      SET title = NULL, subtitle = NULL
+      WHERE id = '00000000-0000-0000-0000-000000000001'
+        AND title = 'LANDING PAGE'
+        AND subtitle = '4+ PAGE'
     `);
 
     // ── 2. homepage_design_items ──────────────────────────────────────────────

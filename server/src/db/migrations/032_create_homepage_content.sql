@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS homepage_hero (
 
 -- Seed a default row so the frontend always has something to fetch
 INSERT IGNORE INTO homepage_hero (id, title, subtitle, image_path, cta_url, is_active)
-VALUES ('00000000-0000-0000-0000-000000000001', 'LANDING PAGE', '4+ PAGE', NULL, NULL, 1);
+VALUES ('00000000-0000-0000-0000-000000000001', NULL, NULL, NULL, NULL, 1);
 
 -- ── 2. Design Showcase Items (replaces category quick-links grid) ─────────────
 CREATE TABLE IF NOT EXISTS homepage_design_items (
