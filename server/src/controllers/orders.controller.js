@@ -88,6 +88,36 @@ export async function createOrder(req, res, next) {
   }
 }
 
+export async function createCustomOrderByCustomer(req, res, next) {
+  try {
+    const { items, subtotal } = req.body;
+
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(422).json({ ok: false, message: 'Pesanan harus memiliki minimal 1 item.' });
+    }
+
+    const customer = {
+      id:      req.user.id,
+      name:    req.user.name,
+      phone:   req.user.phone || '',
+      address: req.user.address || '',
+    };
+
+    const order = await svc.createOrder({
+      customer,
+      items,
+      subtotal: Number(subtotal) || 0,
+      source: 'custom',
+      orderType: 'custom',
+      initialStatus: 'Waiting for Design Approval',
+    });
+    emitOrderNew(order);
+    return res.status(201).json({ ok: true, data: order });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function createCustomOrder(req, res, next) {
   try {
     const { items, subtotal, customerName, customerPhone, customerAddress } = req.body;

@@ -2,92 +2,76 @@
  * CustomOrderPage.jsx — Customer custom order creation page.
  *
  * Layout: Preview kiri (uploaded design file) + Form kanan
- * Pattern: Mengikuti struktur ProductPage dengan preview/form split layout
- *
- * Flow: Customer upload file → isi form → submit → order dengan status "Waiting for Design Approval"
+ * Flow: Customer upload file → isi form → submit ke /api/orders/custom-customer
+ *       → order tersimpan dengan status "Waiting for Design Approval"
  */
 
 import { useState, useContext, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import { api } from '../../../core/httpClient.js';
-import { formatCurrency } from '../../../core/helpers.js';
 import { showToast } from '../../../core/toastEmitter.js';
 import DropZone from '../../shared/DropZone.jsx';
 import '../../../styles/css/pages/customOrder.css';
 
-const PRODUCT_TYPES = [
-  'Banner',
-  'Brosur',
-  'Kartu Nama',
-  'Stiker',
-  'X-Banner',
-  'Poster',
-  'Lainnya',
-];
-
-const MATERIALS = [
-  'Vinyl',
-  'Art Paper',
-  'Glossy',
-  'Matte',
-  'Lainnya',
-];
-
 export default function CustomOrderPage() {
   const { user } = useContext(AuthContext);
-  const navigate = useNavigate();
-  const location = useLocation();
+  const navigate  = useNavigate();
+  const location  = useLocation();
 
-  // File dari homepage (jika ada)
-  const uploadedFileFromHome = location.state?.designFile;
+  // File bawaan dari homepage drop zone (jika ada)
+  const fileFromHome = location.state?.designFile || null;
 
-  const [designFile, setDesignFile]       = useState(uploadedFileFromHome || null);
-  const [previewUrl, setPreviewUrl]       = useState(null);
-  const [productType, setProductType]     = useState('');
-  const [customProductType, setCustomProductType] = useState('');
-  const [width, setWidth]                 = useState('');
-  const [height, setHeight]               = useState('');
-  const [material, setMaterial]           = useState('');
-  const [customMaterial, setCustomMaterial] = useState('');
-  const [quantity, setQuantity]           = useState(1);
-  const [deadline, setDeadline]           = useState('');
-  const [needDesign, setNeedDesign]       = useState(false);
-  const [notes, setNotes]                 = useState('');
+  const [designFile, setDesignFile] = useState(fileFromHome);
+  const [previewUrl, setPreviewUrl] = useState(null);
 
-  const [fieldErrors, setFieldErrors]     = useState({});
-  const [submitting, setSubmitting]       = useState(false);
+  // Form fields
+  const [productType, setProductType] = useState('');
+  const [width,       setWidth]       = useState('');
+  const [height,      setHeight]      = useState('');
+  const [material,    setMaterial]    = useState('');
+  const [color,       setColor]       = useState('');
+  const [quantity,    setQuantity]    = useState(1);
+  const [notes,       setNotes]       = useState('');
 
-  // Load preview jika file dari homepage ada
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [submitting,  setSubmitting]  = useState(false);
+
+  // Build preview untuk file bawaan dari homepage
   useEffect(() => {
-    if (uploadedFileFromHome) {
-      if (uploadedFileFromHome.type?.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (e) => setPreviewUrl(e.target.result);
-        reader.readAsDataURL(uploadedFileFromHome);
-      }
+    if (fileFromHome && fileFromHome.type?.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => setPreviewUrl(e.target.result);
+      reader.readAsDataURL(fileFromHome);
     }
-  }, [uploadedFileFromHome]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Guard: harus login sebagai customer
   if (!user) {
-    showToast('Silakan login terlebih dahulu untuk membuat custom order.', 'info');
-    navigate('/register');
-    return null;
+    return (
+      <main className="custom-order-page">
+        <div className="container">
+          <div className="custom-order-auth-guard">
+            <div className="custom-order-auth-icon">🔒</div>
+            <h2>Login Diperlukan</h2>
+            <p>Silakan login terlebih dahulu untuk membuat custom order.</p>
+            <button
+              className="custom-order-btn custom-order-btn--primary"
+              onClick={() => navigate('/register')}
+            >
+              Ke Halaman Login
+            </button>
+          </div>
+        </div>
+      </main>
+    );
   }
 
-  if (user.role !== 'customer') {
-    showToast('Halaman ini khusus untuk customer.', 'error');
-    navigate('/');
-    return null;
-  }
-
+  // ── File handler ────────────────────────────────────────────────────────────
   function handleFileUpload(files) {
     const file = files?.[0];
     if (!file) return;
-
     setDesignFile(file);
-
-    // Preview untuk image
     if (file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onload = (e) => setPreviewUrl(e.target.result);
@@ -95,32 +79,24 @@ export default function CustomOrderPage() {
     } else {
       setPreviewUrl(null);
     }
-
-    if (fieldErrors.designFile) {
-      setFieldErrors((p) => ({ ...p, designFile: null }));
-    }
+    setFieldErrors((p) => ({ ...p, designFile: null }));
   }
 
+  // ── Validation ──────────────────────────────────────────────────────────────
   function validate() {
     const errors = {};
-    if (!designFile) errors.designFile = 'File desain wajib diunggah.';
-    if (!productType) errors.productType = 'Jenis produk wajib dipilih.';
-    if (productType === 'Lainnya' && !customProductType.trim()) {
-      errors.customProductType = 'Sebutkan jenis produk.';
-    }
-    if (!width || Number(width) <= 0) errors.width = 'Lebar wajib diisi.';
+    if (!designFile)              errors.designFile   = 'File desain wajib diunggah.';
+    if (!productType.trim())      errors.productType  = 'Jenis produk wajib diisi.';
+    if (!width  || Number(width)  <= 0) errors.width  = 'Lebar wajib diisi.';
     if (!height || Number(height) <= 0) errors.height = 'Tinggi wajib diisi.';
-    if (!material) errors.material = 'Bahan wajib dipilih.';
-    if (material === 'Lainnya' && !customMaterial.trim()) {
-      errors.customMaterial = 'Sebutkan bahan.';
-    }
+    if (!material.trim())         errors.material     = 'Bahan wajib diisi.';
     if (!quantity || Number(quantity) < 1) errors.quantity = 'Jumlah minimal 1.';
     return errors;
   }
 
+  // ── Submit ──────────────────────────────────────────────────────────────────
   async function handleSubmit(e) {
     e.preventDefault();
-
     const errors = validate();
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -132,80 +108,98 @@ export default function CustomOrderPage() {
     setFieldErrors({});
 
     try {
-      // Upload design file terlebih dahulu
+      // 1. Upload design file
       const formData = new FormData();
       formData.append('file', designFile);
-
       const uploadRes = await api.post('/api/upload/design', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-
       const designFilePath = uploadRes.data.path;
 
-      // Buat custom order
-      const finalProductType = productType === 'Lainnya' ? customProductType.trim() : productType;
-      const finalMaterial = material === 'Lainnya' ? customMaterial.trim() : material;
+      // 2. Susun item notes dari field-field yang ada
+      const itemNotes = [
+        color  ? `Warna: ${color.trim()}`   : '',
+        notes  ? `Catatan: ${notes.trim()}` : '',
+      ].filter(Boolean).join('\n');
 
-      const orderPayload = {
+      // 3. Buat custom order via endpoint customer
+      await api.post('/api/orders/custom-customer', {
+        subtotal: 0, // Harga ditentukan CS
         items: [
           {
-            name: `Custom Order - ${finalProductType}`,
-            price: 0, // Harga akan ditentukan oleh CS saat nego
-            quantity: Number(quantity),
-            size: `${width} x ${height} cm`,
-            material: finalMaterial,
-            notes: `${needDesign ? '[BUTUH DESAIN] ' : ''}${notes || ''}`.trim(),
+            name:            `Custom Order - ${productType.trim()}`,
+            price:           0,
+            quantity:        Number(quantity),
+            size:            `${width} x ${height} cm`,
+            material:        material.trim(),
+            color:           color.trim() || null,
+            notes:           itemNotes || null,
             designFilePath,
           },
         ],
-        subtotal: 0,
-        customerName: user.name,
-        customerPhone: user.phone || '',
-        customerAddress: user.address || '',
-      };
-
-      if (deadline) {
-        orderPayload.items[0].notes += `\nDeadline: ${deadline}`;
-      }
-
-      const orderRes = await api.post('/api/orders/custom', orderPayload);
+      });
 
       showToast('Custom order berhasil dibuat! CS kami akan menghubungi Anda segera.', 'success');
       navigate('/my-orders');
     } catch (err) {
-      const msg = err.response?.data?.message || 'Gagal membuat custom order.';
+      const msg = err.response?.data?.message || 'Gagal membuat custom order. Coba lagi.';
       showToast(msg, 'error');
     } finally {
       setSubmitting(false);
     }
   }
 
-  const isZipFile = designFile?.name?.toLowerCase().endsWith('.zip') ||
-                    designFile?.type === 'application/zip';
+  // ── Preview helpers ─────────────────────────────────────────────────────────
+  const isZip = designFile?.name?.toLowerCase().endsWith('.zip') ||
+                designFile?.type === 'application/zip' ||
+                designFile?.type === 'application/x-zip-compressed';
 
+  const isAi  = designFile?.name?.toLowerCase().endsWith('.ai');
+  const isCdr = designFile?.name?.toLowerCase().endsWith('.cdr');
+  const isUnsupported = isZip || isAi || isCdr;
+
+  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <main className="custom-order-page">
       <div className="container">
+        {/* Breadcrumb */}
+        <div className="custom-order-breadcrumb">
+          <button type="button" className="custom-order-back" onClick={() => navigate('/')}>
+            ← Beranda
+          </button>
+          <span className="custom-order-breadcrumb-sep">/</span>
+          <span>Custom Order</span>
+        </div>
+
         <div className="custom-order-layout">
-          {/* ── Preview Kiri ── */}
-          <div className="custom-order-preview">
+
+          {/* ── KIRI: Preview ──────────────────────────────────────────── */}
+          <aside className="custom-order-preview">
             <div className="custom-order-preview-card">
-              <div className="custom-order-preview-label">Preview Desain</div>
+              <div className="custom-order-preview-label">🖼️ Preview Desain</div>
+
               {!designFile ? (
                 <div className="custom-order-preview-empty">
                   <div className="custom-order-preview-empty-icon">📁</div>
-                  <div className="custom-order-preview-empty-text">
+                  <p className="custom-order-preview-empty-text">
                     Belum ada file yang diunggah
-                  </div>
+                  </p>
+                  <p className="custom-order-preview-empty-hint">
+                    Upload file desain untuk melihat preview
+                  </p>
                 </div>
-              ) : isZipFile ? (
-                <div className="custom-order-preview-not-supported">
-                  <div className="custom-order-preview-zip-icon">📦</div>
-                  <div className="custom-order-preview-zip-text">
-                    File ZIP tidak dapat di-preview
+
+              ) : isUnsupported ? (
+                <div className="custom-order-preview-unsupported">
+                  <div className="custom-order-preview-unsupported-icon">
+                    {isZip ? '📦' : '🎨'}
                   </div>
-                  <div className="custom-order-preview-filename">{designFile.name}</div>
+                  <p className="custom-order-preview-unsupported-text">
+                    File not supported to be viewed
+                  </p>
+                  <p className="custom-order-preview-filename">{designFile.name}</p>
                 </div>
+
               ) : previewUrl ? (
                 <div className="custom-order-preview-image-wrap">
                   <img
@@ -213,56 +207,63 @@ export default function CustomOrderPage() {
                     alt="Preview desain"
                     className="custom-order-preview-image"
                   />
-                  <div className="custom-order-preview-filename">{designFile.name}</div>
+                  <p className="custom-order-preview-filename">{designFile.name}</p>
                 </div>
+
               ) : (
                 <div className="custom-order-preview-file">
                   <div className="custom-order-preview-file-icon">📄</div>
-                  <div className="custom-order-preview-filename">{designFile.name}</div>
-                  <div className="custom-order-preview-file-type">
-                    {designFile.type || 'File tidak dapat di-preview'}
-                  </div>
+                  <p className="custom-order-preview-filename">{designFile.name}</p>
+                  <p className="custom-order-preview-file-type">{designFile.type || 'Tipe tidak dikenali'}</p>
                 </div>
               )}
             </div>
-          </div>
 
-          {/* ── Form Kanan ── */}
+            {/* Info box di bawah preview */}
+            <div className="custom-order-info-box">
+              <strong>ℹ️ Informasi</strong>
+              <p>
+                Setelah submit, CS kami akan menghubungi untuk konfirmasi
+                harga dan spesifikasi. Pembayaran dilakukan setelah
+                Anda menyetujui penawaran.
+              </p>
+            </div>
+          </aside>
+
+          {/* ── KANAN: Form ────────────────────────────────────────────── */}
           <div className="custom-order-form-wrap">
             <h1 className="custom-order-title">Buat Custom Order</h1>
             <p className="custom-order-subtitle">
-              Isi detail pesanan Anda di bawah ini. CS kami akan menghubungi untuk konfirmasi harga dan spesifikasi.
+              Isi detail pesanan Anda. Semua field bertanda{' '}
+              <span className="custom-required">*</span> wajib diisi.
             </p>
 
             <form className="custom-order-form" onSubmit={handleSubmit} noValidate>
-              {/* Upload Design File */}
+
+              {/* File Desain */}
               <div className="custom-order-field">
                 <label className="custom-order-label">
                   File Desain <span className="custom-required">*</span>
                 </label>
                 {designFile ? (
                   <div className="custom-order-file-uploaded">
-                    <span className="custom-order-file-name">
-                      📎 {designFile.name}
-                    </span>
+                    <span className="custom-order-file-name">📎 {designFile.name}</span>
                     <button
                       type="button"
                       className="custom-order-file-remove"
-                      onClick={() => {
-                        setDesignFile(null);
-                        setPreviewUrl(null);
-                      }}
+                      aria-label="Hapus file"
+                      onClick={() => { setDesignFile(null); setPreviewUrl(null); }}
                     >
                       ✕
                     </button>
                   </div>
                 ) : (
-                  <div className="custom-order-dropzone-compact">
+                  <div className={`custom-order-dropzone-wrap${fieldErrors.designFile ? ' custom-order-dropzone-wrap--error' : ''}`}>
                     <DropZone
                       accept=".jpg,.jpeg,.png,.pdf,.zip,.ai,.cdr,image/jpeg,image/png,application/pdf,application/zip"
                       onFiles={handleFileUpload}
                       label="Klik atau drag & drop file desain"
-                      hint="JPG, PNG, PDF, ZIP, AI, CDR (Max 10MB)"
+                      hint="JPG, PNG, PDF, ZIP, AI, CDR — Maks. 100 MB"
                     />
                   </div>
                 )}
@@ -271,55 +272,35 @@ export default function CustomOrderPage() {
                 )}
               </div>
 
-              {/* Jenis Produk */}
+              {/* Jenis Produk — free text */}
               <div className="custom-order-field">
-                <label className="custom-order-label">
+                <label className="custom-order-label" htmlFor="co-product-type">
                   Jenis Produk <span className="custom-required">*</span>
                 </label>
-                <select
+                <input
+                  id="co-product-type"
                   className={`custom-order-input${fieldErrors.productType ? ' custom-order-input--error' : ''}`}
+                  type="text"
+                  placeholder="Contoh: Banner, Brosur, Stiker, X-Banner, dll"
                   value={productType}
                   onChange={(e) => {
                     setProductType(e.target.value);
-                    if (fieldErrors.productType) setFieldErrors((p) => ({ ...p, productType: null }));
+                    setFieldErrors((p) => ({ ...p, productType: null }));
                   }}
-                >
-                  <option value="">-- Pilih jenis produk --</option>
-                  {PRODUCT_TYPES.map((t) => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
+                />
                 {fieldErrors.productType && (
                   <span className="custom-field-error">{fieldErrors.productType}</span>
                 )}
               </div>
 
-              {productType === 'Lainnya' && (
-                <div className="custom-order-field">
-                  <label className="custom-order-label">Sebutkan Jenis Produk</label>
-                  <input
-                    className={`custom-order-input${fieldErrors.customProductType ? ' custom-order-input--error' : ''}`}
-                    type="text"
-                    placeholder="Contoh: Spanduk, Roll Banner, dll"
-                    value={customProductType}
-                    onChange={(e) => {
-                      setCustomProductType(e.target.value);
-                      if (fieldErrors.customProductType) setFieldErrors((p) => ({ ...p, customProductType: null }));
-                    }}
-                  />
-                  {fieldErrors.customProductType && (
-                    <span className="custom-field-error">{fieldErrors.customProductType}</span>
-                  )}
-                </div>
-              )}
-
               {/* Ukuran */}
               <div className="custom-order-field-group">
                 <div className="custom-order-field">
-                  <label className="custom-order-label">
+                  <label className="custom-order-label" htmlFor="co-width">
                     Lebar (cm) <span className="custom-required">*</span>
                   </label>
                   <input
+                    id="co-width"
                     className={`custom-order-input${fieldErrors.width ? ' custom-order-input--error' : ''}`}
                     type="number"
                     min="1"
@@ -327,19 +308,17 @@ export default function CustomOrderPage() {
                     value={width}
                     onChange={(e) => {
                       setWidth(e.target.value);
-                      if (fieldErrors.width) setFieldErrors((p) => ({ ...p, width: null }));
+                      setFieldErrors((p) => ({ ...p, width: null }));
                     }}
                   />
-                  {fieldErrors.width && (
-                    <span className="custom-field-error">{fieldErrors.width}</span>
-                  )}
+                  {fieldErrors.width && <span className="custom-field-error">{fieldErrors.width}</span>}
                 </div>
-
                 <div className="custom-order-field">
-                  <label className="custom-order-label">
+                  <label className="custom-order-label" htmlFor="co-height">
                     Tinggi (cm) <span className="custom-required">*</span>
                   </label>
                   <input
+                    id="co-height"
                     className={`custom-order-input${fieldErrors.height ? ' custom-order-input--error' : ''}`}
                     type="number"
                     min="1"
@@ -347,70 +326,63 @@ export default function CustomOrderPage() {
                     value={height}
                     onChange={(e) => {
                       setHeight(e.target.value);
-                      if (fieldErrors.height) setFieldErrors((p) => ({ ...p, height: null }));
+                      setFieldErrors((p) => ({ ...p, height: null }));
                     }}
                   />
-                  {fieldErrors.height && (
-                    <span className="custom-field-error">{fieldErrors.height}</span>
-                  )}
+                  {fieldErrors.height && <span className="custom-field-error">{fieldErrors.height}</span>}
                 </div>
               </div>
 
-              {/* Bahan */}
+              {/* Bahan — free text */}
               <div className="custom-order-field">
-                <label className="custom-order-label">
+                <label className="custom-order-label" htmlFor="co-material">
                   Bahan <span className="custom-required">*</span>
                 </label>
-                <select
+                <input
+                  id="co-material"
                   className={`custom-order-input${fieldErrors.material ? ' custom-order-input--error' : ''}`}
+                  type="text"
+                  placeholder="Contoh: Vinyl, Art Paper, MMT, Albatross, dll"
                   value={material}
                   onChange={(e) => {
                     setMaterial(e.target.value);
-                    if (fieldErrors.material) setFieldErrors((p) => ({ ...p, material: null }));
+                    setFieldErrors((p) => ({ ...p, material: null }));
                   }}
-                >
-                  <option value="">-- Pilih bahan --</option>
-                  {MATERIALS.map((m) => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
-                </select>
+                />
                 {fieldErrors.material && (
                   <span className="custom-field-error">{fieldErrors.material}</span>
                 )}
               </div>
 
-              {material === 'Lainnya' && (
-                <div className="custom-order-field">
-                  <label className="custom-order-label">Sebutkan Bahan</label>
-                  <input
-                    className={`custom-order-input${fieldErrors.customMaterial ? ' custom-order-input--error' : ''}`}
-                    type="text"
-                    placeholder="Contoh: Albatross, MMT, dll"
-                    value={customMaterial}
-                    onChange={(e) => {
-                      setCustomMaterial(e.target.value);
-                      if (fieldErrors.customMaterial) setFieldErrors((p) => ({ ...p, customMaterial: null }));
-                    }}
-                  />
-                  {fieldErrors.customMaterial && (
-                    <span className="custom-field-error">{fieldErrors.customMaterial}</span>
-                  )}
-                </div>
-              )}
+              {/* Warna Produk */}
+              <div className="custom-order-field">
+                <label className="custom-order-label" htmlFor="co-color">
+                  Warna Produk
+                </label>
+                <input
+                  id="co-color"
+                  className="custom-order-input"
+                  type="text"
+                  placeholder="Contoh: Full Color, Hitam Putih, Merah Putih, dll"
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
+                />
+              </div>
 
               {/* Jumlah */}
               <div className="custom-order-field">
-                <label className="custom-order-label">
+                <label className="custom-order-label" htmlFor="co-qty">
                   Jumlah <span className="custom-required">*</span>
                 </label>
                 <input
+                  id="co-qty"
                   className={`custom-order-input${fieldErrors.quantity ? ' custom-order-input--error' : ''}`}
                   type="number"
                   min="1"
                   value={quantity}
                   onChange={(e) => {
                     setQuantity(e.target.value);
-                    if (fieldErrors.quantity) setFieldErrors((p) => ({ ...p, quantity: null }));
+                    setFieldErrors((p) => ({ ...p, quantity: null }));
                   }}
                 />
                 {fieldErrors.quantity && (
@@ -418,49 +390,20 @@ export default function CustomOrderPage() {
                 )}
               </div>
 
-              {/* Deadline (opsional) */}
-              <div className="custom-order-field">
-                <label className="custom-order-label">Deadline (Opsional)</label>
-                <input
-                  className="custom-order-input"
-                  type="date"
-                  value={deadline}
-                  onChange={(e) => setDeadline(e.target.value)}
-                />
-              </div>
-
-              {/* Butuh Jasa Desain */}
-              <div className="custom-order-field">
-                <label className="custom-order-checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={needDesign}
-                    onChange={(e) => setNeedDesign(e.target.checked)}
-                  />
-                  <span>Saya butuh jasa desain dari Gala Print</span>
-                </label>
-              </div>
-
               {/* Catatan */}
               <div className="custom-order-field">
-                <label className="custom-order-label">Catatan Tambahan (Opsional)</label>
+                <label className="custom-order-label" htmlFor="co-notes">
+                  Catatan Tambahan
+                </label>
                 <textarea
+                  id="co-notes"
                   className="custom-order-input"
                   rows={4}
-                  placeholder="Contoh: Finishing glossy, tambahan lubang ring, dll..."
+                  placeholder="Contoh: Finishing glossy, lubang ring, lipatan, dll..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   style={{ resize: 'vertical' }}
                 />
-              </div>
-
-              <div className="custom-order-info-box">
-                <strong>ℹ️ Informasi:</strong>
-                <p>
-                  Setelah Anda submit, CS kami akan menghubungi untuk konfirmasi harga,
-                  spesifikasi detail, dan estimasi pengerjaan. Pembayaran dilakukan
-                  setelah Anda menyetujui harga yang ditawarkan.
-                </p>
               </div>
 
               <div className="custom-order-actions">
@@ -482,6 +425,7 @@ export default function CustomOrderPage() {
               </div>
             </form>
           </div>
+
         </div>
       </div>
     </main>

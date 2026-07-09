@@ -19,8 +19,9 @@ const STAFF_ROLES = ['admin', 'owner', 'cashier', 'cs', 'operational', 'qc', 'of
 router.get('/track', ctrl.trackOrder);
 
 // Customer
-router.post('/',         authenticate, requireRole('customer'), ctrl.createOrder);
-router.get('/my',        authenticate, requireRole('customer'), ctrl.listMyOrders);
+router.post('/',                authenticate, requireRole('customer'), ctrl.createOrder);
+router.get('/my',               authenticate, requireRole('customer'), ctrl.listMyOrders);
+router.post('/custom-customer', authenticate, requireRole('customer'), ctrl.createCustomOrderByCustomer);
 
 // Staff-created orders
 router.post('/custom',   authenticate, requireRole('cs', 'admin'), ctrl.createCustomOrder);

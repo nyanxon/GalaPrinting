@@ -559,7 +559,7 @@ function HomePage() {
                   showToast('Silakan login terlebih dahulu untuk membuat custom order.', 'info', 5000);
                   setTimeout(() => {
                     navigate('/register');
-                  }, 5000);
+                  }, 2500);
                 } else {
                   navigate('/custom-order', { state: { designFile: droppedFile?.__fileObject } });
                 }
