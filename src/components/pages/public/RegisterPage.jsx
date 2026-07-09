@@ -177,7 +177,7 @@ function RegisterPage() {
     <main className="register-layout">
       {/* Left: Photo / Banner */}
       <div className="register-photo" aria-hidden="true">
-        <img src={reqImg} alt="Register Banner" className="register-img" />
+        <img src={ regImg } alt="Register Banner" className="register-img" />
         <span className="register-photo-label"></span>
       </div>
 
