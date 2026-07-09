@@ -33,17 +33,6 @@ export async function ensureHomepageTables() {
       VALUES ('00000000-0000-0000-0000-000000000001', NULL, NULL, NULL, NULL, 0, 0)
     `);
 
-    // Clear the old placeholder text from the seed row if it still has the
-    // default "LANDING PAGE / 4+ PAGE" dummy content — replace with NULL so
-    // the hero falls back to the empty/no-content state instead of showing
-    // the placeholder text to end users.
-    await query(`
-      UPDATE homepage_hero
-      SET title = NULL, subtitle = NULL
-      WHERE id = '00000000-0000-0000-0000-000000000001'
-        AND title = 'LANDING PAGE'
-        AND subtitle = '4+ PAGE'
-    `);
 
     // ── 2. homepage_design_items ──────────────────────────────────────────────
     await query(`
