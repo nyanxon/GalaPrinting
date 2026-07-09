@@ -19,6 +19,7 @@ import RegisterPage from './components/pages/public/RegisterPage.jsx';
 import StatusOrderPage from './components/pages/public/StatusOrderPage.jsx';
 import MyOrdersPage from './components/pages/public/MyOrdersPage.jsx';
 import CaraOrderPage from './components/pages/public/CaraOrderPage.jsx';
+import CustomOrderPage from './components/pages/public/CustomOrderPage.jsx';
 import PortfolioPage from './components/pages/public/PortfolioPage.jsx';
 import TentangKamiPage from './components/pages/public/TentangKamiPage.jsx';
 import ProfilePage from './components/pages/public/ProfilePage.jsx';
@@ -123,6 +124,7 @@ function App() {
               <Route path="/status"         element={<StatusOrderPage />} />
               <Route path="/my-orders"      element={<MyOrdersPage />} />
               <Route path="/cara-order"     element={<CaraOrderPage />} />
+              <Route path="/custom-order"   element={<CustomOrderPage />} />
               <Route path="/portfolio"      element={<PortfolioPage />} />
               <Route path="/tentang-kami"   element={<TentangKamiPage />} />
               <Route path="/profile"        element={<ProfilePage />} />

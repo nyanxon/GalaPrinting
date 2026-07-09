@@ -116,7 +116,7 @@ export const ALLOWED_TRANSITIONS = {
   "Waiting for Design Approval":{ next: ["Design Accepted"],              roles: ["cs", "admin"] },
   "Design Accepted":            { next: ["On Progress"],                  roles: ["operational", "admin"] },
   "On Progress":                { next: ["Quality Checking"],             roles: ["qc", "admin"] },
-  "Quality Checking":           { next: ["In Delivery"],                  roles: ["qc", "admin"] },
+  "Quality Checking":           { next: ["In Delivery", "On Progress"],   roles: ["qc", "admin"] }, // QC reject → back to Operational
   "In Delivery":                { next: ["Finished"],                     roles: ["qc", "admin", "courier_api"] },
   "Finished":                   { next: [],                               roles: [] },
 };
@@ -128,7 +128,7 @@ export const CUSTOM_TRANSITIONS = {
   "Waiting for Payment":        { next: ["Payment Accepted"],             roles: ["cashier", "admin"] },
   "Payment Accepted":           { next: ["On Progress"],                  roles: ["operational", "admin"] },
   "On Progress":                { next: ["Quality Checking"],             roles: ["qc", "admin"] },
-  "Quality Checking":           { next: ["In Delivery"],                  roles: ["qc", "admin"] },
+  "Quality Checking":           { next: ["In Delivery", "On Progress"],   roles: ["qc", "admin"] }, // QC reject → back to Operational
   "In Delivery":                { next: ["Finished"],                     roles: ["qc", "admin", "courier_api"] },
   "Finished":                   { next: [],                               roles: [] },
 };

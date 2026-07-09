@@ -33,7 +33,7 @@ const TRANSITIONS = {
   },
   qc:          {
     'On Progress':      ['Quality Checking'],
-    'Quality Checking': ['In Delivery'],
+    'Quality Checking': ['In Delivery', 'On Progress'], // QC reject → back to Operational
     'In Delivery':      ['Finished'],
   },
   admin:       {
@@ -42,7 +42,7 @@ const TRANSITIONS = {
     'Waiting for Design Approval': ['Design Accepted', 'Cancelled'],
     'Design Accepted':            ['On Progress', 'Waiting for Payment', 'Cancelled'],
     'On Progress':                ['Quality Checking', 'Cancelled'],
-    'Quality Checking':           ['In Delivery', 'Cancelled'],
+    'Quality Checking':           ['In Delivery', 'On Progress', 'Cancelled'], // QC reject → back to Operational
     'In Delivery':                ['Finished', 'Cancelled'],
   },
   owner: {

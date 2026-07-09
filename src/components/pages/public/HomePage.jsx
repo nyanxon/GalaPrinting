@@ -405,10 +405,10 @@ function HomePage() {
     const isImage = file.type.startsWith('image/');
     if (isImage) {
       const reader = new FileReader();
-      reader.onload = (evt) => setDroppedFile({ name: file.name, previewUrl: evt.target.result });
+      reader.onload = (evt) => setDroppedFile({ name: file.name, previewUrl: evt.target.result, __fileObject: file });
       reader.readAsDataURL(file);
     } else {
-      setDroppedFile({ name: file.name, previewUrl: null });
+      setDroppedFile({ name: file.name, previewUrl: null, __fileObject: file });
     }
   }
 
@@ -548,7 +548,7 @@ function HomePage() {
             <p className="home-custom-desc">
               {t('home.customOrderDesc2')}
             </p>
-            <Link className="btn home-custom-btn" to="/cara-order">
+            <Link className="btn home-custom-btn" to="/custom-order" state={{ designFile: droppedFile?.__fileObject }}>
               {t('home.createOrder')}
             </Link>
           </div>
