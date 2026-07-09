@@ -546,6 +546,12 @@
   margin: 0;
 }
 
+/* Desktop wrapper — visible by default, hidden on mobile via media query below */
+.lang-switcher-desktop-wrap {
+  display: flex;
+  align-items: center;
+}
+
 /* ── Responsive ──────────────────────────────────────────── */
 @media (min-width: 768px) {
   .navbar-secondary { display: flex; }
@@ -1300,10 +1306,4 @@
   border-right: 1px solid #333;
   border-bottom: 1px solid #333;
   transform: rotate(45deg);
-}
-
-/* Desktop: lang switcher wrapper visible by default */
-.lang-switcher-desktop-wrap {
-  display: flex;
-  align-items: center;
 }
