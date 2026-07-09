@@ -8,9 +8,11 @@
  * Requirements: 7.1, 13.4
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { AuthContext } from '../../context/AuthContext.jsx';
+import { showToast } from '../../../core/toastEmitter.js';
 import ProductCard from '../../shared/ProductCard.jsx';
 import DropZone from '../../shared/DropZone.jsx';
 import { listProducts } from '../../../services/productService.js';
@@ -306,6 +308,8 @@ function DesignShowcase({ items }) {
 
 function HomePage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
   const [products, setProducts]           = useState([]);
   const [categories, setCategories]       = useState([]);
   const [heroBanners, setHeroBanners]     = useState([]);
@@ -315,7 +319,6 @@ function HomePage() {
   const [searchResults, setSearchResults] = useState([]);
   const [showDropdown, setShowDropdown]   = useState(false);
   const [droppedFile, setDroppedFile]     = useState(null);
-  const navigate     = useNavigate();
   const dropdownRef  = useRef(null);
 
   useEffect(() => {
@@ -548,9 +551,22 @@ function HomePage() {
             <p className="home-custom-desc">
               {t('home.customOrderDesc2')}
             </p>
-            <Link className="btn home-custom-btn" to="/custom-order" state={{ designFile: droppedFile?.__fileObject }}>
+            <button
+              className="btn home-custom-btn"
+              type="button"
+              onClick={() => {
+                if (!user) {
+                  showToast('Silakan login terlebih dahulu untuk membuat custom order.', 'info', 5000);
+                  setTimeout(() => {
+                    navigate('/register');
+                  }, 5000);
+                } else {
+                  navigate('/custom-order', { state: { designFile: droppedFile?.__fileObject } });
+                }
+              }}
+            >
               {t('home.createOrder')}
-            </Link>
+            </button>
           </div>
         </section>
 
