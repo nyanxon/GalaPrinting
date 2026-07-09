@@ -26,7 +26,8 @@
     "notifications": "Notifikasi",
     "adminPage": "Halaman Admin",
     "ownerPage": "Halaman Owner",
-    "dashboard": "Dashboard"
+    "dashboard": "Dashboard",
+    "language": "Bahasa"
   },
   "auth": {
     "username": "Username / Email",

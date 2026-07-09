@@ -26,7 +26,8 @@
     "notifications": "Notifikasi",
     "adminPage": "Kaca Admin",
     "ownerPage": "Kaca Owner",
-    "dashboard": "Dashboard"
+    "dashboard": "Dashboard",
+    "language": "Basa"
   },
   "auth": {
     "username": "Username / Email",

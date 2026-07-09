@@ -595,6 +595,18 @@
   .navbar-search-input {
     border-radius: 8px;
   }
+
+  /* Profile picture / avatar button — hidden on mobile,
+     user can access profile via the sidebar links instead */
+  .nav-profile-wrap {
+    display: none;
+  }
+
+  /* Language switcher in the top navbar bar — hidden on mobile,
+     it lives inside the sidebar instead */
+  .lang-switcher-desktop-wrap {
+    display: none;
+  }
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -1255,4 +1267,43 @@
 
 .nav-sidebar-produk-all:hover {
   background: #f0ebe5;
+}
+
+/* ── Sidebar: Language Switcher section ─────────────────── */
+.nav-sidebar-lang {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 22px;
+  border-top: 1px solid #f3f3f3;
+  margin-top: 4px;
+}
+
+.nav-sidebar-lang-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f1f1f;
+}
+
+/* Inside sidebar: dropdown opens upward so it doesn't go off-screen */
+.nav-sidebar-lang .lang-dropdown {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+
+/* Remove the upward arrow and add a downward one for upward dropdown */
+.nav-sidebar-lang .lang-dropdown::before {
+  top: auto;
+  bottom: -7px;
+  border-left: none;
+  border-top: none;
+  border-right: 1px solid #333;
+  border-bottom: 1px solid #333;
+  transform: rotate(45deg);
+}
+
+/* Desktop: lang switcher wrapper visible by default */
+.lang-switcher-desktop-wrap {
+  display: flex;
+  align-items: center;
 }

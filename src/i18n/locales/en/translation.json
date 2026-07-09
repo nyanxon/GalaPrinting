@@ -26,7 +26,8 @@
     "notifications": "Notifications",
     "adminPage": "Admin Page",
     "ownerPage": "Owner Page",
-    "dashboard": "Dashboard"
+    "dashboard": "Dashboard",
+    "language": "Language"
   },
   "auth": {
     "username": "Username / Email",

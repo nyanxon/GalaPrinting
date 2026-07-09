@@ -445,8 +445,10 @@ function Navbar() {
             </button>
           </div>
 
-          {/* Language Switcher — both desktop & mobile */}
-          <LanguageSwitcher />
+          {/* Language Switcher — desktop (hidden on mobile via CSS) */}
+          <div className="lang-switcher-desktop-wrap">
+            <LanguageSwitcher />
+          </div>
         </nav>
 
         {/* Secondary nav */}
@@ -516,6 +518,12 @@ function Navbar() {
                   {t('nav.logout')}
                 </button>
               )}
+
+              {/* Language Switcher — inside sidebar (mobile only) */}
+              <div className="nav-sidebar-lang">
+                <span className="nav-sidebar-lang-label">{t('nav.language') || 'Bahasa'}</span>
+                <LanguageSwitcher />
+              </div>
             </div>
           </nav>
         </>
