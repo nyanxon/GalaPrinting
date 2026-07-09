@@ -48,8 +48,8 @@
     "quantity": "Jumlah"
   },
   "home": {
-    "heroLabel": "LANDING PAGE",
-    "heroSub": "4+ KACA",
+    "heroLabel": "",
+    "heroSub": "",
     "greeting": "Om Swastiastu",
     "whatToPrint": "Lakar mesen apa?",
     "searchPlaceholder": "Nuktuk produk ring dini...",

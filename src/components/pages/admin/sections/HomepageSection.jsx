@@ -181,12 +181,12 @@ function HeroBannerModal({ banner, onClose, onSaved }) {
             <div className="adm-field">
               <label className="adm-label" htmlFor="hb-title">Judul (opsional)</label>
               <input className="adm-input" id="hb-title" name="title"
-                value={form.title} onChange={handleChange} placeholder="LANDING PAGE" />
+                value={form.title} onChange={handleChange} placeholder="" />
             </div>
             <div className="adm-field">
               <label className="adm-label" htmlFor="hb-subtitle">Subtitle (opsional)</label>
               <input className="adm-input" id="hb-subtitle" name="subtitle"
-                value={form.subtitle} onChange={handleChange} placeholder="4+ PAGE" />
+                value={form.subtitle} onChange={handleChange} placeholder="" />
             </div>
             <div className="adm-field">
               <label className="adm-label" htmlFor="hb-cta">Link Tujuan (opsional)</label>

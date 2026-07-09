@@ -48,8 +48,8 @@
     "quantity": "Qty"
   },
   "home": {
-    "heroLabel": "LANDING PAGE",
-    "heroSub": "4+ PAGES",
+    "heroLabel": "",
+    "heroSub": "",
     "greeting": "Hello",
     "whatToPrint": "What would you like to order?",
     "searchPlaceholder": "Search all products here...",
