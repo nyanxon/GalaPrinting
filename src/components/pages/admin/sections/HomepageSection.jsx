@@ -872,8 +872,8 @@ function PreviewHeroCarousel({ slides }) {
     return (
       <section className="home-hero" aria-label="Hero banner">
         <div className="home-hero-inner">
-          <p className="home-hero-label">LANDING PAGE</p>
-          <p className="home-hero-sub">4+ PAGE</p>
+          <p className="home-hero-label"></p>
+          <p className="home-hero-sub"></p>
         </div>
       </section>
     );
