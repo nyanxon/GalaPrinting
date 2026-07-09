@@ -9,23 +9,29 @@ import * as authService from '../services/auth.service.js';
 
 const REFRESH_COOKIE = 'refreshToken';
 
-const COOKIE_OPTIONS = {
+/** Cookie options dasar (tanpa maxAge — diset dinamis per request) */
+const BASE_COOKIE_OPTIONS = {
   httpOnly: true,
   sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-  secure: process.env.NODE_ENV === 'production',
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  secure:   process.env.NODE_ENV === 'production',
+  path:     '/',
 };
 
-function setRefreshCookie(res, token) {
-  res.cookie(REFRESH_COOKIE, token, COOKIE_OPTIONS);
+/**
+ * Set refresh token cookie dengan maxAge yang sinkron dengan durasi token di DB.
+ * @param {import('express').Response} res
+ * @param {string} token
+ * @param {number} maxAgeMs  Durasi cookie dalam milidetik
+ */
+function setRefreshCookie(res, token, maxAgeMs) {
+  res.cookie(REFRESH_COOKIE, token, {
+    ...BASE_COOKIE_OPTIONS,
+    maxAge: maxAgeMs,
+  });
 }
 
 function clearRefreshCookie(res) {
-  res.clearCookie(REFRESH_COOKIE, {
-    httpOnly: true,
-    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-    secure: process.env.NODE_ENV === 'production',
-  });
+  res.clearCookie(REFRESH_COOKIE, BASE_COOKIE_OPTIONS);
 }
 
 // ── Existing endpoints ────────────────────────────────────────────────────────
@@ -42,9 +48,10 @@ export async function register(req, res, next) {
 
     const { name, email, phone, password, gender, dob } = req.body;
     const user = await authService.register({ name, email, phone, password, gender, dob });
-    const { accessToken, refreshToken } = await authService.createTokenPair(user.id);
+    // Register selalu 1 hari — user bisa pilih "ingat saya" saat login berikutnya
+    const { accessToken, refreshToken, cookieMaxAge } = await authService.createTokenPair(user.id, false);
 
-    setRefreshCookie(res, refreshToken);
+    setRefreshCookie(res, refreshToken, cookieMaxAge);
     return res.status(201).json({
       ok: true,
       accessToken,
@@ -66,7 +73,7 @@ export async function login(req, res, next) {
       return res.status(422).json({ ok: false, message: firstMsg, errors: mapped });
     }
 
-    const { email, password } = req.body;
+    const { email, password, rememberMe } = req.body;
     const user = await authService.login({ email, password });
 
     if (!user) {
@@ -77,14 +84,17 @@ export async function login(req, res, next) {
       return res.status(401).json({ ok: false, message: 'Akun tidak aktif.' });
     }
 
-    const { accessToken, refreshToken } = await authService.createTokenPair(user.id);
-    setRefreshCookie(res, refreshToken);
+    // rememberMe: true → 30 hari, false/default → 1 hari
+    const remember = Boolean(rememberMe);
+    const { accessToken, refreshToken, cookieMaxAge } = await authService.createTokenPair(user.id, remember);
+    setRefreshCookie(res, refreshToken, cookieMaxAge);
 
     const { password_hash: _, ...safeUser } = user;
     return res.json({
       ok: true,
       accessToken,
       user: safeUser,
+      rememberMe: remember,
       // Inform the client if the email is not yet verified (soft warning, not a block)
       emailVerified: Boolean(user.is_email_verified),
     });
@@ -101,8 +111,8 @@ export async function refresh(req, res, next) {
       return res.status(401).json({ ok: false, message: 'Token tidak valid atau sudah kedaluwarsa.' });
     }
 
-    const { accessToken, refreshToken } = await authService.rotateRefreshToken(token);
-    setRefreshCookie(res, refreshToken);
+    const { accessToken, refreshToken, cookieMaxAge } = await authService.rotateRefreshToken(token);
+    setRefreshCookie(res, refreshToken, cookieMaxAge);
     return res.json({ ok: true, accessToken });
   } catch (err) {
     if (err.status === 401) {

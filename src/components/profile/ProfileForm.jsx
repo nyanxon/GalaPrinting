@@ -16,6 +16,7 @@
 
 import { useState } from 'react';
 import { updateProfile } from '../../services/profileService.js';
+import { resendVerificationEmail } from '../../services/authService.js';
 import { showToast } from '../../core/toastEmitter.js';
 import { resolveApiUrl } from '../../core/httpClient.js';
 import ImageCropper from './ImageCropper.jsx';
@@ -54,6 +55,25 @@ function ProfileForm({ profile, onProfileUpdated }) {
   const [saving, setSaving] = useState(false);
   const [apiError, setApiError] = useState('');
   const [cropperOpen, setCropperOpen] = useState(false);
+  const [resendingEmail, setResendingEmail] = useState(false);
+
+  const isEmailVerified = Boolean(profile?.is_email_verified);
+
+  async function handleResendVerification() {
+    setResendingEmail(true);
+    try {
+      const res = await resendVerificationEmail();
+      if (res.ok) {
+        showToast('Email verifikasi telah dikirim. Cek inbox Anda.', 'success');
+      } else {
+        showToast(res.message || 'Gagal mengirim email verifikasi.', 'error');
+      }
+    } catch {
+      showToast('Gagal mengirim email verifikasi.', 'error');
+    } finally {
+      setResendingEmail(false);
+    }
+  }
 
   function handleAvatarUpdated(updatedProfile) {
     onProfileUpdated(updatedProfile);
@@ -197,10 +217,31 @@ function ProfileForm({ profile, onProfileUpdated }) {
 
           <div className="pf-view-row">
             <span className="pf-view-label">Email</span>
-            <span className="pf-view-value pf-view-value--email">
-              {profile?.email || '—'}
-              <span className="pf-readonly-badge">Read-only</span>
-            </span>
+            <div className="pf-email-wrap">
+              <div className="pf-email-top">
+                <span className="pf-view-value">{profile?.email || '—'}</span>
+                <span className="pf-readonly-badge">Read-only</span>
+              </div>
+              {isEmailVerified ? (
+                <span className="pf-verified-badge">
+                  ✅ Email terverifikasi
+                </span>
+              ) : (
+                <div className="pf-unverified-wrap">
+                  <span className="pf-unverified-badge">
+                    ⚠️ Email belum diverifikasi
+                  </span>
+                  <button
+                    type="button"
+                    className="pf-resend-btn"
+                    onClick={handleResendVerification}
+                    disabled={resendingEmail}
+                  >
+                    {resendingEmail ? 'Mengirim...' : 'Kirim ulang verifikasi'}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="pf-view-row">
@@ -330,6 +371,10 @@ function ProfileForm({ profile, onProfileUpdated }) {
           disabled
           aria-readonly="true"
         />
+        {/* Status verifikasi di edit mode */}
+        <span className={isEmailVerified ? 'pf-verified-badge pf-verified-badge--small' : 'pf-unverified-badge pf-unverified-badge--small'}>
+          {isEmailVerified ? '✅ Terverifikasi' : '⚠️ Belum diverifikasi'}
+        </span>
       </div>
 
       {/* Phone */}

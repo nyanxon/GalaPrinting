@@ -150,10 +150,10 @@ export async function registerCustomer({ name, email, phone, password, gender, d
  *
  * Requirements: 16.1, 16.3, 16.6
  */
-export async function login({ email, password }) {
+export async function login({ email, password, rememberMe = false }) {
   if (USE_BACKEND) {
     try {
-      const res = await api.post("/api/auth/login", { email, password });
+      const res = await api.post("/api/auth/login", { email, password, rememberMe: Boolean(rememberMe) });
       // Server returns { ok, accessToken, user } directly (no .data wrapper)
       const { accessToken, user } = res.data;
       setAccessToken(accessToken);

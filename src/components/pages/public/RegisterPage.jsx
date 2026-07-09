@@ -47,6 +47,7 @@ function RegisterPage() {
 
   // Login form state
   const [loginData, setLoginData] = useState({ email: '', password: '' });
+  const [loginRememberMe, setLoginRememberMe] = useState(false);
   const [loginAlert, setLoginAlert] = useState(null);
   const [loginFieldErrors, setLoginFieldErrors] = useState({});
   const [loginSubmitting, setLoginSubmitting] = useState(false);
@@ -141,7 +142,7 @@ function RegisterPage() {
     
     setLoginSubmitting(true);
     try {
-      const res = await Promise.resolve(login({ email: loginData.email, password: loginData.password }));
+      const res = await Promise.resolve(login({ email: loginData.email, password: loginData.password, rememberMe: loginRememberMe }));
       if (!res.ok) {
         setLoginAlert({ message: res.message, type: 'error' });
         return;
@@ -430,8 +431,19 @@ function RegisterPage() {
                 />
                 {loginFieldErrors.password && <span className="register-field-error">{loginFieldErrors.password}</span>}
               </div>
-              {/* Lupa Password link */}
-              <div style={{ textAlign: 'right', marginBottom: 12, marginTop: -4 }}>
+
+              {/* Ingat saya + Lupa Password */}
+              <div className="register-remember-row">
+                <label className="register-remember-label">
+                  <input
+                    className="register-remember-checkbox"
+                    type="checkbox"
+                    checked={loginRememberMe}
+                    onChange={(e) => setLoginRememberMe(e.target.checked)}
+                    aria-label="Ingat saya selama 30 hari"
+                  />
+                  <span>Ingat saya</span>
+                </label>
                 <a
                   href="/forgot-password"
                   className="register-link"
@@ -441,6 +453,7 @@ function RegisterPage() {
                   Lupa password?
                 </a>
               </div>
+
               <button className="btn register-submit-btn" type="submit" disabled={loginSubmitting}>
                 {loginSubmitting ? 'Memproses...' : 'MASUK'}
               </button>

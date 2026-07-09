@@ -7,7 +7,7 @@
 import { query } from '../db/connection.js';
 import { StorageService } from '../utils/storage.js';
 
-const PROFILE_FIELDS = 'id, name, email, phone, dob, gender, avatar_url, role, created_at, updated_at';
+const PROFILE_FIELDS = 'id, name, email, phone, dob, gender, avatar_url, role, is_email_verified, created_at, updated_at';
 
 /**
  * Fetch a user's profile by ID.

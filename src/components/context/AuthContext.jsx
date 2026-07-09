@@ -1,21 +1,44 @@
-import { createContext, useState, useEffect } from 'react';
+/**
+ * AuthContext.jsx — Auth state provider.
+ *
+ * Perbaikan race condition refresh:
+ * - `loading: true` selama proses re-hydrate (getCurrentUser) berlangsung.
+ * - Protected route TIDAK boleh redirect ke login sebelum loading = false.
+ * - `gala:session-expired` event → navigasi ke /register.
+ */
+
+import { createContext, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentUser } from '../../services/authService.js';
 
 export const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser]       = useState(null);
+  // loading=true sampai proses silent-refresh selesai.
+  // Seluruh app menunggu ini sebelum memutuskan apakah user sudah login.
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    Promise.resolve(getCurrentUser())
-      .then(setUser)
-      .finally(() => setLoading(false));
+  const hydrateUser = useCallback(async () => {
+    try {
+      const current = await getCurrentUser();
+      setUser(current ?? null);
+    } catch {
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
+  // Jalankan satu kali saat app pertama mount.
+  // getCurrentUser() sudah menangani silent refresh via httpOnly cookie —
+  // tidak perlu race condition workaround tambahan.
+  useEffect(() => {
+    hydrateUser();
+  }, [hydrateUser]);
+
   function updateUser(newUser) {
-    setUser(newUser);
+    setUser(newUser ?? null);
   }
 
   return (
@@ -26,9 +49,9 @@ export function AuthProvider({ children }) {
 }
 
 /**
- * Inner component that listens for the `gala:session-expired` DOM event
- * and navigates to /register using React Router.
- * Must be rendered inside a BrowserRouter tree.
+ * Inner component yang mendengarkan `gala:session-expired` DOM event
+ * dan meredirect ke /register via React Router.
+ * Harus dirender di dalam BrowserRouter tree.
  */
 function AuthNavigationHandler() {
   const navigate = useNavigate();

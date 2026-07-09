@@ -21,10 +21,26 @@ function sha256(str) {
   return crypto.createHash('sha256').update(str).digest('hex');
 }
 
-function refreshExpiresAt() {
+/**
+ * Hitung expires_at untuk refresh token berdasarkan durasi.
+ * @param {number} days
+ * @returns {string} MySQL DATETIME string
+ */
+function refreshExpiresAt(days = 7) {
   const d = new Date();
-  d.setDate(d.getDate() + 7);
+  d.setDate(d.getDate() + days);
   return d.toISOString().slice(0, 19).replace('T', ' ');
+}
+
+/**
+ * Durasi refresh token dalam milidetik, sesuai rememberMe.
+ * @param {boolean} rememberMe
+ * @returns {{ days: number, ms: number }}
+ */
+function getRefreshDuration(rememberMe = false) {
+  const days = rememberMe ? 30 : 1;
+  const ms   = days * 24 * 60 * 60 * 1000;
+  return { days, ms };
 }
 
 /**
@@ -102,8 +118,11 @@ export async function login({ email, password }) {
 
 /**
  * Generate an access + refresh token pair and persist the refresh token.
+ * @param {string}  userId
+ * @param {boolean} rememberMe  true → 30 hari, false → 1 hari
+ * @returns {{ accessToken: string, refreshToken: string, cookieMaxAge: number }}
  */
-export async function createTokenPair(userId) {
+export async function createTokenPair(userId, rememberMe = false) {
   const [userRows] = await query(
     'SELECT id, role, name, email FROM users WHERE id = ?',
     [userId]
@@ -111,6 +130,7 @@ export async function createTokenPair(userId) {
   if (userRows.length === 0) throw new Error('User not found');
   const user = userRows[0];
 
+  const { days, ms } = getRefreshDuration(rememberMe);
   const family       = randomUUID();
   const accessToken  = signAccessToken({ sub: user.id, role: user.role, name: user.name, email: user.email });
   const refreshToken = signRefreshToken(user.id, family);
@@ -119,14 +139,15 @@ export async function createTokenPair(userId) {
   await query(
     `INSERT INTO refresh_tokens (id, user_id, token_hash, family, expires_at)
      VALUES (?, ?, ?, ?, ?)`,
-    [randomUUID(), user.id, tokenHash, family, refreshExpiresAt()]
+    [randomUUID(), user.id, tokenHash, family, refreshExpiresAt(days)]
   );
 
-  return { accessToken, refreshToken };
+  return { accessToken, refreshToken, cookieMaxAge: ms };
 }
 
 /**
  * Rotate a refresh token (detect reuse, issue new pair).
+ * Mempertahankan durasi asli dari token yang dirotasi.
  */
 export async function rotateRefreshToken(token) {
   let payload;
@@ -169,6 +190,13 @@ export async function rotateRefreshToken(token) {
   }
   const user = userRows[0];
 
+  // Pertahankan sisa waktu dari token asli agar rememberMe tetap berlaku
+  const originalExpiresAt = new Date(stored.expires_at);
+  const now               = new Date();
+  const remainingMs       = Math.max(originalExpiresAt - now, 0);
+  const remainingDays     = Math.ceil(remainingMs / (24 * 60 * 60 * 1000));
+  const expiresAt         = refreshExpiresAt(remainingDays || 1);
+
   const newAccessToken  = signAccessToken({ sub: user.id, role: user.role, name: user.name, email: user.email });
   const newRefreshToken = signRefreshToken(user.id, stored.family);
   const newHash         = sha256(newRefreshToken);
@@ -176,10 +204,10 @@ export async function rotateRefreshToken(token) {
   await query(
     `INSERT INTO refresh_tokens (id, user_id, token_hash, family, expires_at)
      VALUES (?, ?, ?, ?, ?)`,
-    [randomUUID(), user.id, newHash, stored.family, refreshExpiresAt()]
+    [randomUUID(), user.id, newHash, stored.family, expiresAt]
   );
 
-  return { accessToken: newAccessToken, refreshToken: newRefreshToken };
+  return { accessToken: newAccessToken, refreshToken: newRefreshToken, cookieMaxAge: remainingMs };
 }
 
 /**
