@@ -10,6 +10,7 @@ import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import { login, registerCustomer, getCurrentUser } from '../../../services/authService.js';
+import regImg from '../assets/register-page.png'
 import '../../../styles/css/pages/register.css';
 
 const ROLE_PATHS = {
@@ -176,7 +177,8 @@ function RegisterPage() {
     <main className="register-layout">
       {/* Left: Photo / Banner */}
       <div className="register-photo" aria-hidden="true">
-        <span className="register-photo-label">FOTO</span>
+        <img src={reqImg} alt="Register Banner" className="register-img" />
+        <span className="register-photo-label"></span>
       </div>
 
       {/* Right: Form */}
