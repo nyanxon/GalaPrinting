@@ -10,7 +10,7 @@ import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import { login, registerCustomer, getCurrentUser } from '../../../services/authService.js';
-import { regImg } from '../../../assets/register-page.png'
+import regImg from '../../../assets/register-page.png'
 import '../../../styles/css/pages/register.css';
 
 const ROLE_PATHS = {
