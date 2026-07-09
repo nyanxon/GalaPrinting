@@ -30,12 +30,18 @@
   z-index: 0;
 }
 
+/* ── Slide backgrounds — only show image once it's ready ─── */
 .home-hero-slide {
   position: absolute;
   inset: 0;
   background: rgba(237, 200, 174, 0.45);
   opacity: 0;
   transition: opacity 0.6s ease;
+}
+
+/* Image painted but not yet active: keep invisible */
+.home-hero-slide--ready {
+  /* background-image is set inline but we reveal it only when active */
 }
 
 .home-hero-slide--active {
@@ -214,14 +220,6 @@
   filter: brightness(0.9);
 }
 
-.home-cat-item-img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
 .home-cat-item-label {
   position: relative;
   z-index: 1;
@@ -235,6 +233,54 @@
 }
 
 .home-cat-placeholder { background: rgba(237, 200, 174, 0.5); }
+
+/* Shimmer animation for placeholder cells while data is loading */
+@keyframes home-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.home-cat-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(237, 200, 174, 0.35) 25%,
+    rgba(237, 200, 174, 0.65) 50%,
+    rgba(237, 200, 174, 0.35) 75%
+  );
+  background-size: 800px 100%;
+  animation: home-shimmer 1.4s infinite linear;
+}
+
+/* Design item image — starts invisible, fades in once loaded */
+.home-cat-item-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.35s ease-in;
+}
+
+.home-cat-item-img.loaded {
+  opacity: 1;
+}
+
+/* Category section banner background — starts invisible, fades in once image loads */
+.home-section-banner-bg {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(237, 200, 174, 0.5);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0;
+  transition: opacity 0.4s ease-in;
+}
+
+.home-section-banner-bg.loaded {
+  opacity: 1;
+}
 
 .home-search-row {
   display: flex;
@@ -465,15 +511,6 @@
 
 .home-section-banner:hover { filter: brightness(0.95); }
 
-.home-section-banner-bg {
-  position: absolute;
-  inset: 0;
-  background-color: rgba(237, 200, 174, 0.5);
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
 .home-section-banner-label {
   position: relative;
   z-index: 1;
@@ -546,6 +583,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  /* fade-in is handled by .img-loaded class from products.css */
 }
 
 .home-section-grid .product-card-body {

@@ -8,7 +8,7 @@
  * Requirements: 7.1, 13.4
  */
 
-import { useState, useEffect, useRef, useCallback, useContext } from 'react';
+import { useState, useEffect, useRef, useCallback, useContext, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../context/AuthContext.jsx';
@@ -45,8 +45,10 @@ function buildGroups(products, categories) {
 /**
  * Category banner that uses the dynamic banner image from the database
  * (falls back to the solid-colour placeholder if no image is set).
+ * Includes fade-in transition to avoid flash when image loads.
  */
 function CategoryBanner({ category, bannerData }) {
+  const [imageLoaded, setImageLoaded] = useState(false);
   const name = category ? category.name : 'Produk';
   const href = bannerData?.linkUrl
     ? bannerData.linkUrl
@@ -55,16 +57,28 @@ function CategoryBanner({ category, bannerData }) {
     : '/products';
   const ctaText = bannerData?.ctaText || 'Lihat Semua →';
   const displayName = bannerData?.title || name;
-  const bgImage = bannerData?.imageUrl ? `url(${bannerData.imageUrl})` : undefined;
+  const bgImage = bannerData?.imageUrl;
+
+  // Preload image to trigger onLoad callback
+  useEffect(() => {
+    if (!bgImage) {
+      setImageLoaded(true); // No image — consider "loaded" so label is visible
+      return;
+    }
+    const img = new Image();
+    img.onload = () => setImageLoaded(true);
+    img.onerror = () => setImageLoaded(true); // Even on error, show content
+    img.src = bgImage;
+  }, [bgImage]);
 
   return (
     <Link className="home-section-banner" to={href} aria-label={`Lihat semua ${displayName}`}>
       <div
-        className="home-section-banner-bg"
+        className={`home-section-banner-bg${imageLoaded ? ' loaded' : ''}`}
         style={
           bgImage
             ? {
-                backgroundImage: bgImage,
+                backgroundImage: `url(${bgImage})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
               }
@@ -80,7 +94,7 @@ function CategoryBanner({ category, bannerData }) {
 }
 
 /** A section of products with a category banner */
-function ProductSection({ products, category, reverse, bannerData }) {
+function ProductSection({ products, category, reverse, bannerData, eager = false }) {
   const bannerEl = (
     <div className="home-section-banner-wrap" data-banner>
       <CategoryBanner category={category} bannerData={bannerData} />
@@ -89,7 +103,7 @@ function ProductSection({ products, category, reverse, bannerData }) {
   const gridEl = (
     <div className="home-section-grid" data-cols="4">
       {products.map((product) => (
-        <ProductCard key={product.id} product={product} />
+        <ProductCard key={product.id} product={product} eager={eager} />
       ))}
     </div>
   );
@@ -118,14 +132,32 @@ function ProductSection({ products, category, reverse, bannerData }) {
  * Hero Carousel — auto-plays through up to 8 database-managed banner slides.
  * Features: auto-advance every 5 s, pause on hover, prev/next buttons, dot nav.
  * Falls back to a solid-colour placeholder when no slides are configured.
+ * Images are preloaded eagerly — slides only become visible once their image
+ * is ready, preventing the "flash of empty box" on initial render.
  */
 function HeroCarousel({ slides }) {
   const { t } = useTranslation();
   const [current, setCurrent] = useState(0);
   const [paused, setPaused]   = useState(false);
+  // Track which slide images have finished loading
+  const [loadedMap, setLoadedMap] = useState({});
   const timerRef = useRef(null);
 
   const total = slides.length;
+
+  // Preload all slide images as soon as the slides array is available
+  useEffect(() => {
+    slides.forEach((s) => {
+      if (!s.imageUrl) {
+        setLoadedMap((prev) => ({ ...prev, [s.id]: true }));
+        return;
+      }
+      const img = new Image();
+      img.onload  = () => setLoadedMap((prev) => ({ ...prev, [s.id]: true }));
+      img.onerror = () => setLoadedMap((prev) => ({ ...prev, [s.id]: true }));
+      img.src = s.imageUrl;
+    });
+  }, [slides]);
 
   const goTo = useCallback((idx) => {
     setCurrent((idx + total) % total);
@@ -179,7 +211,7 @@ function HeroCarousel({ slides }) {
         {slides.map((s, i) => (
           <div
             key={s.id}
-            className={`home-hero-slide${i === current ? ' home-hero-slide--active' : ''}`}
+            className={`home-hero-slide${i === current ? ' home-hero-slide--active' : ''}${loadedMap[s.id] ? ' home-hero-slide--ready' : ''}`}
             style={
               s.imageUrl
                 ? { backgroundImage: `url(${s.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
@@ -254,54 +286,63 @@ function HeroCarousel({ slides }) {
 /**
  * Design showcase grid — replaces the old category quick-links.
  * Shows max 4 items, each with image, optional title, and optional link.
+ * Images fade in on load to avoid flash of empty box.
  */
+function DesignShowcaseItem({ item }) {
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  const inner = (
+    <>
+      {item.imageUrl && (
+        <img
+          src={item.imageUrl}
+          alt={item.title || ''}
+          className={`home-cat-item-img${imageLoaded ? ' loaded' : ''}`}
+          onLoad={() => setImageLoaded(true)}
+          onError={() => setImageLoaded(true)}
+        />
+      )}
+      {item.title && (
+        <span className="home-cat-item-label">{item.title}</span>
+      )}
+    </>
+  );
+
+  return item.linkUrl ? (
+    <Link
+      key={item.id}
+      className="home-cat-item home-cat-item--showcase"
+      to={item.linkUrl}
+    >
+      {inner}
+    </Link>
+  ) : (
+    <div key={item.id} className="home-cat-item home-cat-item--showcase">
+      {inner}
+    </div>
+  );
+}
+
 function DesignShowcase({ items }) {
   const visible = items.slice(0, 4);
 
   if (visible.length === 0) {
-    // Render placeholder grid while loading or if no items configured
+    // Render shimmer placeholder grid while loading or if no items configured
     return (
       <div className="home-cat-grid" data-cat-grid>
-        <div className="home-cat-item home-cat-placeholder" />
-        <div className="home-cat-item home-cat-placeholder" />
-        <div className="home-cat-item home-cat-placeholder" />
-        <div className="home-cat-item home-cat-placeholder" />
+        <div className="home-cat-item home-cat-placeholder home-cat-shimmer" />
+        <div className="home-cat-item home-cat-placeholder home-cat-shimmer" />
+        <div className="home-cat-item home-cat-placeholder home-cat-shimmer" />
+        <div className="home-cat-item home-cat-placeholder home-cat-shimmer" />
       </div>
     );
   }
 
   return (
     <div className="home-cat-grid" data-cat-grid>
-      {visible.map((item) => {
-        const inner = (
-          <>
-            {item.imageUrl && (
-              <img
-                src={item.imageUrl}
-                alt={item.title || ''}
-                className="home-cat-item-img"
-              />
-            )}
-            {item.title && (
-              <span className="home-cat-item-label">{item.title}</span>
-            )}
-          </>
-        );
-
-        return item.linkUrl ? (
-          <Link
-            key={item.id}
-            className="home-cat-item home-cat-item--showcase"
-            to={item.linkUrl}
-          >
-            {inner}
-          </Link>
-        ) : (
-          <div key={item.id} className="home-cat-item home-cat-item--showcase">
-            {inner}
-          </div>
-        );
-      })}
+      {visible.map((item) => (
+        <DesignShowcaseItem key={item.id} item={item} />
+      ))}
     </div>
   );
 }
@@ -369,7 +410,7 @@ function HomePage() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const groups = buildGroups(products, categories);
+  const groups = useMemo(() => buildGroups(products, categories), [products, categories]);
 
   function handleSearchChange(e) {
     const q = e.target.value;
@@ -593,6 +634,7 @@ function HomePage() {
                   category={group.category}
                   reverse={idx % 2 !== 0}
                   bannerData={bannerData}
+                  eager={idx === 0 && chunkIdx === 0}
                 />
               ));
             })

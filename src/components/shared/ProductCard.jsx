@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatCurrency } from '../../core/helpers.js';
 import placeholderImg from '../../assets/placeholder.svg';
@@ -9,14 +10,17 @@ import placeholderImg from '../../assets/placeholder.svg';
  *
  * Props:
  *   product {object} — product data with id, name, price, image, category
+ *   eager   {boolean} — when true, disables lazy loading (use for above-the-fold cards)
  *
  * Renders name, price, image, and a link to /products/:id.
  * Uses Link from react-router-dom for navigation.
  * Uses formatCurrency from src/core/helpers.js for price display.
+ * Image fades in on load to avoid flash of empty placeholder box.
  *
  * Requirements: 7.2, 14.2, 14.3
  */
-function ProductCard({ product }) {
+function ProductCard({ product, eager = false }) {
+  const [imageLoaded, setImageLoaded] = useState(false);
   const name = product?.name || '';
   const price = formatCurrency(product?.price || 0);
   const imageSrc = product?.image || placeholderImg;
@@ -33,8 +37,13 @@ function ProductCard({ product }) {
           <img
             src={imageSrc}
             alt={name}
-            onError={(e) => { e.currentTarget.src = placeholderImg; }}
-            loading="lazy"
+            onLoad={() => setImageLoaded(true)}
+            onError={(e) => {
+              e.currentTarget.src = placeholderImg;
+              setImageLoaded(true);
+            }}
+            loading={eager ? 'eager' : 'lazy'}
+            className={imageLoaded ? 'img-loaded' : ''}
           />
         </div>
         <div className="product-card-body">
