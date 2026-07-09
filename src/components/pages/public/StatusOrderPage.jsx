@@ -26,11 +26,43 @@ function fmtDate(iso) {
 
 const STANDARD_STEPS = ORDER_STATUSES.filter((s) => s !== 'Cancelled');
 
-function TimelineStep({ label, entry, isCurrent, isPast }) {
+/**
+ * Timeline steps untuk custom order (CS-first flow).
+ * Urutan berbeda: design review dulu, baru payment.
+ */
+const CUSTOM_STEPS = [
+  'Waiting for Design Approval',
+  'Design Accepted',
+  'Waiting for Payment',
+  'Payment Accepted',
+  'On Progress',
+  'Quality Checking',
+  'In Delivery',
+  'Finished',
+];
+
+/**
+ * Pilih urutan langkah timeline sesuai order_type.
+ * @param {object} order
+ * @returns {string[]}
+ */
+function getTimelineSteps(order) {
+  const type   = order?.orderType ?? order?.order_type ?? 'standard';
+  const source = order?.source ?? 'online';
+  if (type === 'custom' || source === 'custom') return CUSTOM_STEPS;
+  return STANDARD_STEPS;
+}
+
+/**
+ * TimelineStep — HANYA tercentang jika status ini punya entry nyata di timelineMap
+ * (artinya admin/sistem benar-benar pernah set status ini di database).
+ * TIDAK tercentang hanya karena index-nya lebih kecil dari status saat ini.
+ */
+function TimelineStep({ label, timestampIso, isCurrent }) {
   const { t } = useTranslation();
-  const cfg = STATUS_CONFIG[label] || { icon: '○' };
-  const done = Boolean(entry?.at) || isPast;
-  const time = entry?.at ? fmtDate(entry.at) : null;
+  const cfg  = STATUS_CONFIG[label] || { icon: '○' };
+  // done = hanya jika ada timestamp nyata dari DB
+  const done = Boolean(timestampIso);
 
   return (
     <div className={`so-step${done ? ' so-step--done' : ''}${isCurrent ? ' so-step--current' : ''}`}>
@@ -40,9 +72,9 @@ function TimelineStep({ label, entry, isCurrent, isPast }) {
       </div>
       <div className="so-step-body">
         <div className="so-step-label">{label}</div>
-        {time
-          ? <div className="so-step-time">{time}</div>
-          : done
+        {timestampIso
+          ? <div className="so-step-time">{fmtDate(timestampIso)}</div>
+          : isCurrent
             ? <div className="so-step-time">{t('orderStatus.completed')}</div>
             : <div className="so-step-time so-step-time--pending">{t('orderStatus.pending')}</div>
         }
@@ -263,7 +295,10 @@ function ItemReviewCard({ item, user, orderId }) {
 function OrderDetail({ order, onReset, user, scrollToReview }) {
   const { t } = useTranslation();
   const reviewSectionRef = useRef(null);
-  const currentStepIdx = STANDARD_STEPS.indexOf(order.status);
+
+  // Pilih urutan step sesuai order type (standard vs custom)
+  const timelineSteps  = getTimelineSteps(order);
+  const currentStepIdx = timelineSteps.indexOf(order.status);
   const cfg = STATUS_CONFIG[order.status] || { icon: '○', badge: '' };
 
   // Auto-scroll to review section when navigated via "Beri Ulasan" button
@@ -275,8 +310,9 @@ function OrderDetail({ order, onReset, user, scrollToReview }) {
     }
   }, [scrollToReview]);
 
-  const timelineMap = {};
-  (order.timeline || []).forEach((t) => { timelineMap[t.label] = t; });
+  // timelineMap dari backend: { [statusName]: isoTimestamp }
+  // Hanya berisi status yang benar-benar pernah di-set di DB
+  const timelineMap = order.timelineMap || {};
 
   // Only the logged-in customer who owns this order can review
   const canReview = order.status === 'Finished'
@@ -337,22 +373,20 @@ function OrderDetail({ order, onReset, user, scrollToReview }) {
         <div className="so-left">
           <h3 className="so-section-label">{t('orderStatus.tracking')}</h3>
           <div className="so-timeline">
-            {STANDARD_STEPS.map((label, i) => (
+            {timelineSteps.map((label, i) => (
               <TimelineStep
                 key={label}
                 label={label}
-                entry={timelineMap[label] || null}
+                timestampIso={timelineMap[label] || null}
                 isCurrent={i === currentStepIdx}
-                isPast={currentStepIdx >= 0 && i < currentStepIdx}
               />
             ))}
             {order.status === 'Cancelled' && (
               <TimelineStep
                 key="Cancelled"
                 label="Cancelled"
-                entry={timelineMap['Cancelled'] || null}
+                timestampIso={timelineMap['Cancelled'] || null}
                 isCurrent={true}
-                isPast={false}
               />
             )}
           </div>

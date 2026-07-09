@@ -422,7 +422,15 @@ export async function findOrder({ orderNumber, phone }) {
     query('SELECT * FROM order_history WHERE order_id = ? ORDER BY created_at ASC', [row.id]),
   ]);
 
-  return { ...row, items, history };
+  // Build timelineMap from actual history — same logic as getOrderById
+  const timelineMap = {};
+  for (const h of history) {
+    if (h.to_status && !timelineMap[h.to_status]) {
+      timelineMap[h.to_status] = h.created_at;
+    }
+  }
+
+  return { ...row, items, history, timelineMap };
 }
 
 /**
@@ -447,7 +455,19 @@ export async function getOrderById(id) {
     ),
   ]);
 
-  return { ...order, items, history, approvals };
+  // Build timeline from actual history records.
+  // Each status that appears as to_status in history is considered "done",
+  // timestamped by when that transition was recorded.
+  // This is what the frontend uses to render ✓ checkmarks accurately.
+  const timelineMap = {};
+  for (const h of history) {
+    if (h.to_status && !timelineMap[h.to_status]) {
+      // First occurrence wins (earliest timestamp for that status)
+      timelineMap[h.to_status] = h.created_at;
+    }
+  }
+
+  return { ...order, items, history, approvals, timelineMap };
 }
 
 /**

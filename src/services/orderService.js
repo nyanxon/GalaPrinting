@@ -203,6 +203,10 @@ function mapOrder(row) {
     items:    Array.isArray(row.items)   ? row.items.map(mapOrderItem) : [],
     history:  Array.isArray(row.history) ? row.history : [],
     timeline: Array.isArray(row.timeline)? row.timeline : [],
+    // timelineMap from backend: { [statusName]: isoTimestamp }
+    // Built from actual order_history records — only statuses that were
+    // explicitly set by an admin appear here. Never inferred from ordering.
+    timelineMap: (row.timelineMap && typeof row.timelineMap === 'object') ? row.timelineMap : {},
     approvals: Array.isArray(row.approvals) ? row.approvals : [],
     deliveryMethod: row.delivery_method ?? row.deliveryMethod ?? 'delivery',
     pickupLocation: row.pickup_location ?? row.pickupLocation ?? null,
