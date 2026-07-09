@@ -201,19 +201,13 @@ export async function getCurrentUser() {
       }
 
       // No in-memory token (e.g. page was refreshed).
-      // Attempt a silent token refresh using the HttpOnly cookie.
-      // Use a plain axios call (not the `api` instance) to avoid triggering
-      // the 401 interceptor which would cause an infinite loop.
-      const { default: axios } = await import("axios");
+      // Gunakan performRefresh() yang sama dengan interceptor — singleton mutex
+      // mencegah duplicate refresh request jika dipanggil dari beberapa tempat
+      // secara bersamaan (misal React StrictMode double-mount).
+      const { performRefresh } = await import("../core/httpClient.js");
       try {
-        const refreshRes = await axios.post(
-          '/api/auth/refresh',
-          {},
-          { withCredentials: true }
-        );
-        const newToken = refreshRes.data.accessToken;
+        const newToken = await performRefresh();
         if (!newToken) return null;
-        setAccessToken(newToken);
         if (_socketConnect) _socketConnect(newToken);
       } catch {
         // No valid refresh cookie — user is simply not logged in
@@ -232,7 +226,6 @@ export async function getCurrentUser() {
   const session = getSession();
   if (!session) return null;
   const user = loadUsers().find((u) => u.id === session.userId) ?? null;
-  // If the user's role changed (e.g. seed fixed it), update the session to match
   if (user && session.role !== user.role) {
     writeJson(SESSION_KEY, { userId: user.id, role: user.role });
   }

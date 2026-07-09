@@ -148,6 +148,11 @@ export async function createTokenPair(userId, rememberMe = false) {
 /**
  * Rotate a refresh token (detect reuse, issue new pair).
  * Mempertahankan durasi asli dari token yang dirotasi.
+ *
+ * Grace period: jika token sudah `used_at` tapi dalam 10 detik terakhir,
+ * kembalikan token hasil rotasi sebelumnya (idempotent). Ini menangani
+ * race condition dari concurrent refresh request (misal React StrictMode
+ * double-mount, atau multiple tab) tanpa false-positive logout.
  */
 export async function rotateRefreshToken(token) {
   let payload;
@@ -171,6 +176,40 @@ export async function rotateRefreshToken(token) {
   const stored = rows[0];
 
   if (stored.used_at !== null) {
+    // Grace period: jika token ini baru dipakai dalam 10 detik terakhir,
+    // kemungkinan besar ini adalah concurrent request legitimate (bukan attack).
+    // Kembalikan token rotasi terbaru dari family yang sama.
+    const usedMs = Date.now() - new Date(stored.used_at).getTime();
+    const GRACE_MS = 10_000; // 10 detik
+
+    if (usedMs <= GRACE_MS) {
+      // Cari token terbaru di family yang sama (hasil rotasi dari request sebelumnya)
+      const [latestRows] = await query(
+        `SELECT * FROM refresh_tokens
+         WHERE family = ? AND used_at IS NULL
+         ORDER BY created_at DESC LIMIT 1`,
+        [stored.family]
+      );
+
+      if (latestRows.length > 0) {
+        // Kembalikan access token baru tanpa rotasi ulang
+        const [userRows] = await query(
+          'SELECT id, role, name, email FROM users WHERE id = ?',
+          [payload.sub]
+        );
+        if (userRows.length > 0) {
+          const user = userRows[0];
+          const newAccessToken = signAccessToken({
+            sub: user.id, role: user.role, name: user.name, email: user.email,
+          });
+          const originalExpiresAt = new Date(latestRows[0].expires_at);
+          const remainingMs = Math.max(originalExpiresAt - new Date(), 0);
+          return { accessToken: newAccessToken, refreshToken: null, cookieMaxAge: remainingMs, reuseDetected: false };
+        }
+      }
+    }
+
+    // Di luar grace period → kemungkinan token theft → hapus seluruh family
     await query('DELETE FROM refresh_tokens WHERE family = ?', [stored.family]);
     const err = new Error('Token tidak valid atau sudah kedaluwarsa.');
     err.status = 401;
@@ -190,7 +229,6 @@ export async function rotateRefreshToken(token) {
   }
   const user = userRows[0];
 
-  // Pertahankan sisa waktu dari token asli agar rememberMe tetap berlaku
   const originalExpiresAt = new Date(stored.expires_at);
   const now               = new Date();
   const remainingMs       = Math.max(originalExpiresAt - now, 0);

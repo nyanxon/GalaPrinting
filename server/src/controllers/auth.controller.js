@@ -112,7 +112,13 @@ export async function refresh(req, res, next) {
     }
 
     const { accessToken, refreshToken, cookieMaxAge } = await authService.rotateRefreshToken(token);
-    setRefreshCookie(res, refreshToken, cookieMaxAge);
+
+    // Jika refreshToken null, ini adalah grace period response — hanya kirim access token baru
+    // tanpa update cookie (cookie masih valid dengan token hasil rotasi sebelumnya).
+    if (refreshToken !== null) {
+      setRefreshCookie(res, refreshToken, cookieMaxAge || 24 * 60 * 60 * 1000);
+    }
+
     return res.json({ ok: true, accessToken });
   } catch (err) {
     if (err.status === 401) {
