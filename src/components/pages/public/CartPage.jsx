@@ -9,6 +9,7 @@
 
 import { useContext, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { CartContext } from '../../context/CartContext.jsx';
 import { formatCurrency } from '../../../core/helpers.js';
 import { resolveApiUrl } from '../../../core/httpClient.js';
@@ -19,13 +20,15 @@ import '../../../styles/css/pages/cart.css';
 // ── Cart Item Detail Modal ────────────────────────────────────────────────────
 
 function CartItemDetailModal({ item, onClose }) {
+  const { t } = useTranslation();
+
   if (!item) return null;
 
   const specs = [
-    item.material && { label: 'Bahan',   value: item.material },
-    item.color    && { label: 'Warna',   value: item.color },
-    item.size     && { label: 'Ukuran',  value: item.size },
-    item.notes    && { label: 'Catatan', value: item.notes },
+    item.material && { label: t('cart.material'), value: item.material },
+    item.color    && { label: t('cart.color'),    value: item.color },
+    item.size     && { label: t('cart.size'),     value: item.size },
+    item.notes    && { label: t('cart.notes'),    value: item.notes },
   ].filter(Boolean);
 
   const imgSrc = item.image
@@ -52,7 +55,7 @@ function CartItemDetailModal({ item, onClose }) {
             type="button"
             className="cdm-close"
             onClick={onClose}
-            aria-label="Tutup detail"
+            aria-label={t('cart.closeDetail')}
           >
             ✕
           </button>
@@ -83,15 +86,15 @@ function CartItemDetailModal({ item, onClose }) {
           {/* Qty & price */}
           <div className="cdm-specs" style={{ marginTop: '8px' }}>
             <div className="cdm-spec-row">
-              <span className="cdm-spec-label">Jumlah</span>
+              <span className="cdm-spec-label">{t('cart.qty')}</span>
               <span className="cdm-spec-value">{item.quantity}</span>
             </div>
             <div className="cdm-spec-row">
-              <span className="cdm-spec-label">Harga Satuan</span>
+              <span className="cdm-spec-label">{t('cart.unitPrice')}</span>
               <span className="cdm-spec-value">{formatCurrency(item.price)}</span>
             </div>
             <div className="cdm-spec-row">
-              <span className="cdm-spec-label">Subtotal</span>
+              <span className="cdm-spec-label">{t('cart.subtotal')}</span>
               <span className="cdm-spec-value" style={{ fontWeight: 700 }}>
                 {formatCurrency(item.price * item.quantity)}
               </span>
@@ -101,7 +104,7 @@ function CartItemDetailModal({ item, onClose }) {
           {/* Design file attachment */}
           {hasDesign && (
             <div className="cdm-attachment">
-              <div className="cdm-attachment-label">📎 Lampiran Desain</div>
+              <div className="cdm-attachment-label">📎 {t('cart.designAttachment')}</div>
               {item.designDataUrl ? (
                 (() => {
                   const isImage = item.designDataUrl.startsWith('data:image');
@@ -119,7 +122,7 @@ function CartItemDetailModal({ item, onClose }) {
                       href={item.designDataUrl}
                       download={item.designFileName || 'desain'}
                     >
-                      ⬇ {item.designFileName || 'Unduh File Desain'}
+                      ⬇ {item.designFileName || t('cart.downloadDesign')}
                     </a>
                   );
                 })()
@@ -135,7 +138,7 @@ function CartItemDetailModal({ item, onClose }) {
         {/* Footer */}
         <div className="cdm-footer">
           <button type="button" className="btn primary" onClick={onClose}>
-            Tutup
+            {t('cart.closeBtn')}
           </button>
         </div>
       </div>
@@ -146,6 +149,7 @@ function CartItemDetailModal({ item, onClose }) {
 // ── CartPage ──────────────────────────────────────────────────────────────────
 
 function CartPage() {
+  const { t } = useTranslation();
   const { items, removeItem, updateItemQty } = useContext(CartContext);
   // Track raw input value per item id so user can freely type before committing
   const [qtyInputs, setQtyInputs] = useState({});
@@ -180,16 +184,16 @@ function CartPage() {
 
   return (
     <main className="container cart-page">
-      <h1 className="page-title">Daftar Belanja</h1>
+      <h1 className="page-title">{t('cart.shoppingList')}</h1>
 
       <div className="cart-grid">
         {/* Cart items */}
-        <section className="stack" aria-label="Item keranjang" data-cart-items>
+        <section className="stack" aria-label={t('cart.cartItemsLabel')} data-cart-items>
           {items.length === 0 ? (
             <div className="alert muted">
-              Keranjang kamu masih kosong.{' '}
+              {t('cart.emptyCart')}{' '}
               <Link className="btn" to="/products" style={{ marginLeft: '10px' }}>
-                Lihat Produk
+                {t('cart.viewProducts')}
               </Link>
             </div>
           ) : (
@@ -206,7 +210,7 @@ function CartPage() {
                     type="button"
                     className="cart-item-img-btn"
                     onClick={() => setDetailItem(item)}
-                    aria-label={`Lihat detail ${item.name}`}
+                    aria-label={t('cart.viewDetail')}
                     title="Lihat detail pemesanan"
                   >
                     <img
@@ -225,15 +229,15 @@ function CartPage() {
                       title="Lihat detail pemesanan"
                     >
                       {item.name}
-                      <span className="cart-item-detail-hint"> · Detail</span>
+                      <span className="cart-item-detail-hint"> · {t('cart.viewDetail')}</span>
                     </button>
 
                     {meta && <div className="cart-item-meta">{meta}</div>}
                     {item.designFileName && (
-                      <div className="cart-item-meta">Desain: {item.designFileName}</div>
+                      <div className="cart-item-meta">{t('cart.design')}: {item.designFileName}</div>
                     )}
                     {item.notes && (
-                      <div className="cart-item-meta">Catatan: {item.notes}</div>
+                      <div className="cart-item-meta">{t('cart.notes')}: {item.notes}</div>
                     )}
                     <div className="cart-item-actions">
                       <div className="nav-pill" style={{ gap: '12px' }}>
@@ -261,7 +265,7 @@ function CartPage() {
                           onChange={(e) => handleQtyInput(item, e.target.value)}
                           onBlur={() => commitQty(item)}
                           onKeyDown={(e) => { if (e.key === 'Enter') { e.currentTarget.blur(); } }}
-                          aria-label={`Jumlah ${item.name}`}
+                          aria-label={`${t('cart.qty')} ${item.name}`}
                         />
                         <button
                           className="btn ghost"
@@ -281,9 +285,9 @@ function CartPage() {
                         type="button"
                         data-remove
                         onClick={() => setConfirmId(item.id)}
-                        aria-label={`Hapus ${item.name} dari keranjang`}
+                        aria-label={`${t('cart.remove')} ${item.name}`}
                       >
-                        Hapus
+                        {t('cart.remove')}
                       </button>
                     </div>
                   </div>
@@ -296,9 +300,9 @@ function CartPage() {
         {/* Summary sidebar */}
         <aside className="card summary">
           <div className="card-body">
-            <div className="card-title">Ringkasan</div>
+            <div className="card-title">{t('cart.summary')}</div>
             <div className="summary-row">
-              <span className="muted">Subtotal</span>
+              <span className="muted">{t('cart.subtotal')}</span>
               <strong data-cart-subtotal>{formatCurrency(subtotal)}</strong>
             </div>
             <div className="form-actions" style={{ marginTop: '10px' }}>
@@ -316,7 +320,7 @@ function CartPage() {
                 data-clear
                 onClick={() => setConfirmId('__clear_all__')}
               >
-                Hapus Keranjang
+                {t('cart.clearCart')}
               </button>
             </div>
           </div>
@@ -331,10 +335,10 @@ function CartPage() {
         isOpen={confirmId !== null && confirmId !== '__clear_all__'}
         onClose={() => setConfirmId(null)}
         onConfirm={() => removeItem(confirmId)}
-        title="Hapus Produk"
-        message="Yakin ingin menghapus produk ini dari daftar belanja?"
-        confirmLabel="Hapus"
-        cancelLabel="Tidak"
+        title={t('cart.confirmRemoveTitle')}
+        message={t('cart.confirmRemoveMsg')}
+        confirmLabel={t('cart.confirmYes')}
+        cancelLabel={t('cart.confirmNo')}
       />
 
       {/* Confirm clear all */}
@@ -342,10 +346,10 @@ function CartPage() {
         isOpen={confirmId === '__clear_all__'}
         onClose={() => setConfirmId(null)}
         onConfirm={() => items.forEach((i) => removeItem(i.id))}
-        title="Hapus Semua"
-        message="Yakin ingin menghapus semua produk dari daftar belanja?"
-        confirmLabel="Hapus"
-        cancelLabel="Tidak"
+        title={t('cart.confirmClearTitle')}
+        message={t('cart.confirmClearMsg')}
+        confirmLabel={t('cart.confirmYes')}
+        cancelLabel={t('cart.confirmNo')}
       />
     </main>
   );

@@ -10,6 +10,7 @@
 
 import { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { CartContext } from '../../context/CartContext.jsx';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import PaymentModal from '../../shared/PaymentModal.jsx';
@@ -23,6 +24,7 @@ function CheckoutPage() {
   const { items, clearCart } = useContext(CartContext);
   const { user, loading } = useContext(AuthContext);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -52,13 +54,13 @@ function CheckoutPage() {
         <div className="container co-page">
           <div className="co-auth-required">
             <div className="co-auth-icon">🔒</div>
-            <h2 className="co-auth-title">Login Diperlukan</h2>
+            <h2 className="co-auth-title">{t('checkout.loginRequired')}</h2>
             <p className="co-auth-desc">
-              Kamu harus login atau daftar terlebih dahulu sebelum melanjutkan checkout.
+              {t('checkout.loginRequiredDesc')}
             </p>
             <div className="co-auth-actions">
-              <Link className="co-auth-btn co-auth-btn--primary" to="/register">Login / Daftar</Link>
-              <Link className="co-auth-btn" to="/cart">← Kembali ke Keranjang</Link>
+              <Link className="co-auth-btn co-auth-btn--primary" to="/register">{t('checkout.loginOrRegister')}</Link>
+              <Link className="co-auth-btn" to="/cart">{t('checkout.backToCart')}</Link>
             </div>
           </div>
         </div>
@@ -72,8 +74,8 @@ function CheckoutPage() {
       <main>
         <div className="container co-page">
           <div className="co-empty">
-            <p>Keranjang kamu kosong.</p>
-            <Link className="btn primary" to="/products">Lihat Produk</Link>
+            <p>{t('checkout.emptyCart')}</p>
+            <Link className="btn primary" to="/products">{t('checkout.viewProducts')}</Link>
           </div>
         </div>
       </main>
@@ -99,9 +101,9 @@ function CheckoutPage() {
 
   function validate() {
     let ok = true;
-    if (!formData.name.trim())    { setNameErr('Pilih alamat tersimpan untuk mengisi nama.');    ok = false; }
-    if (!formData.phone.trim())   { setPhoneErr('Pilih alamat tersimpan untuk mengisi nomor telepon.'); ok = false; }
-    if (!formData.address.trim()) { setAddressErr('Pilih alamat tersimpan untuk mengisi alamat pengiriman.'); ok = false; }
+    if (!formData.name.trim())    { setNameErr(t('checkout.errName'));    ok = false; }
+    if (!formData.phone.trim())   { setPhoneErr(t('checkout.errPhone')); ok = false; }
+    if (!formData.address.trim()) { setAddressErr(t('checkout.errAddress')); ok = false; }
     return ok;
   }
 
@@ -161,7 +163,7 @@ function CheckoutPage() {
   }
 
   async function handleApplyPromo() {
-    if (!promoCode.trim()) { setPromoError('Masukkan kode promo.'); return; }
+    if (!promoCode.trim()) { setPromoError(t('checkout.errPromoEmpty')); return; }
     setPromoError('');
     setPromoLoading(true);
     try {
@@ -171,11 +173,11 @@ function CheckoutPage() {
           setPromoDiscount({ discountAmount: res.data.discountAmount, finalSubtotal: res.data.finalSubtotal });
           setPromoApplied(true);
         } else {
-          setPromoError(res.data.message || 'Kode promo tidak valid.');
+          setPromoError(res.data.message || t('checkout.errPromoInvalid'));
         }
       } else {
         // localStorage mode: no promo validation, just show a generic error
-        setPromoError('Validasi kode promo tidak tersedia dalam mode offline.');
+        setPromoError(t('checkout.errPromoOffline'));
       }
     } catch (err) {
       setPromoError(err?.response?.data?.message || 'Gagal memvalidasi kode promo.');
@@ -198,19 +200,19 @@ function CheckoutPage() {
 
           {/* ── Left: form ── */}
           <section className="co-form-section">
-            <h1 className="co-title">Checkout</h1>
+            <h1 className="co-title">{t('checkout.title')}</h1>
 
             <form className="co-form" id="checkout-form" onSubmit={handleSubmit} noValidate>
               {/* Address selector — only shown to logged-in customers with saved addresses */}
               {USE_BACKEND && <AddressSelector onSelect={handleAddressSelect} />}
 
               <div className="co-field">
-                <label className="co-label" htmlFor="co-name">Nama Lengkap</label>
+                <label className="co-label" htmlFor="co-name">{t('checkout.fullName')}</label>
                 <input
                   className={`co-input co-input--readonly${nameErr ? ' co-input--error' : ''}`}
                   id="co-name"
                   name="name"
-                  placeholder="Otomatis diisi dari alamat tersimpan"
+                  placeholder={t('checkout.fullNameReadonly')}
                   readOnly
                   value={formData.name}
                   aria-readonly="true"
@@ -221,13 +223,13 @@ function CheckoutPage() {
               </div>
 
               <div className="co-field">
-                <label className="co-label" htmlFor="co-phone">Nomor Telepon</label>
+                <label className="co-label" htmlFor="co-phone">{t('checkout.phone')}</label>
                 <input
                   className={`co-input co-input--readonly${phoneErr ? ' co-input--error' : ''}`}
                   id="co-phone"
                   name="phone"
                   type="tel"
-                  placeholder="Otomatis diisi dari alamat tersimpan"
+                  placeholder={t('checkout.fullNameReadonly')}
                   readOnly
                   value={formData.phone}
                   aria-readonly="true"
@@ -238,12 +240,12 @@ function CheckoutPage() {
               </div>
 
               <div className="co-field">
-                <label className="co-label" htmlFor="co-address">Alamat Pengiriman</label>
+                <label className="co-label" htmlFor="co-address">{t('checkout.shippingAddress')}</label>
                 <textarea
                   className={`co-input co-textarea co-input--readonly${addressErr ? ' co-input--error' : ''}`}
                   id="co-address"
                   name="address"
-                  placeholder="Otomatis diisi dari alamat tersimpan"
+                  placeholder={t('checkout.fullNameReadonly')}
                   readOnly
                   rows={3}
                   value={formData.address}
@@ -255,12 +257,12 @@ function CheckoutPage() {
               </div>
 
               <div className="co-field">
-                <label className="co-label" htmlFor="co-notes">Catatan Tambahan</label>
+                <label className="co-label" htmlFor="co-notes">{t('checkout.additionalNotes')}</label>
                 <textarea
                   className="co-input co-textarea"
                   id="co-notes"
                   name="notes"
-                  placeholder="Instruksi khusus (opsional)"
+                  placeholder={t('checkout.notesPlaceholder')}
                   rows={2}
                   value={formData.notes}
                   onChange={handleChange}
@@ -272,16 +274,16 @@ function CheckoutPage() {
               )}
 
               <button className="co-submit-btn" type="submit" disabled={submitting}>
-                {submitting ? 'Memproses...' : 'Buat Pesanan'}
+                {submitting ? t('checkout.processing') : t('checkout.createOrder')}
               </button>
 
-              <Link className="co-back-link" to="/cart">← Kembali ke Keranjang</Link>
+              <Link className="co-back-link" to="/cart">{t('checkout.backToCart')}</Link>
             </form>
           </section>
 
           {/* ── Right: order summary ── */}
           <aside className="co-summary-section">
-            <h2 className="co-summary-title">Ringkasan Pesanan</h2>
+            <h2 className="co-summary-title">{t('checkout.orderSummary')}</h2>
             <div className="co-summary-list">
               {items.map((item) => (
                 <div key={item.id} className="co-summary-row">
@@ -300,11 +302,11 @@ function CheckoutPage() {
                   <input
                     className="co-input co-promo-input"
                     type="text"
-                    placeholder="Kode promo"
+                    placeholder={t('checkout.promoCode')}
                     value={promoCode}
                     onChange={(e) => { setPromoCode(e.target.value); setPromoError(''); }}
                     disabled={promoLoading}
-                    aria-label="Kode promo"
+                    aria-label={t('checkout.promoCode')}
                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleApplyPromo(); } }}
                   />
                   <button
@@ -313,27 +315,27 @@ function CheckoutPage() {
                     onClick={handleApplyPromo}
                     disabled={promoLoading}
                   >
-                    {promoLoading ? '...' : 'Terapkan'}
+                    {promoLoading ? '...' : t('checkout.applyPromo')}
                   </button>
                 </div>
               ) : (
                 <div className="co-promo-applied-row">
                   <span className="co-promo-applied-label">🏷️ {promoCode.trim()}</span>
                   <button type="button" className="co-promo-remove-btn" onClick={handleRemovePromo}>
-                    Hapus
+                    {t('checkout.removePromo')}
                   </button>
                 </div>
               )}
               {promoError && <p className="co-promo-error">{promoError}</p>}
               {promoDiscount && (
                 <div className="co-promo-discount-row">
-                  <span>Diskon</span>
+                  <span>{t('checkout.discount')}</span>
                   <span className="co-promo-discount-amount">-{formatCurrency(promoDiscount.discountAmount)}</span>
                 </div>
               )}
             </div>
             <div className="co-summary-total">
-              <span>Total</span>
+              <span>{t('checkout.total')}</span>
               <strong>{formatCurrency(promoDiscount ? promoDiscount.finalSubtotal : subtotal)}</strong>
             </div>
 
@@ -342,8 +344,8 @@ function CheckoutPage() {
               <div className="co-email-verify-warning" role="alert">
                 <span className="co-email-verify-icon">⚠️</span>
                 <span>
-                  Silahkan melakukan verifikasi email sebelum melanjutkan checkout.{' '}
-                  <Link to="/profile" className="co-email-verify-link">Verifikasi sekarang →</Link>
+                  {t('checkout.emailVerifyWarning')}{' '}
+                  <Link to="/profile" className="co-email-verify-link">{t('checkout.emailVerifyNow')}</Link>
                 </span>
               </div>
             )}

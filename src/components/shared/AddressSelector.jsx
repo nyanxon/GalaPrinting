@@ -14,11 +14,13 @@
 
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { getAddresses } from '../../services/addressService.js';
 
 function AddressSelector({ onSelect }) {
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
 
   useEffect(() => {
     let cancelled = false;
@@ -46,13 +48,13 @@ function AddressSelector({ onSelect }) {
       <div className="co-addr-empty-notice">
         <span className="co-addr-empty-icon">📍</span>
         <div className="co-addr-empty-text">
-          <strong>Belum ada alamat tersimpan.</strong>
+          <strong>{t('checkout.noSavedAddress')}</strong>
           <span>
             Silakan{' '}
             <Link to="/profile" className="co-addr-empty-link">
-              tambahkan alamat di halaman profil
+              {t('checkout.addAddressFirst')}
             </Link>{' '}
-            terlebih dahulu agar bisa memilih alamat pengiriman.
+            {t('checkout.addAddressHint')}
           </span>
         </div>
       </div>
@@ -77,7 +79,7 @@ function AddressSelector({ onSelect }) {
   return (
     <div className="co-field">
       <label className="co-label" htmlFor="address-selector">
-        Pilih Alamat Tersimpan
+        {t('checkout.selectSavedAddress')}
       </label>
       <select
         className="co-input"
@@ -85,10 +87,10 @@ function AddressSelector({ onSelect }) {
         defaultValue=""
         onChange={handleChange}
       >
-        <option value="">— Pilih alamat tersimpan —</option>
+        <option value="">{t('checkout.selectAddressPlaceholder')}</option>
         {addresses.map((a) => (
           <option key={a.id} value={a.id}>
-            {a.title} — {a.name}
+            {a.title}
           </option>
         ))}
       </select>

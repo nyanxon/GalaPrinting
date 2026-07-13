@@ -1,0 +1,358 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1. Buat file migrasi SQL untuk tabel `manual_revenue_transactions`": [
+      {
+        "executionId": "fc0ca275-2e97-48e4-ad55-31feae6d2791",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783931963654
+      },
+      {
+        "executionId": "fc0ca275-2e97-48e4-ad55-31feae6d2791",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783931974500
+      },
+      {
+        "executionId": "fc0ca275-2e97-48e4-ad55-31feae6d2791",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783932035132
+      }
+    ],
+    "2.1 Buat file `server/src/services/revenue.service.js`": [
+      {
+        "executionId": "fc0ca275-2e97-48e4-ad55-31feae6d2791",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783931963732
+      },
+      {
+        "executionId": "fc0ca275-2e97-48e4-ad55-31feae6d2791",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783932042203
+      },
+      {
+        "executionId": "fc0ca275-2e97-48e4-ad55-31feae6d2791",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783932112480
+      }
+    ],
+    "3.1 Buat file `server/src/controllers/revenue.controller.js`": [
+      {
+        "executionId": "fc0ca275-2e97-48e4-ad55-31feae6d2791",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783931963828
+      },
+      {
+        "executionId": "fc0ca275-2e97-48e4-ad55-31feae6d2791",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783932118279
+      },
+      {
+        "executionId": "fc0ca275-2e97-48e4-ad55-31feae6d2791",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783932182657
+      }
+    ],
+    "4.1 Buat file `server/src/routes/revenue.routes.js`": [
+      {
+        "executionId": "fc0ca275-2e97-48e4-ad55-31feae6d2791",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783931963894
+      },
+      {
+        "executionId": "fc0ca275-2e97-48e4-ad55-31feae6d2791",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783932220098
+      },
+      {
+        "executionId": "fc0ca275-2e97-48e4-ad55-31feae6d2791",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783932254883
+      }
+    ],
+    "4.2 Modifikasi `server/src/app.js` untuk mendaftarkan revenue routes": [
+      {
+        "executionId": "fc0ca275-2e97-48e4-ad55-31feae6d2791",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783931963944
+      },
+      {
+        "executionId": "fc0ca275-2e97-48e4-ad55-31feae6d2791",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783932261262
+      },
+      {
+        "executionId": "fc0ca275-2e97-48e4-ad55-31feae6d2791",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783932340308
+      }
+    ],
+    "5. Checkpoint — Verifikasi backend berfungsi": [
+      {
+        "executionId": "fc0ca275-2e97-48e4-ad55-31feae6d2791",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783931963994
+      },
+      {
+        "executionId": "fc0ca275-2e97-48e4-ad55-31feae6d2791",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783932356311
+      },
+      {
+        "executionId": "fc0ca275-2e97-48e4-ad55-31feae6d2791",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783932400912
+      }
+    ],
+    "6.1 Buat file `src/styles/css/pages/daily-revenue.css`": [
+      {
+        "executionId": "fc0ca275-2e97-48e4-ad55-31feae6d2791",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783931964096
+      },
+      {
+        "executionId": "fc0ca275-2e97-48e4-ad55-31feae6d2791",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783932420664
+      },
+      {
+        "executionId": "6d6c7eb7-6f22-475d-ab86-c9f3aa63daa7",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783933102354
+      }
+    ],
+    "7.1 Buat skeleton struktur komponen dan state management": [
+      {
+        "executionId": "fc0ca275-2e97-48e4-ad55-31feae6d2791",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783931964146
+      },
+      {
+        "executionId": "6d6c7eb7-6f22-475d-ab86-c9f3aa63daa7",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783933107941
+      },
+      {
+        "executionId": "6d6c7eb7-6f22-475d-ab86-c9f3aa63daa7",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783933370901
+      }
+    ],
+    "7.2 Implementasi date picker, KPI cards, dan skeleton loader": [
+      {
+        "executionId": "fc0ca275-2e97-48e4-ad55-31feae6d2791",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783931964198
+      },
+      {
+        "executionId": "6d6c7eb7-6f22-475d-ab86-c9f3aa63daa7",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783933377440
+      },
+      {
+        "executionId": "6d6c7eb7-6f22-475d-ab86-c9f3aa63daa7",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783933382778
+      }
+    ],
+    "7.3 Implementasi tabel website (read-only) dan tabel transaksi manual": [
+      {
+        "executionId": "fc0ca275-2e97-48e4-ad55-31feae6d2791",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783931964244
+      },
+      {
+        "executionId": "6d6c7eb7-6f22-475d-ab86-c9f3aa63daa7",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783933387996
+      },
+      {
+        "executionId": "6d6c7eb7-6f22-475d-ab86-c9f3aa63daa7",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783933393428
+      }
+    ],
+    "7.4 Implementasi modal form tambah/edit transaksi manual": [
+      {
+        "executionId": "fc0ca275-2e97-48e4-ad55-31feae6d2791",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783931964292
+      },
+      {
+        "executionId": "6d6c7eb7-6f22-475d-ab86-c9f3aa63daa7",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783933398904
+      },
+      {
+        "executionId": "6d6c7eb7-6f22-475d-ab86-c9f3aa63daa7",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783933405304
+      }
+    ],
+    "7.5 Implementasi submit form tambah dan edit": [
+      {
+        "executionId": "fc0ca275-2e97-48e4-ad55-31feae6d2791",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783931964400
+      },
+      {
+        "executionId": "6d6c7eb7-6f22-475d-ab86-c9f3aa63daa7",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783933410478
+      },
+      {
+        "executionId": "6d6c7eb7-6f22-475d-ab86-c9f3aa63daa7",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783933416025
+      }
+    ],
+    "7.6 Implementasi modal konfirmasi hapus": [
+      {
+        "executionId": "fc0ca275-2e97-48e4-ad55-31feae6d2791",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783931964451
+      },
+      {
+        "executionId": "6d6c7eb7-6f22-475d-ab86-c9f3aa63daa7",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783933420792
+      },
+      {
+        "executionId": "6d6c7eb7-6f22-475d-ab86-c9f3aa63daa7",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783933426147
+      }
+    ],
+    "8.1 Modifikasi `src/components/pages/subadmin/CashierDashboardPage.jsx`": [
+      {
+        "executionId": "fc0ca275-2e97-48e4-ad55-31feae6d2791",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783931964507
+      },
+      {
+        "executionId": "6d6c7eb7-6f22-475d-ab86-c9f3aa63daa7",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783933432796
+      },
+      {
+        "executionId": "6d6c7eb7-6f22-475d-ab86-c9f3aa63daa7",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783933527352
+      }
+    ],
+    "9. Checkpoint akhir — Verifikasi integrasi penuh": [
+      {
+        "executionId": "fc0ca275-2e97-48e4-ad55-31feae6d2791",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783931964581
+      },
+      {
+        "executionId": "6d6c7eb7-6f22-475d-ab86-c9f3aa63daa7",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783933534003
+      },
+      {
+        "executionId": "6d6c7eb7-6f22-475d-ab86-c9f3aa63daa7",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783933582440
+      }
+    ],
+    "2. Implementasi backend service layer": [
+      {
+        "executionId": "fc0ca275-2e97-48e4-ad55-31feae6d2791",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783932112567
+      }
+    ],
+    "3. Implementasi backend controller": [
+      {
+        "executionId": "fc0ca275-2e97-48e4-ad55-31feae6d2791",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783932182750
+      }
+    ],
+    "4. Buat file route revenue dan daftarkan di app.js": [
+      {
+        "executionId": "fc0ca275-2e97-48e4-ad55-31feae6d2791",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783932340403
+      }
+    ],
+    "6. Implementasi frontend CSS": [
+      {
+        "executionId": "6d6c7eb7-6f22-475d-ab86-c9f3aa63daa7",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783933102466
+      }
+    ],
+    "7. Implementasi komponen frontend `DailyRevenueSection.jsx`": [
+      {
+        "executionId": "6d6c7eb7-6f22-475d-ab86-c9f3aa63daa7",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783933426241
+      }
+    ],
+    "8. Integrasi ke `CashierDashboardPage.jsx`": [
+      {
+        "executionId": "6d6c7eb7-6f22-475d-ab86-c9f3aa63daa7",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783933527514
+      }
+    ],
+    "2.2 Tulis property test untuk `getDailyRecap` — Property 1 & 2": [
+      {
+        "executionId": "d7d5ff67-745d-4295-9080-c1a255440c71",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783933780678
+      }
+    ],
+    "2.3 Tulis property test untuk kalkulasi `grand_total` — Property 3": [
+      {
+        "executionId": "d7d5ff67-745d-4295-9080-c1a255440c71",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783933781430
+      }
+    ],
+    "2.4 Tulis property test untuk `createManualTransaction` dan `getDailyRecap` — Property 4": [
+      {
+        "executionId": "d7d5ff67-745d-4295-9080-c1a255440c71",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783933787188
+      }
+    ],
+    "2.5 Tulis property test untuk pemotongan `notes` — Property 6": [
+      {
+        "executionId": "d7d5ff67-745d-4295-9080-c1a255440c71",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783933788011
+      }
+    ],
+    "2.6 Tulis property test untuk `updateManualTransaction` — Property 7": [
+      {
+        "executionId": "d7d5ff67-745d-4295-9080-c1a255440c71",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783933788840
+      }
+    ],
+    "2.7 Tulis property test untuk soft delete — Property 8": [
+      {
+        "executionId": "d7d5ff67-745d-4295-9080-c1a255440c71",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783933789795
+      }
+    ],
+    "3.2 Tulis unit test untuk `validateTransactionBody` — Property 5": [
+      {
+        "executionId": "d7d5ff67-745d-4295-9080-c1a255440c71",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783933790380
+      }
+    ],
+    "7.7 Tulis unit test untuk fungsi `validateForm` di `DailyRevenueSection` — Property 9": [
+      {
+        "executionId": "d7d5ff67-745d-4295-9080-c1a255440c71",
+        "chatSessionId": "sess_a4deab32-f732-49aa-a674-391b7f8b4177",
+        "timestamp": 1783933791187
+      }
+    ]
+  }
+}

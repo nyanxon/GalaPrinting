@@ -11,12 +11,14 @@ import '../../../styles/css/pages/dashboard.css';
 import SubAdminLayout from './SubAdminLayout.jsx';
 import CashierOrdersSection from './sections/CashierOrdersSection.jsx';
 import OfflineOrderSection from './sections/OfflineOrderSection.jsx';
+import DailyRevenueSection from './sections/DailyRevenueSection.jsx';
 import ChatsSection from '../admin/sections/ChatsSection.jsx';
 import DMSection from '../admin/sections/DMSection.jsx';
 
 const NAV_ITEMS = [
   { id: 'orders',  label: '📋 Pesanan' },
   { id: 'offline', label: '🏪 Order Offline' },
+  { id: 'recap',   label: '📊 Rekap Harian' },
   { id: 'chat',    label: '💬 Chat Customer' },
   { id: 'dm',      label: '📨 Pesan Staff' },
 ];
@@ -24,6 +26,7 @@ const NAV_ITEMS = [
 const SECTIONS = {
   orders:  <CashierOrdersSection />,
   offline: <OfflineOrderSection />,
+  recap:   <DailyRevenueSection />,
   chat:    <ChatsSection />,
   dm:      <DMSection />,
 };

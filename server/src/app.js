@@ -23,6 +23,7 @@ import cartRoutes      from './routes/cart.routes.js';
 import chatRoutes      from './routes/chat.routes.js';
 import reviewRoutes    from './routes/reviews.routes.js';
 import analyticsRoutes from './routes/analytics.routes.js';
+import revenueRoutes  from './routes/revenue.routes.js';
 import userRoutes      from './routes/users.routes.js';
 import promoRoutes     from './routes/promo.routes.js';
 import profileRoutes   from './routes/profile.routes.js';
@@ -137,6 +138,7 @@ export function createApp() {
   app.use('/api/conversations',  chatRoutes);
   app.use('/api/reviews',       reviewRoutes);
   app.use('/api/analytics',     analyticsRoutes);
+  app.use('/api/revenue',      revenueRoutes);
   app.use('/api/users',         userRoutes);
   app.use('/api/promo',         promoRoutes);
   app.use('/api/profile',       profileRoutes);

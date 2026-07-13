@@ -1,3 +1,7 @@
+# ── Git internals ─────────────────────────────────────────────────────────────
+# The .git directory should never be committed — Git itself manages this.
+.git/
+
 # ── Dependencies ──────────────────────────────────────────────────────────────
 node_modules/
 server/node_modules/
@@ -51,6 +55,7 @@ Thumbs.db
 
 # ── Kiro IDE workspace files ──────────────────────────────────────────────────
 # Exclude machine-local IDE state but keep spec documents (requirements, design, tasks).
+# .git/ for Kiro's internal git is already covered above.
 .kiro/*
 !.kiro/specs/
 
@@ -79,3 +84,12 @@ all_migrations.sql
 # ── Vite local overrides ──────────────────────────────────────────────────────
 vite.config.local.ts
 vite.config.local.js
+
+# ── Diagnostic / startup files ────────────────────────────────────────────────
+startup-diag.log
+*.diag
+
+# ── Temporary files ───────────────────────────────────────────────────────────
+*.tmp
+*.temp
+.cache/

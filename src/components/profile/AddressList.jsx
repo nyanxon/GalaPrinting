@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getAddresses, deleteAddress } from '../../services/addressService.js';
 import AddressForm from './AddressForm.jsx';
 
@@ -126,6 +127,7 @@ const emptyStyle = {
  * Requirements: 5.1, 5.2, 5.3, 5.8, 5.9, 5.10, 5.11
  */
 export default function AddressList() {
+  const { t } = useTranslation();
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -144,7 +146,7 @@ export default function AddressList() {
       const message =
         err?.response?.data?.message ||
         err?.message ||
-        'Gagal memuat daftar alamat.';
+        t('address.loadFailed');
       setError(message);
     } finally {
       setLoading(false);
@@ -168,7 +170,7 @@ export default function AddressList() {
   }
 
   async function handleDeleteClick(address) {
-    const confirmed = window.confirm('Hapus alamat ini?');
+    const confirmed = window.confirm(t('address.delete') + ' ' + address.title + '?');
     if (!confirmed) return;
 
     try {
@@ -178,7 +180,7 @@ export default function AddressList() {
       const message =
         err?.response?.data?.message ||
         err?.message ||
-        'Gagal menghapus alamat.';
+        t('address.deleteFailed');
       alert(message);
     }
   }
@@ -203,7 +205,7 @@ export default function AddressList() {
       {/* Header row: title + add button */}
       <div style={headerRowStyle}>
         <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#111827' }}>
-          Daftar Alamat
+          {t('address.listTitle')}
         </h3>
         <div>
           <button
@@ -213,29 +215,29 @@ export default function AddressList() {
             disabled={atLimit}
             aria-disabled={atLimit}
           >
-            Tambah Alamat
+            {t('address.addBtn')}
           </button>
           {atLimit && (
-            <p style={limitMsgStyle}>Batas maksimal 10 alamat telah tercapai.</p>
+            <p style={limitMsgStyle}>{t('address.limitMsg')}</p>
           )}
         </div>
       </div>
 
       {/* Content */}
-      {loading && <p style={loadingStyle}>Memuat alamat…</p>}
+      {loading && <p style={loadingStyle}>{t('address.loading')}</p>}
 
       {!loading && error && (
         <p style={errorMsgStyle}>{error}</p>
       )}
 
       {!loading && !error && addresses.length === 0 && (
-        <p style={emptyStyle}>Belum ada alamat tersimpan.</p>
+        <p style={emptyStyle}>{t('address.empty')}</p>
       )}
 
       {!loading && !error && addresses.map((address) => (
         <div key={address.id} style={cardStyle}>
           <p style={cardTitleStyle}>{address.title}</p>
-          <p style={cardTextStyle}>{address.name}</p>
+          <p style={cardTextStyle}><span style={{ color: '#6b7280', fontSize: '12px' }}>{t('address.recipient')}: </span>{address.name}</p>
           <p style={cardTextStyle}>{address.phone}</p>
           <p style={cardTextStyle}>{address.full_address}</p>
           <div style={cardActionsStyle}>
@@ -243,17 +245,17 @@ export default function AddressList() {
               type="button"
               style={editBtnStyle}
               onClick={() => handleEditClick(address)}
-              aria-label={`Edit alamat ${address.title}`}
+              aria-label={t('address.edit') + ' ' + address.title}
             >
-              Edit
+              {t('address.edit')}
             </button>
             <button
               type="button"
               style={deleteBtnStyle}
               onClick={() => handleDeleteClick(address)}
-              aria-label={`Hapus alamat ${address.title}`}
+              aria-label={t('address.delete') + ' ' + address.title}
             >
-              Hapus
+              {t('address.delete')}
             </button>
           </div>
         </div>

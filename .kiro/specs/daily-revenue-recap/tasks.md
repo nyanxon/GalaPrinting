@@ -6,7 +6,7 @@ Implementasi ini menambahkan modul rekap pendapatan harian ke CashierDashboard. 
 
 ## Tasks
 
-- [ ] 1. Buat file migrasi SQL untuk tabel `manual_revenue_transactions`
+- [x] 1. Buat file migrasi SQL untuk tabel `manual_revenue_transactions`
   - Buat file `server/src/db/migrations/042_create_manual_revenue_transactions.sql`
   - Definisikan tabel dengan semua kolom sesuai desain: `id` CHAR(36) PK, `transaction_date` DATE NOT NULL, `source_category` ENUM NOT NULL, `amount` DECIMAL(15,2) NOT NULL, `notes` TEXT nullable, `created_by` CHAR(36) FK ke `users.id`, `updated_by` CHAR(36) FK ke `users.id` nullable, `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, `deleted_at` DATETIME nullable
   - Tambahkan INDEX pada `(transaction_date, source_category)`
@@ -14,8 +14,8 @@ Implementasi ini menambahkan modul rekap pendapatan harian ke CashierDashboard. 
   - File ini akan otomatis dieksekusi oleh mekanisme migrasi di `server/src/db/migrate.js`
   - _Requirements: 1.1, 1.2, 1.3_
 
-- [ ] 2. Implementasi backend service layer
-  - [ ] 2.1 Buat file `server/src/services/revenue.service.js`
+- [x] 2. Implementasi backend service layer
+  - [x] 2.1 Buat file `server/src/services/revenue.service.js`
     - Import `{ query }` dari `../db/connection.js` dan `{ randomUUID }` dari `crypto`
     - Implementasikan fungsi `getDailyRecap(date)`: query `orders` dengan `DATE(created_at) = ?` dan `status IN ('Finished', 'In Delivery', 'Quality Checking', 'On Progress')` untuk `website_total` dan `website_transactions`; query `manual_revenue_transactions` dengan `transaction_date = ?` dan `deleted_at IS NULL` untuk `manual_by_category` dan `manual_transactions`; hitung `grand_total = website_total + sum(manual_by_category)`
     - Implementasikan fungsi `createManualTransaction({ transaction_date, source_category, amount, notes, userId })`: generate UUID v4, INSERT ke tabel, return entri baru
@@ -49,8 +49,8 @@ Implementasi ini menambahkan modul rekap pendapatan harian ke CashierDashboard. 
     - **Property 8: Soft delete — baris tetap ada, tidak muncul di rekap**
     - **Validates: Requirements 5.1**
 
-- [ ] 3. Implementasi backend controller
-  - [ ] 3.1 Buat file `server/src/controllers/revenue.controller.js`
+- [x] 3. Implementasi backend controller
+  - [x] 3.1 Buat file `server/src/controllers/revenue.controller.js`
     - Import `* as svc` dari `../services/revenue.service.js`
     - Implementasikan fungsi helper `validateTransactionBody({ transaction_date, source_category, amount })`: validasi format tanggal `YYYY-MM-DD`, validasi `source_category` dari enum yang valid, validasi `amount > 0`; kembalikan string pesan error pertama atau null jika valid
     - Implementasikan `getDailyRecap(req, res, next)`: ambil `date` dari query string (default hari ini `new Date().toISOString().slice(0, 10)` jika tidak ada atau format salah), panggil `svc.getDailyRecap(date)`, kembalikan `{ ok: true, data }` dengan status 200
@@ -65,25 +65,25 @@ Implementasi ini menambahkan modul rekap pendapatan harian ke CashierDashboard. 
     - Test setiap kombinasi input tidak valid menghasilkan status 422
     - Test input valid menghasilkan null (lolos validasi)
 
-- [ ] 4. Buat file route revenue dan daftarkan di app.js
-  - [ ] 4.1 Buat file `server/src/routes/revenue.routes.js`
+- [x] 4. Buat file route revenue dan daftarkan di app.js
+  - [x] 4.1 Buat file `server/src/routes/revenue.routes.js`
     - Import `Router` dari `express`, import `authenticate` dari `../middleware/auth.js`, import `requireRole` dari `../middleware/requireRole.js`, import `* as ctrl` dari `../controllers/revenue.controller.js`
     - Definisikan `guard = [authenticate, requireRole('cashier', 'admin', 'owner')]`
     - Daftarkan route: `GET /daily-recap`, `POST /manual-transaction`, `PUT /manual-transaction/:id`, `DELETE /manual-transaction/:id` — semua dengan `...guard`
     - _Requirements: 6.1_
 
-  - [ ] 4.2 Modifikasi `server/src/app.js` untuk mendaftarkan revenue routes
+  - [x] 4.2 Modifikasi `server/src/app.js` untuk mendaftarkan revenue routes
     - Tambahkan baris import: `import revenueRoutes from './routes/revenue.routes.js';` setelah baris import `analyticsRoutes`
     - Tambahkan baris `app.use('/api/revenue', revenueRoutes);` setelah baris `app.use('/api/analytics', analyticsRoutes);`
     - _Requirements: 6.2_
 
-- [ ] 5. Checkpoint — Verifikasi backend berfungsi
+- [x] 5. Checkpoint — Verifikasi backend berfungsi
   - Pastikan semua file backend bisa di-parse tanpa error sintaks
   - Pastikan import dan export konsisten antar file (service → controller → routes → app.js)
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 6. Implementasi frontend CSS
-  - [ ] 6.1 Buat file `src/styles/css/pages/daily-revenue.css`
+- [x] 6. Implementasi frontend CSS
+  - [x] 6.1 Buat file `src/styles/css/pages/daily-revenue.css`
     - Definisikan class `.rev-kpi-grid` sebagai CSS Grid dengan `grid-template-columns: repeat(auto-fill, minmax(160px, 1fr))` dan `gap`
     - Definisikan class `.rev-kpi-card` untuk card individual: border, padding, border-radius, menggunakan `var(--brand-brown)` untuk accent warna
     - Definisikan class `.rev-skeleton` dengan animasi shimmer (`@keyframes rev-shimmer`) untuk loading state
@@ -93,8 +93,8 @@ Implementasi ini menambahkan modul rekap pendapatan harian ke CashierDashboard. 
     - Jangan tambahkan CSS variable baru — gunakan `var(--brand-brown)` yang sudah ada
     - _Requirements: 7.4, 11.4_
 
-- [ ] 7. Implementasi komponen frontend `DailyRevenueSection.jsx`
-  - [ ] 7.1 Buat skeleton struktur komponen dan state management
+- [x] 7. Implementasi komponen frontend `DailyRevenueSection.jsx`
+  - [x] 7.1 Buat skeleton struktur komponen dan state management
     - Buat file `src/components/pages/subadmin/sections/DailyRevenueSection.jsx`
     - Import CSS: `import '../../../../../styles/css/pages/daily-revenue.css'`
     - Import dependencies: `{ useState, useEffect }` dari `react`, `{ api }` dari `../../../../core/httpClient.js`, `{ formatCurrency }` dari `../../../../core/helpers.js`, `{ showToast }` dari `../../../../core/toastEmitter.js`
@@ -103,21 +103,21 @@ Implementasi ini menambahkan modul rekap pendapatan harian ke CashierDashboard. 
     - Implementasikan `useEffect` yang memanggil `loadRecap(selectedDate)` setiap kali `selectedDate` berubah
     - _Requirements: 7.2, 7.3_
 
-  - [ ] 7.2 Implementasi date picker, KPI cards, dan skeleton loader
+  - [x] 7.2 Implementasi date picker, KPI cards, dan skeleton loader
     - Render input `<input type="date">` dengan nilai `selectedDate` dan handler `onChange` yang memperbarui `selectedDate`
     - Render section KPI cards (`.rev-kpi-grid`): enam `.rev-kpi-card` untuk Website, Toko Fisik, Shopee, Tokopedia, TikTok Shop, dan Grand Total
     - Saat `loading === true`, ganti konten card dengan elemen `.rev-skeleton`
     - Saat `recap !== null`, tampilkan nilai dari `recap.website_total`, `recap.manual_by_category.*`, dan `recap.grand_total` menggunakan `formatCurrency`
     - _Requirements: 7.2, 7.4, 7.5_
 
-  - [ ] 7.3 Implementasi tabel website (read-only) dan tabel transaksi manual
+  - [x] 7.3 Implementasi tabel website (read-only) dan tabel transaksi manual
     - Render tabel website dengan kolom: No. Order, Status, Nominal — data dari `recap.website_transactions`
     - Tambahkan badge bertulisan "Otomatis dari Sistem" di atas tabel website
     - Render tabel manual dengan kolom: Tanggal, Sumber, Nominal, Catatan, Aksi — data dari `recap.manual_transactions`
     - Pada setiap baris tabel manual, tambahkan tombol "Edit" (onClick: buka modal edit dengan data baris) dan tombol "Hapus" (onClick: buka modal konfirmasi hapus)
     - _Requirements: 7.6, 7.7_
 
-  - [ ] 7.4 Implementasi modal form tambah/edit transaksi manual
+  - [x] 7.4 Implementasi modal form tambah/edit transaksi manual
     - Implementasikan fungsi `validateForm()`: validasi `form.transaction_date` tidak kosong, `form.source_category` dipilih, `form.amount > 0`; set `fieldErrors` dan kembalikan false jika ada error
     - Implementasikan fungsi `handleOpenAdd()`: set `form` ke nilai kosong, set `modal = { mode: 'add' }`
     - Implementasikan fungsi `handleOpenEdit(transaction)`: set `form` ke data transaksi terpilih, set `modal = { mode: 'edit', transaction }`
@@ -128,11 +128,11 @@ Implementasi ini menambahkan modul rekap pendapatan harian ke CashierDashboard. 
     - Tombol "＋ Tambah Transaksi" di atas tabel manual memanggil `handleOpenAdd()`
     - _Requirements: 8.1, 8.2, 11.1, 11.2, 11.3_
 
-  - [ ] 7.5 Implementasi submit form tambah dan edit
+  - [x] 7.5 Implementasi submit form tambah dan edit
     - Implementasikan `handleSubmit()`: panggil `validateForm()`, jika gagal return; set `submitting=true`; tentukan metode (POST untuk add, PUT untuk edit); kirim request ke API; jika `ok: true`, set `modal=null`, panggil `loadRecap(selectedDate)`, tampilkan toast sukses; jika `ok: false`, tampilkan toast error tanpa menutup modal; reset `submitting=false`
     - _Requirements: 8.3, 8.4, 9.2, 9.3_
 
-  - [ ] 7.6 Implementasi modal konfirmasi hapus
+  - [x] 7.6 Implementasi modal konfirmasi hapus
     - Implementasikan `handleOpenDelete(transaction)`: set `modal = { mode: 'confirm-delete', transaction }`
     - Render modal konfirmasi (`modal.mode === 'confirm-delete'`) dengan teks konfirmasi eksplisit (misal "Apakah Anda yakin ingin menghapus transaksi ini?")
     - Modal berisi dua tombol: "Batal" (menutup modal) dan "Hapus" (memanggil `handleConfirmDelete`)
@@ -146,14 +146,14 @@ Implementasi ini menambahkan modul rekap pendapatan harian ke CashierDashboard. 
     - Test setiap kondisi form tidak valid: tanggal kosong, kategori tidak dipilih, amount ≤ 0
     - Verifikasi fungsi mengembalikan error dan mencegah API call
 
-- [ ] 8. Integrasi ke `CashierDashboardPage.jsx`
-  - [ ] 8.1 Modifikasi `src/components/pages/subadmin/CashierDashboardPage.jsx`
+- [x] 8. Integrasi ke `CashierDashboardPage.jsx`
+  - [x] 8.1 Modifikasi `src/components/pages/subadmin/CashierDashboardPage.jsx`
     - Tambahkan baris import: `import DailyRevenueSection from './sections/DailyRevenueSection.jsx';`
     - Tambahkan `{ id: 'recap', label: '📊 Rekap Harian' }` ke array `NAV_ITEMS`
     - Tambahkan `recap: <DailyRevenueSection />,` ke objek `SECTIONS`
     - _Requirements: 7.1_
 
-- [ ] 9. Checkpoint akhir — Verifikasi integrasi penuh
+- [x] 9. Checkpoint akhir — Verifikasi integrasi penuh
   - Pastikan semua import antar komponen valid dan file ada di path yang benar
   - Pastikan CSS diimport dengan benar di `DailyRevenueSection.jsx`
   - Pastikan tidak ada CSS variable baru yang ditambahkan

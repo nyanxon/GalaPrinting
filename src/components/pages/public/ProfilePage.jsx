@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useContext } from 'react';
 import { Navigate, Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import ProfileForm from '../../profile/ProfileForm.jsx';
 import AddressList from '../../profile/AddressList.jsx';
@@ -17,15 +18,16 @@ import * as profileService from '../../../services/profileService.js';
 import { resolveApiUrl } from '../../../core/httpClient.js';
 import '../../../styles/css/pages/profile.css';
 
-const TABS = [
-  { id: 'profile',       label: 'Profil',         icon: '👤' },
-  { id: 'orders',        label: 'Pesanan Saya',    icon: '📦' },
-  { id: 'addresses',     label: 'Daftar Alamat',   icon: '📍' },
-  { id: 'notifications', label: 'Notifikasi',      icon: '🔔' },
-];
-
 function ProfilePage() {
+  const { t } = useTranslation();
   const { user, loading, updateUser } = useContext(AuthContext);
+
+  const TABS = [
+    { id: 'profile',       label: t('profile.tabProfile'),       icon: '👤' },
+    { id: 'orders',        label: t('profile.tabOrders'),        icon: '📦' },
+    { id: 'addresses',     label: t('profile.tabAddresses'),     icon: '📍' },
+    { id: 'notifications', label: t('profile.tabNotifications'), icon: '🔔' },
+  ];
   const location = useLocation();
   const [activeTab, setActiveTab] = useState(location.state?.tab || 'profile');
 
@@ -54,7 +56,7 @@ function ProfilePage() {
   }, [isCustomer, isAdminOrOwner]);
 
   if (loading) {
-    return <main><div className="pf-loading">Memuat...</div></main>;
+    return <main><div className="pf-loading">{t('profile.loading')}</div></main>;
   }
 
   if (!user || (user.role !== 'customer' && user.role !== 'admin' && user.role !== 'owner')) {
@@ -114,8 +116,8 @@ function ProfilePage() {
           {/* Profile tab */}
           {activeTab === 'profile' && (
             <section className="pf-section">
-              <h2 className="pf-section-title">Biodata Diri</h2>
-              {profileLoading && <p className="pf-loading-inline">Memuat data profil...</p>}
+              <h2 className="pf-section-title">{t('profile.sectionBiodata')}</h2>
+              {profileLoading && <p className="pf-loading-inline">{t('profile.loadingProfile')}</p>}
               {profileError && !profileLoading && <p className="pf-error">{profileError}</p>}
               {!profileLoading && !profileError && profile && (
                 <ProfileForm profile={profile} onProfileUpdated={handleProfileUpdated} />
@@ -126,11 +128,11 @@ function ProfilePage() {
           {/* Orders tab */}
           {activeTab === 'orders' && (
             <section className="pf-section">
-              <h2 className="pf-section-title">Pesanan Saya</h2>
+              <h2 className="pf-section-title">{t('profile.sectionOrders')}</h2>
               <div className="pf-orders-redirect">
-                <p>Lihat semua pesanan Anda di halaman Pesanan Saya.</p>
+                <p>{t('profile.viewMyOrders')}</p>
                 <Link to="/my-orders" className="pf-orders-btn">
-                  Lihat Pesanan Saya →
+                  {t('profile.goToOrders')}
                 </Link>
               </div>
             </section>
@@ -139,7 +141,7 @@ function ProfilePage() {
           {/* Addresses tab */}
           {activeTab === 'addresses' && (
             <section className="pf-section">
-              <h2 className="pf-section-title">Daftar Alamat</h2>
+              <h2 className="pf-section-title">{t('profile.sectionAddresses')}</h2>
               <AddressList />
             </section>
           )}
@@ -147,7 +149,7 @@ function ProfilePage() {
           {/* Notifications tab */}
           {activeTab === 'notifications' && (
             <section className="pf-section">
-              <h2 className="pf-section-title">Preferensi Notifikasi</h2>
+              <h2 className="pf-section-title">{t('profile.sectionNotifications')}</h2>
               <NotificationSettings />
             </section>
           )}

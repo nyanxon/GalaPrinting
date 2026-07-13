@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createAddress, updateAddress } from '../../services/addressService.js';
 
 // ---------------------------------------------------------------------------
@@ -97,6 +98,7 @@ const apiErrorStyle = {
  */
 export default function AddressForm({ isOpen, onClose, onSaved, address }) {
   const isEditMode = Boolean(address);
+  const { t } = useTranslation();
 
   const [formData, setFormData] = useState({
     title: '',
@@ -137,10 +139,10 @@ export default function AddressForm({ isOpen, onClose, onSaved, address }) {
 
   function validate() {
     const newErrors = {};
-    if (!formData.title.trim()) newErrors.title = 'Judul alamat wajib diisi.';
-    if (!formData.name.trim()) newErrors.name = 'Nama wajib diisi.';
-    if (!formData.phone.trim()) newErrors.phone = 'Nomor telepon wajib diisi.';
-    if (!formData.full_address.trim()) newErrors.full_address = 'Alamat lengkap wajib diisi.';
+    if (!formData.title.trim()) newErrors.title = t('address.errTitle');
+    if (!formData.name.trim()) newErrors.name = t('address.errRecipient');
+    if (!formData.phone.trim()) newErrors.phone = t('address.errPhone');
+    if (!formData.full_address.trim()) newErrors.full_address = t('address.errFullAddress');
     return newErrors;
   }
 
@@ -189,18 +191,18 @@ export default function AddressForm({ isOpen, onClose, onSaved, address }) {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label={isEditMode ? 'Edit alamat' : 'Tambah alamat'}
+        aria-label={isEditMode ? t('address.editTitle') : t('address.addTitle')}
         style={modalStyle}
         onClick={(e) => e.stopPropagation()}
       >
         <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#111827' }}>
-          {isEditMode ? 'Edit Alamat' : 'Tambah Alamat'}
+          {isEditMode ? t('address.editTitle') : t('address.addTitle')}
         </h2>
 
         {/* Judul */}
         <div className="co-field">
           <label className="co-label" htmlFor="addr-judul">
-            Judul <span aria-hidden="true" style={{ color: '#dc2626' }}>*</span>
+            {t('address.title')} <span aria-hidden="true" style={{ color: '#dc2626' }}>*</span>
           </label>
           <input
             id="addr-judul"
@@ -209,16 +211,16 @@ export default function AddressForm({ isOpen, onClose, onSaved, address }) {
             name="title"
             value={formData.title}
             onChange={handleChange}
-            placeholder="Contoh: Rumah, Kantor"
+            placeholder={t('address.titlePlaceholder')}
             autoComplete="off"
           />
           {errors.title && <p style={errorStyle}>{errors.title}</p>}
         </div>
 
-        {/* Nama */}
+        {/* Nama Penerima */}
         <div className="co-field">
           <label className="co-label" htmlFor="addr-nama">
-            Nama <span aria-hidden="true" style={{ color: '#dc2626' }}>*</span>
+            {t('address.recipientName')} <span aria-hidden="true" style={{ color: '#dc2626' }}>*</span>
           </label>
           <input
             id="addr-nama"
@@ -227,7 +229,7 @@ export default function AddressForm({ isOpen, onClose, onSaved, address }) {
             name="name"
             value={formData.name}
             onChange={handleChange}
-            placeholder="Nama penerima"
+            placeholder={t('address.recipientNamePlaceholder')}
             autoComplete="name"
           />
           {errors.name && <p style={errorStyle}>{errors.name}</p>}
@@ -236,7 +238,7 @@ export default function AddressForm({ isOpen, onClose, onSaved, address }) {
         {/* Nomor Telepon */}
         <div className="co-field">
           <label className="co-label" htmlFor="addr-phone">
-            Nomor Telepon <span aria-hidden="true" style={{ color: '#dc2626' }}>*</span>
+            {t('address.phone')} <span aria-hidden="true" style={{ color: '#dc2626' }}>*</span>
           </label>
           <input
             id="addr-phone"
@@ -245,7 +247,7 @@ export default function AddressForm({ isOpen, onClose, onSaved, address }) {
             name="phone"
             value={formData.phone}
             onChange={handleChange}
-            placeholder="Contoh: 08123456789"
+            placeholder={t('address.phonePlaceholder')}
             autoComplete="tel"
           />
           {errors.phone && <p style={errorStyle}>{errors.phone}</p>}
@@ -254,7 +256,7 @@ export default function AddressForm({ isOpen, onClose, onSaved, address }) {
         {/* Alamat Lengkap */}
         <div className="co-field">
           <label className="co-label" htmlFor="addr-full-address">
-            Alamat Lengkap <span aria-hidden="true" style={{ color: '#dc2626' }}>*</span>
+            {t('address.fullAddress')} <span aria-hidden="true" style={{ color: '#dc2626' }}>*</span>
           </label>
           <textarea
             id="addr-full-address"
@@ -262,7 +264,7 @@ export default function AddressForm({ isOpen, onClose, onSaved, address }) {
             name="full_address"
             value={formData.full_address}
             onChange={handleChange}
-            placeholder="Jalan, nomor rumah, RT/RW, kelurahan, kecamatan, kota, provinsi"
+            placeholder={t('address.fullAddressPlaceholder')}
             rows={4}
             style={{ resize: 'vertical' }}
           />
@@ -280,7 +282,7 @@ export default function AddressForm({ isOpen, onClose, onSaved, address }) {
             onClick={handleClose}
             disabled={saving}
           >
-            Batal
+            {t('address.cancel')}
           </button>
           <button
             type="button"
@@ -288,7 +290,7 @@ export default function AddressForm({ isOpen, onClose, onSaved, address }) {
             onClick={handleSave}
             disabled={saving}
           >
-            {saving ? 'Menyimpan…' : 'Simpan'}
+            {saving ? t('address.saving') : t('address.save')}
           </button>
         </div>
       </div>
