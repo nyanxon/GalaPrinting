@@ -27,7 +27,7 @@ import { formatCurrency } from '../../../../core/helpers.js';
 import OrderDetailModal from '../../../shared/OrderDetailModal.jsx';
 import { showToast } from '../../../../core/toastEmitter.js';
 import { resolveApiUrl } from '../../../../core/httpClient.js';
-import { createInvoice, getInvoiceByOrderId, openInvoicePdf } from '../../../../services/invoiceService.js';
+import { getInvoiceByOrderId, openInvoicePdf } from '../../../../services/invoiceService.js';
 import ThermalReceiptModal from '../../../shared/ThermalReceiptModal.jsx';
 
 // ── Fitur 1: state order dari perspektif Cashier ──────────────────────────────
@@ -113,10 +113,9 @@ export default function CashierOrdersSection() {
   const [stateFilter, setStateFilter]     = useState('all');
 
   // Fitur 2: invoice status per order
-  const [invoiceMap, setInvoiceMap]           = useState({});
-  const [creatingInvoice, setCreatingInvoice] = useState(null);
+  const [invoiceMap, setInvoiceMap]         = useState({});
   // Fitur 4 (print): thermal modal
-  const [thermalInvoice, setThermalInvoice]   = useState(null);
+  const [thermalInvoice, setThermalInvoice] = useState(null);
 
   // Cancellation dialog
   const [cancelDialogOpen, setCancelDialogOpen]       = useState(false);
@@ -196,8 +195,28 @@ export default function CashierOrdersSection() {
       showToast(`Status → "${nextStatus}".`, 'success');
     } else {
       showToast(res.message || 'Gagal mengubah status.', 'error');
+      return;
     }
     fetchOrders();
+
+    // Setelah Payment Accepted: auto-fetch invoice, buka PDF, tampilkan thermal
+    if (nextStatus === 'Payment Accepted') {
+      // Tunggu backend membuat invoice (fire-and-forget di backend ~async)
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      try {
+        const inv = await getInvoiceByOrderId(orderId);
+        if (inv) {
+          // Update invoiceMap agar tombol langsung muncul
+          setInvoiceMap((prev) => ({ ...prev, [orderId]: inv }));
+          // Buka PDF A4 otomatis
+          try { await openInvoicePdf(inv.id); } catch { /* silent */ }
+          // Tampilkan modal resi termal
+          setThermalInvoice(inv);
+        }
+      } catch {
+        // Invoice mungkin belum siap — cashier bisa buka manual dari tabel
+      }
+    }
   }
 
   async function handleNoteBlur(orderId) {
@@ -246,20 +265,6 @@ export default function CashierOrdersSection() {
     setCancelTargetOrderId(null);
     setCancelReason('');
     setCancelReasonErr('');
-  }
-
-  // Fitur 2: buat invoice baru untuk order
-  async function handleCreateInvoice(orderId) {
-    setCreatingInvoice(orderId);
-    try {
-      const inv = await createInvoice({ order_id: orderId });
-      setInvoiceMap((prev) => ({ ...prev, [orderId]: inv }));
-      showToast(`Invoice ${inv.invoice_number} berhasil dibuat.`, 'success');
-    } catch (err) {
-      showToast(err.response?.data?.message || 'Gagal membuat invoice.', 'error');
-    } finally {
-      setCreatingInvoice(null);
-    }
   }
 
   // ── Filter display ────────────────────────────────────────────────────────
@@ -443,28 +448,18 @@ export default function CashierOrdersSection() {
                               <span className="adm-date">Mengecek…</span>
                             ) : invoiceMap[order.id] ? (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                {/* Invoice number — buka PDF */}
+                                {/* Satu tombol PDF A4 */}
                                 <button
                                   className="adm-btn adm-btn--secondary"
                                   type="button"
-                                  style={{ fontSize: '11px', padding: '4px 8px' }}
-                                  onClick={() => openInvoicePdf(invoiceMap[order.id].id)}
-                                  title={`Buka PDF invoice ${invoiceMap[order.id].invoice_number}`}
-                                >
-                                  🧾 {invoiceMap[order.id].invoice_number}
-                                </button>
-                                {/* PDF A4 */}
-                                <button
-                                  type="button"
-                                  className="adm-btn adm-btn--secondary"
                                   style={{ fontSize: '11px', padding: '4px 8px' }}
                                   onClick={async () => {
                                     try { await openInvoicePdf(invoiceMap[order.id].id); }
                                     catch { showToast('Gagal membuka PDF invoice.', 'error'); }
                                   }}
-                                  title="Download / buka PDF A4"
+                                  title={`Buka PDF invoice ${invoiceMap[order.id].invoice_number}`}
                                 >
-                                  📄 PDF A4
+                                  🧾 {invoiceMap[order.id].invoice_number}
                                 </button>
                                 {/* Print Resi Termal */}
                                 <button
@@ -477,20 +472,7 @@ export default function CashierOrdersSection() {
                                   🖨️ Print Resi
                                 </button>
                               </div>
-                            ) : (
-                              <button
-                                className="adm-btn"
-                                type="button"
-                                style={{
-                                  fontSize: '11px', padding: '4px 8px',
-                                  background: '#f59e0b', color: '#fff', border: 'none',
-                                }}
-                                disabled={creatingInvoice === order.id}
-                                onClick={() => handleCreateInvoice(order.id)}
-                              >
-                                {creatingInvoice === order.id ? 'Membuat…' : '➕ Invoice'}
-                              </button>
-                            )}
+                            ) : null /* invoice belum tersedia, tidak tampilkan apa-apa */}
                           </div>
                         )}
                       </div>

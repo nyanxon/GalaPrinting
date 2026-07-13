@@ -68,6 +68,27 @@ function CheckoutPage() {
     );
   }
 
+  // Email verification guard — redirect to cart if not verified
+  if (USE_BACKEND && user && !user.is_email_verified) {
+    return (
+      <main>
+        <div className="container co-page">
+          <div className="co-auth-required">
+            <div className="co-auth-icon">✉️</div>
+            <h2 className="co-auth-title">Verifikasi Email Diperlukan</h2>
+            <p className="co-auth-desc">
+              Silakan verifikasi email kamu sebelum melanjutkan checkout.
+            </p>
+            <div className="co-auth-actions">
+              <Link className="co-auth-btn co-auth-btn--primary" to="/profile">Verifikasi Sekarang</Link>
+              <Link className="co-auth-btn" to="/cart">← Kembali ke Keranjang</Link>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   // Empty cart guard
   if (items.length === 0) {
     return (
@@ -338,17 +359,6 @@ function CheckoutPage() {
               <span>{t('checkout.total')}</span>
               <strong>{formatCurrency(promoDiscount ? promoDiscount.finalSubtotal : subtotal)}</strong>
             </div>
-
-            {/* Email verification warning */}
-            {USE_BACKEND && user && !user.is_email_verified && (
-              <div className="co-email-verify-warning" role="alert">
-                <span className="co-email-verify-icon">⚠️</span>
-                <span>
-                  {t('checkout.emailVerifyWarning')}{' '}
-                  <Link to="/profile" className="co-email-verify-link">{t('checkout.emailVerifyNow')}</Link>
-                </span>
-              </div>
-            )}
           </aside>
         </div>
       </div>

@@ -11,8 +11,9 @@ import { useContext, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { CartContext } from '../../context/CartContext.jsx';
+import { AuthContext } from '../../context/AuthContext.jsx';
 import { formatCurrency } from '../../../core/helpers.js';
-import { resolveApiUrl } from '../../../core/httpClient.js';
+import { resolveApiUrl, USE_BACKEND } from '../../../core/httpClient.js';
 import placeholderImg from '../../../assets/placeholder.svg';
 import ConfirmDialog from '../../shared/ConfirmDialog.jsx';
 import '../../../styles/css/pages/cart.css';
@@ -151,6 +152,8 @@ function CartItemDetailModal({ item, onClose }) {
 function CartPage() {
   const { t } = useTranslation();
   const { items, removeItem, updateItemQty } = useContext(CartContext);
+  const { user } = useContext(AuthContext);
+  const needsEmailVerify = USE_BACKEND && user && user.role === 'customer' && !user.is_email_verified;
   // Track raw input value per item id so user can freely type before committing
   const [qtyInputs, setQtyInputs] = useState({});
   // Confirm delete dialog
@@ -306,14 +309,35 @@ function CartPage() {
               <strong data-cart-subtotal>{formatCurrency(subtotal)}</strong>
             </div>
             <div className="form-actions" style={{ marginTop: '10px' }}>
-              <Link
-                className="btn primary"
-                to="/checkout"
-                data-checkout-link
-                style={{ pointerEvents: items.length === 0 ? 'none' : 'auto', opacity: items.length === 0 ? 0.5 : 1 }}
-              >
-                Checkout
-              </Link>
+              {needsEmailVerify && (
+                <div className="co-email-verify-warning" role="alert" style={{ marginBottom: '10px' }}>
+                  <span className="co-email-verify-icon">⚠️</span>
+                  <span style={{ fontSize: '13px' }}>
+                    Verifikasi email kamu sebelum checkout.{' '}
+                    <Link to="/profile" className="co-email-verify-link">Verifikasi sekarang →</Link>
+                  </span>
+                </div>
+              )}
+              {needsEmailVerify ? (
+                <button
+                  className="btn primary"
+                  type="button"
+                  disabled
+                  style={{ opacity: 0.5, cursor: 'not-allowed' }}
+                  title="Verifikasi email kamu terlebih dahulu"
+                >
+                  Checkout
+                </button>
+              ) : (
+                <Link
+                  className="btn primary"
+                  to="/checkout"
+                  data-checkout-link
+                  style={{ pointerEvents: items.length === 0 ? 'none' : 'auto', opacity: items.length === 0 ? 0.5 : 1 }}
+                >
+                  Checkout
+                </Link>
+              )}
               <button
                 className="btn"
                 type="button"
