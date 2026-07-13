@@ -28,6 +28,7 @@ import OrderDetailModal from '../../../shared/OrderDetailModal.jsx';
 import { showToast } from '../../../../core/toastEmitter.js';
 import { resolveApiUrl } from '../../../../core/httpClient.js';
 import { createInvoice, getInvoiceByOrderId, openInvoicePdf } from '../../../../services/invoiceService.js';
+import ThermalReceiptModal from '../../../shared/ThermalReceiptModal.jsx';
 
 // ── Fitur 1: state order dari perspektif Cashier ──────────────────────────────
 
@@ -81,7 +82,7 @@ function CashierProofCell({ order, onCancel }) {
         <span className="adm-date">Belum ada bukti</span>
       )}
 
-      {order.status !== 'Cancelled' && order.status !== 'Finished' && (
+      {order.status !== 'Cancelled' && order.status !== 'Finished' && order.status !== 'Payment Accepted' && (
         <button
           type="button"
           className="adm-btn"
@@ -114,6 +115,8 @@ export default function CashierOrdersSection() {
   // Fitur 2: invoice status per order
   const [invoiceMap, setInvoiceMap]           = useState({});
   const [creatingInvoice, setCreatingInvoice] = useState(null);
+  // Fitur 4 (print): thermal modal
+  const [thermalInvoice, setThermalInvoice]   = useState(null);
 
   // Cancellation dialog
   const [cancelDialogOpen, setCancelDialogOpen]       = useState(false);
@@ -439,15 +442,41 @@ export default function CashierOrdersSection() {
                             {invoiceMap[order.id] === 'loading' ? (
                               <span className="adm-date">Mengecek…</span>
                             ) : invoiceMap[order.id] ? (
-                              <button
-                                className="adm-btn adm-btn--secondary"
-                                type="button"
-                                style={{ fontSize: '11px', padding: '4px 8px' }}
-                                onClick={() => openInvoicePdf(invoiceMap[order.id].id)}
-                                title={`Invoice ${invoiceMap[order.id].invoice_number}`}
-                              >
-                                🧾 {invoiceMap[order.id].invoice_number}
-                              </button>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                {/* Invoice number — buka PDF */}
+                                <button
+                                  className="adm-btn adm-btn--secondary"
+                                  type="button"
+                                  style={{ fontSize: '11px', padding: '4px 8px' }}
+                                  onClick={() => openInvoicePdf(invoiceMap[order.id].id)}
+                                  title={`Buka PDF invoice ${invoiceMap[order.id].invoice_number}`}
+                                >
+                                  🧾 {invoiceMap[order.id].invoice_number}
+                                </button>
+                                {/* PDF A4 */}
+                                <button
+                                  type="button"
+                                  className="adm-btn adm-btn--secondary"
+                                  style={{ fontSize: '11px', padding: '4px 8px' }}
+                                  onClick={async () => {
+                                    try { await openInvoicePdf(invoiceMap[order.id].id); }
+                                    catch { showToast('Gagal membuka PDF invoice.', 'error'); }
+                                  }}
+                                  title="Download / buka PDF A4"
+                                >
+                                  📄 PDF A4
+                                </button>
+                                {/* Print Resi Termal */}
+                                <button
+                                  type="button"
+                                  className="adm-btn adm-btn--thermal"
+                                  style={{ fontSize: '11px', padding: '4px 8px' }}
+                                  onClick={() => setThermalInvoice(invoiceMap[order.id])}
+                                  title="Print resi termal (58/80mm)"
+                                >
+                                  🖨️ Print Resi
+                                </button>
+                              </div>
                             ) : (
                               <button
                                 className="adm-btn"
@@ -486,6 +515,14 @@ export default function CashierOrdersSection() {
         onClose={() => setDetailOpen(false)}
         order={selectedOrder}
       />
+
+      {/* Fitur 4 (print): Resi Termal Modal */}
+      {thermalInvoice && (
+        <ThermalReceiptModal
+          invoice={thermalInvoice}
+          onClose={() => setThermalInvoice(null)}
+        />
+      )}
 
       {/* ── Cancellation Dialog ── */}
       {cancelDialogOpen && (

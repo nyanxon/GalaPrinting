@@ -16,6 +16,7 @@ import { getProductById, resolveVariantPrice } from '../../../services/productSe
 import { listReviews } from '../../../services/reviewService.js';
 import DropZone from '../../shared/DropZone.jsx';
 import placeholderImg from '../../../assets/placeholder.svg';
+import { showToast } from '../../../core/toastEmitter.js';
 import '../../../styles/css/pages/catalogProduct.css';
 
 /**
@@ -67,9 +68,6 @@ function CatalogProductPage() {
   const [designFile, setDesignFile] = useState(null);
   const [designDataUrl, setDesignDataUrl] = useState(null);
   const [designReadReady, setDesignReadReady] = useState(true);
-
-  // Alert
-  const [alertMsg, setAlertMsg] = useState('');
 
   // Active tab
   const [activeTab, setActiveTab] = useState('rincian');
@@ -149,36 +147,35 @@ function CatalogProductPage() {
 
   function handleAddToCart() {
     if (!user || user.role !== 'customer') {
-      setAlertMsg('Silakan login atau daftar untuk menambahkan produk ke keranjang.');
+      showToast('Silakan login atau daftar untuk menambahkan produk ke keranjang.', 'error');
       setTimeout(() => navigate('/register'), 1500);
       return;
     }
-    setAlertMsg('');
 
     if (product.requiresDesign !== false && !designFile) {
-      setAlertMsg('Silakan upload desain terlebih dahulu.');
+      showToast('Silakan upload desain terlebih dahulu.', 'error');
       return;
     }
     if (designFile) {
       if (!['image/jpeg', 'image/png', 'application/pdf', 'application/zip', 'application/x-zip-compressed'].includes(designFile.type)) {
-        setAlertMsg('Format file harus JPG, PNG, PDF, atau ZIP.');
+        showToast('Format file harus JPG, PNG, PDF, atau ZIP.', 'error');
         return;
       }
       if (designFile.size > 100 * 1024 * 1024) { // 100 MB (updated from 10 MB)
-        setAlertMsg('Ukuran file maksimal 100MB.');
+        showToast('Ukuran file maksimal 100MB.', 'error');
         return;
       }
       if (!designReadReady) {
-        setAlertMsg('File sedang diproses, coba lagi sebentar.');
+        showToast('File sedang diproses, coba lagi sebentar.', 'error');
         return;
       }
     }
     if ((product.colors || []).length > 0 && !selectedColor) {
-      setAlertMsg('Silakan pilih warna.');
+      showToast('Silakan pilih warna.', 'error');
       return;
     }
     if ((product.sizes || []).length > 0 && !selectedSize) {
-      setAlertMsg('Silakan pilih ukuran.');
+      showToast('Silakan pilih ukuran.', 'error');
       return;
     }
 
@@ -196,7 +193,7 @@ function CatalogProductPage() {
       designFileName: designFile ? designFile.name : null,
       designDataUrl: designFile ? designDataUrl : null,
     });
-    setAlertMsg('Produk ditambahkan ke keranjang.');
+    showToast('Produk ditambahkan ke keranjang.', 'success');
   }
 
   // ── Gallery helpers ────────────────────────────────────────────────────────
@@ -609,14 +606,6 @@ function CatalogProductPage() {
             </div>
           </div>
 
-          {/* Alert */}
-          <div
-            className="alert muted"
-            data-detail-alert
-            style={{ display: alertMsg ? 'block' : 'none' }}
-          >
-            {alertMsg}
-          </div>
         </section>
       </div>
 

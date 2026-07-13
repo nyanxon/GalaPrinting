@@ -6,6 +6,14 @@
 
 import { validationResult } from 'express-validator';
 import * as authService from '../services/auth.service.js';
+import { sendLoginNewDeviceEmail, sendLoginFailedAlertEmail } from '../services/email.service.js';
+import { getPreferences } from '../services/notifications.service.js';
+import { query } from '../db/connection.js';
+
+// ── Failed login tracking (in-memory, per IP) ─────────────────────────────────
+// Resets on restart — good enough for notifying owners without a Redis dep.
+const failedLoginMap = new Map(); // ip → { count, lastAt }
+const FAILED_THRESHOLD = 5; // alert after this many consecutive failures per IP
 
 const REFRESH_COOKIE = 'refreshToken';
 
@@ -74,9 +82,44 @@ export async function login(req, res, next) {
     }
 
     const { email, password, rememberMe } = req.body;
+    const ip = req.ip || req.socket?.remoteAddress || '—';
+    const ua = req.headers['user-agent'] || 'Tidak diketahui';
+    const timeStr = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Makassar' });
+
     const user = await authService.login({ email, password });
 
     if (!user) {
+      // Track failed attempts per IP and fire alert email if threshold reached
+      const key = `${ip}:${email}`;
+      const entry = failedLoginMap.get(key) || { count: 0 };
+      entry.count += 1;
+      entry.lastAt = Date.now();
+      failedLoginMap.set(key, entry);
+
+      if (entry.count >= FAILED_THRESHOLD) {
+        // Find the user by email to check their preferences and get their email
+        const [rows] = await query('SELECT id, email, name FROM users WHERE email = ? LIMIT 1', [email]);
+        if (rows.length > 0) {
+          const targetUser = rows[0];
+          (async () => {
+            try {
+              const prefs = await getPreferences(targetUser.id);
+              if (prefs.login_failed_alert) {
+                await sendLoginFailedAlertEmail({
+                  to:       targetUser.email,
+                  name:     targetUser.name,
+                  attempts: entry.count,
+                  ip,
+                  time:     timeStr,
+                });
+              }
+            } catch (e) {
+              console.error('[auth] login_failed_alert email error:', e.message);
+            }
+          })();
+        }
+      }
+
       return res.status(401).json({ ok: false, message: 'Email atau password salah.' });
     }
 
@@ -84,12 +127,36 @@ export async function login(req, res, next) {
       return res.status(401).json({ ok: false, message: 'Akun tidak aktif.' });
     }
 
+    // Clear failed attempt counter on successful login
+    failedLoginMap.delete(`${ip}:${email}`);
+
     // rememberMe: true → 30 hari, false/default → 1 hari
     const remember = Boolean(rememberMe);
     const { accessToken, refreshToken, cookieMaxAge } = await authService.createTokenPair(user.id, remember);
     setRefreshCookie(res, refreshToken, cookieMaxAge);
 
     const { password_hash: _, ...safeUser } = user;
+
+    // Fire login_new_device notification (fire-and-forget, preference-gated)
+    if (user.id) {
+      (async () => {
+        try {
+          const prefs = await getPreferences(user.id);
+          if (prefs.login_new_device) {
+            await sendLoginNewDeviceEmail({
+              to:     user.email,
+              name:   user.name,
+              device: ua,
+              ip,
+              time:   timeStr,
+            });
+          }
+        } catch (e) {
+          console.error('[auth] login_new_device email error:', e.message);
+        }
+      })();
+    }
+
     return res.json({
       ok: true,
       accessToken,

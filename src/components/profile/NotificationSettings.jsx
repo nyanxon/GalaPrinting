@@ -2,7 +2,10 @@
  * NotificationSettings.jsx
  *
  * Panel preferensi notifikasi email pelanggan.
- * Loads preferences on mount, renders five checkboxes, and saves via profileService.
+ * Loads preferences on mount, renders checkboxes, and saves via profileService.
+ *
+ * CATATAN: Lupa password & verifikasi email TIDAK ditampilkan di sini karena
+ * merupakan fitur inti yang selalu dikirimkan (tidak bisa dinonaktifkan).
  *
  * Requirements: 7.1 – 7.4
  */
@@ -14,21 +17,55 @@ import {
 } from '../../services/profileService.js';
 import { showToast } from '../../core/toastEmitter.js';
 
+// ── Field definitions ─────────────────────────────────────────────────────────
+// key harus sama persis dengan kolom di tabel notification_preferences
+
 const NOTIFICATION_FIELDS = [
-  { key: 'payment_accepted', label: 'Pembayaran Diterima' },
-  { key: 'order_shipped',    label: 'Pesanan Dikirim' },
-  { key: 'order_finished',   label: 'Pesanan Selesai' },
-  { key: 'order_cancelled',  label: 'Pesanan Dibatalkan' },
-  { key: 'promo_news',       label: 'Berita Promo Gala Printing' },
+  {
+    key:     'order_received',
+    label:   'Pesanan Diterima',
+    desc:    'Email konfirmasi saat pesanan baru berhasil dibuat.',
+  },
+  {
+    key:     'payment_accepted',
+    label:   'Pembayaran Telah Diterima',
+    desc:    'Notifikasi beserta invoice PDF saat pembayaran dikonfirmasi.',
+  },
+  {
+    key:     'mockup_accepted',
+    label:   'Mockup Diterima',
+    desc:    'Notifikasi saat desain / mockup Anda telah disetujui.',
+  },
+  {
+    key:     'order_shipped',
+    label:   'Pesanan Akan Diantar',
+    desc:    'Notifikasi saat pesanan sedang dalam pengiriman.',
+  },
+  {
+    key:     'order_finished',
+    label:   'Pesanan Selesai',
+    desc:    'Notifikasi saat pesanan telah selesai.',
+  },
+  {
+    key:     'order_cancelled',
+    label:   'Pesanan Dibatalkan',
+    desc:    'Notifikasi jika pesanan dibatalkan beserta alasannya.',
+  },
+  {
+    key:     'login_new_device',
+    label:   'Notifikasi Login dari Device Baru',
+    desc:    'Alert keamanan saat akun Anda diakses dari perangkat baru.',
+  },
+  {
+    key:     'login_failed_alert',
+    label:   'Alert Percobaan Login Gagal',
+    desc:    'Peringatan saat ada percobaan login gagal berkali-kali pada akun Anda.',
+  },
 ];
 
-const DEFAULT_PREFS = {
-  payment_accepted: false,
-  order_shipped:    false,
-  order_finished:   false,
-  order_cancelled:  false,
-  promo_news:       false,
-};
+const DEFAULT_PREFS = Object.fromEntries(NOTIFICATION_FIELDS.map(({ key }) => [key, false]));
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 function NotificationSettings() {
   const [prefs, setPrefs]     = useState(DEFAULT_PREFS);
@@ -38,30 +75,24 @@ function NotificationSettings() {
 
   useEffect(() => {
     let cancelled = false;
-
     async function fetchPrefs() {
       setLoading(true);
       setError(null);
       try {
         const data = await getNotificationPreferences();
         if (!cancelled) {
-          setPrefs({
-            payment_accepted: Boolean(data.payment_accepted),
-            order_shipped:    Boolean(data.order_shipped),
-            order_finished:   Boolean(data.order_finished),
-            order_cancelled:  Boolean(data.order_cancelled),
-            promo_news:       Boolean(data.promo_news),
-          });
+          const mapped = {};
+          for (const { key } of NOTIFICATION_FIELDS) {
+            mapped[key] = Boolean(data[key]);
+          }
+          setPrefs(mapped);
         }
       } catch {
-        if (!cancelled) {
-          setError('Gagal memuat preferensi notifikasi. Silakan coba lagi.');
-        }
+        if (!cancelled) setError('Gagal memuat preferensi notifikasi. Silakan coba lagi.');
       } finally {
         if (!cancelled) setLoading(false);
       }
     }
-
     fetchPrefs();
     return () => { cancelled = true; };
   }, []);
@@ -74,7 +105,7 @@ function NotificationSettings() {
     setSaving(true);
     try {
       await updateNotificationPreferences(prefs);
-      showToast('Preferensi notifikasi berhasil disimpan.');
+      showToast('Preferensi notifikasi berhasil disimpan.', 'success');
     } catch (err) {
       showToast(
         err?.response?.data?.message || 'Gagal menyimpan preferensi notifikasi.',
@@ -84,41 +115,6 @@ function NotificationSettings() {
       setSaving(false);
     }
   }
-
-  const checkboxRowStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    marginBottom: '12px',
-    cursor: 'pointer',
-  };
-
-  const checkboxStyle = {
-    width: '18px',
-    height: '18px',
-    cursor: 'pointer',
-    accentColor: '#785E40',
-  };
-
-  const labelStyle = {
-    fontSize: '14px',
-    color: '#333',
-    cursor: 'pointer',
-    userSelect: 'none',
-  };
-
-  const saveBtnStyle = {
-    marginTop: '8px',
-    padding: '10px 28px',
-    background: saving ? '#c4a882' : 'var(--brand-brown, #785E40)',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '14px',
-    fontWeight: '700',
-    cursor: saving ? 'not-allowed' : 'pointer',
-    transition: 'filter 0.15s',
-  };
 
   if (loading) {
     return <p style={{ color: '#9b9b9b', fontSize: '14px' }}>Memuat preferensi notifikasi…</p>;
@@ -130,37 +126,78 @@ function NotificationSettings() {
 
   return (
     <div>
-      {NOTIFICATION_FIELDS.map(({ key, label }) => {
-        const inputId = `notif-${key}`;
-        return (
-          <div
-            key={key}
-            style={checkboxRowStyle}
-            onClick={() => handleChange(key)}
-          >
-            <input
-              id={inputId}
-              type="checkbox"
-              style={checkboxStyle}
-              checked={prefs[key]}
-              onChange={() => handleChange(key)}
-              onClick={(e) => e.stopPropagation()}
-            />
-            <label htmlFor={inputId} style={labelStyle}>
-              {label}
-            </label>
-          </div>
-        );
-      })}
+      {/* Security group header */}
+      <div style={{ marginBottom: '6px' }}>
+        <p style={{ margin: '0 0 4px', fontSize: '12px', fontWeight: 700, color: '#9b9b9b',
+                    textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          Status Pesanan
+        </p>
+      </div>
+
+      {NOTIFICATION_FIELDS.slice(0, 6).map(({ key, label, desc }) => (
+        <NotifRow key={key} id={key} label={label} desc={desc}
+          checked={prefs[key]} onChange={() => handleChange(key)} />
+      ))}
+
+      <div style={{ margin: '20px 0 6px', borderTop: '1px solid #f0f0f0', paddingTop: '16px' }}>
+        <p style={{ margin: '0 0 4px', fontSize: '12px', fontWeight: 700, color: '#9b9b9b',
+                    textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          Keamanan Akun
+        </p>
+      </div>
+
+      {NOTIFICATION_FIELDS.slice(6).map(({ key, label, desc }) => (
+        <NotifRow key={key} id={key} label={label} desc={desc}
+          checked={prefs[key]} onChange={() => handleChange(key)} />
+      ))}
+
+      <p style={{ margin: '16px 0 12px', fontSize: '12px', color: '#9b9b9b', lineHeight: 1.5 }}>
+        ℹ️ Verifikasi email dan reset password selalu dikirimkan dan tidak dapat dinonaktifkan.
+      </p>
 
       <button
         type="button"
-        style={saveBtnStyle}
+        style={{
+          padding: '10px 28px',
+          background: saving ? '#c4a882' : 'var(--brand-brown, #785E40)',
+          color: '#fff',
+          border: 'none',
+          borderRadius: '8px',
+          fontSize: '14px',
+          fontWeight: '700',
+          cursor: saving ? 'not-allowed' : 'pointer',
+          transition: 'filter 0.15s',
+        }}
         onClick={handleSave}
         disabled={saving}
       >
         {saving ? 'Menyimpan…' : 'Simpan'}
       </button>
+    </div>
+  );
+}
+
+// ── Row sub-component ─────────────────────────────────────────────────────────
+
+function NotifRow({ id, label, desc, checked, onChange }) {
+  const inputId = `notif-${id}`;
+  return (
+    <div
+      style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '14px', cursor: 'pointer' }}
+      onClick={onChange}
+    >
+      <input
+        id={inputId}
+        type="checkbox"
+        style={{ width: '18px', height: '18px', marginTop: '2px', cursor: 'pointer', accentColor: '#785E40', flexShrink: 0 }}
+        checked={checked}
+        onChange={onChange}
+        onClick={(e) => e.stopPropagation()}
+      />
+      <label htmlFor={inputId} style={{ cursor: 'pointer', userSelect: 'none' }}>
+        <div style={{ fontSize: '14px', fontWeight: 600, color: '#1f1f1f', lineHeight: 1.3 }}>{label}</div>
+        {desc && <div style={{ fontSize: '12px', color: '#9b9b9b', marginTop: '2px', lineHeight: 1.4 }}>{desc}</div>}
+      </label>
     </div>
   );
 }

@@ -11,9 +11,139 @@ import { useContext, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CartContext } from '../../context/CartContext.jsx';
 import { formatCurrency } from '../../../core/helpers.js';
+import { resolveApiUrl } from '../../../core/httpClient.js';
 import placeholderImg from '../../../assets/placeholder.svg';
 import ConfirmDialog from '../../shared/ConfirmDialog.jsx';
 import '../../../styles/css/pages/cart.css';
+
+// ── Cart Item Detail Modal ────────────────────────────────────────────────────
+
+function CartItemDetailModal({ item, onClose }) {
+  if (!item) return null;
+
+  const specs = [
+    item.material && { label: 'Bahan',   value: item.material },
+    item.color    && { label: 'Warna',   value: item.color },
+    item.size     && { label: 'Ukuran',  value: item.size },
+    item.notes    && { label: 'Catatan', value: item.notes },
+  ].filter(Boolean);
+
+  const imgSrc = item.image
+    ? (item.image.startsWith('http') || item.image.startsWith('data:') || item.image.startsWith('/')
+        ? resolveApiUrl(item.image) || placeholderImg
+        : item.image)
+    : placeholderImg;
+
+  const hasDesign = Boolean(item.designDataUrl || item.designFileName);
+
+  return (
+    <div
+      className="cdm-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Detail ${item.name}`}
+      onClick={onClose}
+    >
+      <div className="cdm-modal" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="cdm-header">
+          <h3 className="cdm-title">{item.name}</h3>
+          <button
+            type="button"
+            className="cdm-close"
+            onClick={onClose}
+            aria-label="Tutup detail"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="cdm-body">
+          {/* Product image */}
+          <img
+            className="cdm-image"
+            src={imgSrc}
+            alt={item.name}
+            onError={(e) => { e.currentTarget.src = placeholderImg; }}
+          />
+
+          {/* Specs */}
+          {specs.length > 0 && (
+            <div className="cdm-specs">
+              {specs.map(({ label, value }) => (
+                <div key={label} className="cdm-spec-row">
+                  <span className="cdm-spec-label">{label}</span>
+                  <span className="cdm-spec-value">{value}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Qty & price */}
+          <div className="cdm-specs" style={{ marginTop: '8px' }}>
+            <div className="cdm-spec-row">
+              <span className="cdm-spec-label">Jumlah</span>
+              <span className="cdm-spec-value">{item.quantity}</span>
+            </div>
+            <div className="cdm-spec-row">
+              <span className="cdm-spec-label">Harga Satuan</span>
+              <span className="cdm-spec-value">{formatCurrency(item.price)}</span>
+            </div>
+            <div className="cdm-spec-row">
+              <span className="cdm-spec-label">Subtotal</span>
+              <span className="cdm-spec-value" style={{ fontWeight: 700 }}>
+                {formatCurrency(item.price * item.quantity)}
+              </span>
+            </div>
+          </div>
+
+          {/* Design file attachment */}
+          {hasDesign && (
+            <div className="cdm-attachment">
+              <div className="cdm-attachment-label">📎 Lampiran Desain</div>
+              {item.designDataUrl ? (
+                (() => {
+                  const isImage = item.designDataUrl.startsWith('data:image');
+                  return isImage ? (
+                    <a href={item.designDataUrl} download={item.designFileName || 'desain'} target="_blank" rel="noopener noreferrer">
+                      <img
+                        className="cdm-design-preview"
+                        src={item.designDataUrl}
+                        alt="Preview desain"
+                      />
+                    </a>
+                  ) : (
+                    <a
+                      className="cdm-design-link"
+                      href={item.designDataUrl}
+                      download={item.designFileName || 'desain'}
+                    >
+                      ⬇ {item.designFileName || 'Unduh File Desain'}
+                    </a>
+                  );
+                })()
+              ) : (
+                <span className="cdm-design-name">
+                  📄 {item.designFileName}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="cdm-footer">
+          <button type="button" className="btn primary" onClick={onClose}>
+            Tutup
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── CartPage ──────────────────────────────────────────────────────────────────
 
 function CartPage() {
   const { items, removeItem, updateItemQty } = useContext(CartContext);
@@ -21,6 +151,8 @@ function CartPage() {
   const [qtyInputs, setQtyInputs] = useState({});
   // Confirm delete dialog
   const [confirmId, setConfirmId] = useState(null);
+  // Detail modal
+  const [detailItem, setDetailItem] = useState(null);
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
@@ -63,15 +195,39 @@ function CartPage() {
           ) : (
             items.map((item) => {
               const meta = [item.material, item.color, item.size].filter(Boolean).join(' • ');
+              const imgSrc = item.image
+                ? resolveApiUrl(item.image) || placeholderImg
+                : placeholderImg;
+
               return (
                 <div key={item.id} className="cart-item" data-item-id={item.id}>
-                  <img
-                    src={item.image || placeholderImg}
-                    alt={item.name}
-                    onError={(e) => { e.currentTarget.src = placeholderImg; }}
-                  />
+                  {/* Clickable image → opens detail modal */}
+                  <button
+                    type="button"
+                    className="cart-item-img-btn"
+                    onClick={() => setDetailItem(item)}
+                    aria-label={`Lihat detail ${item.name}`}
+                    title="Lihat detail pemesanan"
+                  >
+                    <img
+                      src={imgSrc}
+                      alt={item.name}
+                      onError={(e) => { e.currentTarget.src = placeholderImg; }}
+                    />
+                  </button>
+
                   <div>
-                    <div className="cart-item-title">{item.name}</div>
+                    {/* Clickable title → opens detail modal */}
+                    <button
+                      type="button"
+                      className="cart-item-title cart-item-title-btn"
+                      onClick={() => setDetailItem(item)}
+                      title="Lihat detail pemesanan"
+                    >
+                      {item.name}
+                      <span className="cart-item-detail-hint"> · Detail</span>
+                    </button>
+
                     {meta && <div className="cart-item-meta">{meta}</div>}
                     {item.designFileName && (
                       <div className="cart-item-meta">Desain: {item.designFileName}</div>
@@ -166,6 +322,9 @@ function CartPage() {
           </div>
         </aside>
       </div>
+
+      {/* Cart Item Detail Modal */}
+      <CartItemDetailModal item={detailItem} onClose={() => setDetailItem(null)} />
 
       {/* Confirm remove single item */}
       <ConfirmDialog

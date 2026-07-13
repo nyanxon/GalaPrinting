@@ -305,6 +305,7 @@ function CheckoutPage() {
                     onChange={(e) => { setPromoCode(e.target.value); setPromoError(''); }}
                     disabled={promoLoading}
                     aria-label="Kode promo"
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleApplyPromo(); } }}
                   />
                   <button
                     type="button"
@@ -335,6 +336,17 @@ function CheckoutPage() {
               <span>Total</span>
               <strong>{formatCurrency(promoDiscount ? promoDiscount.finalSubtotal : subtotal)}</strong>
             </div>
+
+            {/* Email verification warning */}
+            {USE_BACKEND && user && !user.is_email_verified && (
+              <div className="co-email-verify-warning" role="alert">
+                <span className="co-email-verify-icon">⚠️</span>
+                <span>
+                  Silahkan melakukan verifikasi email sebelum melanjutkan checkout.{' '}
+                  <Link to="/profile" className="co-email-verify-link">Verifikasi sekarang →</Link>
+                </span>
+              </div>
+            )}
           </aside>
         </div>
       </div>

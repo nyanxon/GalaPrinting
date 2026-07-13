@@ -8,16 +8,23 @@ import { randomUUID } from 'crypto';
 import { query, pool } from '../db/connection.js';
 import { StorageService } from '../utils/storage.js';
 import { incrementUsage, recordUsageLog } from './promo.service.js';
-import { sendOrderNotification, sendNewOrderAdminAlert } from './email.service.js';
+import {
+  sendOrderNotification,
+  sendNewOrderAdminAlert,
+  sendOrderReceivedEmail,
+  sendMockupAcceptedEmail,
+  sendInvoiceEmail,
+} from './email.service.js';
 import { getPreferences } from './notifications.service.js';
 import { assertNotLocked, recordApproval, APPROVAL_STAGE_FOR_STATUS } from './orderApprovals.service.js';
+import { generateInvoicePdf } from '../utils/invoicePdf.js';
 
 // ── Status transition rules ───────────────────────────────────────────────────
 
 const TRANSITIONS = {
   cashier:     {
     'Waiting for Payment': ['Payment Accepted', 'Cancelled'],
-    'Payment Accepted':    ['Cancelled'],
+    'Payment Accepted':    [], // Setelah Payment Accepted, cashier tidak bisa membatalkan
   },
   cs:          {
     // Standard flow
@@ -66,9 +73,10 @@ export function getAllowedNextStatuses(currentStatus, role) {
 /**
  * Maps an order status string to the corresponding notification preference key.
  * Only statuses that trigger customer emails are listed here.
+ * NOTE: 'Payment Accepted' is handled separately via invoice email (with PDF attachment).
  */
 const STATUS_TO_PREF_KEY = {
-  'Payment Accepted': 'payment_accepted',
+  'Design Accepted':  'mockup_accepted',
   'In Delivery':      'order_shipped',
   'Finished':         'order_finished',
   'Cancelled':        'order_cancelled',
@@ -102,7 +110,17 @@ async function sendEmailIfEnabled(updatedOrder, newStatus, customerId) {
       customer_name: updatedOrder.customer_name || userRows[0].name,
     };
 
-    // Fire-and-forget — sendOrderNotification already handles its own errors
+    if (newStatus === 'Design Accepted') {
+      // Use dedicated mockup-accepted email
+      sendMockupAcceptedEmail({
+        customerEmail: orderWithEmail.customer_email,
+        customerName:  orderWithEmail.customer_name,
+        orderNumber:   orderWithEmail.order_number,
+      });
+      return;
+    }
+
+    // All other statuses use the generic order notification email
     sendOrderNotification(orderWithEmail, newStatus);
   } catch (err) {
     console.error('[orders] sendEmailIfEnabled error:', err.message);
@@ -334,6 +352,27 @@ export async function createOrder({ customer, items, subtotal, source = 'online'
     console.error('[orders] Auto-create invoice failed:', err.message);
   });
 
+  // Send "Pesanan Diterima" email to customer if preference is enabled
+  if (createdOrder.customer_id) {
+    (async () => {
+      try {
+        const [userRows] = await query('SELECT email, name FROM users WHERE id = ?', [createdOrder.customer_id]);
+        if (!userRows.length) return;
+        const prefs = await getPreferences(createdOrder.customer_id);
+        if (!prefs.order_received) return;
+        await sendOrderReceivedEmail({
+          customerEmail: userRows[0].email,
+          customerName:  createdOrder.customer_name || userRows[0].name,
+          orderNumber:   createdOrder.order_number,
+          subtotal:      createdOrder.subtotal,
+          items:         createdOrder.items || [],
+        });
+      } catch (err) {
+        console.error('[orders] order_received email failed:', err.message);
+      }
+    })();
+  }
+
   return createdOrder;
 }
 
@@ -540,6 +579,59 @@ export async function updateOrderStatus(id, newStatus, actorId, actorRole, cance
   }
 
   const updatedOrder = await getOrderById(id);
+
+  // ── Payment Accepted: auto-create invoice (if not exists), mark paid, send invoice email ──
+  if (newStatus === 'Payment Accepted' && order.customer_id) {
+    (async () => {
+      try {
+        // 1. Ensure invoice exists (may have been auto-created on order creation)
+        let [[inv]] = await query('SELECT id FROM invoices WHERE order_id = ?', [id]);
+        if (!inv) {
+          await autoCreateInvoice(updatedOrder);
+          [[inv]] = await query('SELECT id FROM invoices WHERE order_id = ?', [id]);
+        }
+        if (!inv) return;
+
+        const invoiceId = inv.id;
+
+        // 2. Mark invoice as paid with current timestamp (only if not already paid)
+        const [[invRow]] = await query('SELECT payment_status, locked FROM invoices WHERE id = ?', [invoiceId]);
+        if (invRow && !invRow.locked) {
+          await query(
+            `UPDATE invoices
+             SET payment_status = 'paid', locked = 1, paid_at = NOW()
+             WHERE id = ?`,
+            [invoiceId]
+          );
+        }
+
+        // 3. Fetch full invoice with items + customer email for the PDF email
+        const [invRows] = await query(
+          `SELECT i.*,
+                  o.order_number, o.customer_name, o.customer_phone, o.customer_address,
+                  u.email AS customer_email, creator.name AS creator_name
+           FROM invoices i
+           LEFT JOIN orders o ON i.order_id = o.id
+           LEFT JOIN users u ON i.customer_id = u.id
+           LEFT JOIN users creator ON i.created_by = creator.id
+           WHERE i.id = ?`,
+          [invoiceId]
+        );
+        if (!invRows.length) return;
+        const [itemRows] = await query('SELECT * FROM order_items WHERE order_id = ?', [id]);
+        const fullInvoice = { ...invRows[0], items: itemRows };
+
+        // 4. Check payment_accepted preference then send invoice email with PDF
+        const prefs = await getPreferences(order.customer_id);
+        if (!prefs.payment_accepted) return;
+
+        const { pdfBuffer } = await generateInvoicePdf(fullInvoice);
+        await sendInvoiceEmail({ invoice: fullInvoice, pdfBuffer });
+      } catch (err) {
+        console.error('[orders] Payment Accepted post-processing failed:', err.message);
+      }
+    })();
+  }
 
   // Fire-and-forget email notification — only for logged-in customers
   if (order.customer_id) {

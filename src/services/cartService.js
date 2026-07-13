@@ -75,6 +75,7 @@ export async function getCart(_userId) {
       const items = raw.map((item) => ({
         ...item,
         productId: item.productId ?? item.product_id ?? null,
+        image:     item.image     ?? item.image_path  ?? null,
       }));
       return { items };
     } catch {

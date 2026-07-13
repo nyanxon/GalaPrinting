@@ -1058,3 +1058,39 @@
 .co-addr-empty-link:hover {
   text-decoration: none;
 }
+
+/* ══════════════════════════════════════════════════════════
+   EMAIL VERIFICATION WARNING (below summary total)
+   ══════════════════════════════════════════════════════════ */
+
+.co-email-verify-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-top: 14px;
+  font-size: 13px;
+  color: #b91c1c;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.co-email-verify-icon {
+  flex-shrink: 0;
+  font-size: 15px;
+  margin-top: 1px;
+}
+
+.co-email-verify-link {
+  color: #991b1b;
+  font-weight: 700;
+  text-decoration: underline;
+  white-space: nowrap;
+}
+
+.co-email-verify-link:hover {
+  text-decoration: none;
+}
