@@ -12,7 +12,7 @@
  * Requirements: 11.1, 13.4
  */
 
-import { useState, useEffect, useContext, useCallback } from 'react';
+import { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { AuthContext } from '../../../context/AuthContext.jsx';
 import {
   listAllOrders,
@@ -125,6 +125,10 @@ export default function CashierOrdersSection() {
   const [cancelReason, setCancelReason]               = useState('');
   const [cancelReasonErr, setCancelReasonErr]         = useState('');
 
+  // Auto-print: track order IDs that should auto-print invoice when loaded
+  const pendingAutoPrintRef = useRef(new Set());
+  const [thermalAutoPrint, setThermalAutoPrint] = useState(false);
+
   // Fitur 1: fetch ALL orders — tidak ada filter status
   const fetchOrders = useCallback(async () => {
     try {
@@ -178,22 +182,60 @@ export default function CashierOrdersSection() {
     };
   }, [fetchOrders, socketFromHook]);
 
-  // Fitur 2: lazy-load invoice untuk order Payment Accepted
+  // Fitur 2: lazy-load invoice untuk order Payment Accepted (with retry for 404)
   useEffect(() => {
     orders.forEach((order) => {
       if (order.status !== 'Payment Accepted') return;
       // Skip jika sudah punya data (termasuk null = tidak ada invoice, atau 'loading')
       if (invoiceMap[order.id] !== undefined) return;
       setInvoiceMap((prev) => ({ ...prev, [order.id]: 'loading' }));
-      getInvoiceByOrderId(order.id)
-        .then((inv) => setInvoiceMap((prev) => ({ ...prev, [order.id]: inv ?? null })))
-        .catch((err) => {
+
+      async function fetchWithRetry(attempt = 0) {
+        try {
+          const inv = await getInvoiceByOrderId(order.id);
+          if (inv) {
+            setInvoiceMap((prev) => ({ ...prev, [order.id]: inv }));
+          } else if (attempt < 1) {
+            // Invoice belum ada, retry sekali lagi setelah 1 detik
+            setTimeout(() => fetchWithRetry(attempt + 1), 1000);
+          } else {
+            setInvoiceMap((prev) => ({ ...prev, [order.id]: null }));
+          }
+        } catch (err) {
           console.error('[CashierOrders] Gagal memuat invoice:', err?.response?.data?.message || err.message);
           setInvoiceMap((prev) => ({ ...prev, [order.id]: 'error' }));
-        });
+        }
+      }
+      fetchWithRetry();
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orders]);
+
+  // Auto-print: when invoice loads for a pending order, trigger A4 PDF + thermal receipt
+  useEffect(() => {
+    for (const orderId of pendingAutoPrintRef.current) {
+      const inv = invoiceMap[orderId];
+      if (inv && inv !== 'loading' && inv !== 'error' && inv !== null) {
+        pendingAutoPrintRef.current.delete(orderId);
+
+        // Auto-open A4 PDF in new tab
+        if (inv.id) {
+          openInvoicePdf(inv.id).catch(() => {
+            showToast('Gagal membuka PDF invoice.', 'error');
+          });
+        }
+
+        // Auto-print thermal receipt
+        setThermalInvoice(inv);
+        setThermalAutoPrint(true);
+        break;
+      }
+      if (inv === null || inv === 'error') {
+        pendingAutoPrintRef.current.delete(orderId);
+        showToast('Invoice gagal dimuat, silakan coba print manual.', 'error');
+      }
+    }
+  }, [invoiceMap]);
 
   async function handleAdvance(orderId, nextStatus) {
     // Reset invoiceMap agar lazy-load bisa re-fetch
@@ -203,6 +245,8 @@ export default function CashierOrdersSection() {
         delete next[orderId];
         return next;
       });
+      // Track for auto-print once invoice loads
+      pendingAutoPrintRef.current.add(orderId);
     }
 
     const res = await updateOrderStatus(orderId, nextStatus, actorRole);
@@ -522,7 +566,8 @@ export default function CashierOrdersSection() {
       {thermalInvoice && (
         <ThermalReceiptModal
           invoice={thermalInvoice}
-          onClose={() => setThermalInvoice(null)}
+          onClose={() => { setThermalInvoice(null); setThermalAutoPrint(false); }}
+          autoPrint={thermalAutoPrint}
         />
       )}
 

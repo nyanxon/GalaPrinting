@@ -9,7 +9,7 @@
  *   onClose: fn
  */
 
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { formatCurrency } from '../../core/helpers.js';
 
 const THERMAL_WIDTH_PX = 302; // ≈ 80mm at 96dpi
@@ -61,6 +61,11 @@ function ThermalReceiptContent({ invoice }) {
         <div><strong>Tanggal     :</strong> {formatDate(invoice.created_at)}</div>
         {invoice.paid_at && (
           <div><strong>Dibayar     :</strong> {formatDate(invoice.paid_at)}</div>
+        )}
+        {invoice.payment_status === 'paid' && (
+          <div style={{ fontWeight: 700, color: '#166534', marginTop: '2px' }}>
+            <strong>Status      :</strong> ✅ LUNAS
+          </div>
         )}
       </div>
 
@@ -138,8 +143,19 @@ function ThermalReceiptContent({ invoice }) {
   );
 }
 
-export default function ThermalReceiptModal({ invoice, onClose }) {
+export default function ThermalReceiptModal({ invoice, onClose, autoPrint }) {
   const printRef = useRef(null);
+
+  // Auto-print on mount when autoPrint prop is true
+  useEffect(() => {
+    if (autoPrint) {
+      const timer = setTimeout(() => {
+        handlePrint();
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handlePrint() {
     // Buat window print khusus dengan hanya konten resi termal

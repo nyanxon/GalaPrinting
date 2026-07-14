@@ -4,7 +4,7 @@
  *          dan memblokir update status untuk tahap yang sudah di-approve.
  */
 
-import { useState, useEffect, useContext, useCallback } from 'react';
+import { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { AuthContext } from '../../../context/AuthContext.jsx';
 import {
   listOrdersPaginated,
@@ -19,6 +19,8 @@ import { formatCurrency } from '../../../../core/helpers.js';
 import OrderDetailModal from '../../../shared/OrderDetailModal.jsx';
 import { showToast } from '../../../../core/toastEmitter.js';
 import { useSocket } from '../../../context/SocketContext.jsx';
+import { getInvoiceByOrderId, openInvoicePdf } from '../../../../services/invoiceService.js';
+import ThermalReceiptModal from '../../../shared/ThermalReceiptModal.jsx';
 
 const PAGE_SIZE = 10;
 
@@ -98,6 +100,12 @@ export default function OrdersSection() {
   const [cancelReason, setCancelReason]             = useState('');
   const [cancelReasonErr, setCancelReasonErr]       = useState('');
 
+  // Invoice + auto-print states
+  const [invoiceMap, setInvoiceMap]                 = useState({});
+  const [thermalInvoice, setThermalInvoice]         = useState(null);
+  const [thermalAutoPrint, setThermalAutoPrint]     = useState(false);
+  const pendingAutoPrintRef = useRef(new Set());
+
   const fetchOrders = useCallback(async () => {
     try {
       const data = await listOrdersPaginated({ page: currentPage, limit: PAGE_SIZE, status: filterStatus });
@@ -154,6 +162,54 @@ export default function OrdersSection() {
     };
   }, [socket, fetchOrders]);
 
+  // Lazy-load invoice for "Payment Accepted" orders (with retry for 404)
+  useEffect(() => {
+    result.items.forEach((order) => {
+      if (order.status !== 'Payment Accepted') return;
+      if (invoiceMap[order.id] !== undefined) return;
+      setInvoiceMap((prev) => ({ ...prev, [order.id]: 'loading' }));
+
+      async function fetchWithRetry(attempt = 0) {
+        try {
+          const inv = await getInvoiceByOrderId(order.id);
+          if (inv) {
+            setInvoiceMap((prev) => ({ ...prev, [order.id]: inv }));
+          } else if (attempt < 1) {
+            setTimeout(() => fetchWithRetry(attempt + 1), 1000);
+          } else {
+            setInvoiceMap((prev) => ({ ...prev, [order.id]: null }));
+          }
+        } catch {
+          setInvoiceMap((prev) => ({ ...prev, [order.id]: null }));
+        }
+      }
+      fetchWithRetry();
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result.items]);
+
+  // Auto-print: when invoice loads for a pending order, trigger A4 PDF + thermal receipt
+  useEffect(() => {
+    for (const orderId of pendingAutoPrintRef.current) {
+      const inv = invoiceMap[orderId];
+      if (inv && inv !== 'loading' && inv !== 'error' && inv !== null) {
+        pendingAutoPrintRef.current.delete(orderId);
+        if (inv.id) {
+          openInvoicePdf(inv.id).catch(() => {
+            showToast('Gagal membuka PDF invoice.', 'error');
+          });
+        }
+        setThermalInvoice(inv);
+        setThermalAutoPrint(true);
+        break;
+      }
+      if (inv === null || inv === 'error') {
+        pendingAutoPrintRef.current.delete(orderId);
+        showToast('Invoice gagal dimuat, silakan coba print manual.', 'error');
+      }
+    }
+  }, [invoiceMap]);
+
   async function handleStatusChange(orderId, newStatus) {
     if (newStatus === 'Cancelled') {
       setCancelTargetOrderId(orderId);
@@ -162,6 +218,17 @@ export default function OrdersSection() {
       setCancelDialogOpen(true);
       return;
     }
+
+    // Track for auto-print when advancing to Payment Accepted
+    if (newStatus === 'Payment Accepted') {
+      setInvoiceMap((prev) => {
+        const next = { ...prev };
+        delete next[orderId];
+        return next;
+      });
+      pendingAutoPrintRef.current.add(orderId);
+    }
+
     const res = await updateOrderStatus(orderId, newStatus, actorRole);
     if (res.ok) {
       showToast(`Status → "${newStatus}".`, 'success');
@@ -398,6 +465,33 @@ export default function OrdersSection() {
                         >
                           🔍 Detail
                         </button>
+
+                        {/* Invoice buttons untuk Payment Accepted */}
+                        {order.status === 'Payment Accepted' && invoiceMap[order.id] && invoiceMap[order.id] !== 'loading' && invoiceMap[order.id] !== null && (
+                          <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <button
+                              className="adm-btn adm-btn--secondary"
+                              type="button"
+                              style={{ fontSize: '11px', padding: '4px 8px' }}
+                              onClick={async () => {
+                                try { await openInvoicePdf(invoiceMap[order.id].id); }
+                                catch { showToast('Gagal membuka PDF invoice.', 'error'); }
+                              }}
+                              title={`Buka PDF invoice ${invoiceMap[order.id].invoice_number}`}
+                            >
+                              🧾 {invoiceMap[order.id].invoice_number}
+                            </button>
+                            <button
+                              type="button"
+                              className="adm-btn adm-btn--thermal"
+                              style={{ fontSize: '11px', padding: '4px 8px' }}
+                              onClick={() => { setThermalInvoice(invoiceMap[order.id]); setThermalAutoPrint(false); }}
+                              title="Print resi termal (80mm)"
+                            >
+                              🖨️ Print Resi
+                            </button>
+                          </div>
+                        )}
                       </div>
                       <div className="adm-date" style={{ marginTop: '4px' }}>
                         {new Date(order.createdAt).toLocaleDateString('id-ID')}
@@ -429,6 +523,15 @@ export default function OrdersSection() {
           fetchOrders().then((data) => { if (data) setResult(data); });
         }}
       />
+
+      {/* Thermal Receipt Modal */}
+      {thermalInvoice && (
+        <ThermalReceiptModal
+          invoice={thermalInvoice}
+          onClose={() => { setThermalInvoice(null); setThermalAutoPrint(false); }}
+          autoPrint={thermalAutoPrint}
+        />
+      )}
 
       {/* ── Cancellation Reason Dialog ── */}
       {cancelDialogOpen && (
