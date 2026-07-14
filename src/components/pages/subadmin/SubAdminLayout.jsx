@@ -84,10 +84,9 @@ export default function SubAdminLayout({ navItems, sections, title }) {
             <img src={logoImg} alt="Gala Printing" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
           </div>
 
-          <div className="subadmin-role-badge">{roleInfo.label}</div>
-          {roleDesc && <div className="subadmin-role-desc">{roleDesc}</div>}
+          <div className="subadmin-role-badge" style={{ marginBottom: '8px' }}>{roleInfo.label}</div>
 
-          <nav className="staff-nav" style={{ marginTop: '24px' }}>
+          <nav className="staff-nav" style={{ marginTop: '8px' }}>
             {(navItems ?? []).map((item) => (
               <button
                 key={item.id}
@@ -121,6 +120,7 @@ export default function SubAdminLayout({ navItems, sections, title }) {
               <StaffAvatarButton />
               {/* Fitur 4: toggle mute/unmute sound notifikasi */}
               <button
+                className="staff-sound-btn"
                 type="button"
                 onClick={() => { toggleMute(); unlockAudio(); }}
                 title={muted ? 'Aktifkan suara notifikasi' : 'Matikan suara notifikasi'}

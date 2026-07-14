@@ -27,7 +27,7 @@ import { formatCurrency } from '../../../../core/helpers.js';
 import OrderDetailModal from '../../../shared/OrderDetailModal.jsx';
 import { showToast } from '../../../../core/toastEmitter.js';
 import { resolveApiUrl } from '../../../../core/httpClient.js';
-import { getInvoiceByOrderId, openInvoicePdf } from '../../../../services/invoiceService.js';
+import { getInvoiceByOrderId, openInvoicePdf, createInvoice } from '../../../../services/invoiceService.js';
 import ThermalReceiptModal from '../../../shared/ThermalReceiptModal.jsx';
 
 // ── Fitur 1: state order dari perspektif Cashier ──────────────────────────────
@@ -183,13 +183,22 @@ export default function CashierOrdersSection() {
       if (invoiceMap[order.id] !== undefined) return;
       setInvoiceMap((prev) => ({ ...prev, [order.id]: 'loading' }));
       getInvoiceByOrderId(order.id)
-        .then((inv) => setInvoiceMap((prev) => ({ ...prev, [order.id]: inv })))
+        .then((inv) => setInvoiceMap((prev) => ({ ...prev, [order.id]: inv ?? null })))
         .catch(() => setInvoiceMap((prev) => ({ ...prev, [order.id]: null })));
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orders]);
 
   async function handleAdvance(orderId, nextStatus) {
+    // Jika akan advance ke Payment Accepted, reset invoiceMap agar bisa di-fetch ulang
+    if (nextStatus === 'Payment Accepted') {
+      setInvoiceMap((prev) => {
+        const next = { ...prev };
+        delete next[orderId];
+        return next;
+      });
+    }
+
     const res = await updateOrderStatus(orderId, nextStatus, actorRole);
     if (res.ok) {
       showToast(`Status → "${nextStatus}".`, 'success');
@@ -201,8 +210,8 @@ export default function CashierOrdersSection() {
 
     // Setelah Payment Accepted: auto-fetch invoice, buka PDF, tampilkan thermal
     if (nextStatus === 'Payment Accepted') {
-      // Tunggu backend membuat invoice (fire-and-forget di backend ~async)
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Tunggu backend membuat invoice — naikkan timeout agar lebih andal di production
+      await new Promise((resolve) => setTimeout(resolve, 2500));
       try {
         const inv = await getInvoiceByOrderId(orderId);
         if (inv) {
@@ -212,6 +221,15 @@ export default function CashierOrdersSection() {
           try { await openInvoicePdf(inv.id); } catch { /* silent */ }
           // Tampilkan modal resi termal
           setThermalInvoice(inv);
+        } else {
+          // Invoice belum siap setelah 2.5 detik — coba sekali lagi setelah 2 detik
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          const invRetry = await getInvoiceByOrderId(orderId);
+          if (invRetry) {
+            setInvoiceMap((prev) => ({ ...prev, [orderId]: invRetry }));
+            try { await openInvoicePdf(invRetry.id); } catch { /* silent */ }
+            setThermalInvoice(invRetry);
+          }
         }
       } catch {
         // Invoice mungkin belum siap — cashier bisa buka manual dari tabel
@@ -265,6 +283,30 @@ export default function CashierOrdersSection() {
     setCancelTargetOrderId(null);
     setCancelReason('');
     setCancelReasonErr('');
+  }
+
+  // Buat invoice jika belum ada (untuk order lama), lalu buka PDF + tampilkan thermal
+  async function handleEnsureInvoice(orderId) {
+    try {
+      // Coba buat invoice
+      const inv = await createInvoice({ order_id: orderId });
+      setInvoiceMap((prev) => ({ ...prev, [orderId]: inv }));
+      showToast(`Invoice ${inv.invoice_number} berhasil dibuat.`, 'success');
+      // Buka PDF otomatis
+      try { await openInvoicePdf(inv.id); } catch { /* silent */ }
+      // Tampilkan thermal
+      setThermalInvoice(inv);
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Gagal membuat invoice.';
+      showToast(msg, 'error');
+      // Coba fetch ulang — mungkin sudah ada
+      try {
+        const existing = await getInvoiceByOrderId(orderId);
+        if (existing) {
+          setInvoiceMap((prev) => ({ ...prev, [orderId]: existing }));
+        }
+      } catch { /* ignore */ }
+    }
   }
 
   // ── Filter display ────────────────────────────────────────────────────────
@@ -472,7 +514,21 @@ export default function CashierOrdersSection() {
                                   🖨️ Print Resi
                                 </button>
                               </div>
-                            ) : null /* invoice belum tersedia, tidak tampilkan apa-apa */}
+                            ) : (
+                              /* Invoice belum ada — tampilkan tombol buat invoice (untuk order lama) */
+                              <button
+                                className="adm-btn"
+                                type="button"
+                                style={{
+                                  fontSize: '11px', padding: '4px 8px',
+                                  background: '#f59e0b', color: '#fff', border: 'none',
+                                }}
+                                onClick={() => handleEnsureInvoice(order.id)}
+                                title="Buat invoice untuk order ini"
+                              >
+                                🧾 Buat Invoice
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>

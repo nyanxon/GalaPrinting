@@ -14,21 +14,24 @@ import OfflineOrderSection from './sections/OfflineOrderSection.jsx';
 import DailyRevenueSection from './sections/DailyRevenueSection.jsx';
 import ChatsSection from '../admin/sections/ChatsSection.jsx';
 import DMSection from '../admin/sections/DMSection.jsx';
+import InvoiceSection from '../admin/sections/InvoiceSection.jsx';
 
 const NAV_ITEMS = [
-  { id: 'orders',  label: '📋 Pesanan' },
-  { id: 'offline', label: '🏪 Order Offline' },
-  { id: 'recap',   label: '📊 Rekap Harian' },
-  { id: 'chat',    label: '💬 Chat Customer' },
-  { id: 'dm',      label: '📨 Pesan Staff' },
+  { id: 'orders',   label: '📋 Pesanan' },
+  { id: 'offline',  label: '🏪 Order Offline' },
+  { id: 'invoices', label: '🧾 Invoice' },
+  { id: 'recap',    label: '📊 Rekap Harian' },
+  { id: 'chat',     label: '💬 Chat Customer' },
+  { id: 'dm',       label: '📨 Pesan Staff' },
 ];
 
 const SECTIONS = {
-  orders:  <CashierOrdersSection />,
-  offline: <OfflineOrderSection />,
-  recap:   <DailyRevenueSection />,
-  chat:    <ChatsSection />,
-  dm:      <DMSection />,
+  orders:   <CashierOrdersSection />,
+  offline:  <OfflineOrderSection />,
+  invoices: <InvoiceSection />,
+  recap:    <DailyRevenueSection />,
+  chat:     <ChatsSection />,
+  dm:       <DMSection />,
 };
 
 export default function CashierDashboardPage() {

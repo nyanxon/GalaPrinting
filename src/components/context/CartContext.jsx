@@ -185,7 +185,8 @@ export function CartProvider({ children }) {
 
           setItems(finalItems);
         } else {
-          // Rollback on failure
+          // Rollback on failure — log untuk debugging
+          console.warn('[CartContext] addItem failed:', result);
           setItems((prev) => prev.filter((i) => i.id !== tempId));
         }
       }
