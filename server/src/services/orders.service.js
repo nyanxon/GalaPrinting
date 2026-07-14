@@ -580,21 +580,20 @@ export async function updateOrderStatus(id, newStatus, actorId, actorRole, cance
 
   const updatedOrder = await getOrderById(id);
 
-  // ── Payment Accepted: auto-create invoice (if not exists), mark paid, send invoice email ──
-  if (newStatus === 'Payment Accepted' && order.customer_id) {
-    (async () => {
-      try {
-        // 1. Ensure invoice exists (may have been auto-created on order creation)
-        let [[inv]] = await query('SELECT id FROM invoices WHERE order_id = ?', [id]);
-        if (!inv) {
-          await autoCreateInvoice(updatedOrder);
-          [[inv]] = await query('SELECT id FROM invoices WHERE order_id = ?', [id]);
-        }
-        if (!inv) return;
+  // ── Payment Accepted: auto-create invoice synchronously, mark paid, send invoice email ──
+  if (newStatus === 'Payment Accepted') {
+    try {
+      // 1. Ensure invoice exists (may have been auto-created on order creation)
+      let [[inv]] = await query('SELECT id FROM invoices WHERE order_id = ?', [id]);
+      if (!inv) {
+        await autoCreateInvoice(updatedOrder);
+        [[inv]] = await query('SELECT id FROM invoices WHERE order_id = ?', [id]);
+      }
 
+      if (inv) {
         const invoiceId = inv.id;
 
-        // 2. Mark invoice as paid with current timestamp (only if not already paid)
+        // 2. Mark invoice as paid with current timestamp (the exact time cashier accepted)
         const [[invRow]] = await query('SELECT payment_status, locked FROM invoices WHERE id = ?', [invoiceId]);
         if (invRow && !invRow.locked) {
           await query(
@@ -605,32 +604,40 @@ export async function updateOrderStatus(id, newStatus, actorId, actorRole, cance
           );
         }
 
-        // 3. Fetch full invoice with items + customer email for the PDF email
-        const [invRows] = await query(
-          `SELECT i.*,
-                  o.order_number, o.customer_name, o.customer_phone, o.customer_address,
-                  u.email AS customer_email, creator.name AS creator_name
-           FROM invoices i
-           LEFT JOIN orders o ON i.order_id = o.id
-           LEFT JOIN users u ON i.customer_id = u.id
-           LEFT JOIN users creator ON i.created_by = creator.id
-           WHERE i.id = ?`,
-          [invoiceId]
-        );
-        if (!invRows.length) return;
-        const [itemRows] = await query('SELECT * FROM order_items WHERE order_id = ?', [id]);
-        const fullInvoice = { ...invRows[0], items: itemRows };
+        // 3. Send invoice email fire-and-forget (email tidak boleh blokir response)
+        if (order.customer_id) {
+          (async () => {
+            try {
+              const [invRows] = await query(
+                `SELECT i.*,
+                        o.order_number, o.customer_name, o.customer_phone, o.customer_address,
+                        u.email AS customer_email, creator.name AS creator_name
+                 FROM invoices i
+                 LEFT JOIN orders o ON i.order_id = o.id
+                 LEFT JOIN users u ON i.customer_id = u.id
+                 LEFT JOIN users creator ON i.created_by = creator.id
+                 WHERE i.id = ?`,
+                [invoiceId]
+              );
+              if (!invRows.length) return;
+              const [itemRows] = await query('SELECT * FROM order_items WHERE order_id = ?', [id]);
+              const fullInvoice = { ...invRows[0], items: itemRows };
 
-        // 4. Check payment_accepted preference then send invoice email with PDF
-        const prefs = await getPreferences(order.customer_id);
-        if (!prefs.payment_accepted) return;
+              const prefs = await getPreferences(order.customer_id);
+              if (!prefs.payment_accepted) return;
 
-        const { pdfBuffer } = await generateInvoicePdf(fullInvoice);
-        await sendInvoiceEmail({ invoice: fullInvoice, pdfBuffer });
-      } catch (err) {
-        console.error('[orders] Payment Accepted post-processing failed:', err.message);
+              const { pdfBuffer } = await generateInvoicePdf(fullInvoice);
+              await sendInvoiceEmail({ invoice: fullInvoice, pdfBuffer });
+            } catch (err) {
+              console.error('[orders] Invoice email failed:', err.message);
+            }
+          })();
+        }
       }
-    })();
+    } catch (err) {
+      // Invoice creation failure must NOT block the status update response
+      console.error('[orders] Payment Accepted post-processing failed:', err.message);
+    }
   }
 
   // Fire-and-forget email notification — only for logged-in customers

@@ -376,7 +376,7 @@ function OrderDetailModal({ isOpen, onClose, order, actorRole, onOrderUpdated })
                     <div className="odm-history-content">
                       <span className="odm-history-status">
                         <strong>{ap.stage}</strong>
-                        {' '}&mdash; di-ACC oleh{' '}
+                        {' '}&mdash; disetujui oleh{' '}
                         <strong>{ap.approved_name || ap.approver_name_live || ap.approved_role}</strong>
                         {' '}({ap.approved_role})
                       </span>
