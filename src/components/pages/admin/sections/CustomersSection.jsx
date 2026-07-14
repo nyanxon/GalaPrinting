@@ -9,9 +9,10 @@
  *  - admin  : hanya bisa melihat daftar, TIDAK bisa mengubah role atau menghapus
  */
 
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useCallback } from 'react';
 import { listCustomers, updateUserRole, deleteUser } from '../../../../services/authService.js';
 import { AuthContext } from '../../../context/AuthContext.jsx';
+import { getSocket } from '../../../../core/socket.js';
 
 const PAGE_SIZE = 10;
 
@@ -236,17 +237,34 @@ export default function CustomersSection() {
   const canChangeRole = isOwner;
   const canDelete     = isOwner;
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const customers = await listCustomers();
-        setAllCustomers(Array.isArray(customers) ? customers : []);
-      } catch (err) {
-        console.error('Failed to load customers:', err);
-      }
+  const loadCustomers = useCallback(async () => {
+    try {
+      const customers = await listCustomers();
+      setAllCustomers(Array.isArray(customers) ? customers : []);
+    } catch (err) {
+      console.error('Failed to load customers:', err);
     }
-    load();
   }, []);
+
+  useEffect(() => {
+    loadCustomers();
+  }, [loadCustomers]);
+
+  // Real-time: customer baru bisa muncul setelah order pertama → reload saat order:new
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    function handleOrderNew() {
+      loadCustomers();
+    }
+
+    socket.on('order:new', handleOrderNew);
+
+    return () => {
+      socket.off('order:new', handleOrderNew);
+    };
+  }, [loadCustomers]);
 
   // Auto-dismiss toast setelah 3 detik
   useEffect(() => {

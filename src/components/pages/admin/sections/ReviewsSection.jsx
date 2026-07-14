@@ -5,10 +5,11 @@
  * Requirements: 9.2, 16.4
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { listReviews, deleteReview } from '../../../../services/reviewService.js';
 import { showToast } from '../../../../core/toastEmitter.js';
 import { resolveApiUrl } from '../../../../core/httpClient.js';
+import { getSocket } from '../../../../core/socket.js';
 
 const PAGE_SIZE = 10;
 
@@ -69,18 +70,34 @@ export default function ReviewsSection() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
-  async function loadReviews() {
+  const loadReviews = useCallback(async () => {
     try {
       const reviews = await listReviews();
       setAllReviews(Array.isArray(reviews) ? reviews : []);
     } catch (err) {
       console.error('Failed to load reviews:', err);
     }
-  }
+  }, []);
 
   useEffect(() => {
     loadReviews();
-  }, []);
+  }, [loadReviews]);
+
+  // Real-time: review baru bisa muncul setelah order Finished → reload saat status berubah
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    function handleOrderStatusChanged() {
+      loadReviews();
+    }
+
+    socket.on('order:status_changed', handleOrderStatusChanged);
+
+    return () => {
+      socket.off('order:status_changed', handleOrderStatusChanged);
+    };
+  }, [loadReviews]);
 
   const q = searchQuery.toLowerCase();
   const filtered = q

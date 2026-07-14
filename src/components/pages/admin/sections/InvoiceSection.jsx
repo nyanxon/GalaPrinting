@@ -20,6 +20,7 @@ import { api } from '../../../../core/httpClient.js';
 import { showToast } from '../../../../core/toastEmitter.js';
 import { formatCurrency } from '../../../../core/helpers.js';
 import ThermalReceiptModal from '../../../shared/ThermalReceiptModal.jsx';
+import { getSocket } from '../../../../core/socket.js';
 
 const PAGE_SIZE = 20;
 
@@ -434,6 +435,27 @@ export default function InvoiceSection() {
   }, [page, filterStatus]);
 
   useEffect(() => { fetchInvoices(); }, [fetchInvoices]);
+
+  // Real-time: reload invoice list saat ada order baru atau status berubah
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    function handleOrderNew() {
+      fetchInvoices();
+    }
+    function handleOrderStatusChanged() {
+      fetchInvoices();
+    }
+
+    socket.on('order:new', handleOrderNew);
+    socket.on('order:status_changed', handleOrderStatusChanged);
+
+    return () => {
+      socket.off('order:new', handleOrderNew);
+      socket.off('order:status_changed', handleOrderStatusChanged);
+    };
+  }, [fetchInvoices]);
 
   function handleCreated() {
     fetchInvoices();

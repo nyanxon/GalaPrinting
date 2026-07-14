@@ -202,9 +202,16 @@ function CartPage() {
           ) : (
             items.map((item) => {
               const meta = [item.material, item.color, item.size].filter(Boolean).join(' • ');
-              const imgSrc = item.image
-                ? resolveApiUrl(item.image) || placeholderImg
-                : placeholderImg;
+              const imgSrc = (() => {
+                if (!item.image) return placeholderImg;
+                const raw = item.image;
+                // Already absolute URL (http/https)
+                if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+                // Data URL (design preview)
+                if (raw.startsWith('data:')) return raw;
+                // Relative path — resolve via API base
+                return resolveApiUrl(raw) || placeholderImg;
+              })();
 
               return (
                 <div key={item.id} className="cart-item" data-item-id={item.id}>

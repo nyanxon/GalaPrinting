@@ -1,6 +1,12 @@
 .container{
-  width: min(100% - 32px, var(--container));
+  width: min(100% - 48px, var(--container));
   margin-inline: auto;
+}
+
+@media (max-width: 399px) {
+  .container {
+    width: min(100% - 32px, var(--container));
+  }
 }
 
 .stack{ display: grid; gap: 14px; }

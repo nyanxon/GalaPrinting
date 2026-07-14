@@ -5,6 +5,7 @@
  */
 
 import { useState, useContext, useEffect } from 'react';
+import { getSocket } from '../../../core/socket.js';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import { logout } from '../../../services/authService.js';
@@ -70,10 +71,22 @@ function ActivitySidebar({ onGoToOrders, onGoToChats }) {
     window.addEventListener('gala:orders-updated', handleOrdersUpdate);
     window.addEventListener('gala:chat-updated', handleChatUpdate);
     window.addEventListener('storage', handleStorage);
+
+    // Socket real-time
+    const socket = getSocket();
+    if (socket) {
+      socket.on('order:new', handleOrdersUpdate);
+      socket.on('order:status_changed', handleOrdersUpdate);
+    }
+
     return () => {
       window.removeEventListener('gala:orders-updated', handleOrdersUpdate);
       window.removeEventListener('gala:chat-updated', handleChatUpdate);
       window.removeEventListener('storage', handleStorage);
+      if (socket) {
+        socket.off('order:new', handleOrdersUpdate);
+        socket.off('order:status_changed', handleOrdersUpdate);
+      }
     };
   }, []);
 

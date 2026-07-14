@@ -146,8 +146,8 @@ function CatalogProductPage() {
   }
 
   function handleAddToCart() {
-    if (!user || user.role !== 'customer') {
-      showToast('Silakan login atau daftar untuk menambahkan produk ke keranjang.', 'error');
+    if (!user) {
+      showToast('Silakan login terlebih dahulu untuk menambahkan produk ke keranjang.', 'error');
       setTimeout(() => navigate('/register'), 1500);
       return;
     }
