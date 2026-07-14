@@ -58,11 +58,18 @@ export function CartProvider({ children }) {
   function mergeDesignData(serverItems) {
     const cache = getDesignCache();
     return serverItems.map((item) => {
+      // Normalize image and productId fields — backend returns image_path from JOIN
+      const normalizedItem = {
+        ...item,
+        productId: item.productId ?? item.product_id ?? null,
+        image:     item.image     ?? item.image_path  ?? null,
+      };
+
       // Use item id as the primary cache key (unique per cart slot).
       // Fall back to "productId|name" for backwards-compat with old cache entries.
-      const itemId = item.id ?? '';
-      const pid = item.productId ?? item.product_id ?? '';
-      const legacyKey = `${pid}|${item.name}`;
+      const itemId = normalizedItem.id ?? '';
+      const pid = normalizedItem.productId ?? '';
+      const legacyKey = `${pid}|${normalizedItem.name}`;
       const cached = cache[itemId] || cache[legacyKey];
       if (cached) {
         // Update cache to use server ID going forward (removes stale temp IDs)
@@ -71,12 +78,12 @@ export function CartProvider({ children }) {
           setDesignCache(cache);
         }
         return {
-          ...item,
+          ...normalizedItem,
           designDataUrl: cached.designDataUrl ?? null,
-          designFileName: cached.designFileName ?? item.designFileName ?? item.design_file_path,
+          designFileName: cached.designFileName ?? normalizedItem.designFileName ?? normalizedItem.design_file_path,
         };
       }
-      return item;
+      return normalizedItem;
     });
   }
 

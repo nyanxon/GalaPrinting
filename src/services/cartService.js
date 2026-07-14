@@ -72,10 +72,26 @@ export async function getCart(_userId) {
       const res = await api.get("/api/cart");
       const raw = res.data?.data ?? [];
       // Normalize snake_case server fields to camelCase
+      const resolveCartImage = (rawPath) => {
+        if (!rawPath) return null;
+        // Already an absolute URL or data URL — use as-is
+        if (rawPath.startsWith('http') || rawPath.startsWith('data:')) return rawPath;
+        // JSON array format: pick the first image
+        if (rawPath.trim().startsWith('[')) {
+          try {
+            const arr = JSON.parse(rawPath);
+            if (Array.isArray(arr) && arr.length > 0) rawPath = arr[0];
+          } catch { /* not a JSON array — use raw string */ }
+        }
+        if (!rawPath) return null;
+        // Relative path — prepend API base
+        const base = import.meta.env.VITE_API_URL || '';
+        return rawPath.startsWith('/') ? `${base}${rawPath}` : `${base}/${rawPath}`;
+      };
       const items = raw.map((item) => ({
         ...item,
         productId: item.productId ?? item.product_id ?? null,
-        image:     item.image     ?? item.image_path  ?? null,
+        image:     resolveCartImage(item.image ?? item.image_path ?? null),
       }));
       return { items };
     } catch {
