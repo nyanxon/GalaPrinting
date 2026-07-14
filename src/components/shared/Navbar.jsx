@@ -65,9 +65,7 @@ function Navbar() {
 
   const role    = user?.role ?? null;
   const isStaff = role !== null && STAFF_ROLES.includes(role);
-  // Admin and owner users can browse the public homepage — show the full profile popup for them
-  // Other staff (cashier, cs, etc.) still get the simple staff nav bar
-  const showAsStaff = isStaff && role !== 'admin' && role !== 'owner';
+  const showAsStaff = false; // Semua role mendapat navbar customer lengkap
   const cartCount = items.length;
   const cartTotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
@@ -216,19 +214,7 @@ function Navbar() {
 
           {/* Nav actions */}
           <div className="nav-actions">
-            {showAsStaff ? (
-              <div className="nav-auth-group">
-                {STAFF_DASHBOARD[role] && (
-                  <Link className="nav-dashboard-link" to={STAFF_DASHBOARD[role].path}>
-                    {STAFF_DASHBOARD[role].label}
-                  </Link>
-                )}
-                <button className="btn ghost nav-auth-btn" type="button" onClick={handleLogout}>
-                  {t('nav.logout')}
-                </button>
-              </div>
-            ) : (
-              <>
+            <>
                 {/* Cart icon */}
                 <div className="nav-cart-wrap" style={{ position: 'relative' }}>
                   <button
@@ -351,6 +337,19 @@ function Navbar() {
                               </Link>
                             </>
                           )}
+                          {isStaff && role !== 'admin' && role !== 'owner' && STAFF_DASHBOARD[role] && (
+                            <>
+                              <div className="profile-popup-divider" />
+                              <Link
+                                className="profile-popup-item profile-popup-admin-link"
+                                to={STAFF_DASHBOARD[role].path}
+                                onClick={closeAllPopups}
+                              >
+                                <span>{STAFF_DASHBOARD[role].label.split(' ')[0]}</span>{' '}
+                                {t('nav.dashboard')}
+                              </Link>
+                            </>
+                          )}
                           <div className="profile-popup-divider" />
                           <button className="profile-popup-item profile-popup-logout" type="button" onClick={handleLogout}>
                             <span>🚪</span> {t('nav.logout')}
@@ -437,7 +436,6 @@ function Navbar() {
                   )}
                 </div>
               </>
-            )}
 
             {/* Mobile menu toggle */}
             <button className="nav-toggle" type="button" aria-label={t('nav.openMenu')} aria-expanded={mobileOpen} onClick={() => setMobileOpen((prev) => !prev)}>
