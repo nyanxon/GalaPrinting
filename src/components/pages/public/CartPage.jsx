@@ -25,15 +25,6 @@ function CartItemDetailModal({ item, onClose }) {
 
   if (!item) return null;
 
-  // ── Resolve product image (already absolute URL from cartService resolveCartImage) ──
-  const imgSrc = (() => {
-    const raw = item.image;
-    if (!raw) return placeholderImg;
-    if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
-    if (raw.startsWith('data:')) return raw;
-    return resolveApiUrl(raw) || placeholderImg;
-  })();
-
   // ── Design file ──
   const designUrl      = item.designDataUrl || null;
   const designFileName = item.designFileName || item.design_file_path || null;
@@ -67,17 +58,6 @@ function CartItemDetailModal({ item, onClose }) {
 
         {/* ── Body ── */}
         <div className="cdm-body">
-
-          {/* Foto Produk */}
-          <div className="cdm-section">
-            <div className="cdm-section-label">🖼 Foto Produk</div>
-            <img
-              className="cdm-image"
-              src={imgSrc}
-              alt={item.name}
-              onError={(e) => { e.currentTarget.src = placeholderImg; }}
-            />
-          </div>
 
           {/* Info Produk */}
           <div className="cdm-specs">

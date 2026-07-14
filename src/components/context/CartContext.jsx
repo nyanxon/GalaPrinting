@@ -146,6 +146,7 @@ export function CartProvider({ children }) {
 
         if (item.designDataUrl || item.designFileName) {
           const cache = getDesignCache();
+          const stableKey = `${item.productId ?? ''}|${item.name ?? ''}`;
           // Store under both the tempId AND the fingerprint for robust matching
           cache[tempId] = {
             designDataUrl: item.designDataUrl ?? null,
@@ -153,6 +154,11 @@ export function CartProvider({ children }) {
             fingerprint,
           };
           cache[fingerprint] = {
+            designDataUrl: item.designDataUrl ?? null,
+            designFileName: item.designFileName ?? null,
+          };
+          // Stable key — survives page reload karena tidak include timestamp
+          cache[stableKey] = {
             designDataUrl: item.designDataUrl ?? null,
             designFileName: item.designFileName ?? null,
           };
@@ -190,6 +196,20 @@ export function CartProvider({ children }) {
             return serverItem;
           });
 
+          // Simpan ulang cache dengan legacyKey (productId|name) agar bisa di-recover saat reload
+          const updatedCache = getDesignCache();
+          finalItems.forEach((serverItem) => {
+            if (serverItem.designDataUrl) {
+              const stableKey = `${serverItem.productId ?? ''}|${serverItem.name ?? ''}`;
+              if (!updatedCache[stableKey]) {
+                updatedCache[stableKey] = {
+                  designDataUrl:  serverItem.designDataUrl,
+                  designFileName: serverItem.designFileName ?? null,
+                };
+              }
+            }
+          });
+          setDesignCache(updatedCache);
           setItems(finalItems);
         } else {
           // Rollback on failure — log untuk debugging
