@@ -114,33 +114,17 @@ function CartItemDetailModal({ item, onClose }) {
           {hasDesign && (
             <div className="cdm-attachment" style={{ marginTop: '12px' }}>
               <div className="cdm-section-label">📎 File Desain</div>
-              {designUrl ? (
-                isDesignImage ? (
-                  <a href={designUrl} download={designFileName || 'desain'} target="_blank" rel="noopener noreferrer">
-                    <img
-                      className="cdm-design-preview"
-                      src={designUrl}
-                      alt="Preview desain"
-                      style={{ marginTop: '8px', maxWidth: '100%', borderRadius: '8px', border: '1px solid #e5e7eb' }}
-                    />
-                    <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
-                      Klik untuk download
-                    </div>
-                  </a>
-                ) : (
-                  <a
-                    className="cdm-design-link"
-                    href={designUrl}
-                    download={designFileName || 'desain'}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '8px', color: 'var(--brand-brown, #785E40)', textDecoration: 'underline', fontSize: '14px' }}
-                  >
-                    ⬇ {designFileName || 'Unduh File Desain'}
-                  </a>
-                )
+              {designUrl && isDesignImage ? (
+                <img
+                  className="cdm-design-preview"
+                  src={designUrl}
+                  alt="Preview desain"
+                  style={{ marginTop: '8px', maxWidth: '100%', borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                />
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', padding: '10px 12px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
                   <span style={{ fontSize: '24px' }}>📄</span>
-                  <span style={{ fontSize: '13px', color: '#374151' }}>{designFileName}</span>
+                  <span style={{ fontSize: '13px', color: '#374151' }}>{designFileName || 'File desain tersimpan'}</span>
                 </div>
               )}
             </div>

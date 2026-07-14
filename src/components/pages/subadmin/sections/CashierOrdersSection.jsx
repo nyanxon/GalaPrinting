@@ -181,11 +181,15 @@ export default function CashierOrdersSection() {
   useEffect(() => {
     orders.forEach((order) => {
       if (order.status !== 'Payment Accepted') return;
+      // Skip jika sudah punya data (termasuk null = tidak ada invoice, atau 'loading')
       if (invoiceMap[order.id] !== undefined) return;
       setInvoiceMap((prev) => ({ ...prev, [order.id]: 'loading' }));
       getInvoiceByOrderId(order.id)
         .then((inv) => setInvoiceMap((prev) => ({ ...prev, [order.id]: inv ?? null })))
-        .catch(() => setInvoiceMap((prev) => ({ ...prev, [order.id]: null })));
+        .catch((err) => {
+          console.error('[CashierOrders] Gagal memuat invoice:', err?.response?.data?.message || err.message);
+          setInvoiceMap((prev) => ({ ...prev, [order.id]: 'error' }));
+        });
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orders]);
@@ -207,21 +211,9 @@ export default function CashierOrdersSection() {
       showToast(res.message || 'Gagal mengubah status.', 'error');
       return;
     }
-    fetchOrders();
 
-    // Invoice sudah dibuat synchronous di backend — langsung fetch
-    if (nextStatus === 'Payment Accepted') {
-      try {
-        const inv = await getInvoiceByOrderId(orderId);
-        if (inv) {
-          setInvoiceMap((prev) => ({ ...prev, [orderId]: inv }));
-          try { await openInvoicePdf(inv.id); } catch { /* silent */ }
-          setThermalInvoice(inv);
-        }
-      } catch {
-        // Lazy-load useEffect akan handle saat orders di-refresh
-      }
-    }
+    // fetchOrders akan trigger lazy-load useEffect yang akan fetch invoice
+    await fetchOrders();
   }
 
   async function handleNoteBlur(orderId) {
@@ -450,7 +442,27 @@ export default function CashierOrdersSection() {
                         {order.status === 'Payment Accepted' && (
                           <div style={{ marginTop: '4px' }}>
                             {invoiceMap[order.id] === 'loading' ? (
-                              <span className="adm-date">Mengecek…</span>
+                              <span className="adm-date" style={{ fontSize: '11px' }}>⏳ Memuat invoice…</span>
+                            ) : invoiceMap[order.id] === 'error' ? (
+                              <div>
+                                <span className="adm-date" style={{ fontSize: '11px', color: '#b91c1c' }}>
+                                  ⚠️ Gagal memuat invoice
+                                </span>
+                                <button
+                                  className="adm-btn"
+                                  type="button"
+                                  style={{ fontSize: '10px', padding: '2px 6px', marginTop: '2px', display: 'block' }}
+                                  onClick={() => {
+                                    setInvoiceMap((prev) => {
+                                      const next = { ...prev };
+                                      delete next[order.id];
+                                      return next;
+                                    });
+                                  }}
+                                >
+                                  🔄 Coba lagi
+                                </button>
+                              </div>
                             ) : invoiceMap[order.id] ? (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                 {/* Satu tombol PDF A4 */}
@@ -478,7 +490,7 @@ export default function CashierOrdersSection() {
                                 </button>
                               </div>
                             ) : (
-                              <span className="adm-date" style={{ fontSize: '11px' }}>Memuat invoice…</span>
+                              <span className="adm-date" style={{ fontSize: '11px' }}>Invoice sedang diproses…</span>
                             )}
                           </div>
                         )}
