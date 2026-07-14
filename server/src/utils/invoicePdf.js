@@ -43,7 +43,7 @@ export async function generateInvoicePdf(invoice) {
   return new Promise((resolve, reject) => {
     try {
       const chunks = [];
-      const doc = new PDFDocument({ size: 'A4', margin: 50 });
+      const doc = new PDFDocument({ size: 'A4', margin: 50, margin_bottom: 10 });
 
       doc.on('data', (chunk) => chunks.push(chunk));
       doc.on('end', () => resolve({ pdfBuffer: Buffer.concat(chunks) }));

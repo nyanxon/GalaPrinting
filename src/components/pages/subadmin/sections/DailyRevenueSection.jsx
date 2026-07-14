@@ -332,6 +332,7 @@ export default function DailyRevenueSection() {
             <thead>
               <tr>
                 <th>No. Order</th>
+                <th>Tanggal Bayar</th>
                 <th>Status</th>
                 <th>Nominal</th>
               </tr>
@@ -339,7 +340,7 @@ export default function DailyRevenueSection() {
             <tbody>
               {websiteTransactions.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="adm-empty">
+                  <td colSpan={4} className="adm-empty">
                     Belum ada data.
                   </td>
                 </tr>
@@ -349,6 +350,7 @@ export default function DailyRevenueSection() {
                     <td>
                       <code>{tx.order_number}</code>
                     </td>
+                    <td>{formatDateDisplay(tx.paid_at)}</td>
                     <td>{tx.status}</td>
                     <td>{formatCurrency(Number(tx.subtotal))}</td>
                   </tr>

@@ -7,7 +7,6 @@
 import { query } from '../db/connection.js';
 import { randomUUID } from 'crypto';
 
-const ACTIVE_STATUSES = ['Finished', 'In Delivery', 'Quality Checking', 'On Progress'];
 const SOURCE_CATEGORIES = ['offline_store', 'shopee', 'tokopedia', 'tiktok_shop'];
 
 /**
@@ -24,16 +23,17 @@ const SOURCE_CATEGORIES = ['offline_store', 'shopee', 'tokopedia', 'tiktok_shop'
  * }>}
  */
 export async function getDailyRecap(date) {
-  // ── 1. Website orders ────────────────────────────────────────────────────
-  const statusPlaceholders = ACTIVE_STATUSES.map(() => '?').join(', ');
-
+  // ── 1. Website orders (based on Payment Accepted date) ─────────────────
   const [websiteRows] = await query(
-    `SELECT id, order_number, customer_id, subtotal, status, created_at
-     FROM orders
-     WHERE DATE(created_at) = ?
-       AND status IN (${statusPlaceholders})
-     ORDER BY created_at ASC`,
-    [date, ...ACTIVE_STATUSES]
+    `SELECT o.id, o.order_number, o.customer_id, o.subtotal, o.status,
+            oh.created_at AS paid_at
+     FROM orders o
+     INNER JOIN order_history oh
+       ON oh.order_id = o.id AND oh.to_status = 'Payment Accepted'
+     WHERE DATE(oh.created_at) = ?
+       AND o.status != 'Cancelled'
+     ORDER BY oh.created_at ASC`,
+    [date]
   );
 
   const website_total = websiteRows.reduce((sum, row) => sum + parseFloat(row.subtotal ?? 0), 0);
