@@ -22,7 +22,7 @@ import {
   getAllowedNextStatuses,
   STATUS_CONFIG,
 } from '../../../../services/orderService.js';
-import { getSocket } from '../../../../core/socket.js';
+import { useSocket } from '../../../context/SocketContext.jsx';
 import { formatCurrency } from '../../../../core/helpers.js';
 import OrderDetailModal from '../../../shared/OrderDetailModal.jsx';
 import { showToast } from '../../../../core/toastEmitter.js';
@@ -105,6 +105,7 @@ function CashierProofCell({ order, onCancel }) {
 export default function CashierOrdersSection() {
   const { user } = useContext(AuthContext);
   const actorRole = user?.role || 'cashier';
+  const socketFromHook = useSocket();
 
   const [orders, setOrders]               = useState([]);
   const [searchQuery, setSearchQuery]     = useState('');
@@ -165,7 +166,7 @@ export default function CashierOrdersSection() {
 
   // Fitur 4: auto-refresh saat socket event order baru / status berubah
   useEffect(() => {
-    const socket = getSocket();
+    const socket = socketFromHook;
     if (!socket) return;
     function onOrderNew()      { fetchOrders(); }
     function onStatusChanged() { fetchOrders(); }
@@ -175,7 +176,7 @@ export default function CashierOrdersSection() {
       socket.off('order:new',            onOrderNew);
       socket.off('order:status_changed', onStatusChanged);
     };
-  }, [fetchOrders]);
+  }, [fetchOrders, socketFromHook]);
 
   // Fitur 2: lazy-load invoice untuk order Payment Accepted
   useEffect(() => {

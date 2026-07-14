@@ -9,7 +9,7 @@ import { AuthContext } from '../../context/AuthContext.jsx';
 import { logout } from '../../../services/authService.js';
 import { listAllOrders } from '../../../services/orderService.js';
 import { listConversations } from '../../../services/chatService.js';
-import { getSocket } from '../../../core/socket.js';
+import { useSocket } from '../../context/SocketContext.jsx';
 import { useAdminSound } from '../../../hooks/useAdminSound.js';
 import OrdersSection from './sections/OrdersSection.jsx';
 import CustomersSection from './sections/CustomersSection.jsx';
@@ -41,6 +41,7 @@ const ADMIN_NAV = [
 ];
 
 function ActivitySidebar({ onGoToOrders, onGoToChats }) {
+  const socket = useSocket();
   const [recentOrders, setRecentOrders]     = useState([]);
   const [unhandledChats, setUnhandledChats] = useState([]);
 
@@ -84,23 +85,24 @@ function ActivitySidebar({ onGoToOrders, onGoToChats }) {
     window.addEventListener('gala:chat-updated', handleChatUpdate);
     window.addEventListener('storage', handleStorage);
 
-    // Socket real-time: refresh saat order baru atau status berubah
-    const socket = getSocket();
-    if (socket) {
-      socket.on('order:new', handleOrdersUpdate);
-      socket.on('order:status_changed', handleOrdersUpdate);
-    }
-
     return () => {
       window.removeEventListener('gala:orders-updated', handleOrdersUpdate);
       window.removeEventListener('gala:chat-updated', handleChatUpdate);
       window.removeEventListener('storage', handleStorage);
-      if (socket) {
-        socket.off('order:new', handleOrdersUpdate);
-        socket.off('order:status_changed', handleOrdersUpdate);
-      }
     };
   }, []);
+
+  // useEffect terpisah untuk socket listener saja
+  useEffect(() => {
+    if (!socket) return;
+    function handleOrdersUpdate() { loadActivity(); }
+    socket.on('order:new', handleOrdersUpdate);
+    socket.on('order:status_changed', handleOrdersUpdate);
+    return () => {
+      socket.off('order:new', handleOrdersUpdate);
+      socket.off('order:status_changed', handleOrdersUpdate);
+    };
+  }, [socket, loadActivity]);
 
   return (
     <aside className="staff-activity" aria-label="Activity">
@@ -173,7 +175,7 @@ export default function AdminDashboardPage() {
   const isDashboard = activeNav === 'dashboard';
 
   // Fitur 5: suara notifikasi
-  const socket = getSocket();
+  const socket = useSocket();
   const { muted, toggleMute, unlockAudio } = useAdminSound(socket);
 
   // Unlock audio on first mount (kalau sudah ada interaksi)

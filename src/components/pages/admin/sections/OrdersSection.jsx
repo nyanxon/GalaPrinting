@@ -18,7 +18,7 @@ import {
 import { formatCurrency } from '../../../../core/helpers.js';
 import OrderDetailModal from '../../../shared/OrderDetailModal.jsx';
 import { showToast } from '../../../../core/toastEmitter.js';
-import { getSocket } from '../../../../core/socket.js';
+import { useSocket } from '../../../context/SocketContext.jsx';
 
 const PAGE_SIZE = 10;
 
@@ -84,6 +84,7 @@ function PaginationBar({ page, totalPages, total, limit, onPageChange }) {
 export default function OrdersSection() {
   const { user } = useContext(AuthContext);
   const actorRole = user?.role || 'admin';
+  const socket = useSocket();
 
   const [currentPage, setCurrentPage] = useState(1);
   const [filterStatus, setFilterStatus] = useState('');
@@ -132,7 +133,6 @@ export default function OrdersSection() {
 
   // Real-time: listen socket order:new & order:status_changed agar tidak perlu refresh manual
   useEffect(() => {
-    const socket = getSocket();
     if (!socket) return;
 
     function handleOrderNew() {
@@ -152,7 +152,7 @@ export default function OrdersSection() {
       socket.off('order:new', handleOrderNew);
       socket.off('order:status_changed', handleOrderStatusChanged);
     };
-  }, [fetchOrders]);
+  }, [socket, fetchOrders]);
 
   async function handleStatusChange(orderId, newStatus) {
     if (newStatus === 'Cancelled') {

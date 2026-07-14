@@ -99,6 +99,8 @@ export function performRefresh() {
       const newToken = res.data.accessToken;
       if (!newToken) throw new Error('No token in refresh response');
       setAccessToken(newToken);
+      // Beritahu SocketProvider untuk reconnect dengan token baru
+      window.dispatchEvent(new CustomEvent('gala:token-refreshed', { detail: { token: newToken } }));
       return newToken;
     })
     .catch((err) => {

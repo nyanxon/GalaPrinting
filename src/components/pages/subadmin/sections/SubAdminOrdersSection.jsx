@@ -24,9 +24,8 @@ import {
   getAllowedNextStatuses,
   STATUS_CONFIG,
 } from '../../../../services/orderService.js';
-import { getSocket } from '../../../../core/socket.js';
-import { formatCurrency } from '../../../../core/helpers.js';
-import OrderDetailModal from '../../../shared/OrderDetailModal.jsx';
+import { useSocket } from '../../../context/SocketContext.jsx';
+import { formatCurrency } from '../../../../core/helpers.js';import OrderDetailModal from '../../../shared/OrderDetailModal.jsx';
 import { showToast } from '../../../../core/toastEmitter.js';
 
 /**
@@ -78,6 +77,7 @@ const STATE_LABEL = {
 export default function SubAdminOrdersSection({ extraColumn = null }) {
   const { user } = useContext(AuthContext);
   const actorRole = user?.role || 'admin';
+  const socketFromHook = useSocket();
 
   const [orders, setOrders] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -131,7 +131,7 @@ export default function SubAdminOrdersSection({ extraColumn = null }) {
 
   // Fitur 4: auto-refresh list saat ada socket event order baru / status berubah
   useEffect(() => {
-    const socket = getSocket();
+    const socket = socketFromHook;
     if (!socket) return;
     function onOrderNew()      { fetchOrders(); }
     function onStatusChanged() { fetchOrders(); }
@@ -141,7 +141,7 @@ export default function SubAdminOrdersSection({ extraColumn = null }) {
       socket.off('order:new',            onOrderNew);
       socket.off('order:status_changed', onStatusChanged);
     };
-  }, [fetchOrders]);
+  }, [fetchOrders, socketFromHook]);
 
   async function handleAdvance(orderId, nextStatus) {
     const res = await updateOrderStatus(orderId, nextStatus, actorRole);

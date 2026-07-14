@@ -24,8 +24,7 @@
 import { readJson, writeJson } from "../core/storage.js";
 import { escapeHtml } from "../core/helpers.js";
 import { USE_BACKEND, api } from "../core/httpClient.js";
-import { io } from "socket.io-client";
-import { registerSocketHandlers } from "./authService.js";
+import { getSocket } from "../core/socket.js";
 
 const CHAT_KEY = "gala.chats";
 
@@ -46,7 +45,7 @@ const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
    ══════════════════════════════════════════════════════════ */
 
 /** @type {import('socket.io-client').Socket | null} */
-let socket = null;
+let _listenedSocket = null;
 
 /**
  * Pending conversation rooms to join once the socket connects.
@@ -57,15 +56,15 @@ const _pendingRoomJoins = new Set();
 
 /**
  * Stable handler for the gala:join-conversation window event.
- * Kept outside connectSocket so it is only ever registered once and can be
- * properly cleaned up by disconnectSocket.
+ * Uses the singleton socket from core/socket.js.
  * @param {CustomEvent} e
  */
 function _handleJoinConversation(e) {
   const { conversationId } = e.detail || {};
   if (!conversationId) return;
-  if (socket?.connected) {
-    socket.emit('join:conversation', { conversationId });
+  const s = getSocket();
+  if (s?.connected) {
+    s.emit('join:conversation', { conversationId });
   } else {
     // Socket not yet connected — queue the join for when it connects
     _pendingRoomJoins.add(conversationId);
@@ -73,27 +72,16 @@ function _handleJoinConversation(e) {
 }
 
 /**
- * Connect to the Socket.io server using the provided access token.
- * Registers event listeners that dispatch DOM CustomEvents so any React
- * component can subscribe without prop-drilling.
+ * Register chat-related Socket.io event listeners on the provided socket.
+ * Called by SocketContext after the singleton socket is created.
  *
- * Called by authService after a successful login/register.
- *
- * @param {string} accessToken
+ * @param {import('socket.io-client').Socket} socket
  */
-export function connectSocket(accessToken) {
-  // Avoid duplicate connections
-  if (socket && socket.connected) return;
-
-  const serverUrl = import.meta.env.VITE_API_URL || undefined;
-
-  socket = io(serverUrl, {
-    auth: { token: accessToken },
-    transports: ["websocket", "polling"],
-  });
+export function setupChatListeners(socket) {
+  if (!socket || socket === _listenedSocket) return;
+  _listenedSocket = socket;
 
   socket.on("connect", () => {
-    // Flush any rooms that were requested before the socket was ready
     _pendingRoomJoins.forEach((conversationId) => {
       socket.emit('join:conversation', { conversationId });
     });
@@ -104,58 +92,29 @@ export function connectSocket(accessToken) {
     console.warn("[chatService] Socket.io connect error:", err.message);
   });
 
-  // ── Incoming message ──────────────────────────────────────
-  // Requirement 16.7
   socket.on("message:new", (payload) => {
     window.dispatchEvent(new CustomEvent("gala:message-new", { detail: payload }));
   });
 
-  // ── Order status changed ──────────────────────────────────
-  // Requirement 16.7
   socket.on("order:status_changed", (payload) => {
     window.dispatchEvent(new CustomEvent("gala:order-status-changed", { detail: payload }));
   });
 
-  // ── New order (staff notification) ───────────────────────
-  // Requirement 16.7
   socket.on("order:new", (payload) => {
     window.dispatchEvent(new CustomEvent("gala:order-new", { detail: payload }));
   });
 
-  // ── Conversation read receipt ─────────────────────────────
   socket.on("conversation:read", (payload) => {
     window.dispatchEvent(new CustomEvent("gala:conversation-read", { detail: payload }));
   });
 
-  // ── New DM conversation (staff notification) ──────────────
-  // Requirements: 8.9, 6.5
   socket.on("dm:new", (payload) => {
-    window.dispatchEvent(new CustomEvent("gala:dm-new", { detail: payload }));
+    window.dispatchEvent(new CustomEvent("gala:dm:new", { detail: payload }));
   });
 
-  // Register the window-level join handler once per connection lifecycle.
-  // Using a stable named function avoids duplicate listener accumulation.
   window.removeEventListener('gala:join-conversation', _handleJoinConversation);
   window.addEventListener('gala:join-conversation', _handleJoinConversation);
 }
-
-/**
- * Disconnect the Socket.io client and release the reference.
- * Called by authService on logout.
- */
-export function disconnectSocket() {
-  window.removeEventListener('gala:join-conversation', _handleJoinConversation);
-  _pendingRoomJoins.clear();
-  if (socket) {
-    socket.disconnect();
-    socket = null;
-  }
-}
-
-/* ── Register socket lifecycle with authService ──────────── */
-// Wire up connect/disconnect so the socket follows the auth lifecycle.
-// Called once at module load time.
-registerSocketHandlers({ connect: connectSocket, disconnect: disconnectSocket });
 
 /* ── Storage helpers (localStorage path) ────────────────── */
 function load() {

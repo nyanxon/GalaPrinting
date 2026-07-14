@@ -5,7 +5,7 @@
  */
 
 import { useState, useContext, useEffect } from 'react';
-import { getSocket } from '../../../core/socket.js';
+import { useSocket } from '../../context/SocketContext.jsx';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import { logout } from '../../../services/authService.js';
@@ -43,6 +43,7 @@ const OWNER_NAV = [
 ];
 
 function ActivitySidebar({ onGoToOrders, onGoToChats }) {
+  const socket = useSocket();
   const [recentOrders, setRecentOrders] = useState([]);
   const [unhandledChats, setUnhandledChats] = useState([]);
 
@@ -72,8 +73,7 @@ function ActivitySidebar({ onGoToOrders, onGoToChats }) {
     window.addEventListener('gala:chat-updated', handleChatUpdate);
     window.addEventListener('storage', handleStorage);
 
-    // Socket real-time
-    const socket = getSocket();
+    // Socket real-time — socket is available from line 46 closure
     if (socket) {
       socket.on('order:new', handleOrdersUpdate);
       socket.on('order:status_changed', handleOrdersUpdate);
@@ -88,7 +88,7 @@ function ActivitySidebar({ onGoToOrders, onGoToChats }) {
         socket.off('order:status_changed', handleOrdersUpdate);
       }
     };
-  }, []);
+  }, [socket]);
 
   return (
     <aside className="staff-activity" aria-label="Activity">

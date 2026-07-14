@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider, AuthNavigationHandler } from './components/context/AuthContext.jsx';
+import { SocketProvider } from './components/context/SocketContext.jsx';
 import { CartProvider } from './components/context/CartContext.jsx';
 import { CartContext } from './components/context/CartContext.jsx';
 import { useContext, useEffect } from 'react';
@@ -107,7 +108,8 @@ function App() {
 
   return (
     <AuthProvider>
-      <CartProvider>
+      <SocketProvider>
+        <CartProvider>
         <CartWarningBanner />
         <Toast />
         <BrowserRouter>
@@ -195,7 +197,8 @@ function App() {
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </BrowserRouter>
-      </CartProvider>
+        </CartProvider>
+      </SocketProvider>
     </AuthProvider>
   );
 }

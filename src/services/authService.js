@@ -1,18 +1,6 @@
 import { readJson, writeJson, remove } from "../core/storage.js";
 import { USE_BACKEND, api, setAccessToken, clearSession } from "../core/httpClient.js";
 import { syncCartOnLogin } from "./cartService.js";
-import { initSocket, disconnectSocket } from "../core/socket.js";
-
-// Daftarkan socket handlers segera setelah module load
-// (registerSocketHandlers dipanggil dari chatService — ini adalah pengganti / tambahan)
-// Untuk admin dashboard (Fitur 5), kita inisialisasi socket langsung di sini.
-function _socketConnectHandler(token) {
-  if (token) initSocket(token);
-}
-
-function _socketDisconnectHandler() {
-  disconnectSocket();
-}
 
 // ---------------------------------------------------------------------------
 // localStorage keys (used when USE_BACKEND=false)
@@ -29,32 +17,6 @@ function loadUsers()      { return readJson(USERS_KEY, []); }
 function saveUsers(users) { writeJson(USERS_KEY, users); }
 
 export function getSession()  { return readJson(SESSION_KEY, null); }
-
-// ---------------------------------------------------------------------------
-// Socket.io lifecycle hooks
-//
-// NOTE: Socket.io initialisation and teardown are wired up in task 12.6
-// (src/services/chatService.js). The functions below are called by login/logout
-// so that the socket connects/disconnects at the right moment. They are
-// intentionally no-ops until chatService provides real implementations.
-// ---------------------------------------------------------------------------
-
-/** @type {(() => void) | null} */
-let _socketConnect = _socketConnectHandler;
-
-/** @type {(() => void) | null} */
-let _socketDisconnect = _socketDisconnectHandler;
-
-/**
- * Register socket lifecycle callbacks.
- * Called by chatService (task 12.6) once it has initialised socket.io-client.
- *
- * @param {{ connect: () => void, disconnect: () => void }} handlers
- */
-export function registerSocketHandlers({ connect, disconnect }) {
-  _socketConnect    = connect;
-  _socketDisconnect = disconnect;
-}
 
 // ---------------------------------------------------------------------------
 // logout — shared between both modes for the localStorage path
@@ -75,7 +37,6 @@ export async function logout() {
       // Best-effort — clear session regardless of server response
     }
     clearSession();                          // clears in-memory token + redirects
-    if (_socketDisconnect) _socketDisconnect();
     return;
   }
 
@@ -103,7 +64,6 @@ export async function registerCustomer({ name, email, phone, password, gender, d
       // Server returns { ok, accessToken, user } directly (no .data wrapper)
       const { accessToken, user } = res.data;
       setAccessToken(accessToken);
-      if (_socketConnect) _socketConnect(accessToken);
       await syncCartOnLogin();
       return { ok: true, message: "Registrasi berhasil.", user };
     } catch (err) {
@@ -157,7 +117,6 @@ export async function login({ email, password, rememberMe = false }) {
       // Server returns { ok, accessToken, user } directly (no .data wrapper)
       const { accessToken, user } = res.data;
       setAccessToken(accessToken);
-      if (_socketConnect) _socketConnect(accessToken);
       await syncCartOnLogin();
       return { ok: true, message: "Login berhasil.", role: user.role, user };
     } catch (err) {
@@ -208,7 +167,6 @@ export async function getCurrentUser() {
       try {
         const newToken = await performRefresh();
         if (!newToken) return null;
-        if (_socketConnect) _socketConnect(newToken);
       } catch {
         // No valid refresh cookie — user is simply not logged in
         return null;
