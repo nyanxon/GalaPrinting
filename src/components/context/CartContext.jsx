@@ -165,13 +165,36 @@ export function CartProvider({ children }) {
           setDesignCache(cache);
         }
 
+        // Simpan design data dari tempItem ke variabel lokal
+        // sehingga tidak bergantung pada localStorage saat server refresh
+        const savedDesign = {
+          designDataUrl: item.designDataUrl ?? null,
+          designFileName: item.designFileName ?? null,
+        };
+
         const result = await addToCart(user?.id, item);
         if (result.ok) {
           // Refresh to get the server-assigned id, then merge design data back.
           // mergeDesignData will match by item.id first, then legacyKey.
           // We also try to match by fingerprint for the newly added item.
           const { items: refreshed } = await getCart(user?.id);
-          const merged = mergeDesignData(refreshed);
+
+          // Inject design data langsung ke item yang baru ditambahkan
+          // sebelum mergeDesignData — sehingga tidak bergantung pada localStorage cache
+          const refreshedWithDesign = refreshed.map((serverItem) => {
+            const pid2 = serverItem.productId ?? serverItem.product_id ?? '';
+            if (
+              pid2 === (item.productId ?? '') &&
+              serverItem.name === item.name &&
+              !serverItem.designDataUrl &&
+              savedDesign.designDataUrl
+            ) {
+              return { ...serverItem, ...savedDesign };
+            }
+            return serverItem;
+          });
+
+          const merged = mergeDesignData(refreshedWithDesign);
 
           // Extra pass: find the server item that corresponds to the temp item
           // (same productId + name, not yet in previous state) and apply its
@@ -183,30 +206,38 @@ export function CartProvider({ children }) {
             // will have the same productId + name
             const pid = serverItem.productId ?? serverItem.product_id ?? '';
             const fpEntry = cache[fingerprint];
-            if (fpEntry && pid === (item.productId ?? '') && serverItem.name === item.name) {
+            const designEntry =
+              fpEntry ||
+              (pid === (item.productId ?? '') && serverItem.name === item.name
+                ? savedDesign
+                : null);
+            if (designEntry && pid === (item.productId ?? '') && serverItem.name === item.name) {
               // Update cache to use server-assigned ID going forward
-              cache[serverItem.id] = fpEntry;
+              cache[serverItem.id] = designEntry;
               setDesignCache(cache);
               return {
                 ...serverItem,
-                designDataUrl: fpEntry.designDataUrl ?? null,
-                designFileName: fpEntry.designFileName ?? serverItem.designFileName,
+                designDataUrl: designEntry.designDataUrl ?? null,
+                designFileName: designEntry.designFileName ?? serverItem.designFileName,
               };
             }
             return serverItem;
           });
 
-          // Simpan ulang cache dengan legacyKey (productId|name) agar bisa di-recover saat reload
+          // Update cache dengan server-assigned ID untuk setiap item yang punya design
           const updatedCache = getDesignCache();
           finalItems.forEach((serverItem) => {
-            if (serverItem.designDataUrl) {
-              const stableKey = `${serverItem.productId ?? ''}|${serverItem.name ?? ''}`;
-              if (!updatedCache[stableKey]) {
-                updatedCache[stableKey] = {
-                  designDataUrl:  serverItem.designDataUrl,
-                  designFileName: serverItem.designFileName ?? null,
-                };
-              }
+            if (serverItem.designDataUrl && serverItem.id) {
+              updatedCache[serverItem.id] = {
+                designDataUrl: serverItem.designDataUrl,
+                designFileName: serverItem.designFileName ?? null,
+              };
+              // Also update stableKey (productId|name) so it survives page reload
+              const sk = `${serverItem.productId ?? ''}|${serverItem.name ?? ''}`;
+              updatedCache[sk] = {
+                designDataUrl: serverItem.designDataUrl,
+                designFileName: serverItem.designFileName ?? null,
+              };
             }
           });
           setDesignCache(updatedCache);

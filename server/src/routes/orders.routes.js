@@ -18,10 +18,11 @@ const STAFF_ROLES = ['admin', 'owner', 'cashier', 'cs', 'operational', 'qc', 'of
 // Public
 router.get('/track', ctrl.trackOrder);
 
-// Customer
-router.post('/',                authenticate, requireRole('customer'), ctrl.createOrder);
-router.get('/my',               authenticate, requireRole('customer'), ctrl.listMyOrders);
-router.post('/custom-customer', authenticate, requireRole('customer'), ctrl.createCustomOrderByCustomer);
+// Customer + all authenticated roles
+const ALL_ROLES = ['customer', 'cashier', 'cs', 'operational', 'qc', 'admin', 'owner', 'offline'];
+router.post('/',                authenticate, requireRole(...ALL_ROLES), ctrl.createOrder);
+router.get('/my',               authenticate, requireRole(...ALL_ROLES), ctrl.listMyOrders);
+router.post('/custom-customer', authenticate, requireRole(...ALL_ROLES), ctrl.createCustomOrderByCustomer);
 
 // Staff-created orders
 router.post('/custom',   authenticate, requireRole('cs', 'admin'), ctrl.createCustomOrder);
@@ -43,20 +44,20 @@ router.patch('/:id/pickup',          authenticate, requireRole('qc', 'admin'), c
 // Invoice untuk order (customer & staff bisa lihat)
 router.get('/:orderId/invoice', authenticate, getInvoiceByOrder);
 
-// Payment proof upload (customer)
+// Payment proof upload (semua role yang login)
 router.post(
   '/:id/payment-proof',
   authenticate,
-  requireRole('customer'),
+  requireRole('customer', 'cashier', 'cs', 'operational', 'qc', 'admin', 'owner', 'offline'),
   uploadPayment.single('file'),
   ctrl.uploadPaymentProof
 );
 
-// Design file upload per order item (customer)
+// Design file upload per order item (semua role yang login)
 router.post(
   '/:id/items/:itemId/design',
   authenticate,
-  requireRole('customer'),
+  requireRole('customer', 'cashier', 'cs', 'operational', 'qc', 'admin', 'owner', 'offline'),
   uploadDesign.single('file'),
   ctrl.uploadDesignFile
 );

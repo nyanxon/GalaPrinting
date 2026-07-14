@@ -48,7 +48,7 @@ function CheckoutPage() {
 
   // Auth guard
   if (loading) return null;
-  if (!user || user.role !== 'customer') {
+  if (!user) {
     return (
       <main>
         <div className="container co-page">
@@ -68,8 +68,8 @@ function CheckoutPage() {
     );
   }
 
-  // Email verification guard — redirect to cart if not verified
-  if (USE_BACKEND && user && !user.is_email_verified) {
+  // Email verification guard — hanya untuk customer
+  if (USE_BACKEND && user && user.role === 'customer' && !user.is_email_verified) {
     return (
       <main>
         <div className="container co-page">
