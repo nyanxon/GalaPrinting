@@ -249,6 +249,15 @@
   letter-spacing: 0.04em;
 }
 
+.cdm-section-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted, #6b7280);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+
 .cdm-design-preview {
   width: 100%;
   max-height: 180px;

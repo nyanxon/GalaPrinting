@@ -25,20 +25,22 @@ function CartItemDetailModal({ item, onClose }) {
 
   if (!item) return null;
 
-  const specs = [
-    item.material && { label: t('cart.material'), value: item.material },
-    item.color    && { label: t('cart.color'),    value: item.color },
-    item.size     && { label: t('cart.size'),     value: item.size },
-    item.notes    && { label: t('cart.notes'),    value: item.notes },
-  ].filter(Boolean);
+  // ── Resolve product image (already absolute URL from cartService resolveCartImage) ──
+  const imgSrc = (() => {
+    const raw = item.image;
+    if (!raw) return placeholderImg;
+    if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+    if (raw.startsWith('data:')) return raw;
+    return resolveApiUrl(raw) || placeholderImg;
+  })();
 
-  const imgSrc = item.image
-    ? (item.image.startsWith('http') || item.image.startsWith('data:') || item.image.startsWith('/')
-        ? resolveApiUrl(item.image) || placeholderImg
-        : item.image)
-    : placeholderImg;
+  // ── Design file ──
+  const designUrl      = item.designDataUrl || null;
+  const designFileName = item.designFileName || item.design_file_path || null;
+  const hasDesign      = Boolean(designUrl || designFileName);
+  const isDesignImage  = designUrl ? designUrl.startsWith('data:image') : false;
 
-  const hasDesign = Boolean(item.designDataUrl || item.designFileName);
+  const totalPrice = Number(item.price || 0) * Number(item.quantity || 1);
 
   return (
     <div
@@ -49,99 +51,137 @@ function CartItemDetailModal({ item, onClose }) {
       onClick={onClose}
     >
       <div className="cdm-modal" onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
+
+        {/* ── Header ── */}
         <div className="cdm-header">
           <h3 className="cdm-title">{item.name}</h3>
           <button
             type="button"
             className="cdm-close"
             onClick={onClose}
-            aria-label={t('cart.closeDetail')}
+            aria-label="Tutup detail"
           >
             ✕
           </button>
         </div>
 
-        {/* Body */}
+        {/* ── Body ── */}
         <div className="cdm-body">
-          {/* Product image */}
-          <img
-            className="cdm-image"
-            src={imgSrc}
-            alt={item.name}
-            onError={(e) => { e.currentTarget.src = placeholderImg; }}
-          />
 
-          {/* Specs */}
-          {specs.length > 0 && (
-            <div className="cdm-specs">
-              {specs.map(({ label, value }) => (
-                <div key={label} className="cdm-spec-row">
-                  <span className="cdm-spec-label">{label}</span>
-                  <span className="cdm-spec-value">{value}</span>
-                </div>
-              ))}
-            </div>
-          )}
+          {/* Foto Produk */}
+          <div className="cdm-section">
+            <div className="cdm-section-label">🖼 Foto Produk</div>
+            <img
+              className="cdm-image"
+              src={imgSrc}
+              alt={item.name}
+              onError={(e) => { e.currentTarget.src = placeholderImg; }}
+            />
+          </div>
 
-          {/* Qty & price */}
-          <div className="cdm-specs" style={{ marginTop: '8px' }}>
+          {/* Info Produk */}
+          <div className="cdm-specs">
+            {/* Nama Item */}
             <div className="cdm-spec-row">
-              <span className="cdm-spec-label">{t('cart.qty')}</span>
-              <span className="cdm-spec-value">{item.quantity}</span>
+              <span className="cdm-spec-label">Nama Item</span>
+              <span className="cdm-spec-value">{item.name}</span>
+            </div>
+
+            {/* Bahan */}
+            <div className="cdm-spec-row">
+              <span className="cdm-spec-label">Bahan</span>
+              <span className="cdm-spec-value">{item.material || <span style={{ color: '#9ca3af' }}>—</span>}</span>
+            </div>
+
+            {/* Warna */}
+            <div className="cdm-spec-row">
+              <span className="cdm-spec-label">Warna</span>
+              <span className="cdm-spec-value">{item.color || <span style={{ color: '#9ca3af' }}>—</span>}</span>
+            </div>
+
+            {/* Ukuran */}
+            <div className="cdm-spec-row">
+              <span className="cdm-spec-label">Ukuran</span>
+              <span className="cdm-spec-value">{item.size || <span style={{ color: '#9ca3af' }}>—</span>}</span>
+            </div>
+
+            {/* Keterangan */}
+            <div className="cdm-spec-row">
+              <span className="cdm-spec-label">Keterangan</span>
+              <span className="cdm-spec-value">{item.notes || <span style={{ color: '#9ca3af' }}>—</span>}</span>
+            </div>
+          </div>
+
+          {/* Harga */}
+          <div className="cdm-specs" style={{ marginTop: '12px', borderTop: '1px solid #f0f0f0', paddingTop: '12px' }}>
+            <div className="cdm-spec-row">
+              <span className="cdm-spec-label">Jumlah</span>
+              <span className="cdm-spec-value">{item.quantity} pcs</span>
             </div>
             <div className="cdm-spec-row">
-              <span className="cdm-spec-label">{t('cart.unitPrice')}</span>
+              <span className="cdm-spec-label">Harga Satuan</span>
               <span className="cdm-spec-value">{formatCurrency(item.price)}</span>
             </div>
-            <div className="cdm-spec-row">
-              <span className="cdm-spec-label">{t('cart.subtotal')}</span>
-              <span className="cdm-spec-value" style={{ fontWeight: 700 }}>
-                {formatCurrency(item.price * item.quantity)}
+            <div className="cdm-spec-row" style={{ fontWeight: 700 }}>
+              <span className="cdm-spec-label">Total Harga</span>
+              <span className="cdm-spec-value" style={{ color: 'var(--brand-brown, #785E40)', fontSize: '16px' }}>
+                {formatCurrency(totalPrice)}
               </span>
             </div>
           </div>
 
-          {/* Design file attachment */}
+          {/* File Desain yang Diupload */}
           {hasDesign && (
-            <div className="cdm-attachment">
-              <div className="cdm-attachment-label">📎 {t('cart.designAttachment')}</div>
-              {item.designDataUrl ? (
-                (() => {
-                  const isImage = item.designDataUrl.startsWith('data:image');
-                  return isImage ? (
-                    <a href={item.designDataUrl} download={item.designFileName || 'desain'} target="_blank" rel="noopener noreferrer">
-                      <img
-                        className="cdm-design-preview"
-                        src={item.designDataUrl}
-                        alt="Preview desain"
-                      />
-                    </a>
-                  ) : (
-                    <a
-                      className="cdm-design-link"
-                      href={item.designDataUrl}
-                      download={item.designFileName || 'desain'}
-                    >
-                      ⬇ {item.designFileName || t('cart.downloadDesign')}
-                    </a>
-                  );
-                })()
+            <div className="cdm-attachment" style={{ marginTop: '12px' }}>
+              <div className="cdm-section-label">📎 File Desain</div>
+              {designUrl ? (
+                isDesignImage ? (
+                  <a href={designUrl} download={designFileName || 'desain'} target="_blank" rel="noopener noreferrer">
+                    <img
+                      className="cdm-design-preview"
+                      src={designUrl}
+                      alt="Preview desain"
+                      style={{ marginTop: '8px', maxWidth: '100%', borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                    />
+                    <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                      Klik untuk download
+                    </div>
+                  </a>
+                ) : (
+                  <a
+                    className="cdm-design-link"
+                    href={designUrl}
+                    download={designFileName || 'desain'}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '8px', color: 'var(--brand-brown, #785E40)', textDecoration: 'underline', fontSize: '14px' }}
+                  >
+                    ⬇ {designFileName || 'Unduh File Desain'}
+                  </a>
+                )
               ) : (
-                <span className="cdm-design-name">
-                  📄 {item.designFileName}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', padding: '10px 12px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+                  <span style={{ fontSize: '24px' }}>📄</span>
+                  <span style={{ fontSize: '13px', color: '#374151' }}>{designFileName}</span>
+                </div>
               )}
             </div>
           )}
+
+          {/* Jika tidak ada file desain */}
+          {!hasDesign && (
+            <div style={{ marginTop: '12px', padding: '10px 12px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb', color: '#9ca3af', fontSize: '13px' }}>
+              📎 Belum ada file desain yang diupload
+            </div>
+          )}
+
         </div>
 
-        {/* Footer */}
+        {/* ── Footer ── */}
         <div className="cdm-footer">
           <button type="button" className="btn primary" onClick={onClose}>
-            {t('cart.closeBtn')}
+            Tutup
           </button>
         </div>
+
       </div>
     </div>
   );
