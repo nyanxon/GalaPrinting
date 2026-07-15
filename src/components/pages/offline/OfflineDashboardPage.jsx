@@ -18,7 +18,7 @@ import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import { logout } from '../../../services/auth.js';
 import { createOfflineOrder, listAllOrders, STATUS_CONFIG } from '../../../services/orders.js';
-import { STAFF_ROLES } from '../../../config/roles.js';
+import { STAFF_ROLE_CONFIG } from '../../../config/roles.js';
 import { formatCurrency } from '../../../utils/format.js';
 import { showToast } from '../../../core/toastEmitter.js';
 import ChatsSection from '../admin/sections/ChatsSection.jsx';
@@ -550,7 +550,7 @@ export default function OfflineDashboardPage() {
   const [activeNav,     setActiveNav]     = useState('new-order');
   const [createdOrder,  setCreatedOrder]  = useState(null);   // receipt state
 
-  const roleInfo = STAFF_ROLES[user?.role] ?? { label: 'Offline Admin', color: ROLE_COLOR };
+  const roleInfo = STAFF_ROLE_CONFIG[user?.role] ?? { label: 'Offline Admin', color: ROLE_COLOR };
   const userName = user?.name || roleInfo.label;
 
   async function handleLogout() {

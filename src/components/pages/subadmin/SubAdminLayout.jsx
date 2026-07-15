@@ -11,7 +11,7 @@ import { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import { logout } from '../../../services/auth.js';
-import { STAFF_ROLES } from '../../../config/roles.js';
+import { STAFF_ROLE_CONFIG } from '../../../config/roles.js';
 import { getSocket } from '../../../core/socket.js';
 import { useAdminSound } from '../../../hooks/useAdminSound.js';
 import StaffAvatarButton from '../../staff/StaffAvatarButton.jsx';
@@ -34,7 +34,7 @@ export default function SubAdminLayout({ navItems, sections, title }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const role      = user?.role ?? '';
-  const roleInfo  = STAFF_ROLES[role] ?? { label: role, color: '#785E40' };
+  const roleInfo  = STAFF_ROLE_CONFIG[role] ?? { label: role, color: '#785E40' };
   const userName  = user?.name || roleInfo.label || role;
   const roleDesc  = ROLE_DESCRIPTIONS[role] ?? '';
   const sidebarBg = roleInfo.color ?? '#785E40';
