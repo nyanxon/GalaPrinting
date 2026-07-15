@@ -10,8 +10,8 @@
 import { useRef, useEffect } from 'react';
 import { formatCurrency } from '../../core/helpers.js';
 
-/* 58mm at 96dpi ≈ 220px */
-const PAPER_WIDTH_PX = 220;
+/* 58mm paper, 3mm margin kiri-kanan → 52mm content ≈ 197px at 96dpi */
+const PAPER_WIDTH_PX = 197;
 
 function formatDate(date) {
   if (!date) return '—';
@@ -189,7 +189,7 @@ export default function ThermalReceiptModal({ invoice, onClose, autoPrint }) {
       color: #000;
     }
     @media print {
-      @page { size: 58mm auto; margin: 1mm; }
+      @page { size: 58mm auto; margin: 1mm 3mm; }
       body { width: 100%; }
     }
   </style>
