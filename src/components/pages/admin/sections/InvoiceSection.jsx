@@ -15,7 +15,7 @@ import {
   updateInvoice,
   sendInvoiceEmail,
   openInvoicePdf,
-} from '../../../../services/invoiceService.js';
+} from '../../../../services/api/invoiceService.js';
 import { api } from '../../../../core/httpClient.js';
 import { showToast } from '../../../../core/toastEmitter.js';
 import { formatCurrency } from '../../../../utils/format.js';

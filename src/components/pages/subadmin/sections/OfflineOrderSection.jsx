@@ -10,7 +10,7 @@ import { useState } from 'react';
 import { api } from '../../../../core/httpClient.js';
 import { formatCurrency } from '../../../../utils/format.js';
 import { showToast } from '../../../../core/toastEmitter.js';
-import { getInvoiceByOrderId, openInvoicePdf, sendInvoiceEmail } from '../../../../services/invoiceService.js';
+import { getInvoiceByOrderId, openInvoicePdf, sendInvoiceEmail } from '../../../../services/api/invoiceService.js';
 import ThermalReceiptModal from '../../../modals/ThermalReceiptModal.jsx';
 
 function makeItem() {

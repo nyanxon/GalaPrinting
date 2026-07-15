@@ -3,6 +3,9 @@
  *
  * Allows staff to create orders for walk-in customers at the physical store.
  *
+ * TODO: This page has NO mobile responsiveness (no hamburger, no backdrop, no sidebar toggle).
+ * The sidebar is permanently visible on small screens. Consider adding mobile toggle like other dashboards.
+ *
  * Flow:
  *  1. Fill in customer info (name, phone, address)
  *  2. Add order items (product name, qty, unit price — free-form)

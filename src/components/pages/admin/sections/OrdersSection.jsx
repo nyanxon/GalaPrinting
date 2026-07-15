@@ -4,32 +4,23 @@
  *          dan memblokir update status untuk tahap yang sudah di-approve.
  */
 
-import { useState, useEffect, useContext, useCallback, useRef } from 'react';
-import { AuthContext } from '../../../context/AuthContext.jsx';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   listOrdersPaginated,
-  getOrderById,
   updateOrderStatus,
-  updateAdminNote,
   getAllowedNextStatuses,
   STATUS_CONFIG,
   ORDER_STATUSES,
 } from '../../../../services/orders.js';
 import { formatCurrency } from '../../../../utils/format.js';
-import OrderDetailModal from '../../../modals/OrderDetailModal.jsx';
+import { getInvoiceByOrderId, openInvoicePdf } from '../../../../services/api/invoiceService.js';
 import { showToast } from '../../../../core/toastEmitter.js';
-import { useSocket } from '../../../context/SocketContext.jsx';
-import { getInvoiceByOrderId, openInvoicePdf } from '../../../../services/invoiceService.js';
+import OrderDetailModal from '../../../modals/OrderDetailModal.jsx';
 import ThermalReceiptModal from '../../../modals/ThermalReceiptModal.jsx';
+import useOrderList from '../../../../hooks/useOrderList.js';
 
 const PAGE_SIZE = 10;
 
-/**
- * Fitur 1: Cek apakah status saat ini sudah di-lock (sudah di-approve sebelumnya).
- * Jika iya, return objek approval; jika tidak, return null.
- * @param {object} order
- * @returns {{ approved_name: string, approved_at: string } | null}
- */
 function getApprovalForCurrentStatus(order) {
   if (!Array.isArray(order.approvals) || order.approvals.length === 0) return null;
   return order.approvals.find((a) => a.stage === order.status) || null;
@@ -37,74 +28,59 @@ function getApprovalForCurrentStatus(order) {
 
 function PaginationBar({ page, totalPages, total, limit, onPageChange }) {
   if (totalPages <= 1) return null;
-
   const start = (page - 1) * limit + 1;
   const end = Math.min(page * limit, total);
-
   const pages = [];
   for (let p = Math.max(1, page - 2); p <= Math.min(totalPages, page + 2); p++) {
     pages.push(p);
   }
-
   return (
     <div className="adm-pagination">
       <span className="adm-page-info">
         {start}–{end} dari {total}
       </span>
       <div className="adm-page-btns">
-        <button
-          className="adm-page-btn"
-          type="button"
-          disabled={page <= 1}
-          onClick={() => onPageChange(page - 1)}
-        >
-          ‹
-        </button>
+        <button className="adm-page-btn" type="button" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>‹</button>
         {pages.map((p) => (
-          <button
-            key={p}
-            className={`adm-page-btn${p === page ? ' active' : ''}`}
-            type="button"
-            onClick={() => onPageChange(p)}
-          >
-            {p}
-          </button>
+          <button key={p} className={`adm-page-btn${p === page ? ' active' : ''}`} type="button" onClick={() => onPageChange(p)}>{p}</button>
         ))}
-        <button
-          className="adm-page-btn"
-          type="button"
-          disabled={page >= totalPages}
-          onClick={() => onPageChange(page + 1)}
-        >
-          ›
-        </button>
+        <button className="adm-page-btn" type="button" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>›</button>
       </div>
     </div>
   );
 }
 
 export default function OrdersSection() {
-  const { user } = useContext(AuthContext);
-  const actorRole = user?.role || 'admin';
-  const socket = useSocket();
-
+  const [result, setResult] = useState({ items: [], total: 0, page: 1, limit: PAGE_SIZE, totalPages: 1 });
   const [currentPage, setCurrentPage] = useState(1);
   const [filterStatus, setFilterStatus] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [result, setResult] = useState({ items: [], total: 0, page: 1, limit: PAGE_SIZE, totalPages: 1 });
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [detailOpen, setDetailOpen] = useState(false);
-  const [noteValues, setNoteValues] = useState({});
-  const [cancelDialogOpen, setCancelDialogOpen]     = useState(false);
-  const [cancelTargetOrderId, setCancelTargetOrderId] = useState(null);
-  const [cancelReason, setCancelReason]             = useState('');
-  const [cancelReasonErr, setCancelReasonErr]       = useState('');
+  const fetchOrdersRef = useRef(null);
 
-  // Invoice + auto-print states
-  const [invoiceMap, setInvoiceMap]                 = useState({});
-  const [thermalInvoice, setThermalInvoice]         = useState(null);
-  const [thermalAutoPrint, setThermalAutoPrint]     = useState(false);
-  const pendingAutoPrintRef = useRef(new Set());
+  const {
+    searchQuery, setSearchQuery,
+    selectedOrder, setSelectedOrder,
+    detailOpen, setDetailOpen,
+    noteValues, setNoteValues,
+    actorRole,
+    handleNoteBlur,
+    handleNoteKeyDown,
+    handleDetailClick,
+    handleOpenCancel,
+    handleCancelConfirm,
+    handleCancelClose,
+    cancelDialogOpen,
+    cancelReason, setCancelReason,
+    cancelReasonErr,
+    invoiceMap, setInvoiceMap,
+    thermalInvoice, setThermalInvoice,
+    thermalAutoPrint, setThermalAutoPrint,
+    pendingAutoPrintRef,
+  } = useOrderList({
+    fetchOrders: () => fetchOrdersRef.current?.(),
+    defaultRole: 'admin',
+    enableCancel: true,
+    enableInvoice: true,
+  });
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -117,52 +93,20 @@ export default function OrdersSection() {
             (o.customer?.name || '').toLowerCase().includes(q) ||
             (o.customerPhone || '').includes(q)
         );
-        return { ...data, items: filtered, total: filtered.length };
+        setResult({ ...data, items: filtered, total: filtered.length });
+      } else {
+        setResult(data);
       }
-      return data;
     } catch (err) {
       console.error('Failed to load orders:', err);
-      return null;
     }
   }, [currentPage, filterStatus, searchQuery]);
 
-  useEffect(() => {
-    fetchOrders().then((data) => { if (data) setResult(data); });
-  }, [fetchOrders]);
+  fetchOrdersRef.current = fetchOrders;
 
-  // Listen for order updates from other parts of the app
-  useEffect(() => {
-    function handler() {
-      fetchOrders().then((data) => { if (data) setResult(data); });
-    }
-    window.addEventListener('gala:orders-updated', handler);
-    return () => window.removeEventListener('gala:orders-updated', handler);
-  }, [fetchOrders]);
+  useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
-  // Real-time: listen socket order:new & order:status_changed agar tidak perlu refresh manual
-  useEffect(() => {
-    if (!socket) return;
-
-    function handleOrderNew() {
-      // Refresh list — order baru masuk
-      fetchOrders().then((data) => { if (data) setResult(data); });
-    }
-
-    function handleOrderStatusChanged() {
-      // Refresh list supaya status terbaru tampil
-      fetchOrders().then((data) => { if (data) setResult(data); });
-    }
-
-    socket.on('order:new', handleOrderNew);
-    socket.on('order:status_changed', handleOrderStatusChanged);
-
-    return () => {
-      socket.off('order:new', handleOrderNew);
-      socket.off('order:status_changed', handleOrderStatusChanged);
-    };
-  }, [socket, fetchOrders]);
-
-  // Lazy-load invoice for "Payment Accepted" orders (with retry for 404)
+  // Invoice lazy-load for "Payment Accepted" orders (with retry for 404)
   useEffect(() => {
     result.items.forEach((order) => {
       if (order.status !== 'Payment Accepted') return;
@@ -188,44 +132,14 @@ export default function OrdersSection() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result.items]);
 
-  // Auto-print: when invoice loads for a pending order, trigger A4 PDF + thermal receipt
-  useEffect(() => {
-    for (const orderId of pendingAutoPrintRef.current) {
-      const inv = invoiceMap[orderId];
-      if (inv && inv !== 'loading' && inv !== 'error' && inv !== null) {
-        pendingAutoPrintRef.current.delete(orderId);
-        if (inv.id) {
-          openInvoicePdf(inv.id).catch(() => {
-            showToast('Gagal membuka PDF invoice.', 'error');
-          });
-        }
-        setThermalInvoice(inv);
-        setThermalAutoPrint(true);
-        break;
-      }
-      if (inv === null || inv === 'error') {
-        pendingAutoPrintRef.current.delete(orderId);
-        showToast('Invoice gagal dimuat, silakan coba print manual.', 'error');
-      }
-    }
-  }, [invoiceMap]);
-
   async function handleStatusChange(orderId, newStatus) {
     if (newStatus === 'Cancelled') {
-      setCancelTargetOrderId(orderId);
-      setCancelReason('');
-      setCancelReasonErr('');
-      setCancelDialogOpen(true);
+      handleOpenCancel(orderId);
       return;
     }
 
-    // Track for auto-print when advancing to Payment Accepted
     if (newStatus === 'Payment Accepted') {
-      setInvoiceMap((prev) => {
-        const next = { ...prev };
-        delete next[orderId];
-        return next;
-      });
+      setInvoiceMap((prev) => { const n = { ...prev }; delete n[orderId]; return n; });
       pendingAutoPrintRef.current.add(orderId);
     }
 
@@ -235,60 +149,7 @@ export default function OrdersSection() {
     } else {
       showToast(res.message || 'Gagal mengubah status.', 'error');
     }
-    const data = await fetchOrders();
-    if (data) setResult(data);
-  }
-
-  async function handleCancelConfirm() {
-    if (!cancelReason.trim()) {
-      setCancelReasonErr('Alasan pembatalan wajib diisi.');
-      return;
-    }
-    const res = await updateOrderStatus(cancelTargetOrderId, 'Cancelled', actorRole, cancelReason.trim());
-    if (res.ok) {
-      showToast('Pesanan dibatalkan.', 'success');
-      setCancelDialogOpen(false);
-      setCancelTargetOrderId(null);
-      setCancelReason('');
-      setCancelReasonErr('');
-      const data = await fetchOrders();
-      if (data) setResult(data);
-    } else {
-      setCancelReasonErr(res.message || 'Gagal membatalkan pesanan.');
-    }
-  }
-
-  function handleCancelClose() {
-    setCancelDialogOpen(false);
-    setCancelTargetOrderId(null);
-    setCancelReason('');
-    setCancelReasonErr('');
-  }
-
-  async function handleNoteBlur(orderId) {
-    const note = noteValues[orderId] ?? '';
-    const res = await updateAdminNote(orderId, note);
-    if (res.ok) showToast('Catatan disimpan.', 'success', 1500);
-  }
-
-  function handleNoteKeyDown(e, orderId) {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleNoteBlur(orderId);
-    }
-  }
-
-  async function handleDetailClick(orderId) {
-    try {
-      // Fetch full order with items, history, and design files
-      const order = await getOrderById(orderId);
-      if (order) {
-        setSelectedOrder(order);
-        setDetailOpen(true);
-      }
-    } catch (err) {
-      console.error('Failed to load order detail:', err);
-    }
+    fetchOrders();
   }
 
   function handleFilterChange(e) {
@@ -346,20 +207,12 @@ export default function OrdersSection() {
           <tbody>
             {result.items.length === 0 ? (
               <tr>
-                <td colSpan={6} className="adm-empty">
-                  Belum ada pesanan.
-                </td>
+                <td colSpan={6} className="adm-empty">Belum ada pesanan.</td>
               </tr>
             ) : (
               result.items.map((order) => {
                 const cfg = STATUS_CONFIG[order.status] || { icon: '○', badge: '' };
-                const allowed = getAllowedNextStatuses(
-                  order.status,
-                  actorRole,
-                  order.orderType || 'standard'
-                );
-
-                // Fitur 1: cek apakah status ini sudah di-approve/locked
+                const allowed = getAllowedNextStatuses(order.status, actorRole, order.orderType || 'standard');
                 const approvalInfo = getApprovalForCurrentStatus(order);
                 const isLocked = Boolean(approvalInfo);
 
@@ -369,8 +222,7 @@ export default function OrdersSection() {
                       <code>{order.orderNumber}</code>
                       {order.updatedAt && (
                         <div className="adm-date">
-                          Diperbarui:{' '}
-                          {new Date(order.updatedAt).toLocaleDateString('id-ID')}
+                          Diperbarui: {new Date(order.updatedAt).toLocaleDateString('id-ID')}
                         </div>
                       )}
                     </td>
@@ -405,7 +257,6 @@ export default function OrdersSection() {
                       )}
                     </td>
                     <td>
-                      {/* Fitur 1: tampilkan badge ACC jika sudah di-lock, jika tidak tampilkan dropdown */}
                       {isLocked ? (
                         <div>
                           <span className={`order-status-badge ${cfg.badge}`} style={{ display: 'block', marginBottom: '6px' }}>
@@ -466,7 +317,6 @@ export default function OrdersSection() {
                           🔍 Detail
                         </button>
 
-                        {/* Invoice buttons untuk Payment Accepted */}
                         {order.status === 'Payment Accepted' && invoiceMap[order.id] && invoiceMap[order.id] !== 'loading' && invoiceMap[order.id] !== null && (
                           <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                             <button
@@ -486,7 +336,7 @@ export default function OrdersSection() {
                               className="adm-btn adm-btn--thermal"
                               style={{ fontSize: '11px', padding: '4px 8px' }}
                               onClick={() => { setThermalInvoice(invoiceMap[order.id]); setThermalAutoPrint(false); }}
-                              title="Print resi termal (58mm)"
+                              title="Print resi termal"
                             >
                               🖨️ Print Resi
                             </button>
@@ -520,11 +370,10 @@ export default function OrdersSection() {
         actorRole={actorRole}
         onOrderUpdated={(updated) => {
           setSelectedOrder(updated);
-          fetchOrders().then((data) => { if (data) setResult(data); });
+          fetchOrders();
         }}
       />
 
-      {/* Thermal Receipt Modal */}
       {thermalInvoice && (
         <ThermalReceiptModal
           invoice={thermalInvoice}
@@ -533,7 +382,6 @@ export default function OrdersSection() {
         />
       )}
 
-      {/* ── Cancellation Reason Dialog ── */}
       {cancelDialogOpen && (
         <div
           className="cancel-dialog-overlay"
@@ -560,7 +408,7 @@ export default function OrdersSection() {
               rows={4}
               placeholder="Contoh: Stok habis, customer tidak merespons, dll."
               value={cancelReason}
-              onChange={(e) => { setCancelReason(e.target.value); setCancelReasonErr(''); }}
+              onChange={(e) => { setCancelReason(e.target.value); }}
               style={{ width: '100%', resize: 'vertical', marginBottom: '8px' }}
               aria-label="Alasan pembatalan"
             />

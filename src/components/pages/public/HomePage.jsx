@@ -21,7 +21,7 @@ import {
   listHeroBanners,
   listDesignItems,
   getCatBannersMap,
-} from '../../../services/homepageService.js';
+} from '../../../services/api/homepageService.js';
 import '../../../styles/css/pages/home.css';
 
 const PER_SECTION = 8; // 4 cols × 2 rows

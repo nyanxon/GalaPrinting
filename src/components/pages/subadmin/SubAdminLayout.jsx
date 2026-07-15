@@ -8,16 +8,15 @@
  */
 
 import { useState, useContext, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import { logout } from '../../../services/auth.js';
 import { STAFF_ROLE_CONFIG } from '../../../config/roles.js';
 import { getSocket } from '../../../core/socket.js';
 import { useAdminSound } from '../../../hooks/useAdminSound.js';
-import StaffAvatarButton from '../../staff/StaffAvatarButton.jsx';
-import logoImg from '../../../assets/logo.png';
+import SidebarShell from '../../staff/SidebarShell.jsx';
 import '../../../styles/css/pages/dashboard.css';
 
+// TODO: ROLE_DESCRIPTIONS is defined but never rendered in the sidebar (unlike OfflineDashboardPage which shows its ROLE_DESC). Consider rendering or removing.
 const ROLE_DESCRIPTIONS = {
   cashier:     'Verifikasi pembayaran dan konfirmasi pesanan masuk.',
   cs:          'Konsultasi desain dengan customer dan konfirmasi persetujuan desain.',
@@ -64,105 +63,50 @@ export default function SubAdminLayout({ navItems, sections, title }) {
   const currentLabel   = navItems?.find((n) => n.id === activeNav)?.label ?? title ?? '';
 
   return (
-    <div className="staff-body">
-      <div className="staff-layout">
-
-        {/* Mobile backdrop */}
-        {sidebarOpen && (
-          <div className="staff-sidebar-backdrop" onClick={() => setSidebarOpen(false)} aria-hidden="true" />
-        )}
-
-        {/* Sidebar */}
-        <aside
-          className={`staff-sidebar${sidebarOpen ? ' staff-sidebar--open' : ''}`}
-          aria-label={`${roleInfo.label} navigation`}
-          style={{ background: sidebarBg }}
+    <SidebarShell
+      navItems={navItems}
+      activeNav={activeNav}
+      onNavClick={handleNavClick}
+      currentLabel={currentLabel}
+      userName={userName}
+      onLogout={handleLogout}
+      sidebarOpen={sidebarOpen}
+      onToggleSidebar={setSidebarOpen}
+      ariaLabel={`${roleInfo.label} navigation`}
+      sidebarStyle={{ background: sidebarBg }}
+      navStyle={{ marginTop: '8px' }}
+      preNavSlot={
+        <div className="subadmin-role-badge" style={{ marginBottom: '8px' }}>{roleInfo.label}</div>
+      }
+      headerSlot={
+        <button
+          className="staff-sound-btn"
+          type="button"
+          onClick={() => { toggleMute(); unlockAudio(); }}
+          title={muted ? 'Aktifkan suara notifikasi' : 'Matikan suara notifikasi'}
+          aria-label={muted ? 'Aktifkan suara' : 'Matikan suara'}
+          style={{
+            background: 'transparent',
+            border: '1px solid rgba(255,255,255,0.3)',
+            borderRadius: '8px',
+            color: '#fff',
+            padding: '6px 10px',
+            cursor: 'pointer',
+            fontSize: '16px',
+            lineHeight: 1,
+          }}
         >
-          <button className="staff-sidebar-close" type="button" aria-label="Tutup menu" onClick={() => setSidebarOpen(false)}>✕</button>
-
-          <div className="staff-sidebar-logo">
-            <img src={logoImg} alt="Gala Printing" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-          </div>
-
-          <div className="subadmin-role-badge" style={{ marginBottom: '8px' }}>{roleInfo.label}</div>
-
-          <nav className="staff-nav" style={{ marginTop: '8px' }}>
-            {(navItems ?? []).map((item) => (
-              <button
-                key={item.id}
-                className={`staff-nav-item${activeNav === item.id ? ' active' : ''}`}
-                type="button"
-                onClick={() => handleNavClick(item.id)}
-              >
-                {item.label}
-              </button>
-            ))}
-          </nav>
-        </aside>
-
-        {/* Main content */}
-        <div className="staff-main">
-          <header className="staff-header">
-            {/* Hamburger — visible on mobile only */}
-            <button
-              className="staff-hamburger"
-              type="button"
-              aria-label="Buka menu"
-              aria-expanded={sidebarOpen}
-              onClick={() => setSidebarOpen(true)}
-            >
-              <span /><span /><span />
-            </button>
-
-            <div className="staff-header-section-label">{currentLabel}</div>
-
-            <div className="staff-header-right">
-              <StaffAvatarButton />
-              {/* Fitur 4: toggle mute/unmute sound notifikasi */}
-              <button
-                className="staff-sound-btn"
-                type="button"
-                onClick={() => { toggleMute(); unlockAudio(); }}
-                title={muted ? 'Aktifkan suara notifikasi' : 'Matikan suara notifikasi'}
-                aria-label={muted ? 'Aktifkan suara' : 'Matikan suara'}
-                style={{
-                  background: 'transparent',
-                  border: '1px solid rgba(255,255,255,0.3)',
-                  borderRadius: '8px',
-                  color: '#fff',
-                  padding: '6px 10px',
-                  cursor: 'pointer',
-                  fontSize: '16px',
-                  lineHeight: 1,
-                }}
-              >
-                {muted ? '🔇' : '🔔'}
-              </button>
-              <div className="staff-header-auth">
-                <span className="staff-header-name">{userName}</span>
-                <button
-                  className="staff-homepage-btn"
-                  type="button"
-                  onClick={() => navigate('/')}
-                  title="Buka Homepage"
-                >
-                  Homepage
-                </button>
-                <button className="staff-logout-btn" type="button" onClick={handleLogout}>Keluar</button>
-              </div>
-            </div>
-          </header>
-
-          <div className="staff-body-row staff-body-row--full">
-            <div className="staff-content">
-              <div id="subadmin-panel" className="subadmin-panel-wrap">
-                {activeSection}
-              </div>
-            </div>
+          {muted ? '🔇' : '🔔'}
+        </button>
+      }
+    >
+      <div className="staff-body-row staff-body-row--full">
+        <div className="staff-content">
+          <div id="subadmin-panel" className="subadmin-panel-wrap">
+            {activeSection}
           </div>
         </div>
-
       </div>
-    </div>
+    </SidebarShell>
   );
 }

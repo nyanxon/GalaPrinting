@@ -10,7 +10,7 @@
  */
 
 import { useState } from 'react';
-import { setOrderDeliveryMethod, setOrderPickupInfo } from '../../services/invoiceService.js';
+import { setOrderDeliveryMethod, setOrderPickupInfo } from '../../services/api/invoiceService.js';
 import { showToast } from '../../core/toastEmitter.js';
 
 const METHOD_OPTIONS = [

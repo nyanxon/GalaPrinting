@@ -22,8 +22,7 @@ import HomepageSection from './sections/HomepageSection.jsx';
 import CategoriesSection from './sections/CategoriesSection.jsx';
 import InvoiceSection from './sections/InvoiceSection.jsx';
 import ExportDataCards from '../../ui/ExportDataCards.jsx';
-import StaffAvatarButton from '../../staff/StaffAvatarButton.jsx';
-import logoImg from '../../../assets/logo.png';
+import SidebarShell from '../../staff/SidebarShell.jsx';
 import '../../../styles/css/pages/dashboard.css';
 
 const ADMIN_NAV = [
@@ -218,121 +217,52 @@ export default function AdminDashboardPage() {
   const currentNavLabel = ADMIN_NAV.find((n) => n.id === activeNav)?.label ?? 'DASHBOARD';
 
   return (
-    <div className="staff-body">
-      <div className="staff-layout">
-
-        {/* ── Mobile sidebar backdrop ── */}
-        {sidebarOpen && (
-          <div
-            className="staff-sidebar-backdrop"
-            onClick={() => setSidebarOpen(false)}
-            aria-hidden="true"
-          />
-        )}
-
-        {/* ── Left sidebar (desktop: always visible / mobile: drawer) ── */}
-        <aside
-          className={`staff-sidebar${sidebarOpen ? ' staff-sidebar--open' : ''}`}
-          aria-label="Admin navigation"
+    <SidebarShell
+      navItems={ADMIN_NAV}
+      activeNav={activeNav}
+      onNavClick={handleNavClick}
+      currentLabel={currentNavLabel}
+      userName={userName}
+      onLogout={handleLogout}
+      sidebarOpen={sidebarOpen}
+      onToggleSidebar={setSidebarOpen}
+      ariaLabel="Admin navigation"
+      headerSlot={
+        <button
+          className="staff-sound-btn"
+          type="button"
+          onClick={() => { toggleMute(); unlockAudio(); }}
+          title={muted ? 'Aktifkan suara notifikasi' : 'Matikan suara notifikasi'}
+          aria-label={muted ? 'Aktifkan suara' : 'Matikan suara'}
+          style={{
+            background: 'transparent',
+            border: '1px solid rgba(255,255,255,0.3)',
+            borderRadius: '8px',
+            color: '#fff',
+            padding: '6px 10px',
+            cursor: 'pointer',
+            fontSize: '16px',
+            lineHeight: 1,
+          }}
         >
-          {/* Mobile: close button inside drawer */}
-          <button
-            className="staff-sidebar-close"
-            type="button"
-            aria-label="Tutup menu"
-            onClick={() => setSidebarOpen(false)}
-          >
-            ✕
-          </button>
-
-          <div className="staff-sidebar-logo">
-            <img src={logoImg} alt="Gala Printing"
-              onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-          </div>
-          <nav className="staff-nav">
-            {ADMIN_NAV.map((item) => (
-              <button
-                key={item.id}
-                className={`staff-nav-item${activeNav === item.id ? ' active' : ''}`}
-                type="button"
-                onClick={() => handleNavClick(item.id)}
-              >
-                {item.label}
-              </button>
-            ))}
-          </nav>
-        </aside>
-
-        {/* ── Right column ── */}
-        <div className="staff-main">
-          <header className="staff-header">
-            {/* Mobile: hamburger button */}
-            <button
-              className="staff-hamburger"
-              type="button"
-              aria-label="Buka menu"
-              aria-expanded={sidebarOpen}
-              onClick={() => setSidebarOpen(true)}
-            >
-              <span /><span /><span />
-            </button>
-
-            <div className="staff-header-section-label">{currentNavLabel}</div>
-
-            <div className="staff-header-right">
-              <StaffAvatarButton />
-              {/* Fitur 5: toggle mute/unmute sound notifikasi */}
-              <button
-                className="staff-sound-btn"
-                type="button"
-                onClick={() => { toggleMute(); unlockAudio(); }}
-                title={muted ? 'Aktifkan suara notifikasi' : 'Matikan suara notifikasi'}
-                aria-label={muted ? 'Aktifkan suara' : 'Matikan suara'}
-                style={{
-                  background: 'transparent',
-                  border: '1px solid rgba(255,255,255,0.3)',
-                  borderRadius: '8px',
-                  color: '#fff',
-                  padding: '6px 10px',
-                  cursor: 'pointer',
-                  fontSize: '16px',
-                  lineHeight: 1,
-                }}
-              >
-                {muted ? '🔇' : '🔔'}
-              </button>
-              <div className="staff-header-auth">
-                <span className="staff-header-name">{userName}</span>
-                <button
-                  className="staff-homepage-btn"
-                  type="button"
-                  onClick={() => navigate('/')}
-                  title="Buka Homepage"
-                >
-                  Homepage
-                </button>
-                <button className="staff-logout-btn" type="button" onClick={handleLogout}>Keluar</button>
-              </div>
-            </div>
-          </header>
-
-          <div className={`staff-body-row${isDashboard ? '' : ' staff-body-row--full'}`}>
-            <div className="staff-content">
-              {isDashboard && (
-                <>
-                  <WelcomeCard userName={userName} />
-                  <ExportDataCards />
-                </>
-              )}
-              <div id="adm-panel">{renderSection()}</div>
-            </div>
-            {isDashboard && (
-              <ActivitySidebar onGoToOrders={goToOrders} onGoToChats={goToChats} />
-            )}
-          </div>
+          {muted ? '🔇' : '🔔'}
+        </button>
+      }
+    >
+      <div className={`staff-body-row${isDashboard ? '' : ' staff-body-row--full'}`}>
+        <div className="staff-content">
+          {isDashboard && (
+            <>
+              <WelcomeCard userName={userName} />
+              <ExportDataCards />
+            </>
+          )}
+          <div id="adm-panel">{renderSection()}</div>
         </div>
-
+        {isDashboard && (
+          <ActivitySidebar onGoToOrders={goToOrders} onGoToChats={goToChats} />
+        )}
       </div>
-    </div>
+    </SidebarShell>
   );
 }

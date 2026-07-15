@@ -14,58 +14,18 @@
  * Requirements: 11.1, 11.2, 13.4
  */
 
-import { useState, useEffect, useContext, useCallback } from 'react';
-import { AuthContext } from '../../../context/AuthContext.jsx';
-import {
-  listAllOrders,
-  getOrderById,
-  updateOrderStatus,
-  updateAdminNote,
-  getAllowedNextStatuses,
-  STATUS_CONFIG,
-} from '../../../../services/orders.js';
-import { useSocket } from '../../../context/SocketContext.jsx';
-import { formatCurrency } from '../../../../utils/format.js';import OrderDetailModal from '../../../modals/OrderDetailModal.jsx';
-import { showToast } from '../../../../core/toastEmitter.js';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { listAllOrders, getAllowedNextStatuses, STATUS_CONFIG } from '../../../../services/orders.js';
+import { formatCurrency } from '../../../../utils/format.js';
+import OrderDetailModal from '../../../modals/OrderDetailModal.jsx';
+import useOrderList, { getOrderState } from '../../../../hooks/useOrderList.js';
 
-/**
- * Tentukan "state" order dari perspektif role tertentu:
- *   'action'    — role ini bisa/harus advance order ini sekarang
- *   'done'      — role ini sudah selesai memproses order ini
- *   'pending'   — order belum sampai di tahap role ini (masih di role sebelumnya)
- *   'terminal'  — order sudah Finished atau Cancelled
- *
- * ROLE_STAGES mendefinisikan pada status apa saja suatu role "bertanggung jawab".
- */
 const ROLE_STAGES = {
   cashier:     ['Waiting for Payment', 'Payment Accepted'],
   cs:          ['Payment Accepted', 'Waiting for Design Approval', 'Design Accepted'],
   operational: ['Design Accepted', 'On Progress'],
   qc:          ['On Progress', 'Quality Checking', 'In Delivery', 'Finished'],
 };
-
-function getOrderState(order, role) {
-  const status = order.status;
-  if (status === 'Cancelled') return 'terminal';
-  if (status === 'Finished' && role !== 'qc') return 'terminal';
-
-  const allowed = getAllowedNextStatuses(status, role, order.orderType || 'standard');
-  if (allowed.length > 0) return 'action';
-
-  const stages = ROLE_STAGES[role] || [];
-  if (stages.includes(status)) return 'done';
-
-  // Cek apakah status sudah melewati semua stage role ini
-  const STATUS_ORDER = [
-    'Waiting for Payment', 'Payment Accepted', 'Waiting for Design Approval',
-    'Design Accepted', 'On Progress', 'Quality Checking', 'In Delivery', 'Finished',
-  ];
-  const statusIdx = STATUS_ORDER.indexOf(status);
-  const lastStageIdx = Math.max(...stages.map((s) => STATUS_ORDER.indexOf(s)).filter((i) => i >= 0));
-  if (statusIdx > lastStageIdx) return 'done';
-
-  return 'pending';
-}
 
 const STATE_LABEL = {
   action:  { text: 'Butuh Aksi', cls: 'role-state--action' },
@@ -75,31 +35,45 @@ const STATE_LABEL = {
 };
 
 export default function SubAdminOrdersSection({ extraColumn = null }) {
-  const { user } = useContext(AuthContext);
-  const actorRole = user?.role || 'admin';
-  const socketFromHook = useSocket();
-
   const [orders, setOrders] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [detailOpen, setDetailOpen] = useState(false);
-  const [noteValues, setNoteValues] = useState({});
-  // Filter tampilan: 'all' | 'action' | 'done' | 'pending'
-  const [stateFilter, setStateFilter] = useState('all');
+  const fetchOrdersRef = useRef(null);
+
+  const {
+    searchQuery, setSearchQuery,
+    selectedOrder, setSelectedOrder,
+    detailOpen, setDetailOpen,
+    noteValues, setNoteValues,
+    stateFilter, setStateFilter,
+    actorRole,
+    handleAdvance,
+    handleNoteBlur,
+    handleNoteKeyDown,
+    handleDetailClick,
+    getOrderStateForOrder,
+  } = useOrderList({
+    fetchOrders: () => fetchOrdersRef.current?.(),
+    defaultRole: 'admin',
+    enableStateFilter: true,
+    roleStages: ROLE_STAGES,
+  });
+
+  // Wrapper: add Finished→terminal for non-qc roles (SubAdmin-specific behavior)
+  const getOrderStateForRole = useCallback((order) => {
+    const state = getOrderStateForOrder(order);
+    if (order.status === 'Finished' && actorRole !== 'qc') return 'terminal';
+    return state;
+  }, [getOrderStateForOrder, actorRole]);
 
   const fetchOrders = useCallback(async () => {
     try {
-      // Fitur 1: ambil SEMUA order — tidak ada filter status
       const raw = await listAllOrders();
       let all = Array.isArray(raw) ? raw : [];
 
-      // Sort: action → done → pending → terminal
       const ORDER_MAP = { action: 0, done: 1, pending: 2, terminal: 3 };
       all = [...all].sort((a, b) => {
-        const sa = ORDER_MAP[getOrderState(a, actorRole)] ?? 3;
-        const sb = ORDER_MAP[getOrderState(b, actorRole)] ?? 3;
+        const sa = ORDER_MAP[getOrderStateForRole(a)] ?? 3;
+        const sb = ORDER_MAP[getOrderStateForRole(b)] ?? 3;
         if (sa !== sb) return sa - sb;
-        // Dalam group yang sama, terbaru di atas
         return new Date(b.createdAt) - new Date(a.createdAt);
       });
 
@@ -116,76 +90,20 @@ export default function SubAdminOrdersSection({ extraColumn = null }) {
     } catch (err) {
       console.error('Failed to load orders:', err);
     }
-  }, [searchQuery, actorRole]);
+  }, [searchQuery, getOrderStateForRole]);
 
-  useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
+  // Keep ref fresh for socket/event listeners
+  fetchOrdersRef.current = fetchOrders;
 
-  // Listen for socket/custom events
-  useEffect(() => {
-    function handler() { fetchOrders(); }
-    window.addEventListener('gala:orders-updated', handler);
-    return () => window.removeEventListener('gala:orders-updated', handler);
-  }, [fetchOrders]);
+  useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
-  // Fitur 4: auto-refresh list saat ada socket event order baru / status berubah
-  useEffect(() => {
-    const socket = socketFromHook;
-    if (!socket) return;
-    function onOrderNew()      { fetchOrders(); }
-    function onStatusChanged() { fetchOrders(); }
-    socket.on('order:new',            onOrderNew);
-    socket.on('order:status_changed', onStatusChanged);
-    return () => {
-      socket.off('order:new',            onOrderNew);
-      socket.off('order:status_changed', onStatusChanged);
-    };
-  }, [fetchOrders, socketFromHook]);
-
-  async function handleAdvance(orderId, nextStatus) {
-    const res = await updateOrderStatus(orderId, nextStatus, actorRole);
-    if (res.ok) {
-      showToast(`Status → "${nextStatus}".`, 'success');
-    } else {
-      showToast(res.message || 'Gagal mengubah status.', 'error');
-    }
-    fetchOrders();
-  }
-
-  async function handleNoteBlur(orderId) {
-    const note = noteValues[orderId] ?? '';
-    const res = await updateAdminNote(orderId, note);
-    if (res.ok) showToast('Catatan disimpan.', 'success', 1500);
-  }
-
-  function handleNoteKeyDown(e, orderId) {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleNoteBlur(orderId);
-    }
-  }
-
-  async function handleDetailClick(orderId) {
-    try {
-      const order = await getOrderById(orderId);
-      if (order) {
-        setSelectedOrder(order);
-        setDetailOpen(true);
-      }
-    } catch (err) {
-      console.error('Failed to load order detail:', err);
-    }
-  }
-
-  // Filter orders berdasarkan stateFilter
   const displayOrders = stateFilter === 'all'
     ? orders
-    : orders.filter((o) => getOrderState(o, actorRole) === stateFilter);
+    : orders.filter((o) => getOrderStateForRole(o) === stateFilter);
 
-  const actionCount  = orders.filter((o) => getOrderState(o, actorRole) === 'action').length;
-  const doneCount    = orders.filter((o) => getOrderState(o, actorRole) === 'done').length;
-  const pendingCount = orders.filter((o) => getOrderState(o, actorRole) === 'pending').length;
+  const actionCount  = orders.filter((o) => getOrderStateForRole(o) === 'action').length;
+  const doneCount    = orders.filter((o) => getOrderStateForRole(o) === 'done').length;
+  const pendingCount = orders.filter((o) => getOrderStateForRole(o) === 'pending').length;
 
   return (
     <div className="adm-card">
@@ -194,7 +112,6 @@ export default function SubAdminOrdersSection({ extraColumn = null }) {
           Semua Pesanan ({orders.length})
         </h2>
         <div className="adm-toolbar-right">
-          {/* Filter toggle — Fitur 1 */}
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
             {[
               { key: 'all',     label: `Semua (${orders.length})` },
@@ -256,12 +173,11 @@ export default function SubAdminOrdersSection({ extraColumn = null }) {
                   actorRole,
                   order.orderType || 'standard'
                 );
-                // QC role handles delivery via extra column — don't show advance btn for those statuses
                 const isQcDeliveryStatus =
                   actorRole === 'qc' &&
                   (order.status === 'Quality Checking' || order.status === 'In Delivery');
                 const showAdvanceBtn = allowed.length > 0 && !isQcDeliveryStatus;
-                const orderState = getOrderState(order, actorRole);
+                const orderState = getOrderStateForRole(order);
                 const stateInfo = STATE_LABEL[orderState] || STATE_LABEL.terminal;
 
                 return (
@@ -302,7 +218,6 @@ export default function SubAdminOrdersSection({ extraColumn = null }) {
                         {cfg.icon} {order.status}
                       </span>
                     </td>
-                    {/* Kolom "Status Saya" — Fitur 1: tampilkan state order dari perspektif role ini */}
                     <td>
                       {stateInfo.text ? (
                         <span

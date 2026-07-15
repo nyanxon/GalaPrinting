@@ -12,48 +12,19 @@
  * Requirements: 11.1, 13.4
  */
 
-import { useState, useEffect, useContext, useCallback, useRef } from 'react';
-import { AuthContext } from '../../../context/AuthContext.jsx';
-import {
-  listAllOrders,
-  getOrderById,
-  updateOrderStatus,
-  updateAdminNote,
-  getAllowedNextStatuses,
-  STATUS_CONFIG,
-} from '../../../../services/orders.js';
-import { useSocket } from '../../../context/SocketContext.jsx';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { listAllOrders, getAllowedNextStatuses, STATUS_CONFIG } from '../../../../services/orders.js';
 import { formatCurrency } from '../../../../utils/format.js';
-import OrderDetailModal from '../../../modals/OrderDetailModal.jsx';
-import { showToast } from '../../../../core/toastEmitter.js';
 import { resolveApiUrl } from '../../../../core/httpClient.js';
-import { getInvoiceByOrderId, openInvoicePdf } from '../../../../services/invoiceService.js';
-
+import { getInvoiceByOrderId, openInvoicePdf } from '../../../../services/api/invoiceService.js';
+import { showToast } from '../../../../core/toastEmitter.js';
+import OrderDetailModal from '../../../modals/OrderDetailModal.jsx';
 import ThermalReceiptModal from '../../../modals/ThermalReceiptModal.jsx';
-
-// ── Fitur 1: state order dari perspektif Cashier ──────────────────────────────
+import useOrderList from '../../../../hooks/useOrderList.js';
 
 const CASHIER_STAGES = ['Waiting for Payment', 'Payment Accepted'];
-const STATUS_ORDER = [
-  'Waiting for Payment', 'Payment Accepted', 'Waiting for Design Approval',
-  'Design Accepted', 'On Progress', 'Quality Checking', 'In Delivery', 'Finished',
-];
 
-function getOrderState(order, role) {
-  const status = order.status;
-  if (status === 'Cancelled') return 'terminal';
-
-  const allowed = getAllowedNextStatuses(status, role, order.orderType || 'standard');
-  if (allowed.length > 0) return 'action';
-
-  if (CASHIER_STAGES.includes(status)) return 'done';
-
-  const statusIdx    = STATUS_ORDER.indexOf(status);
-  const lastStageIdx = Math.max(...CASHIER_STAGES.map((s) => STATUS_ORDER.indexOf(s)).filter((i) => i >= 0));
-  if (statusIdx > lastStageIdx) return 'done';
-
-  return 'pending';
-}
+const ROLE_STAGES = { cashier: CASHIER_STAGES };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -103,43 +74,49 @@ function CashierProofCell({ order, onCancel }) {
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export default function CashierOrdersSection() {
-  const { user } = useContext(AuthContext);
-  const actorRole = user?.role || 'cashier';
-  const socketFromHook = useSocket();
+  const [orders, setOrders] = useState([]);
+  const fetchOrdersRef = useRef(null);
 
-  const [orders, setOrders]               = useState([]);
-  const [searchQuery, setSearchQuery]     = useState('');
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [detailOpen, setDetailOpen]       = useState(false);
-  const [noteValues, setNoteValues]       = useState({});
-  const [stateFilter, setStateFilter]     = useState('all');
+  const {
+    searchQuery, setSearchQuery,
+    selectedOrder, setSelectedOrder,
+    detailOpen, setDetailOpen,
+    noteValues, setNoteValues,
+    stateFilter, setStateFilter,
+    actorRole,
+    invoiceMap, setInvoiceMap,
+    thermalInvoice, setThermalInvoice,
+    thermalAutoPrint, setThermalAutoPrint,
+    pendingAutoPrintRef,
+    handleAdvance: hookAdvance,
+    handleNoteBlur,
+    handleNoteKeyDown,
+    handleDetailClick,
+    handleOpenCancel,
+    handleCancelConfirm,
+    handleCancelClose,
+    getOrderStateForOrder,
+    cancelDialogOpen,
+    cancelReason, setCancelReason,
+    cancelReasonErr,
+  } = useOrderList({
+    fetchOrders: () => fetchOrdersRef.current?.(),
+    defaultRole: 'cashier',
+    enableCancel: true,
+    enableInvoice: true,
+    enableStateFilter: true,
+    roleStages: ROLE_STAGES,
+  });
 
-  // Fitur 2: invoice status per order
-  const [invoiceMap, setInvoiceMap]         = useState({});
-  // Fitur 4 (print): thermal modal
-  const [thermalInvoice, setThermalInvoice] = useState(null);
-
-  // Cancellation dialog
-  const [cancelDialogOpen, setCancelDialogOpen]       = useState(false);
-  const [cancelTargetOrderId, setCancelTargetOrderId] = useState(null);
-  const [cancelReason, setCancelReason]               = useState('');
-  const [cancelReasonErr, setCancelReasonErr]         = useState('');
-
-  // Auto-print: track order IDs that should auto-print invoice when loaded
-  const pendingAutoPrintRef = useRef(new Set());
-  const [thermalAutoPrint, setThermalAutoPrint] = useState(false);
-
-  // Fitur 1: fetch ALL orders — tidak ada filter status
   const fetchOrders = useCallback(async () => {
     try {
       const raw = await listAllOrders();
       let all = Array.isArray(raw) ? raw : [];
 
-      // Sort: action → done → pending → terminal, lalu terbaru di atas dalam tiap grup
       const ORDER_MAP = { action: 0, done: 1, pending: 2, terminal: 3 };
       all = [...all].sort((a, b) => {
-        const sa = ORDER_MAP[getOrderState(a, actorRole)] ?? 3;
-        const sb = ORDER_MAP[getOrderState(b, actorRole)] ?? 3;
+        const sa = ORDER_MAP[getOrderStateForOrder(a)] ?? 3;
+        const sb = ORDER_MAP[getOrderStateForOrder(b)] ?? 3;
         if (sa !== sb) return sa - sb;
         return new Date(b.createdAt) - new Date(a.createdAt);
       });
@@ -157,37 +134,18 @@ export default function CashierOrdersSection() {
     } catch (err) {
       console.error('Failed to load orders:', err);
     }
-  }, [searchQuery, actorRole]);
+  }, [searchQuery, getOrderStateForOrder]);
+
+  // Keep ref fresh for socket/event listeners
+  fetchOrdersRef.current = fetchOrders;
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
-  // Custom event (dari komponen lain)
-  useEffect(() => {
-    function handler() { fetchOrders(); }
-    window.addEventListener('gala:orders-updated', handler);
-    return () => window.removeEventListener('gala:orders-updated', handler);
-  }, [fetchOrders]);
-
-  // Fitur 4: auto-refresh saat socket event order baru / status berubah
-  useEffect(() => {
-    const socket = socketFromHook;
-    if (!socket) return;
-    function onOrderNew()      { fetchOrders(); }
-    function onStatusChanged() { fetchOrders(); }
-    socket.on('order:new',            onOrderNew);
-    socket.on('order:status_changed', onStatusChanged);
-    return () => {
-      socket.off('order:new',            onOrderNew);
-      socket.off('order:status_changed', onStatusChanged);
-    };
-  }, [fetchOrders, socketFromHook]);
-
-  // Fitur 2: lazy-load invoice untuk order Payment Accepted + status setelahnya (with retry for 404)
+  // Fitur 2: lazy-load invoice
   const pastPaymentStatuses = ['Waiting for Design Approval', 'On Progress', 'Ready to Ship', 'Shipped', 'Completed'];
   useEffect(() => {
     orders.forEach((order) => {
       if (order.status !== 'Payment Accepted' && !pastPaymentStatuses.includes(order.status)) return;
-      // Skip jika sudah punya data (termasuk null = tidak ada invoice, atau 'loading')
       if (invoiceMap[order.id] !== undefined) return;
       setInvoiceMap((prev) => ({ ...prev, [order.id]: 'loading' }));
 
@@ -197,7 +155,6 @@ export default function CashierOrdersSection() {
           if (inv) {
             setInvoiceMap((prev) => ({ ...prev, [order.id]: inv }));
           } else if (attempt < 1) {
-            // Invoice belum ada, retry sekali lagi setelah 1 detik
             setTimeout(() => fetchWithRetry(attempt + 1), 1000);
           } else {
             setInvoiceMap((prev) => ({ ...prev, [order.id]: null }));
@@ -212,115 +169,22 @@ export default function CashierOrdersSection() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orders]);
 
-  // Auto-print: when invoice loads for a pending order, trigger A4 PDF + thermal receipt
-  useEffect(() => {
-    for (const orderId of pendingAutoPrintRef.current) {
-      const inv = invoiceMap[orderId];
-      if (inv && inv !== 'loading' && inv !== 'error' && inv !== null) {
-        pendingAutoPrintRef.current.delete(orderId);
-
-        // Auto-open A4 PDF in new tab
-        if (inv.id) {
-          openInvoicePdf(inv.id).catch(() => {
-            showToast('Gagal membuka PDF invoice.', 'error');
-          });
-        }
-
-        // Auto-print thermal receipt
-        setThermalInvoice(inv);
-        setThermalAutoPrint(true);
-        break;
-      }
-      if (inv === null || inv === 'error') {
-        pendingAutoPrintRef.current.delete(orderId);
-        showToast('Invoice gagal dimuat, silakan coba print manual.', 'error');
-      }
-    }
-  }, [invoiceMap]);
-
-  async function handleAdvance(orderId, nextStatus) {
-    // Reset invoiceMap agar lazy-load bisa re-fetch
+  // Wrap advance to handle invoice reset + auto-print tracking
+  const handleAdvance = useCallback(async (orderId, nextStatus) => {
     if (nextStatus === 'Payment Accepted') {
-      setInvoiceMap((prev) => {
-        const next = { ...prev };
-        delete next[orderId];
-        return next;
-      });
-      // Track for auto-print once invoice loads
+      setInvoiceMap((prev) => { const n = { ...prev }; delete n[orderId]; return n; });
       pendingAutoPrintRef.current.add(orderId);
     }
-
-    const res = await updateOrderStatus(orderId, nextStatus, actorRole);
-    if (res.ok) {
-      showToast(`Status → "${nextStatus}".`, 'success');
-    } else {
-      showToast(res.message || 'Gagal mengubah status.', 'error');
-      return;
-    }
-
-    // fetchOrders akan trigger lazy-load useEffect yang akan fetch invoice
-    await fetchOrders();
-  }
-
-  async function handleNoteBlur(orderId) {
-    const note = noteValues[orderId] ?? '';
-    const res  = await updateAdminNote(orderId, note);
-    if (res.ok) showToast('Catatan disimpan.', 'success', 1500);
-  }
-
-  function handleNoteKeyDown(e, orderId) {
-    if (e.key === 'Enter') { e.preventDefault(); handleNoteBlur(orderId); }
-  }
-
-  async function handleDetailClick(orderId) {
-    try {
-      const order = await getOrderById(orderId);
-      if (order) { setSelectedOrder(order); setDetailOpen(true); }
-    } catch (err) {
-      console.error('Failed to load order detail:', err);
-    }
-  }
-
-  function handleOpenCancel(orderId) {
-    setCancelTargetOrderId(orderId);
-    setCancelReason('');
-    setCancelReasonErr('');
-    setCancelDialogOpen(true);
-  }
-
-  async function handleCancelConfirm() {
-    if (!cancelReason.trim()) { setCancelReasonErr('Alasan pembatalan wajib diisi.'); return; }
-    const res = await updateOrderStatus(cancelTargetOrderId, 'Cancelled', actorRole, cancelReason.trim());
-    if (res.ok) {
-      showToast('Pesanan dibatalkan.', 'success');
-      setCancelDialogOpen(false);
-      setCancelTargetOrderId(null);
-      setCancelReason('');
-      setCancelReasonErr('');
-      fetchOrders();
-    } else {
-      setCancelReasonErr(res.message || 'Gagal membatalkan pesanan.');
-    }
-  }
-
-  function handleCancelClose() {
-    setCancelDialogOpen(false);
-    setCancelTargetOrderId(null);
-    setCancelReason('');
-    setCancelReasonErr('');
-  }
-
-  // ── Filter display ────────────────────────────────────────────────────────
+    hookAdvance(orderId, nextStatus);
+  }, [hookAdvance, setInvoiceMap, pendingAutoPrintRef]);
 
   const displayOrders = stateFilter === 'all'
     ? orders
-    : orders.filter((o) => getOrderState(o, actorRole) === stateFilter);
+    : orders.filter((o) => getOrderStateForOrder(o) === stateFilter);
 
-  const actionCount  = orders.filter((o) => getOrderState(o, actorRole) === 'action').length;
-  const doneCount    = orders.filter((o) => getOrderState(o, actorRole) === 'done').length;
-  const pendingCount = orders.filter((o) => getOrderState(o, actorRole) === 'pending').length;
-
-  // ── Render ────────────────────────────────────────────────────────────────
+  const actionCount  = orders.filter((o) => getOrderStateForOrder(o) === 'action').length;
+  const doneCount    = orders.filter((o) => getOrderStateForOrder(o) === 'done').length;
+  const pendingCount = orders.filter((o) => getOrderStateForOrder(o) === 'pending').length;
 
   return (
     <div className="adm-card">
@@ -329,7 +193,6 @@ export default function CashierOrdersSection() {
           Semua Pesanan ({orders.length})
         </h2>
         <div className="adm-toolbar-right">
-          {/* Filter toggle — Fitur 1 */}
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
             {[
               { key: 'all',     label: `Semua (${orders.length})` },
@@ -388,7 +251,7 @@ export default function CashierOrdersSection() {
                 const cfg            = STATUS_CONFIG[order.status] || { icon: '○', badge: '' };
                 const allowed        = getAllowedNextStatuses(order.status, actorRole, order.orderType || 'standard');
                 const advanceTargets = allowed.filter((s) => s !== 'Cancelled');
-                const orderState     = getOrderState(order, actorRole);
+                const orderState     = getOrderStateForOrder(order);
 
                 const stateBadge = {
                   action:  { text: 'Butuh Aksi',    bg: '#dcfce7', color: '#166534' },
@@ -433,7 +296,6 @@ export default function CashierOrdersSection() {
                       </span>
                     </td>
 
-                    {/* Kolom Status Saya — Fitur 1 */}
                     <td>
                       {stateBadge.text ? (
                         <span style={{
@@ -484,7 +346,6 @@ export default function CashierOrdersSection() {
                           🔍 Detail
                         </button>
 
-                        {/* Fitur 2: Invoice button — tampilkan jika invoice sudah dimuat */}
                         {invoiceMap[order.id] !== undefined && (
                           <div style={{ marginTop: '4px' }}>
                             {invoiceMap[order.id] === 'loading' ? (
@@ -511,7 +372,6 @@ export default function CashierOrdersSection() {
                               </div>
                             ) : invoiceMap[order.id] ? (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                {/* Satu tombol PDF A4 */}
                                 <button
                                   className="adm-btn adm-btn--secondary"
                                   type="button"
@@ -524,7 +384,6 @@ export default function CashierOrdersSection() {
                                 >
                                   🧾 {invoiceMap[order.id].invoice_number}
                                 </button>
-                                {/* Print Resi Termal */}
                                 <button
                                   type="button"
                                   className="adm-btn adm-btn--thermal"
@@ -563,7 +422,6 @@ export default function CashierOrdersSection() {
         order={selectedOrder}
       />
 
-      {/* Fitur 4 (print): Resi Termal Modal */}
       {thermalInvoice && (
         <ThermalReceiptModal
           invoice={thermalInvoice}
@@ -572,7 +430,6 @@ export default function CashierOrdersSection() {
         />
       )}
 
-      {/* ── Cancellation Dialog ── */}
       {cancelDialogOpen && (
         <div style={{
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
@@ -594,7 +451,7 @@ export default function CashierOrdersSection() {
               rows={4}
               placeholder="Contoh: Bukti pembayaran tidak valid, customer tidak merespons, dll."
               value={cancelReason}
-              onChange={(e) => { setCancelReason(e.target.value); setCancelReasonErr(''); }}
+              onChange={(e) => { setCancelReason(e.target.value); }}
               style={{ width: '100%', resize: 'vertical', marginBottom: '8px', boxSizing: 'border-box' }}
               aria-label="Alasan pembatalan"
             />

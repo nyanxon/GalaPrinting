@@ -28,7 +28,7 @@ import {
   listCatBanners,
   saveCatBanner,
   deleteCatBanner,
-} from '../../../../services/homepageService.js';
+} from '../../../../services/api/homepageService.js';
 import { api } from '../../../../core/httpClient.js';
 import { listProducts } from '../../../../services/products.js';
 

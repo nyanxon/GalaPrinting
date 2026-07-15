@@ -3,7 +3,7 @@ import Modal from '../ui/Modal.jsx';
 import { formatCurrency } from '../../utils/format.js';
 import { api, resolveApiUrl } from '../../core/httpClient.js';
 import DeliveryMethodPanel from '../staff/DeliveryMethodPanel.jsx';
-import { getInvoiceByOrderId, updateInvoicePaymentStatus, openInvoicePdf } from '../../services/invoiceService.js';
+import { getInvoiceByOrderId, updateInvoicePaymentStatus, openInvoicePdf } from '../../services/api/invoiceService.js';
 import { showToast } from '../../core/toastEmitter.js';
 
 /**

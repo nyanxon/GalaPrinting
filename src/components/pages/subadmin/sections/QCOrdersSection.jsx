@@ -14,7 +14,7 @@
 import { useState } from 'react';
 import SubAdminOrdersSection from './SubAdminOrdersSection.jsx';
 import { setTrackingNumber, updateOrderStatus } from '../../../../services/orders.js';
-import { setOrderDeliveryMethod, setOrderPickupInfo } from '../../../../services/invoiceService.js';
+import { setOrderDeliveryMethod, setOrderPickupInfo } from '../../../../services/api/invoiceService.js';
 import { showToast } from '../../../../core/toastEmitter.js';
 
 const COURIERS = ['JNE', 'J&T Express', 'SiCepat', 'AnterAja', 'Pos Indonesia', 'Ninja Xpress'];

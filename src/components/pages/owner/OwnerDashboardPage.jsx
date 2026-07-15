@@ -22,11 +22,11 @@ import HomepageSection from '../admin/sections/HomepageSection.jsx';
 import RevenueSection from './sections/RevenueSection.jsx';
 import ReportsSection from './sections/ReportsSection.jsx';
 import AnalyticsSection from './sections/AnalyticsSection.jsx';
-import StaffAvatarButton from '../../staff/StaffAvatarButton.jsx';
 import ExportDataCards from '../../ui/ExportDataCards.jsx';
-import logoImg from '../../../assets/logo.png';
+import SidebarShell from '../../staff/SidebarShell.jsx';
 import '../../../styles/css/pages/dashboard.css';
 
+// TODO: Owner is missing `invoices` and `dm` nav items that Admin has — may be intentional or a bug.
 const OWNER_NAV = [
   { id: 'dashboard',   label: 'DASHBOARD' },
   { id: 'orders',      label: 'ORDERS' },
@@ -112,6 +112,7 @@ function ActivitySidebar({ onGoToOrders, onGoToChats }) {
         )}
       </div>
       <div className="staff-activity-card">
+        {/* TODO: Owner chat card is missing the → goto button that Admin has (line 131 in AdminDashboardPage). */}
         <div className="staff-activity-card-header">
           <div className="staff-activity-card-title">NEW CHAT</div>
         </div>
@@ -150,6 +151,7 @@ function WelcomeCard({ userName }) {
   );
 }
 
+// TODO: Owner is missing sound toggle (useAdminSound) that Admin and SubAdmin have — may be intentional or a bug.
 export default function OwnerDashboardPage() {
   const { user, updateUser } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -193,77 +195,32 @@ export default function OwnerDashboardPage() {
   const currentNavLabel = OWNER_NAV.find((n) => n.id === activeNav)?.label ?? 'DASHBOARD';
 
   return (
-    <div className="staff-body">
-      <div className="staff-layout">
-
-        {sidebarOpen && (
-          <div className="staff-sidebar-backdrop" onClick={() => setSidebarOpen(false)} aria-hidden="true" />
-        )}
-
-        <aside
-          className={`staff-sidebar staff-sidebar--owner${sidebarOpen ? ' staff-sidebar--open' : ''}`}
-          aria-label="Owner navigation"
-        >
-          <button className="staff-sidebar-close" type="button" aria-label="Tutup menu" onClick={() => setSidebarOpen(false)}>✕</button>
-          <div className="staff-sidebar-logo">
-            <img src={logoImg} alt="Gala Printing" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-          </div>
-          <nav className="staff-nav">
-            {OWNER_NAV.map((item) => (
-              <button
-                key={item.id}
-                className={`staff-nav-item${activeNav === item.id ? ' active' : ''}`}
-                type="button"
-                onClick={() => handleNavClick(item.id)}
-              >
-                {item.label}
-              </button>
-            ))}
-          </nav>
-        </aside>
-
-        <div className="staff-main">
-          <header className="staff-header">
-            <button className="staff-hamburger" type="button" aria-label="Buka menu" aria-expanded={sidebarOpen} onClick={() => setSidebarOpen(true)}>
-              <span /><span /><span />
-            </button>
-
-            <div className="staff-header-section-label">{currentNavLabel}</div>
-
-            <div className="staff-header-right">
-              <StaffAvatarButton />
-              <div className="staff-header-auth">
-                <span className="staff-header-name">{userName}</span>
-                <button
-                  className="staff-homepage-btn"
-                  type="button"
-                  onClick={() => navigate('/')}
-                  title="Buka Homepage"
-                >
-                  Homepage
-                </button>
-                <button className="staff-logout-btn" type="button" onClick={handleLogout}>Keluar</button>
-              </div>
-            </div>
-          </header>
-
-          <div className={`staff-body-row${isDashboard ? '' : ' staff-body-row--full'}`}>
-            <div className="staff-content">
-              {isDashboard && (
-                <>
-                  <WelcomeCard userName={userName} />
-                  <ExportDataCards />
-                </>
-              )}
-              <div id="adm-panel">{renderSection()}</div>
-            </div>
-            {isDashboard && (
-              <ActivitySidebar onGoToOrders={goToOrders} onGoToChats={goToChats} />
-            )}
-          </div>
+    <SidebarShell
+      navItems={OWNER_NAV}
+      activeNav={activeNav}
+      onNavClick={handleNavClick}
+      currentLabel={currentNavLabel}
+      userName={userName}
+      onLogout={handleLogout}
+      sidebarOpen={sidebarOpen}
+      onToggleSidebar={setSidebarOpen}
+      ariaLabel="Owner navigation"
+      sidebarClassName="staff-sidebar--owner"
+    >
+      <div className={`staff-body-row${isDashboard ? '' : ' staff-body-row--full'}`}>
+        <div className="staff-content">
+          {isDashboard && (
+            <>
+              <WelcomeCard userName={userName} />
+              <ExportDataCards />
+            </>
+          )}
+          <div id="adm-panel">{renderSection()}</div>
         </div>
-
+        {isDashboard && (
+          <ActivitySidebar onGoToOrders={goToOrders} onGoToChats={goToChats} />
+        )}
       </div>
-    </div>
+    </SidebarShell>
   );
 }
