@@ -9,7 +9,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../../../../core/httpClient.js';
-import { formatCurrency } from '../../../../core/helpers.js';
+import { formatCurrency } from '../../../../utils/format.js';
 import { showToast } from '../../../../core/toastEmitter.js';
 import '../../../../styles/css/pages/daily-revenue.css';
 

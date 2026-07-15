@@ -13,7 +13,7 @@ vi.mock('../services/addressService.js', () => ({
 }));
 
 import { getAddresses } from '../services/addressService.js';
-import AddressSelector from '../components/shared/AddressSelector.jsx';
+import AddressSelector from '../components/ui/AddressSelector.jsx';
 
 /**
  * Arbitrary for a single address object.

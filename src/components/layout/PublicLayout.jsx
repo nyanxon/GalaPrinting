@@ -2,9 +2,9 @@ import { Outlet } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import Navbar from '../shared/Navbar.jsx';
 import Footer from '../shared/Footer.jsx';
-import EmailVerificationBanner from '../shared/EmailVerificationBanner.jsx';
+import EmailVerificationBanner from '../staff/EmailVerificationBanner.jsx';
 
-const ChatWidget = lazy(() => import('../shared/ChatWidget.jsx'));
+const ChatWidget = lazy(() => import('../ui/ChatWidget.jsx'));
 
 /**
  * PublicLayout component

@@ -6,7 +6,7 @@ import { AuthContext, AuthProvider } from '../components/context/AuthContext.jsx
 import { useContext } from 'react';
 
 // Mock authService so getCurrentUser returns null initially
-vi.mock('../services/authService.js', () => ({
+vi.mock('../services/auth.js', () => ({
   getCurrentUser: vi.fn(() => null),
 }));
 

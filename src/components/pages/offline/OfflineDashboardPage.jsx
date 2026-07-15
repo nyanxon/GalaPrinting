@@ -16,14 +16,14 @@
 import { useState, useContext, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext.jsx';
-import { logout } from '../../../services/authService.js';
-import { createOfflineOrder, listAllOrders, STATUS_CONFIG } from '../../../services/orderService.js';
-import { STAFF_ROLES } from '../../../core/config.js';
-import { formatCurrency } from '../../../core/helpers.js';
+import { logout } from '../../../services/auth.js';
+import { createOfflineOrder, listAllOrders, STATUS_CONFIG } from '../../../services/orders.js';
+import { STAFF_ROLES } from '../../../config/roles.js';
+import { formatCurrency } from '../../../utils/format.js';
 import { showToast } from '../../../core/toastEmitter.js';
 import ChatsSection from '../admin/sections/ChatsSection.jsx';
 import DMSection from '../admin/sections/DMSection.jsx';
-import StaffAvatarButton from '../../shared/StaffAvatarButton.jsx';
+import StaffAvatarButton from '../../staff/StaffAvatarButton.jsx';
 import logoImg from '../../../assets/logo.png';
 import '../../../styles/css/pages/dashboard.css';
 

@@ -22,10 +22,10 @@ import {
   listOrdersPaginated,
   getOrderById,
   STATUS_CONFIG,
-} from '../../../../services/orderService.js';
-import { listCategories } from '../../../../services/categoryService.js';
-import { formatCurrency } from '../../../../core/helpers.js';
-import OrderDetailModal from '../../../shared/OrderDetailModal.jsx';
+} from '../../../../services/orders.js';
+import { listCategories } from '../../../../services/categories.js';
+import { formatCurrency } from '../../../../utils/format.js';
+import OrderDetailModal from '../../../modals/OrderDetailModal.jsx';
 
 /* ── helpers ───────────────────────────────────────────────── */
 function pctChange(current, previous) {

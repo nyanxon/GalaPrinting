@@ -1,0 +1,1 @@
+.content-page{padding:22px 0 10px}.hero{margin-top:12px;background:#edc8ae59;border:1px solid var(--border);border-radius:18px;padding:18px}.kpi{display:grid;gap:12px}@media(min-width:768px){.kpi{grid-template-columns:repeat(3,1fr)}}.kpi .card{box-shadow:none}

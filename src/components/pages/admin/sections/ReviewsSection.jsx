@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { listReviews, deleteReview } from '../../../../services/reviewService.js';
+import { listReviews, deleteReview } from '../../../../services/reviews.js';
 import { showToast } from '../../../../core/toastEmitter.js';
 import { resolveApiUrl } from '../../../../core/httpClient.js';
 import { getSocket } from '../../../../core/socket.js';

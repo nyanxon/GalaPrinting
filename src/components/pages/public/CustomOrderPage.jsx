@@ -11,7 +11,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import { api } from '../../../core/httpClient.js';
 import { showToast } from '../../../core/toastEmitter.js';
-import DropZone from '../../shared/DropZone.jsx';
+import DropZone from '../../ui/DropZone.jsx';
 import '../../../styles/css/pages/customOrder.css';
 
 export default function CustomOrderPage() {

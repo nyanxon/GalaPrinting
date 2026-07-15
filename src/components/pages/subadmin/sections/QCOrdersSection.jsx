@@ -13,7 +13,7 @@
 
 import { useState } from 'react';
 import SubAdminOrdersSection from './SubAdminOrdersSection.jsx';
-import { setTrackingNumber, updateOrderStatus } from '../../../../services/orderService.js';
+import { setTrackingNumber, updateOrderStatus } from '../../../../services/orders.js';
 import { setOrderDeliveryMethod, setOrderPickupInfo } from '../../../../services/invoiceService.js';
 import { showToast } from '../../../../core/toastEmitter.js';
 

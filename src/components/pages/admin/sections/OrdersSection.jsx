@@ -14,13 +14,13 @@ import {
   getAllowedNextStatuses,
   STATUS_CONFIG,
   ORDER_STATUSES,
-} from '../../../../services/orderService.js';
-import { formatCurrency } from '../../../../core/helpers.js';
-import OrderDetailModal from '../../../shared/OrderDetailModal.jsx';
+} from '../../../../services/orders.js';
+import { formatCurrency } from '../../../../utils/format.js';
+import OrderDetailModal from '../../../modals/OrderDetailModal.jsx';
 import { showToast } from '../../../../core/toastEmitter.js';
 import { useSocket } from '../../../context/SocketContext.jsx';
 import { getInvoiceByOrderId, openInvoicePdf } from '../../../../services/invoiceService.js';
-import ThermalReceiptModal from '../../../shared/ThermalReceiptModal.jsx';
+import ThermalReceiptModal from '../../../modals/ThermalReceiptModal.jsx';
 
 const PAGE_SIZE = 10;
 

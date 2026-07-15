@@ -9,13 +9,13 @@
 import { useState, useEffect, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext.jsx';
-import PaymentModal from '../../shared/PaymentModal.jsx';
+import PaymentModal from '../../modals/PaymentModal.jsx';
 import {
   listOrdersByCustomer,
   attachPaymentProof,
   STATUS_CONFIG,
-} from '../../../services/orderService.js';
-import { formatCurrency } from '../../../core/helpers.js';
+} from '../../../services/orders.js';
+import { formatCurrency } from '../../../utils/format.js';
 import '../../../styles/css/pages/myOrders.css';
 
 function fmtDate(iso) {

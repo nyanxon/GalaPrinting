@@ -12,10 +12,10 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { CartContext } from '../../context/CartContext.jsx';
 import { AuthContext } from '../../context/AuthContext.jsx';
-import { formatCurrency } from '../../../core/helpers.js';
+import { formatCurrency } from '../../../utils/format.js';
 import { resolveApiUrl, USE_BACKEND } from '../../../core/httpClient.js';
 import placeholderImg from '../../../assets/placeholder.svg';
-import ConfirmDialog from '../../shared/ConfirmDialog.jsx';
+import ConfirmDialog from '../../ui/ConfirmDialog.jsx';
 import '../../../styles/css/pages/cart.css';
 
 // ── Cart Item Detail Modal ────────────────────────────────────────────────────

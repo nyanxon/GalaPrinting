@@ -7,7 +7,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { verifyEmail, resendVerificationEmail } from '../../../services/authService.js';
+import { verifyEmail, resendVerificationEmail } from '../../../services/auth.js';
 
 function VerifyEmailPage() {
   const [searchParams] = useSearchParams();

@@ -7,7 +7,7 @@ import { MemoryRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthContext } from '../components/context/AuthContext.jsx';
 
 // Mock authService to avoid real network/localStorage calls
-vi.mock('../services/authService.js', () => ({
+vi.mock('../services/auth.js', () => ({
   getCurrentUser: vi.fn(() => null),
 }));
 

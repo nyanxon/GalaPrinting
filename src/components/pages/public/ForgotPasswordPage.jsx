@@ -7,7 +7,7 @@
 
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { forgotPassword } from '../../../services/authService.js';
+import { forgotPassword } from '../../../services/auth.js';
 
 function ForgotPasswordPage() {
   const [email, setEmail]         = useState('');

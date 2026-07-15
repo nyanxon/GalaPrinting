@@ -23,9 +23,9 @@ import {
   updateAdminNote,
   getAllowedNextStatuses,
   STATUS_CONFIG,
-} from '../../../../services/orderService.js';
+} from '../../../../services/orders.js';
 import { useSocket } from '../../../context/SocketContext.jsx';
-import { formatCurrency } from '../../../../core/helpers.js';import OrderDetailModal from '../../../shared/OrderDetailModal.jsx';
+import { formatCurrency } from '../../../../utils/format.js';import OrderDetailModal from '../../../modals/OrderDetailModal.jsx';
 import { showToast } from '../../../../core/toastEmitter.js';
 
 /**

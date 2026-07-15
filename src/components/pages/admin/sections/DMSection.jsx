@@ -19,9 +19,9 @@ import {
   validateFile,
 } from '../../../../services/chatService.js';
 import { api } from '../../../../core/httpClient.js';
-import EmojiPickerButton from '../../../shared/EmojiPickerButton.jsx';
-import ChatAvatar from '../../../shared/ChatAvatar.jsx';
-import DropZone from '../../../shared/DropZone.jsx';
+import EmojiPickerButton from '../../../ui/EmojiPickerButton.jsx';
+import ChatAvatar from '../../../ui/ChatAvatar.jsx';
+import DropZone from '../../../ui/DropZone.jsx';
 
 /* ── Helpers ─────────────────────────────────────────────── */
 

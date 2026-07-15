@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import DropZone from '../../../shared/DropZone.jsx';
+import DropZone from '../../../ui/DropZone.jsx';
 import {
   listProductsPaginated,
   addProduct,
@@ -14,10 +14,10 @@ import {
   deleteProduct,
   listCategories,
   uploadProductImage,
-} from '../../../../services/productService.js';
-import { createCategory } from '../../../../services/categoryService.js';
-import { validateProduct } from '../../../../core/validate.js';
-import { formatCurrency } from '../../../../core/helpers.js';
+} from '../../../../services/products.js';
+import { createCategory } from '../../../../services/categories.js';
+import { validateProduct } from '../../../../utils/validate.js';
+import { formatCurrency } from '../../../../utils/format.js';
 import { showToast } from '../../../../core/toastEmitter.js';
 
 const PAGE_SIZE = 10;

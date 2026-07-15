@@ -6,8 +6,8 @@
 import { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext.jsx';
-import { logout } from '../../../services/authService.js';
-import { listAllOrders } from '../../../services/orderService.js';
+import { logout } from '../../../services/auth.js';
+import { listAllOrders } from '../../../services/orders.js';
 import { listConversations } from '../../../services/chatService.js';
 import { useSocket } from '../../context/SocketContext.jsx';
 import { useAdminSound } from '../../../hooks/useAdminSound.js';
@@ -21,8 +21,8 @@ import PromoSection from './sections/PromoSection.jsx';
 import HomepageSection from './sections/HomepageSection.jsx';
 import CategoriesSection from './sections/CategoriesSection.jsx';
 import InvoiceSection from './sections/InvoiceSection.jsx';
-import ExportDataCards from '../../admin/ExportDataCards.jsx';
-import StaffAvatarButton from '../../shared/StaffAvatarButton.jsx';
+import ExportDataCards from '../../ui/ExportDataCards.jsx';
+import StaffAvatarButton from '../../staff/StaffAvatarButton.jsx';
 import logoImg from '../../../assets/logo.png';
 import '../../../styles/css/pages/dashboard.css';
 

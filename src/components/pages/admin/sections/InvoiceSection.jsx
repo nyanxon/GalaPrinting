@@ -18,8 +18,8 @@ import {
 } from '../../../../services/invoiceService.js';
 import { api } from '../../../../core/httpClient.js';
 import { showToast } from '../../../../core/toastEmitter.js';
-import { formatCurrency } from '../../../../core/helpers.js';
-import ThermalReceiptModal from '../../../shared/ThermalReceiptModal.jsx';
+import { formatCurrency } from '../../../../utils/format.js';
+import ThermalReceiptModal from '../../../modals/ThermalReceiptModal.jsx';
 import { getSocket } from '../../../../core/socket.js';
 
 const PAGE_SIZE = 20;

@@ -8,9 +8,9 @@
  */
 
 import { useState, useEffect } from 'react';
-import { listCustomers } from '../../../../services/authService.js';
-import { createCustomOrder, deleteOrder } from '../../../../services/orderService.js';
-import { formatCurrency } from '../../../../core/helpers.js';
+import { listCustomers } from '../../../../services/auth.js';
+import { createCustomOrder, deleteOrder } from '../../../../services/orders.js';
+import { formatCurrency } from '../../../../utils/format.js';
 import { showToast } from '../../../../core/toastEmitter.js';
 
 let itemCounter = 0;

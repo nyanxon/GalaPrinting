@@ -13,7 +13,7 @@ import {
   getVisitStats,
   getTopViewedProducts,
 } from '../../../../services/analyticsService.js';
-import { formatCurrency } from '../../../../core/helpers.js';
+import { formatCurrency } from '../../../../utils/format.js';
 
 export default function ReportsSection() {
   const [monthly, setMonthly] = useState([]);

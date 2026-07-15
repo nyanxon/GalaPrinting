@@ -8,7 +8,7 @@ import { AuthContext } from '../components/context/AuthContext.jsx';
 import RoleGuard from '../components/guards/RoleGuard.jsx';
 
 // Mock authService so AuthProvider doesn't call real localStorage
-vi.mock('../services/authService.js', () => ({
+vi.mock('../services/auth.js', () => ({
   getCurrentUser: vi.fn(() => null),
 }));
 

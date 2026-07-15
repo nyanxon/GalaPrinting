@@ -9,7 +9,7 @@
 
 import '../../../styles/css/pages/dashboard.css';
 import SubAdminLayout from './SubAdminLayout.jsx';
-import OperationalOrdersSection from './sections/OperationalOrdersSection.jsx';
+import SubAdminOrdersSection from './sections/SubAdminOrdersSection.jsx';
 import ChatsSection from '../admin/sections/ChatsSection.jsx';
 import DMSection from '../admin/sections/DMSection.jsx';
 
@@ -20,7 +20,7 @@ const NAV_ITEMS = [
 ];
 
 const SECTIONS = {
-  orders: <OperationalOrdersSection />,
+  orders: <SubAdminOrdersSection />,
   chat:   <ChatsSection />,
   dm:     <DMSection />,
 };

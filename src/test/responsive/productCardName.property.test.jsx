@@ -22,7 +22,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { render } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import * as fc from 'fast-check';
-import ProductCard from '../../components/shared/ProductCard.jsx';
+import ProductCard from '../../components/ui/ProductCard.jsx';
 
 // ---------------------------------------------------------------------------
 // CSS injection helper

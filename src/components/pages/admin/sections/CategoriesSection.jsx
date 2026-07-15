@@ -15,7 +15,7 @@ import {
   createCategory,
   updateCategory,
   deleteCategory,
-} from '../../../../services/categoryService.js';
+} from '../../../../services/categories.js';
 import { api } from '../../../../core/httpClient.js';
 
 // Fetch category list with product counts from the raw API

@@ -20,14 +20,14 @@ import QCDashboardPage from '../components/pages/subadmin/QCDashboardPage.jsx';
 import OfflineDashboardPage from '../components/pages/offline/OfflineDashboardPage.jsx';
 
 // Mock authService to avoid real localStorage calls
-vi.mock('../services/authService.js', () => ({
+vi.mock('../services/auth.js', () => ({
   getCurrentUser: vi.fn(() => null),
   seedStaffUsers: vi.fn(),
   logout: vi.fn(),
 }));
 
 // Mock all service modules used by page components to avoid localStorage errors
-vi.mock('../services/orderService.js', () => ({
+vi.mock('../services/orders.js', () => ({
   listAllOrders: vi.fn(() => []),
   getOrdersByCustomer: vi.fn(() => []),
   createOrder: vi.fn(() => ({ ok: true })),
@@ -35,7 +35,7 @@ vi.mock('../services/orderService.js', () => ({
   getOrderByNumberAndPhone: vi.fn(() => null),
 }));
 
-vi.mock('../services/productService.js', () => ({
+vi.mock('../services/products.js', () => ({
   listProducts: vi.fn(() => []),
   getProductBySlug: vi.fn(() => null),
   createProduct: vi.fn(() => ({ ok: true })),
@@ -43,7 +43,7 @@ vi.mock('../services/productService.js', () => ({
   deleteProduct: vi.fn(() => ({ ok: true })),
 }));
 
-vi.mock('../services/categoryService.js', () => ({
+vi.mock('../services/categories.js', () => ({
   listCategories: vi.fn(() => []),
 }));
 
@@ -55,7 +55,7 @@ vi.mock('../services/chatService.js', () => ({
   validateFile: vi.fn(() => ({ ok: true })),
 }));
 
-vi.mock('../services/reviewService.js', () => ({
+vi.mock('../services/reviews.js', () => ({
   listReviews: vi.fn(() => []),
   updateReview: vi.fn(() => ({ ok: true })),
 }));

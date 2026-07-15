@@ -13,11 +13,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { CartContext } from '../../context/CartContext.jsx';
 import { AuthContext } from '../../context/AuthContext.jsx';
-import PaymentModal from '../../shared/PaymentModal.jsx';
-import { createOrderFromCart, attachPaymentProof } from '../../../services/orderService.js';
-import { formatCurrency } from '../../../core/helpers.js';
+import PaymentModal from '../../modals/PaymentModal.jsx';
+import { createOrderFromCart, attachPaymentProof } from '../../../services/orders.js';
+import { formatCurrency } from '../../../utils/format.js';
 import { USE_BACKEND, api } from '../../../core/httpClient.js';
-import AddressSelector from '../../shared/AddressSelector.jsx';
+import AddressSelector from '../../ui/AddressSelector.jsx';
 import '../../../styles/css/pages/checkout.css';
 
 function CheckoutPage() {

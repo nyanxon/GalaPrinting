@@ -3,15 +3,14 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../context/AuthContext.jsx';
 import { CartContext } from '../context/CartContext.jsx';
-import { logout, login, getCurrentUser } from '../../services/authService.js';
-import { listCategories } from '../../services/categoryService.js';
-import { formatCurrency } from '../../core/helpers.js';
+import { STAFF_ROLES } from '../../config/roles.js';
+import { logout, login, getCurrentUser } from '../../services/auth.js';
+import { listCategories } from '../../services/categories.js';
+import { formatCurrency } from '../../utils/format.js';
 import { resolveApiUrl } from '../../core/httpClient.js';
 import logoImg from '../../assets/logo.png';
-import LanguageSwitcher from './LanguageSwitcher.jsx';
+import LanguageSwitcher from '../ui/LanguageSwitcher.jsx';
 import placeholderImg from '../../assets/placeholder.svg';
-
-const STAFF_ROLES = ['admin', 'owner', 'cashier', 'cs', 'operational', 'qc', 'offline'];
 
 const STAFF_DASHBOARD = {
   admin:       { path: '/admin',       label: '⚙️ Admin' },

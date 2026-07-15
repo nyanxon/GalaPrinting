@@ -9,7 +9,7 @@
 
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { resolveVariantPrice } from '../../../src/services/productService.js';
+import { resolveVariantPrice } from '../../../src/services/products.js';
 
 // ── Property 1: Variant price lookup correctness ──────────────────────────────
 

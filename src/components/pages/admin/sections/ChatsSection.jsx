@@ -16,9 +16,9 @@ import {
   searchCustomers,
   createOrGetConversation,
 } from '../../../../services/chatService.js';
-import EmojiPickerButton from '../../../shared/EmojiPickerButton.jsx';
-import ChatAvatar from '../../../shared/ChatAvatar.jsx';
-import DropZone from '../../../shared/DropZone.jsx';
+import EmojiPickerButton from '../../../ui/EmojiPickerButton.jsx';
+import ChatAvatar from '../../../ui/ChatAvatar.jsx';
+import DropZone from '../../../ui/DropZone.jsx';
 
 function formatTime(iso) {
   return new Date(iso).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });

@@ -13,7 +13,7 @@
 
 import '../../../styles/css/pages/dashboard.css';
 import SubAdminLayout from './SubAdminLayout.jsx';
-import CSOrdersSection from './sections/CSOrdersSection.jsx';
+import SubAdminOrdersSection from './sections/SubAdminOrdersSection.jsx';
 import CSCustomOrderSection from './sections/CSCustomOrderSection.jsx';
 import ChatsSection from '../admin/sections/ChatsSection.jsx';
 import DMSection from '../admin/sections/DMSection.jsx';
@@ -26,7 +26,7 @@ const NAV_ITEMS = [
 ];
 
 const SECTIONS = {
-  orders:         <CSOrdersSection />,
+  orders:         <SubAdminOrdersSection />,
   'custom-order': <CSCustomOrderSection />,
   chat:           <ChatsSection />,
   dm:             <DMSection />,

@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as fc from 'fast-check';
-import Modal from '../components/shared/Modal.jsx';
+import Modal from '../components/ui/Modal.jsx';
 
 describe('Modal', () => {
   it('renders nothing when isOpen is false', () => {

@@ -10,10 +10,10 @@ import { useState, useEffect, useContext, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../context/AuthContext.jsx';
-import { findOrder, ORDER_STATUSES, STATUS_CONFIG } from '../../../services/orderService.js';
-import { addReview } from '../../../services/reviewService.js';
+import { findOrder, ORDER_STATUSES, STATUS_CONFIG } from '../../../services/orders.js';
+import { addReview } from '../../../services/reviews.js';
 import { api } from '../../../core/httpClient.js';
-import { formatCurrency } from '../../../core/helpers.js';
+import { formatCurrency } from '../../../utils/format.js';
 import '../../../styles/css/pages/statusOrder.css';
 
 function fmtDate(iso) {

@@ -10,7 +10,7 @@
  */
 
 import { useState, useEffect, useContext, useCallback } from 'react';
-import { listCustomers, updateUserRole, deleteUser } from '../../../../services/authService.js';
+import { listCustomers, updateUserRole, deleteUser } from '../../../../services/auth.js';
 import { AuthContext } from '../../../context/AuthContext.jsx';
 import { getSocket } from '../../../../core/socket.js';
 

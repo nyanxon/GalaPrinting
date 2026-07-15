@@ -7,8 +7,8 @@ import { useContext, useEffect, Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
 import PublicLayout from './components/layout/PublicLayout.jsx';
 import RoleGuard from './components/guards/RoleGuard.jsx';
-import Toast from './components/shared/Toast.jsx';
-import LoadingSpinner from './components/shared/LoadingSpinner.jsx';
+import Toast from './components/ui/Toast.jsx';
+import LoadingSpinner from './components/ui/LoadingSpinner.jsx';
 // NOTE: `seedStaffUsers` seeding is disabled — staff accounts come from the backend.
 
 // Public pages — lazy loaded so only the homepage chunk loads initially

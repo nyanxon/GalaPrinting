@@ -16,7 +16,7 @@
 
 import { useState } from 'react';
 import { updateProfile } from '../../services/profileService.js';
-import { resendVerificationEmail } from '../../services/authService.js';
+import { resendVerificationEmail } from '../../services/auth.js';
 import { showToast } from '../../core/toastEmitter.js';
 import { resolveApiUrl } from '../../core/httpClient.js';
 import ImageCropper from './ImageCropper.jsx';

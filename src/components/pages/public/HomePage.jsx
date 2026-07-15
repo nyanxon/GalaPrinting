@@ -13,10 +13,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import { showToast } from '../../../core/toastEmitter.js';
-import ProductCard from '../../shared/ProductCard.jsx';
-import DropZone from '../../shared/DropZone.jsx';
-import { listProducts } from '../../../services/productService.js';
-import { listCategories } from '../../../services/categoryService.js';
+import ProductCard from '../../ui/ProductCard.jsx';
+import DropZone from '../../ui/DropZone.jsx';
+import { listProducts } from '../../../services/products.js';
+import { listCategories } from '../../../services/categories.js';
 import {
   listHeroBanners,
   listDesignItems,

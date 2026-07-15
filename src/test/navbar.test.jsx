@@ -9,7 +9,7 @@ import { CartContext } from '../components/context/CartContext.jsx';
 import Navbar from '../components/shared/Navbar.jsx';
 
 // Mock authService so logout doesn't touch real localStorage
-vi.mock('../services/authService.js', () => ({
+vi.mock('../services/auth.js', () => ({
   getCurrentUser: vi.fn(() => null),
   logout: vi.fn(),
 }));

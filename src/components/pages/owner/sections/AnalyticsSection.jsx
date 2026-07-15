@@ -14,7 +14,7 @@ import {
   getBestSellers,
   recordVisit,
 } from '../../../../services/analyticsService.js';
-import { formatCurrency } from '../../../../core/helpers.js';
+import { formatCurrency } from '../../../../utils/format.js';
 
 export default function AnalyticsSection() {
   const [totalVisits, setTotalVisits] = useState(0);

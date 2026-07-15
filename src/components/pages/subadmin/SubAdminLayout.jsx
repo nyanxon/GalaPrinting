@@ -10,11 +10,11 @@
 import { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext.jsx';
-import { logout } from '../../../services/authService.js';
-import { STAFF_ROLES } from '../../../core/config.js';
+import { logout } from '../../../services/auth.js';
+import { STAFF_ROLES } from '../../../config/roles.js';
 import { getSocket } from '../../../core/socket.js';
 import { useAdminSound } from '../../../hooks/useAdminSound.js';
-import StaffAvatarButton from '../../shared/StaffAvatarButton.jsx';
+import StaffAvatarButton from '../../staff/StaffAvatarButton.jsx';
 import logoImg from '../../../assets/logo.png';
 import '../../../styles/css/pages/dashboard.css';
 

@@ -3,7 +3,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 import * as fc from 'fast-check';
-import Toast from '../components/shared/Toast.jsx';
+import Toast from '../components/ui/Toast.jsx';
 import { showToast } from '../core/toastEmitter.js';
 
 // ---------------------------------------------------------------------------

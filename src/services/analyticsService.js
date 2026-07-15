@@ -3,7 +3,7 @@
  *
  * Shared analytics data source for Admin & Owner dashboards.
  * When USE_BACKEND=true: calls /api/analytics/* endpoints.
- * When USE_BACKEND=false: all metrics are derived from orderService + productService
+ * When USE_BACKEND=false: all metrics are derived from orders + products
  *   and website visits/product views are tracked in localStorage.
  *
  * All revenue/monthly/best-sellers functions now accept an optional `filters` object:
@@ -20,8 +20,8 @@
 
 import { readJson, writeJson } from "../core/storage.js";
 import { USE_BACKEND, api } from "../core/httpClient.js";
-import { listAllOrders } from "./orderService.js";
-import { listProducts } from "./productService.js";
+import { listAllOrders } from "./orders.js";
+import { listProducts } from "./products.js";
 
 const VISITS_KEY   = "gala.analytics.visits";
 const VIEWS_KEY    = "gala.analytics.productViews";

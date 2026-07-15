@@ -10,8 +10,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { showToast } from '../../../../core/toastEmitter.js';
 import { resolveApiUrl } from '../../../../core/httpClient.js';
-import DropZone from '../../../shared/DropZone.jsx';
-import ProductCard from '../../../shared/ProductCard.jsx';
+import DropZone from '../../../ui/DropZone.jsx';
+import ProductCard from '../../../ui/ProductCard.jsx';
 import '../../../../styles/css/pages/home.css';
 import {
   listAllHeroBanners,
@@ -30,9 +30,9 @@ import {
   deleteCatBanner,
 } from '../../../../services/homepageService.js';
 import { api } from '../../../../core/httpClient.js';
-import { listProducts } from '../../../../services/productService.js';
+import { listProducts } from '../../../../services/products.js';
 
-// Fetch categories as [{id, name}] objects (not the name-only array from productService)
+// Fetch categories as [{id, name}] objects (not the name-only array from products)
 async function fetchCategoriesWithIds() {
   try {
     const res = await api.get('/api/categories');

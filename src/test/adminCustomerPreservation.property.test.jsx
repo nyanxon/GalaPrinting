@@ -21,11 +21,11 @@ import * as fc from 'fast-check';
 // ─────────────────────────────────────────────────────────────────────────────
 // Mock authService so CustomersSection doesn't make real HTTP calls.
 // ─────────────────────────────────────────────────────────────────────────────
-vi.mock('../services/authService.js', () => ({
+vi.mock('../services/auth.js', () => ({
   listCustomers: vi.fn(),
 }));
 
-import { listCustomers } from '../services/authService.js';
+import { listCustomers } from '../services/auth.js';
 import CustomersSection from '../components/pages/admin/sections/CustomersSection.jsx';
 
 // ─────────────────────────────────────────────────────────────────────────────

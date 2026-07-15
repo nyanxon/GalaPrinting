@@ -23,7 +23,7 @@ import * as fc from 'fast-check';
 // Mock all service/utility dependencies so ProductsSection does not make
 // real HTTP calls or trigger side effects.
 // ---------------------------------------------------------------------------
-vi.mock('../services/productService.js', () => ({
+vi.mock('../services/products.js', () => ({
   addProduct: vi.fn(),
   updateProduct: vi.fn(),
   listProductsPaginated: vi.fn(),
@@ -31,11 +31,11 @@ vi.mock('../services/productService.js', () => ({
   deleteProduct: vi.fn(),
 }));
 
-vi.mock('../services/categoryService.js', () => ({
+vi.mock('../services/categories.js', () => ({
   createCategory: vi.fn(),
 }));
 
-vi.mock('../core/validate.js', () => ({
+vi.mock('../utils/validate.js', () => ({
   validateProduct: vi.fn(() => ({ ok: true, errors: [] })),
 }));
 
@@ -43,7 +43,7 @@ vi.mock('../core/toastEmitter.js', () => ({
   showToast: vi.fn(),
 }));
 
-vi.mock('../core/helpers.js', () => ({
+vi.mock('../utils/format.js', () => ({
   formatCurrency: vi.fn((v) => String(v)),
 }));
 
@@ -55,7 +55,7 @@ import {
   listCategories,
   addProduct,
   deleteProduct,
-} from '../services/productService.js';
+} from '../services/products.js';
 import ProductsSection from '../components/pages/admin/sections/ProductsSection.jsx';
 
 // ---------------------------------------------------------------------------

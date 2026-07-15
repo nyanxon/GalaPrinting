@@ -28,7 +28,7 @@ import { render, screen, waitFor, fireEvent, act } from '@testing-library/react'
 // Mock all service/utility dependencies so ProductsSection doesn't make
 // real HTTP calls or trigger side effects.
 // ─────────────────────────────────────────────────────────────────────────────
-vi.mock('../services/productService.js', () => ({
+vi.mock('../services/products.js', () => ({
   addProduct: vi.fn(),
   updateProduct: vi.fn(),
   listProductsPaginated: vi.fn(),
@@ -36,11 +36,11 @@ vi.mock('../services/productService.js', () => ({
   deleteProduct: vi.fn(),
 }));
 
-vi.mock('../services/categoryService.js', () => ({
+vi.mock('../services/categories.js', () => ({
   createCategory: vi.fn(),
 }));
 
-vi.mock('../core/validate.js', () => ({
+vi.mock('../utils/validate.js', () => ({
   validateProduct: vi.fn(() => ({ ok: true, errors: [] })),
   normalizePagination: vi.fn((opts) => ({
     page: opts?.page ?? 1,
@@ -52,7 +52,7 @@ vi.mock('../core/toastEmitter.js', () => ({
   showToast: vi.fn(),
 }));
 
-vi.mock('../core/helpers.js', () => ({
+vi.mock('../utils/format.js', () => ({
   formatCurrency: vi.fn((v) => String(v)),
 }));
 
@@ -65,7 +65,7 @@ import {
   listProductsPaginated,
   listCategories,
   addProduct,
-} from '../services/productService.js';
+} from '../services/products.js';
 import ProductsSection from '../components/pages/admin/sections/ProductsSection.jsx';
 
 // ─────────────────────────────────────────────────────────────────────────────

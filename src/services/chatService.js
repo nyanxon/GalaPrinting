@@ -22,7 +22,7 @@
  */
 
 import { readJson, writeJson } from "../core/storage.js";
-import { escapeHtml } from "../core/helpers.js";
+import { escapeHtml } from "../utils/dom.js";
 import { USE_BACKEND, api } from "../core/httpClient.js";
 import { getSocket } from "../core/socket.js";
 

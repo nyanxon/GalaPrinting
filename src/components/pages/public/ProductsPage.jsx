@@ -11,10 +11,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import ProductCard from '../../shared/ProductCard.jsx';
-import { listProducts } from '../../../services/productService.js';
-import { listCategories } from '../../../services/categoryService.js';
-import { debounce } from '../../../core/helpers.js';
+import ProductCard from '../../ui/ProductCard.jsx';
+import { listProducts } from '../../../services/products.js';
+import { listCategories } from '../../../services/categories.js';
+import { debounce } from '../../../utils/dom.js';
 import '../../../styles/css/pages/products.css';
 
 function ProductsPage() {
