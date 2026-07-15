@@ -8,6 +8,7 @@
  */
 
 import { useState, useContext, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import { logout } from '../../../services/auth.js';
 import { STAFF_ROLE_CONFIG } from '../../../config/roles.js';
