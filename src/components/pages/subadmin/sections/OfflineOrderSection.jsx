@@ -2,13 +2,16 @@
  * OfflineOrderSection.jsx — Form input order offline untuk cashier.
  *
  * Tidak menggunakan modal — form langsung ditampilkan di halaman.
- * Setelah submit berhasil, menampilkan ringkasan order dan tombol reset.
+ * Setelah submit berhasil, menampilkan ringkasan order, tombol reset,
+ * tombol PDF invoice, tombol print resi, dan opsional kirim email.
  */
 
 import { useState } from 'react';
 import { api } from '../../../../core/httpClient.js';
 import { formatCurrency } from '../../../../core/helpers.js';
 import { showToast } from '../../../../core/toastEmitter.js';
+import { getInvoiceByOrderId, openInvoicePdf, sendInvoiceEmail } from '../../../../services/invoiceService.js';
+import ThermalReceiptModal from '../../../shared/ThermalReceiptModal.jsx';
 
 function makeItem() {
   return { id: crypto.randomUUID(), name: '', price: '', quantity: 1 };
@@ -17,6 +20,71 @@ function makeItem() {
 function SuccessCard({ order, onReset }) {
   const items = order.items || [];
   const subtotal = Number(order.subtotal ?? order.total ?? 0);
+  const [invoice, setInvoice] = useState(null);
+  const [invoiceLoading, setInvoiceLoading] = useState(false);
+  const [invoiceSent, setInvoiceSent] = useState(false);
+  const [emailSending, setEmailSending] = useState(false);
+  const [thermalOpen, setThermalOpen] = useState(false);
+
+  async function loadInvoice() {
+    if (invoice || invoiceLoading) return;
+    setInvoiceLoading(true);
+    try {
+      const inv = await getInvoiceByOrderId(order.id);
+      if (inv) setInvoice(inv);
+    } catch {
+      // Invoice mungkin belum siap, retry sekali
+      await new Promise((r) => setTimeout(r, 1500));
+      try {
+        const inv = await getInvoiceByOrderId(order.id);
+        if (inv) setInvoice(inv);
+      } catch {
+        showToast('Invoice belum tersedia, coba lagi sebentar.', 'error');
+      }
+    } finally {
+      setInvoiceLoading(false);
+    }
+  }
+
+  async function handleOpenPdf() {
+    await loadInvoice();
+    if (!invoice) {
+      showToast('Invoice belum tersedia.', 'error');
+      return;
+    }
+    try {
+      await openInvoicePdf(invoice.id);
+    } catch {
+      showToast('Gagal membuka PDF invoice.', 'error');
+    }
+  }
+
+  async function handlePrintReceipt() {
+    await loadInvoice();
+    if (!invoice) {
+      showToast('Invoice belum tersedia.', 'error');
+      return;
+    }
+    setThermalOpen(true);
+  }
+
+  async function handleSendEmail() {
+    await loadInvoice();
+    if (!invoice) {
+      showToast('Invoice belum tersedia.', 'error');
+      return;
+    }
+    setEmailSending(true);
+    try {
+      await sendInvoiceEmail(invoice.id);
+      setInvoiceSent(true);
+      showToast('Invoice berhasil dikirim ke email customer.', 'success');
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Gagal mengirim email.', 'error');
+    } finally {
+      setEmailSending(false);
+    }
+  }
 
   return (
     <div className="offline-success-card">
@@ -56,13 +124,52 @@ function SuccessCard({ order, onReset }) {
         </div>
       </div>
 
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '12px' }}>
+        <button
+          type="button"
+          className="adm-btn adm-btn--secondary"
+          onClick={handleOpenPdf}
+          disabled={invoiceLoading}
+        >
+          📄 Invoice PDF
+        </button>
+        <button
+          type="button"
+          className="adm-btn adm-btn--thermal"
+          onClick={handlePrintReceipt}
+          disabled={invoiceLoading}
+        >
+          🖨️ Print Resi
+        </button>
+        {order.customer_email && !invoiceSent && (
+          <button
+            type="button"
+            className="adm-btn adm-btn--primary"
+            onClick={handleSendEmail}
+            disabled={emailSending || invoiceLoading}
+          >
+            {emailSending ? 'Mengirim…' : '📧 Kirim Invoice'}
+          </button>
+        )}
+        {invoiceSent && (
+          <span style={{ fontSize: '12px', color: '#16a34a', fontWeight: 600, alignSelf: 'center' }}>
+            ✅ Invoice terkirim
+          </span>
+        )}
+      </div>
+
       <button
         type="button"
         className="adm-btn adm-btn--primary offline-reset-btn"
         onClick={onReset}
+        style={{ marginTop: '16px' }}
       >
         ➕ Input Order Baru
       </button>
+
+      {thermalOpen && invoice && (
+        <ThermalReceiptModal invoice={invoice} onClose={() => setThermalOpen(false)} />
+      )}
     </div>
   );
 }
@@ -71,6 +178,7 @@ export default function OfflineOrderSection() {
   const [customerName,    setCustomerName]    = useState('');
   const [customerPhone,   setCustomerPhone]   = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
+  const [customerEmail,   setCustomerEmail]   = useState('');
   const [adminNote,       setAdminNote]       = useState('');
   const [items,           setItems]           = useState([makeItem()]);
   const [submitting,      setSubmitting]      = useState(false);
@@ -135,6 +243,7 @@ export default function OfflineOrderSection() {
         customerName:    customerName.trim(),
         customerPhone:   customerPhone.trim(),
         customerAddress: customerAddress.trim(),
+        customerEmail:   customerEmail.trim(),
         adminNote:       adminNote.trim(),
         items:           validItems,
         subtotal,
@@ -155,6 +264,7 @@ export default function OfflineOrderSection() {
     setCustomerName('');
     setCustomerPhone('');
     setCustomerAddress('');
+    setCustomerEmail('');
     setAdminNote('');
     setItems([makeItem()]);
     setFieldErrors({});
@@ -169,7 +279,7 @@ export default function OfflineOrderSection() {
   }
 
   return (
-    <div className="adm-card">
+    <div className="adm-card offline-scrollable">
       <div className="adm-toolbar">
         <h2 className="adm-section-title">🏪 Input Order Offline</h2>
       </div>
@@ -218,6 +328,17 @@ export default function OfflineOrderSection() {
               placeholder="Alamat customer (opsional)…"
               value={customerAddress}
               onChange={(e) => setCustomerAddress(e.target.value)}
+            />
+          </div>
+
+          <div className="offline-form-field" style={{ marginTop: '12px' }}>
+            <label className="offline-form-label">Email (untuk kirim invoice)</label>
+            <input
+              className="adm-input"
+              type="email"
+              placeholder="email@customer.com (opsional)…"
+              value={customerEmail}
+              onChange={(e) => setCustomerEmail(e.target.value)}
             />
           </div>
         </section>

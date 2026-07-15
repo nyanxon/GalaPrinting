@@ -183,8 +183,10 @@ function mapOrder(row) {
       phone:        row.customer_phone         ?? row.customer?.phone        ?? "",
       address:      row.customer_address       ?? row.customer?.address      ?? "",
       addressTitle: row.customer_address_title ?? row.customer?.addressTitle ?? null,
+      email:        row.customer_email         ?? row.customer?.email        ?? "",
     },
     customerPhone: row.customer_phone ?? row.customerPhone ?? "",
+    customerEmail: row.customer_email ?? row.customerEmail ?? "",
     status:        row.status,
     subtotal:      Number(row.subtotal ?? 0),
     cancellationReason: row.cancellation_reason ?? row.cancellationReason ?? null,
@@ -385,6 +387,28 @@ export function createCustomOrder({ customerId, customerName, customerPhone, cus
     }).then((res) => mapOrder(res.data.data));
   }
   return createCustomOrderLocal({ customerId, customerName, customerPhone, customerAddress, items, subtotal, adminNote });
+}
+
+/**
+ * Delete a custom order by ID (CS/admin only).
+ * @param {string} orderId
+ */
+export function deleteOrder(orderId) {
+  if (USE_BACKEND) {
+    return api.delete(`/api/orders/${orderId}`).then((res) => res.data);
+  }
+  // Local fallback
+  const key = 'gala_orders';
+  const orders = JSON.parse(localStorage.getItem(key) || '[]');
+  const idx = orders.findIndex((o) => o.id === orderId);
+  if (idx === -1) throw new Error('Pesanan tidak ditemukan.');
+  const order = orders[idx];
+  if (order.orderType !== 'custom') throw new Error('Hanya pesanan custom yang bisa dihapus.');
+  const paidStatuses = ['Payment Accepted', 'Waiting for Design Approval', 'On Progress', 'Ready to Ship', 'Shipped', 'Completed'];
+  if (paidStatuses.includes(order.status)) throw new Error('Pesanan yang sudah diproses tidak bisa dihapus.');
+  orders.splice(idx, 1);
+  localStorage.setItem(key, JSON.stringify(orders));
+  return { ok: true, data: order };
 }
 
 /**

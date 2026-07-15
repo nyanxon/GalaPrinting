@@ -41,6 +41,9 @@ router.patch('/:id/tracking',        authenticate, requireRole('qc', 'admin'), c
 router.patch('/:id/delivery-method', authenticate, requireRole('qc', 'cs', 'admin'), ctrl.setDeliveryMethod);
 router.patch('/:id/pickup',          authenticate, requireRole('qc', 'admin'), ctrl.setPickupInfo);
 
+// Delete custom order (cs, admin only)
+router.delete('/:id', authenticate, requireRole('cs', 'admin'), ctrl.deleteOrder);
+
 // Invoice untuk order (customer & staff bisa lihat)
 router.get('/:orderId/invoice', authenticate, getInvoiceByOrder);
 

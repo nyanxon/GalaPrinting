@@ -182,10 +182,11 @@ export default function CashierOrdersSection() {
     };
   }, [fetchOrders, socketFromHook]);
 
-  // Fitur 2: lazy-load invoice untuk order Payment Accepted (with retry for 404)
+  // Fitur 2: lazy-load invoice untuk order Payment Accepted + status setelahnya (with retry for 404)
+  const pastPaymentStatuses = ['Waiting for Design Approval', 'On Progress', 'Ready to Ship', 'Shipped', 'Completed'];
   useEffect(() => {
     orders.forEach((order) => {
-      if (order.status !== 'Payment Accepted') return;
+      if (order.status !== 'Payment Accepted' && !pastPaymentStatuses.includes(order.status)) return;
       // Skip jika sudah punya data (termasuk null = tidak ada invoice, atau 'loading')
       if (invoiceMap[order.id] !== undefined) return;
       setInvoiceMap((prev) => ({ ...prev, [order.id]: 'loading' }));
@@ -483,8 +484,8 @@ export default function CashierOrdersSection() {
                           🔍 Detail
                         </button>
 
-                        {/* Fitur 2: Invoice button untuk Payment Accepted */}
-                        {order.status === 'Payment Accepted' && (
+                        {/* Fitur 2: Invoice button — tampilkan jika invoice sudah dimuat */}
+                        {invoiceMap[order.id] !== undefined && (
                           <div style={{ marginTop: '4px' }}>
                             {invoiceMap[order.id] === 'loading' ? (
                               <span className="adm-date" style={{ fontSize: '11px' }}>⏳ Memuat invoice…</span>

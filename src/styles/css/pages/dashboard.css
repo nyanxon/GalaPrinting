@@ -4840,6 +4840,21 @@
   gap: 0;
 }
 
+/* Scrollable offline order form — allows items + buttons to be reachable */
+.offline-order-card.offline-scrollable {
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
+}
+
+/* Sticky form actions so the save button is always reachable */
+.offline-form-actions {
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  padding: 12px 4px 4px;
+  z-index: 1;
+}
+
 .offline-form-section {
   background: #faf8f5;
   border: 1px solid #e5e7eb;

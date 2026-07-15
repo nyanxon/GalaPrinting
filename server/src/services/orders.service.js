@@ -233,8 +233,8 @@ export async function createOrder({ customer, items, subtotal, source = 'online'
 
     await conn.execute(
       `INSERT INTO orders
-         (id, order_number, order_type, source, customer_id, customer_name, customer_phone, customer_address, customer_address_title, status, subtotal, promo_code, discount_amount, admin_note)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (id, order_number, order_type, source, customer_id, customer_name, customer_phone, customer_address, customer_address_title, customer_email, status, subtotal, promo_code, discount_amount, admin_note)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         orderNumber,
@@ -245,6 +245,7 @@ export async function createOrder({ customer, items, subtotal, source = 'online'
         customer?.phone || null,
         customer?.address || null,
         customer?.addressTitle || null,
+        customer?.email || null,
         status,
         subtotal || 0,
         promoCode || null,
@@ -605,13 +606,14 @@ export async function updateOrderStatus(id, newStatus, actorId, actorRole, cance
         }
 
         // 3. Send invoice email fire-and-forget (email tidak boleh blokir response)
-        if (order.customer_id) {
+        const recipientEmail = order.customer_email || null;
+        if (recipientEmail) {
           (async () => {
             try {
               const [invRows] = await query(
                 `SELECT i.*,
                         o.order_number, o.customer_name, o.customer_phone, o.customer_address,
-                        u.email AS customer_email, creator.name AS creator_name
+                        COALESCE(u.email, o.customer_email) AS customer_email, creator.name AS creator_name
                  FROM invoices i
                  LEFT JOIN orders o ON i.order_id = o.id
                  LEFT JOIN users u ON i.customer_id = u.id
@@ -623,8 +625,12 @@ export async function updateOrderStatus(id, newStatus, actorId, actorRole, cance
               const [itemRows] = await query('SELECT * FROM order_items WHERE order_id = ?', [id]);
               const fullInvoice = { ...invRows[0], items: itemRows };
 
-              const prefs = await getPreferences(order.customer_id);
-              if (!prefs.payment_accepted) return;
+              // For logged-in customers, respect notification preferences;
+              // for offline customers with email, always send
+              if (order.customer_id) {
+                const prefs = await getPreferences(order.customer_id);
+                if (!prefs.payment_accepted) return;
+              }
 
               const { pdfBuffer } = await generateInvoicePdf(fullInvoice);
               await sendInvoiceEmail({ invoice: fullInvoice, pdfBuffer });
@@ -747,6 +753,53 @@ export async function attachDesignFile(itemId, filePath) {
 }
 
 // ── Auto-invoice helper ────────────────────────────────────────────────────────
+
+/**
+ * Delete a custom order and its related data.
+ * Only allowed for CS/admin on custom orders that haven't been paid yet.
+ * @param {string} id  Order UUID
+ * @returns {object} The deleted order row
+ */
+export async function deleteOrder(id) {
+  const [[order]] = await query('SELECT * FROM orders WHERE id = ?', [id]);
+  if (!order) {
+    const err = new Error('Pesanan tidak ditemukan.');
+    err.status = 404;
+    throw err;
+  }
+  if (order.order_type !== 'custom') {
+    const err = new Error('Hanya pesanan custom yang bisa dihapus.');
+    err.status = 400;
+    throw err;
+  }
+  const paidStatuses = ['Payment Accepted', 'Waiting for Design Approval', 'On Progress', 'Ready to Ship', 'Shipped', 'Completed'];
+  if (paidStatuses.includes(order.status)) {
+    const err = new Error('Pesanan yang sudah diproses tidak bisa dihapus.');
+    err.status = 400;
+    throw err;
+  }
+
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    // Delete related records in dependency order
+    const [invRows] = await conn.execute('SELECT id FROM invoices WHERE order_id = ?', [id]);
+    for (const inv of invRows) {
+      await conn.execute('DELETE FROM invoice_items WHERE invoice_id = ?', [inv.id]);
+    }
+    await conn.execute('DELETE FROM invoices WHERE order_id = ?', [id]);
+    await conn.execute('DELETE FROM order_items WHERE order_id = ?', [id]);
+    await conn.execute('DELETE FROM order_history WHERE order_id = ?', [id]);
+    await conn.execute('DELETE FROM orders WHERE id = ?', [id]);
+    await conn.commit();
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
+  return order;
+}
 
 /**
  * Otomatis buat invoice untuk order baru yang baru saja dibuat.

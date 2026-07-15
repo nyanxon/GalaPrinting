@@ -9,7 +9,7 @@
 
 import { useState, useEffect } from 'react';
 import { listCustomers } from '../../../../services/authService.js';
-import { createCustomOrder } from '../../../../services/orderService.js';
+import { createCustomOrder, deleteOrder } from '../../../../services/orderService.js';
 import { formatCurrency } from '../../../../core/helpers.js';
 import { showToast } from '../../../../core/toastEmitter.js';
 
@@ -28,6 +28,8 @@ export default function CSCustomOrderSection() {
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [successOrder, setSuccessOrder] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -133,6 +135,22 @@ export default function CSCustomOrderSection() {
     setItems([newItem()]);
     setFormError('');
     setSuccessOrder(null);
+    setDeleteConfirm(false);
+  }
+
+  async function handleDelete() {
+    if (!successOrder?.id) return;
+    setDeleting(true);
+    try {
+      await deleteOrder(successOrder.id);
+      showToast('Custom order berhasil dihapus.', 'success');
+      setSuccessOrder(null);
+      setDeleteConfirm(false);
+    } catch (err) {
+      showToast(err?.response?.data?.message || err.message || 'Gagal menghapus pesanan.', 'error');
+    } finally {
+      setDeleting(false);
+    }
   }
 
   if (successOrder) {
@@ -177,8 +195,56 @@ export default function CSCustomOrderSection() {
             >
               ➕ Buat Custom Order Baru
             </button>
+            <button
+              className="adm-btn adm-btn--delete"
+              type="button"
+              onClick={() => setDeleteConfirm(true)}
+              style={{ marginLeft: '8px' }}
+            >
+              🗑️ Hapus Pesanan Ini
+            </button>
           </div>
         </div>
+
+        {/* Delete Confirmation Dialog */}
+        {deleteConfirm && (
+          <div style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+          }}>
+            <div style={{
+              background: '#fff', borderRadius: '12px', padding: '28px 32px',
+              minWidth: '360px', maxWidth: '480px', width: '100%',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+            }}>
+              <h3 style={{ margin: '0 0 12px', fontSize: '18px', fontWeight: 700 }}>
+                🗑️ Hapus Custom Order?
+              </h3>
+              <p style={{ margin: '0 0 16px', color: '#555', fontSize: '14px' }}>
+                Pesanan <strong>{successOrder?.orderNumber}</strong> akan dihapus secara permanen.
+                Tindakan ini tidak bisa dibatalkan.
+              </p>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button
+                  className="adm-btn"
+                  type="button"
+                  onClick={() => setDeleteConfirm(false)}
+                  disabled={deleting}
+                >
+                  Batal
+                </button>
+                <button
+                  className="adm-btn adm-btn--delete"
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                >
+                  {deleting ? 'Menghapus…' : '🗑️ Ya, Hapus'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

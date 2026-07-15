@@ -157,6 +157,7 @@ export async function createOfflineOrder(req, res, next) {
       customerName,
       customerPhone,
       customerAddress,
+      customerEmail,
       adminNote,
     } = req.body;
 
@@ -174,6 +175,7 @@ export async function createOfflineOrder(req, res, next) {
       name:    customerObj?.name    || customerName    || '',
       phone:   customerObj?.phone   || customerPhone   || '',
       address: customerObj?.address || customerAddress || '',
+      email:   customerObj?.email   || customerEmail   || '',
     };
 
     // Offline orders start at "On Progress" — payment and design steps are
@@ -337,6 +339,15 @@ export async function uploadPaymentProof(req, res, next) {
       });
     } catch { /* ignore */ }
 
+    return res.json({ ok: true, data: order });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function deleteOrder(req, res, next) {
+  try {
+    const order = await svc.deleteOrder(req.params.id);
     return res.json({ ok: true, data: order });
   } catch (err) {
     next(err);
