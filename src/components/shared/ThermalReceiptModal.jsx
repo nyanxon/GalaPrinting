@@ -33,15 +33,17 @@ function ThermalReceiptContent({ invoice }) {
       width: `${PAPER_WIDTH_PX}px`,
       fontFamily: "'Courier New', Courier, monospace",
       fontSize: '11px',
+      fontWeight: 700,
       lineHeight: '1.35',
       color: '#000',
       background: '#fff',
       padding: '6px 4px',
       boxSizing: 'border-box',
+      WebkitTextStroke: '0.3px #000',
     },
     center:  { textAlign: 'center' },
     bold:    { fontWeight: 700 },
-    small:   { fontSize: '9px', color: '#555' },
+    small:   { fontSize: '9px', color: '#555', WebkitTextStroke: '0.2px #555' },
     sep:     { borderTop: '1px dashed #999', margin: '4px 0' },
     sepBold: { borderTop: '2px solid #000', margin: '4px 0' },
     row:     { display: 'flex', justifyContent: 'space-between' },
@@ -53,7 +55,7 @@ function ThermalReceiptContent({ invoice }) {
     <div className="thermal-receipt" style={css.root}>
       {/* ── HEADER ── */}
       <div style={{ ...css.center, marginBottom: '4px' }}>
-        <div style={{ ...css.bold, fontSize: '13px', letterSpacing: '0.03em' }}>
+        <div style={{ ...css.bold, fontSize: '14px', letterSpacing: '0.05em', WebkitTextStroke: '0.5px #000' }}>
           GALA PRINTING
         </div>
         <div style={css.small}>galaprintofficialbali.co.id</div>
@@ -129,7 +131,7 @@ function ThermalReceiptContent({ invoice }) {
 
       <div style={css.sepBold} />
 
-      <div style={{ ...css.row, ...css.bold, fontSize: '12px', marginBottom: '4px' }}>
+      <div style={{ ...css.row, ...css.bold, fontSize: '12px', marginBottom: '4px', WebkitTextStroke: '0.4px #000' }}>
         <span>TOTAL</span><span>{formatCurrency(total)}</span>
       </div>
 
@@ -174,11 +176,13 @@ export default function ThermalReceiptModal({ invoice, onClose, autoPrint }) {
 <head>
   <meta charset="UTF-8"/>
   <title>Resi — ${invoice.invoice_number}</title>
-  <style>
+    <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Courier New', Courier, monospace;
       font-size: 11px;
+      font-weight: 700;
+      -webkit-text-stroke: 0.3px #000;
       width: 220px;
       margin: 0 auto;
       background: #fff;
