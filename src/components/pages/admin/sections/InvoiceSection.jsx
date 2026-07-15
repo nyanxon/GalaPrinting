@@ -373,7 +373,7 @@ function InvoiceDetailModal({ invoiceId, onClose, onUpdated }) {
               type="button"
               className="adm-btn adm-btn--thermal"
               onClick={() => setThermalOpen(true)}
-              title="Print resi termal (58/80mm)"
+              title="Print resi termal (58mm)"
             >
               🖨️ Print Resi
             </button>

@@ -1,18 +1,17 @@
 /**
- * ThermalReceiptModal.jsx — Preview & cetak resi termal (80mm / 302px).
- *
- * Fitur 4: tampilkan preview resi termal, tombol "Print" membuka dialog
- * print browser dengan CSS @media print khusus layout termal.
+ * ThermalReceiptModal.jsx — Preview & cetak resi termal (58mm).
  *
  * Props:
- *   invoice: object  — data invoice dari InvoiceSection
+ *   invoice: object  — data invoice
  *   onClose: fn
+ *   autoPrint: bool  — auto-print on mount
  */
 
 import { useRef, useEffect } from 'react';
 import { formatCurrency } from '../../core/helpers.js';
 
-const THERMAL_WIDTH_PX = 302; // ≈ 80mm at 96dpi
+/* 58mm at 96dpi ≈ 220px */
+const PAPER_WIDTH_PX = 220;
 
 function formatDate(date) {
   if (!date) return '—';
@@ -29,70 +28,78 @@ function ThermalReceiptContent({ invoice }) {
   const tax      = Number(invoice.tax_amount || 0);
   const total    = Number(invoice.total || subtotal - discount + tax);
 
+  const css = {
+    root: {
+      width: `${PAPER_WIDTH_PX}px`,
+      fontFamily: "'Courier New', Courier, monospace",
+      fontSize: '11px',
+      lineHeight: '1.35',
+      color: '#000',
+      background: '#fff',
+      padding: '6px 4px',
+      boxSizing: 'border-box',
+    },
+    center:  { textAlign: 'center' },
+    bold:    { fontWeight: 700 },
+    small:   { fontSize: '9px', color: '#555' },
+    sep:     { borderTop: '1px dashed #999', margin: '4px 0' },
+    sepBold: { borderTop: '2px solid #000', margin: '4px 0' },
+    row:     { display: 'flex', justifyContent: 'space-between' },
+    muted:   { color: '#555' },
+    green:   { color: '#166534' },
+  };
+
   return (
-    <div
-      className="thermal-receipt"
-      style={{
-        width: `${THERMAL_WIDTH_PX}px`,
-        fontFamily: "'Courier New', Courier, monospace",
-        fontSize: '12px',
-        lineHeight: '1.4',
-        color: '#000',
-        background: '#fff',
-        padding: '8px',
-        boxSizing: 'border-box',
-      }}
-    >
-      {/* Header */}
-      <div style={{ textAlign: 'center', marginBottom: '8px' }}>
-        <div style={{ fontWeight: 700, fontSize: '14px', letterSpacing: '0.05em' }}>
+    <div className="thermal-receipt" style={css.root}>
+      {/* ── HEADER ── */}
+      <div style={{ ...css.center, marginBottom: '4px' }}>
+        <div style={{ ...css.bold, fontSize: '13px', letterSpacing: '0.03em' }}>
           GALA PRINTING
         </div>
-        <div style={{ fontSize: '10px', color: '#444' }}>galaprintofficialbali.co.id</div>
-        <div style={{ fontSize: '10px', color: '#444' }}>Dalung, Kuta Utara, Badung, Bali</div>
+        <div style={css.small}>galaprintofficialbali.co.id</div>
+        <div style={css.small}>Dalung, Kuta Utara, Badung, Bali</div>
       </div>
 
-      <div style={{ borderTop: '1px dashed #000', margin: '4px 0' }} />
+      <div style={css.sep} />
 
-      {/* Invoice meta */}
-      <div style={{ marginBottom: '6px' }}>
-        <div><strong>No. Invoice :</strong> {invoice.invoice_number}</div>
-        <div><strong>No. Order   :</strong> {invoice.order_number || '—'}</div>
-        <div><strong>Tanggal     :</strong> {formatDate(invoice.created_at)}</div>
+      {/* ── INVOICE META ── */}
+      <div style={{ marginBottom: '4px' }}>
+        <div><span style={css.bold}>No. Inv</span> : {invoice.invoice_number}</div>
+        <div><span style={css.bold}>No. Ord</span> : {invoice.order_number || '—'}</div>
+        <div><span style={css.bold}>Tanggal</span> : {formatDate(invoice.created_at)}</div>
         {invoice.paid_at && (
-          <div><strong>Dibayar     :</strong> {formatDate(invoice.paid_at)}</div>
+          <div><span style={css.bold}>Dibayar</span> : {formatDate(invoice.paid_at)}</div>
         )}
         {invoice.payment_status === 'paid' && (
-          <div style={{ fontWeight: 700, color: '#166534', marginTop: '2px' }}>
-            <strong>Status      :</strong> ✅ LUNAS
+          <div style={{ ...css.bold, ...css.green, marginTop: '2px' }}>
+            ** LUNAS **
           </div>
         )}
       </div>
 
-      <div style={{ borderTop: '1px dashed #000', margin: '4px 0' }} />
+      <div style={css.sep} />
 
-      {/* Customer */}
-      <div style={{ marginBottom: '6px' }}>
-        <div><strong>Customer :</strong> {invoice.customer_name || '—'}</div>
+      {/* ── CUSTOMER ── */}
+      <div style={{ marginBottom: '4px' }}>
+        <div><span style={css.bold}>Customer</span></div>
+        <div>{invoice.customer_name || '—'}</div>
         {invoice.customer_phone && (
-          <div><strong>Telp     :</strong> {invoice.customer_phone}</div>
+          <div style={css.muted}>Telp: {invoice.customer_phone}</div>
         )}
       </div>
 
-      <div style={{ borderTop: '1px dashed #000', margin: '4px 0' }} />
+      <div style={css.sep} />
 
-      {/* Items */}
+      {/* ── ITEMS ── */}
       <div style={{ marginBottom: '4px' }}>
         {items.length === 0 ? (
-          <div style={{ color: '#888' }}>—</div>
+          <div style={css.muted}>—</div>
         ) : items.map((item, i) => {
           const sub = Number(item.price || 0) * Number(item.quantity || 1);
           return (
-            <div key={item.id || i} style={{ marginBottom: '4px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ flex: 1, marginRight: '4px', wordBreak: 'break-word' }}>{item.name}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#555' }}>
+            <div key={item.id || i} style={{ marginBottom: '3px' }}>
+              <div style={{ wordBreak: 'break-word' }}>{item.name}</div>
+              <div style={{ ...css.row, ...css.muted, fontSize: '10px' }}>
                 <span>{item.quantity} x {formatCurrency(item.price)}</span>
                 <span>{formatCurrency(sub)}</span>
               </div>
@@ -101,43 +108,44 @@ function ThermalReceiptContent({ invoice }) {
         })}
       </div>
 
-      <div style={{ borderTop: '1px dashed #000', margin: '4px 0' }} />
+      <div style={css.sep} />
 
-      {/* Totals */}
-      <div style={{ marginBottom: '4px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+      {/* ── TOTALS ── */}
+      <div style={{ marginBottom: '2px' }}>
+        <div style={css.row}>
           <span>Subtotal</span><span>{formatCurrency(subtotal)}</span>
         </div>
         {discount > 0 && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#166534' }}>
+          <div style={{ ...css.row, ...css.green }}>
             <span>Diskon</span><span>-{formatCurrency(discount)}</span>
           </div>
         )}
         {tax > 0 && (
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <div style={css.row}>
             <span>Pajak</span><span>{formatCurrency(tax)}</span>
           </div>
         )}
       </div>
 
-      <div style={{ borderTop: '2px solid #000', margin: '4px 0' }} />
+      <div style={css.sepBold} />
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: '13px', marginBottom: '6px' }}>
+      <div style={{ ...css.row, ...css.bold, fontSize: '12px', marginBottom: '4px' }}>
         <span>TOTAL</span><span>{formatCurrency(total)}</span>
       </div>
 
       {invoice.payment_method && (
-        <div style={{ marginBottom: '4px' }}>
-          <strong>Metode Bayar:</strong> {invoice.payment_method}
+        <div style={{ marginBottom: '4px', fontSize: '10px' }}>
+          <span style={css.bold}>Bayar:</span> {invoice.payment_method}
         </div>
       )}
 
-      <div style={{ borderTop: '1px dashed #000', margin: '4px 0' }} />
+      <div style={css.sep} />
 
-      {/* Footer */}
-      <div style={{ textAlign: 'center', fontSize: '11px', color: '#444', marginTop: '6px' }}>
+      {/* ── FOOTER ── */}
+      <div style={{ ...css.center, fontSize: '9px', color: '#555', marginTop: '4px' }}>
         <div>Terima kasih atas kepercayaan Anda!</div>
-        <div>Barang yang sudah dibeli tidak dapat dikembalikan.</div>
+        <div>Barang yang sudah dibeli tidak</div>
+        <div>dapat dikembalikan.</div>
       </div>
     </div>
   );
@@ -146,23 +154,18 @@ function ThermalReceiptContent({ invoice }) {
 export default function ThermalReceiptModal({ invoice, onClose, autoPrint }) {
   const printRef = useRef(null);
 
-  // Auto-print on mount when autoPrint prop is true
   useEffect(() => {
     if (autoPrint) {
-      const timer = setTimeout(() => {
-        handlePrint();
-      }, 400);
+      const timer = setTimeout(() => { handlePrint(); }, 400);
       return () => clearTimeout(timer);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function handlePrint() {
-    // Buat window print khusus dengan hanya konten resi termal
     const printContents = printRef.current?.innerHTML || '';
     const printWindow = window.open('', '_blank', 'width=400,height=600');
     if (!printWindow) {
-      // Fallback: window.print() biasa
       window.print();
       return;
     }
@@ -170,19 +173,19 @@ export default function ThermalReceiptModal({ invoice, onClose, autoPrint }) {
 <html lang="id">
 <head>
   <meta charset="UTF-8"/>
-  <title>Resi Termal — ${invoice.invoice_number}</title>
+  <title>Resi — ${invoice.invoice_number}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Courier New', Courier, monospace;
-      font-size: 12px;
-      width: 302px;
+      font-size: 11px;
+      width: 220px;
       margin: 0 auto;
       background: #fff;
       color: #000;
     }
     @media print {
-      @page { size: 80mm auto; margin: 2mm; }
+      @page { size: 58mm auto; margin: 1mm; }
       body { width: 100%; }
     }
   </style>
@@ -223,7 +226,7 @@ export default function ThermalReceiptModal({ invoice, onClose, autoPrint }) {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '14px 20px', borderBottom: '1px solid #e5e7eb',
         }}>
-          <span style={{ fontWeight: 700, fontSize: '15px' }}>🖨️ Preview Resi Termal (80mm)</span>
+          <span style={{ fontWeight: 700, fontSize: '15px' }}>Preview Resi (58mm)</span>
           <button
             type="button"
             onClick={onClose}
@@ -234,7 +237,7 @@ export default function ThermalReceiptModal({ invoice, onClose, autoPrint }) {
           >✕</button>
         </div>
 
-        {/* Preview box */}
+        {/* Preview */}
         <div style={{ padding: '20px', background: '#f9fafb', display: 'flex', justifyContent: 'center' }}>
           <div
             style={{
@@ -261,7 +264,7 @@ export default function ThermalReceiptModal({ invoice, onClose, autoPrint }) {
             onClick={handlePrint}
             style={{ background: '#785E40', borderColor: '#785E40' }}
           >
-            🖨️ Print Resi
+            Print Resi
           </button>
         </div>
       </div>

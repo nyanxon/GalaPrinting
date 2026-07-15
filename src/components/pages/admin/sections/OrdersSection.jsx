@@ -486,7 +486,7 @@ export default function OrdersSection() {
                               className="adm-btn adm-btn--thermal"
                               style={{ fontSize: '11px', padding: '4px 8px' }}
                               onClick={() => { setThermalInvoice(invoiceMap[order.id]); setThermalAutoPrint(false); }}
-                              title="Print resi termal (80mm)"
+                              title="Print resi termal (58mm)"
                             >
                               🖨️ Print Resi
                             </button>
