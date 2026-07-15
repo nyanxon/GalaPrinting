@@ -32,7 +32,7 @@ function ThermalReceiptContent({ invoice }) {
     root: {
       width: `${PAPER_WIDTH_PX}px`,
       fontFamily: "'Courier New', Courier, monospace",
-      fontSize: '11px',
+      fontSize: '10px',
       fontWeight: 700,
       lineHeight: '1.35',
       color: '#000',
@@ -43,7 +43,7 @@ function ThermalReceiptContent({ invoice }) {
     },
     center:  { textAlign: 'center' },
     bold:    { fontWeight: 700 },
-    small:   { fontSize: '9px', color: '#555', WebkitTextStroke: '0.2px #555' },
+    small:   { fontSize: '8px', color: '#555', WebkitTextStroke: '0.2px #555' },
     sep:     { borderTop: '1px dashed #999', margin: '4px 0' },
     sepBold: { borderTop: '2px solid #000', margin: '4px 0' },
     row:     { display: 'flex', justifyContent: 'space-between' },
@@ -55,7 +55,7 @@ function ThermalReceiptContent({ invoice }) {
     <div className="thermal-receipt" style={css.root}>
       {/* ── HEADER ── */}
       <div style={{ ...css.center, marginBottom: '4px' }}>
-        <div style={{ ...css.bold, fontSize: '14px', letterSpacing: '0.05em', WebkitTextStroke: '0.5px #000' }}>
+        <div style={{ ...css.bold, fontSize: '13px', letterSpacing: '0.05em', WebkitTextStroke: '0.5px #000' }}>
           GALA PRINTING
         </div>
         <div style={css.small}>galaprintofficialbali.co.id</div>
@@ -101,7 +101,7 @@ function ThermalReceiptContent({ invoice }) {
           return (
             <div key={item.id || i} style={{ marginBottom: '3px' }}>
               <div style={{ wordBreak: 'break-word' }}>{item.name}</div>
-              <div style={{ ...css.row, ...css.muted, fontSize: '10px' }}>
+              <div style={{ ...css.row, ...css.muted, fontSize: '9px' }}>
                 <span>{item.quantity} x {formatCurrency(item.price)}</span>
                 <span>{formatCurrency(sub)}</span>
               </div>
@@ -131,12 +131,12 @@ function ThermalReceiptContent({ invoice }) {
 
       <div style={css.sepBold} />
 
-      <div style={{ ...css.row, ...css.bold, fontSize: '12px', marginBottom: '4px', WebkitTextStroke: '0.4px #000' }}>
+      <div style={{ ...css.row, ...css.bold, fontSize: '11px', marginBottom: '4px', WebkitTextStroke: '0.4px #000' }}>
         <span>TOTAL</span><span>{formatCurrency(total)}</span>
       </div>
 
       {invoice.payment_method && (
-        <div style={{ marginBottom: '4px', fontSize: '10px' }}>
+        <div style={{ marginBottom: '4px', fontSize: '9px' }}>
           <span style={css.bold}>Bayar:</span> {invoice.payment_method}
         </div>
       )}
@@ -144,7 +144,7 @@ function ThermalReceiptContent({ invoice }) {
       <div style={css.sep} />
 
       {/* ── FOOTER ── */}
-      <div style={{ ...css.center, fontSize: '9px', color: '#555', marginTop: '4px' }}>
+      <div style={{ ...css.center, fontSize: '8px', color: '#555', marginTop: '4px' }}>
         <div>Terima kasih atas kepercayaan Anda!</div>
         <div>Barang yang sudah dibeli tidak</div>
         <div>dapat dikembalikan.</div>
@@ -180,7 +180,7 @@ export default function ThermalReceiptModal({ invoice, onClose, autoPrint }) {
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Courier New', Courier, monospace;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
       -webkit-text-stroke: 0.3px #000;
       width: 220px;
