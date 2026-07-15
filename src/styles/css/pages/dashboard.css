@@ -4841,9 +4841,16 @@
 }
 
 /* Scrollable offline order form — allows items + buttons to be reachable */
-.offline-order-card.offline-scrollable {
-  max-height: calc(100vh - 140px);
+.staff-content .adm-card.offline-scrollable {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
   overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.staff-content .adm-card.offline-scrollable .offline-form {
+  min-height: 0;
 }
 
 /* Sticky form actions so the save button is always reachable */
