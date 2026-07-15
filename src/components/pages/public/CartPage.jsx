@@ -230,6 +230,9 @@ function CartPage() {
                     <img
                       src={imgSrc}
                       alt={item.name}
+                      width="80"
+                      height="80"
+                      loading="lazy"
                       onError={(e) => { e.currentTarget.src = placeholderImg; }}
                     />
                   </button>

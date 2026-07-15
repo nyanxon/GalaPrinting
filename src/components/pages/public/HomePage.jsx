@@ -297,6 +297,9 @@ function DesignShowcaseItem({ item }) {
         <img
           src={item.imageUrl}
           alt={item.title || ''}
+          width="280"
+          height="210"
+          loading="lazy"
           className={`home-cat-item-img${imageLoaded ? ' loaded' : ''}`}
           onLoad={() => setImageLoaded(true)}
           onError={() => setImageLoaded(true)}
@@ -523,6 +526,9 @@ function HomePage() {
                             <img
                               src={p.image || '/assets/img/placeholder.svg'}
                               alt=""
+                              width="48"
+                              height="48"
+                              loading="lazy"
                               onError={(e) => {
                                 e.currentTarget.src = '/assets/img/placeholder.svg';
                               }}

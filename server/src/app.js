@@ -7,6 +7,7 @@
 
 import express from 'express';
 import helmet from 'helmet';
+import compression from 'compression';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
@@ -72,6 +73,11 @@ export function createApp() {
   // ── Security headers ──────────────────────────────────────────────────────
   app.use(helmet());
 
+  // ── Gzip/Brotli compression ─────────────────────────────────────────────
+  // Compresses all responses (API JSON, HTML, CSS, JS, SVG).
+  // Must be registered early so it wraps downstream middleware.
+  app.use(compression());
+
   // ── CORS ──────────────────────────────────────────────────────────────────
   // Support multiple origins (comma-separated in CLIENT_ORIGIN env var).
   // e.g. CLIENT_ORIGIN=https://galaprintofficialbali.co.id,http://localhost:5173
@@ -115,7 +121,7 @@ export function createApp() {
   const uploadsAbsPath = path.isAbsolute(config.uploadDir)
     ? config.uploadDir
     : path.resolve(process.cwd(), config.uploadDir);
-  app.use('/uploads', express.static(uploadsAbsPath));
+  app.use('/uploads', express.static(uploadsAbsPath, { maxAge: '30d' }));
   console.log(`[app] Serving uploads from: ${uploadsAbsPath}`);
 
   // ── API routes ────────────────────────────────────────────────────────────

@@ -3,42 +3,43 @@ import { AuthProvider, AuthNavigationHandler } from './components/context/AuthCo
 import { SocketProvider } from './components/context/SocketContext.jsx';
 import { CartProvider } from './components/context/CartContext.jsx';
 import { CartContext } from './components/context/CartContext.jsx';
-import { useContext, useEffect } from 'react';
+import { useContext, useEffect, Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
 import PublicLayout from './components/layout/PublicLayout.jsx';
 import RoleGuard from './components/guards/RoleGuard.jsx';
 import Toast from './components/shared/Toast.jsx';
+import LoadingSpinner from './components/shared/LoadingSpinner.jsx';
 // NOTE: `seedStaffUsers` seeding is disabled — staff accounts come from the backend.
 
-// Public pages
-import HomePage from './components/pages/public/HomePage.jsx';
-import ProductsPage from './components/pages/public/ProductsPage.jsx';
-import CatalogProductPage from './components/pages/public/CatalogProductPage.jsx';
-import CartPage from './components/pages/public/CartPage.jsx';
-import CheckoutPage from './components/pages/public/CheckoutPage.jsx';
-import RegisterPage from './components/pages/public/RegisterPage.jsx';
-import StatusOrderPage from './components/pages/public/StatusOrderPage.jsx';
-import MyOrdersPage from './components/pages/public/MyOrdersPage.jsx';
-import CaraOrderPage from './components/pages/public/CaraOrderPage.jsx';
-import CustomOrderPage from './components/pages/public/CustomOrderPage.jsx';
-import PortfolioPage from './components/pages/public/PortfolioPage.jsx';
-import TentangKamiPage from './components/pages/public/TentangKamiPage.jsx';
-import ProfilePage from './components/pages/public/ProfilePage.jsx';
-import VerifyEmailPage from './components/pages/public/VerifyEmailPage.jsx';
-import ForgotPasswordPage from './components/pages/public/ForgotPasswordPage.jsx';
-import ResetPasswordPage from './components/pages/public/ResetPasswordPage.jsx';
+// Public pages — lazy loaded so only the homepage chunk loads initially
+const HomePage             = lazy(() => import('./components/pages/public/HomePage.jsx'));
+const ProductsPage         = lazy(() => import('./components/pages/public/ProductsPage.jsx'));
+const CatalogProductPage   = lazy(() => import('./components/pages/public/CatalogProductPage.jsx'));
+const CartPage             = lazy(() => import('./components/pages/public/CartPage.jsx'));
+const CheckoutPage         = lazy(() => import('./components/pages/public/CheckoutPage.jsx'));
+const RegisterPage         = lazy(() => import('./components/pages/public/RegisterPage.jsx'));
+const StatusOrderPage      = lazy(() => import('./components/pages/public/StatusOrderPage.jsx'));
+const MyOrdersPage         = lazy(() => import('./components/pages/public/MyOrdersPage.jsx'));
+const CaraOrderPage        = lazy(() => import('./components/pages/public/CaraOrderPage.jsx'));
+const CustomOrderPage      = lazy(() => import('./components/pages/public/CustomOrderPage.jsx'));
+const PortfolioPage        = lazy(() => import('./components/pages/public/PortfolioPage.jsx'));
+const TentangKamiPage      = lazy(() => import('./components/pages/public/TentangKamiPage.jsx'));
+const ProfilePage          = lazy(() => import('./components/pages/public/ProfilePage.jsx'));
+const VerifyEmailPage      = lazy(() => import('./components/pages/public/VerifyEmailPage.jsx'));
+const ForgotPasswordPage   = lazy(() => import('./components/pages/public/ForgotPasswordPage.jsx'));
+const ResetPasswordPage    = lazy(() => import('./components/pages/public/ResetPasswordPage.jsx'));
 
-// Staff pages
-import AdminDashboardPage from './components/pages/admin/AdminDashboardPage.jsx';
-import OwnerDashboardPage from './components/pages/owner/OwnerDashboardPage.jsx';
-import CashierDashboardPage from './components/pages/subadmin/CashierDashboardPage.jsx';
-import CSDashboardPage from './components/pages/subadmin/CSDashboardPage.jsx';
-import OperationalDashboardPage from './components/pages/subadmin/OperationalDashboardPage.jsx';
-import QCDashboardPage from './components/pages/subadmin/QCDashboardPage.jsx';
-import OfflineDashboardPage from './components/pages/offline/OfflineDashboardPage.jsx';
+// Staff pages — lazy loaded, only fetched when navigating to /admin, /owner, etc.
+const AdminDashboardPage       = lazy(() => import('./components/pages/admin/AdminDashboardPage.jsx'));
+const OwnerDashboardPage       = lazy(() => import('./components/pages/owner/OwnerDashboardPage.jsx'));
+const CashierDashboardPage     = lazy(() => import('./components/pages/subadmin/CashierDashboardPage.jsx'));
+const CSDashboardPage          = lazy(() => import('./components/pages/subadmin/CSDashboardPage.jsx'));
+const OperationalDashboardPage = lazy(() => import('./components/pages/subadmin/OperationalDashboardPage.jsx'));
+const QCDashboardPage          = lazy(() => import('./components/pages/subadmin/QCDashboardPage.jsx'));
+const OfflineDashboardPage     = lazy(() => import('./components/pages/offline/OfflineDashboardPage.jsx'));
 
 // 404
-import NotFoundPage from './components/pages/NotFoundPage.jsx';
+const NotFoundPage = lazy(() => import('./components/pages/NotFoundPage.jsx'));
 
 // Boot sequence: hydrateUser (session restore) is handled inside AuthProvider on mount.
 
@@ -114,6 +115,7 @@ function App() {
         <Toast />
         <BrowserRouter>
           <AuthNavigationHandler />
+          <Suspense fallback={<LoadingSpinner />}>
           <Routes>
             {/* Public layout — Navbar + Footer + ChatWidget */}
             <Route element={<PublicLayout />}>
@@ -196,6 +198,7 @@ function App() {
             {/* Catch-all */}
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
+          </Suspense>
         </BrowserRouter>
         </CartProvider>
       </SocketProvider>

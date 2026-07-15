@@ -337,6 +337,9 @@ function CatalogProductPage() {
                       <img
                         src={src}
                         alt={`${product.name} — thumbnail ${realIdx + 1}`}
+                        width="72"
+                        height="72"
+                        loading="lazy"
                         onError={(e) => { e.currentTarget.src = placeholderImg; }}
                       />
                     </button>

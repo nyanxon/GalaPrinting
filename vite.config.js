@@ -1,5 +1,6 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
+import compression from 'vite-plugin-compression'
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
@@ -8,18 +9,30 @@ export default defineConfig(({ mode }) => {
   const backendTarget = env.VITE_API_URL || 'http://localhost:3001';
 
   return {
-    plugins: [react()],
+    plugins: [
+      react(),
+      // Generate .gz files for all assets — served by Express compression middleware
+      compression({ algorithm: 'gzip' }),
+    ],
 
     build: {
       // Explicit asset filenames — content-hashed so they can be cached forever.
-      // The hash changes when file content changes, making stale caches impossible.
       rollupOptions: {
         output: {
-          // JS chunks: assets/[name]-[hash].js
           entryFileNames: 'assets/[name]-[hash].js',
           chunkFileNames: 'assets/[name]-[hash].js',
-          // CSS and other assets: assets/[name]-[hash][extname]
           assetFileNames: 'assets/[name]-[hash][extname]',
+          manualChunks: {
+            // Core React ecosystem — loaded on every page
+            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+            // HTTP + realtime
+            'vendor-network': ['axios', 'socket.io-client'],
+            // i18n — loaded eagerly (needed before first paint for translations)
+            'vendor-i18n': ['i18next', 'react-i18next', 'i18next-browser-languagedetector'],
+            // Heavy UI libraries — only needed on specific pages
+            'vendor-emoji': ['emoji-mart', '@emoji-mart/data', '@emoji-mart/react'],
+            'vendor-crop': ['react-easy-crop'],
+          },
         },
       },
       // Raise the inline threshold to 0 so no assets get inlined into HTML

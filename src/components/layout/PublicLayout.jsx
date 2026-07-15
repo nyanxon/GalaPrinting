@@ -1,8 +1,10 @@
 import { Outlet } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
 import Navbar from '../shared/Navbar.jsx';
 import Footer from '../shared/Footer.jsx';
-import ChatWidget from '../shared/ChatWidget.jsx';
 import EmailVerificationBanner from '../shared/EmailVerificationBanner.jsx';
+
+const ChatWidget = lazy(() => import('../shared/ChatWidget.jsx'));
 
 /**
  * PublicLayout component
@@ -20,7 +22,9 @@ function PublicLayout() {
       <EmailVerificationBanner />
       <Outlet />
       <Footer />
-      <ChatWidget />
+      <Suspense fallback={null}>
+        <ChatWidget />
+      </Suspense>
     </>
   );
 }
