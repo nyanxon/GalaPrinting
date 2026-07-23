@@ -1,11 +1,8 @@
 /**
  * AccountEditModal.jsx — Modal for editing a user's role and permissions.
  *
- * Read-only user info (name, email) + editable role dropdown + permission checkboxes.
- * Checkboxes are DYNAMIC: they change based on the selected role, showing only
- * the menus/features that role actually has.
- *
- * Uses src/config/permissions.js as the single source of truth.
+ * Follows the same CSS class pattern as ProductsSection / CustomersSection:
+ *   adm-modal-overlay → adm-modal → adm-modal-header / adm-modal-body / adm-modal-actions
  */
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -16,9 +13,9 @@ export default function AccountEditModal({ user, permissions, onClose, onSave, s
   const [newRole, setNewRole]           = useState(user?.role || 'customer');
   const [checkedPerms, setCheckedPerms] = useState(new Set(permissions || []));
 
-  const selectAllRef = useRef(null);
+  const selectAllRef  = useRef(null);
+  const overlayRef    = useRef(null);
 
-  // Permissions valid for the currently selected role
   const availablePerms = useMemo(() => getPermissionsForRole(newRole), [newRole]);
   const availableKeys  = useMemo(() => availablePerms.map((p) => p.key), [availablePerms]);
 
@@ -26,23 +23,18 @@ export default function AccountEditModal({ user, permissions, onClose, onSave, s
     () => availableKeys.filter((k) => checkedPerms.has(k)).length,
     [availableKeys, checkedPerms],
   );
-  const allChecked    = availableKeys.length > 0 && checkedCount === availableKeys.length;
-  const someChecked   = checkedCount > 0 && checkedCount < availableKeys.length;
+  const allChecked  = availableKeys.length > 0 && checkedCount === availableKeys.length;
+  const someChecked = checkedCount > 0 && checkedCount < availableKeys.length;
 
-  // Keep indeterminate state in sync (native property, not attribute)
   useEffect(() => {
-    if (selectAllRef.current) {
-      selectAllRef.current.indeterminate = someChecked;
-    }
+    if (selectAllRef.current) selectAllRef.current.indeterminate = someChecked;
   }, [someChecked]);
 
-  // Re-sync state when props change (modal opens with new data)
   useEffect(() => {
     if (user) setNewRole(user.role);
     if (permissions) setCheckedPerms(new Set(permissions));
   }, [user, permissions]);
 
-  // When role changes, filter checkedPerms to only keep valid keys for the new role
   useEffect(() => {
     const validKeys = new Set(availableKeys);
     setCheckedPerms((prev) => {
@@ -68,6 +60,10 @@ export default function AccountEditModal({ user, permissions, onClose, onSave, s
     });
   }
 
+  function handleOverlayClick(e) {
+    if (e.target === overlayRef.current && !saving) onClose();
+  }
+
   function handleSubmit(e) {
     e.preventDefault();
     onSave(newRole, Array.from(checkedPerms));
@@ -78,176 +74,182 @@ export default function AccountEditModal({ user, permissions, onClose, onSave, s
   return (
     <div
       className="adm-modal-overlay"
+      ref={overlayRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="edit-account-title"
-      onClick={(e) => { if (e.target === e.currentTarget && !saving) onClose(); }}
+      onClick={handleOverlayClick}
     >
       <div className="adm-modal" style={{ maxWidth: '600px' }}>
-        <h3 className="adm-modal-title" id="edit-account-title">
-          Edit Akun — {user.name}
-        </h3>
 
-        <form onSubmit={handleSubmit}>
-          {/* ── Read-only user info ── */}
-          <div
-            style={{
-              background: '#fafafa',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-sm)',
-              padding: '12px 14px',
-              marginBottom: '16px',
-              fontSize: '0.9rem',
-              lineHeight: '1.7',
-            }}
+        {/* ── Header ── */}
+        <div className="adm-modal-header">
+          <h2 className="adm-modal-title" id="edit-account-title">
+            Edit Akun
+          </h2>
+          <button
+            className="adm-modal-close"
+            type="button"
+            aria-label="Tutup"
+            onClick={onClose}
+            disabled={saving}
           >
-            <div>
-              <span style={{ color: 'var(--muted)', minWidth: 80, display: 'inline-block' }}>Nama</span>:
-              <strong> {user.name || '—'}</strong>
-            </div>
-            <div>
-              <span style={{ color: 'var(--muted)', minWidth: 80, display: 'inline-block' }}>Email</span>:
-              {' '}{user.email}
-            </div>
-          </div>
+            ✕
+          </button>
+        </div>
 
-          {/* ── Role dropdown ── */}
-          <div style={{ marginBottom: '16px' }}>
-            <label
-              htmlFor="role-select"
-              style={{ display: 'block', fontWeight: 600, marginBottom: '6px', fontSize: '0.9rem' }}
-            >
-              Role
-            </label>
-            <select
-              id="role-select"
-              className="adm-input"
-              value={newRole}
-              onChange={(e) => setNewRole(e.target.value)}
-              disabled={saving}
-              style={{ width: '100%' }}
-            >
-              {ALL_ROLE_VALUES.map((r) => (
-                <option key={r} value={r}>
-                  {STAFF_ROLE_CONFIG[r]?.label ?? r}
-                </option>
-              ))}
-            </select>
-          </div>
+        {/* ── Body ── */}
+        <div className="adm-modal-body">
+          <form onSubmit={handleSubmit}>
 
-          {/* ── Permissions checkboxes (dynamic per role) ── */}
-          <div style={{ marginBottom: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <label style={{ fontWeight: 600, fontSize: '0.9rem' }}>
+            {/* Read-only user info */}
+            <div
+              style={{
+                background: '#fafafa',
+                border: '1px solid #e0e0e0',
+                borderRadius: '6px',
+                padding: '12px 14px',
+                marginBottom: '16px',
+                fontSize: '0.9rem',
+                lineHeight: '1.7',
+              }}
+            >
+              <div>
+                <span style={{ color: '#666', minWidth: 80, display: 'inline-block' }}>Nama</span>:
+                <strong> {user.name || '—'}</strong>
+              </div>
+              <div>
+                <span style={{ color: '#666', minWidth: 80, display: 'inline-block' }}>Email</span>:
+                {' '}{user.email}
+              </div>
+            </div>
+
+            {/* Role dropdown */}
+            <div className="adm-field" style={{ marginBottom: '16px' }}>
+              <label className="adm-label" htmlFor="role-select">Role</label>
+              <select
+                id="role-select"
+                className="adm-input"
+                value={newRole}
+                onChange={(e) => setNewRole(e.target.value)}
+                disabled={saving}
+              >
+                {ALL_ROLE_VALUES.map((r) => (
+                  <option key={r} value={r}>
+                    {STAFF_ROLE_CONFIG[r]?.label ?? r}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Permissions */}
+            <div className="adm-field">
+              <label className="adm-label">
                 Permissions
                 {availablePerms.length > 0 && (
-                  <span style={{ fontWeight: 400, color: 'var(--muted)', fontSize: '0.8rem', marginLeft: '8px' }}>
+                  <span style={{ fontWeight: 400, color: '#6b7280', fontSize: '12px', marginLeft: '8px' }}>
                     {checkedCount}/{availablePerms.length} dipilih
                   </span>
                 )}
               </label>
+
+              {availablePerms.length === 0 ? (
+                <p style={{ color: '#6b7280', fontSize: '13px', fontStyle: 'italic', margin: '4px 0 0' }}>
+                  Tidak ada menu untuk role ini.
+                </p>
+              ) : (
+                <>
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                      gap: '8px',
+                    }}
+                  >
+                    {availablePerms.map((perm) => {
+                      const isActive = checkedPerms.has(perm.key);
+                      return (
+                        <label
+                          key={perm.key}
+                          className="adm-field--check"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px 10px',
+                            borderRadius: '6px',
+                            border: `1px solid ${isActive ? '#c7dba6' : '#e0e0e0'}`,
+                            cursor: saving ? 'not-allowed' : 'pointer',
+                            background: isActive ? '#f4faf0' : '#fff',
+                            fontSize: '13px',
+                            transition: 'border-color 0.15s, background 0.15s',
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isActive}
+                            onChange={() => togglePerm(perm.key)}
+                            disabled={saving}
+                            style={{ accentColor: 'var(--brand-brown, #785E40)' }}
+                          />
+                          {perm.label}
+                        </label>
+                      );
+                    })}
+                  </div>
+
+                  {/* Select All */}
+                  <label
+                    className="adm-field--check"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px 10px',
+                      marginTop: '8px',
+                      borderRadius: '6px',
+                      border: `1px dashed ${allChecked ? '#c7dba6' : someChecked ? '#fcd34d' : '#d1d5db'}`,
+                      cursor: saving ? 'not-allowed' : 'pointer',
+                      background: allChecked ? '#f4faf0' : someChecked ? '#fffbeb' : '#fafafa',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      transition: 'border-color 0.15s, background 0.15s',
+                    }}
+                  >
+                    <input
+                      ref={selectAllRef}
+                      type="checkbox"
+                      checked={allChecked}
+                      onChange={toggleSelectAll}
+                      disabled={saving}
+                      style={{ accentColor: 'var(--brand-brown, #785E40)' }}
+                    />
+                    Centang Semua
+                  </label>
+                </>
+              )}
             </div>
 
-            {availablePerms.length === 0 ? (
-              <p style={{ color: 'var(--muted)', fontSize: '0.85rem', fontStyle: 'italic' }}>
-                Tidak ada menu untuk role ini.
-              </p>
-            ) : (
-              <>
-                {/* Permission grid */}
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                    gap: '8px',
-                    marginBottom: '8px',
-                  }}
-                >
-                  {availablePerms.map((perm) => (
-                    <label
-                      key={perm.key}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '6px 10px',
-                        borderRadius: 'var(--radius-sm)',
-                        border: '1px solid var(--border)',
-                        cursor: saving ? 'not-allowed' : 'pointer',
-                        background: checkedPerms.has(perm.key) ? '#f0fdf4' : '#fff',
-                        fontSize: '0.85rem',
-                        transition: 'background 0.15s',
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={checkedPerms.has(perm.key)}
-                        onChange={() => togglePerm(perm.key)}
-                        disabled={saving}
-                        style={{ accentColor: 'var(--brand-brown)' }}
-                      />
-                      {perm.label}
-                    </label>
-                  ))}
-                </div>
-
-                {/* Select All */}
-                <label
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '8px 10px',
-                    borderRadius: 'var(--radius-sm)',
-                    border: '1px dashed var(--border)',
-                    cursor: saving ? 'not-allowed' : 'pointer',
-                    background: allChecked ? '#f0fdf4' : someChecked ? '#fffbeb' : '#fff',
-                    fontSize: '0.85rem',
-                    fontWeight: 600,
-                    transition: 'background 0.15s',
-                  }}
-                >
-                  <input
-                    ref={selectAllRef}
-                    type="checkbox"
-                    checked={allChecked}
-                    onChange={toggleSelectAll}
-                    disabled={saving}
-                    style={{ accentColor: 'var(--brand-brown)' }}
-                  />
-                  Centang Semua
-                </label>
-              </>
-            )}
-          </div>
-
-          {/* ── Action buttons ── */}
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'flex-end',
-              gap: '10px',
-              borderTop: '1px solid var(--border)',
-              paddingTop: '16px',
-            }}
-          >
-            <button
-              type="button"
-              className="adm-btn"
-              onClick={onClose}
-              disabled={saving}
-            >
-              Batal
-            </button>
-            <button
-              type="submit"
-              className="adm-btn adm-btn-primary"
-              disabled={saving}
-            >
-              {saving ? 'Menyimpan…' : 'Simpan'}
-            </button>
-          </div>
-        </form>
+            {/* Actions — inside form so submit works */}
+            <div className="adm-modal-actions" style={{ padding: '16px 0 0' }}>
+              <button
+                type="button"
+                className="adm-btn"
+                onClick={onClose}
+                disabled={saving}
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                className="adm-btn adm-btn--primary"
+                disabled={saving}
+              >
+                {saving ? 'Menyimpan…' : 'Simpan'}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
