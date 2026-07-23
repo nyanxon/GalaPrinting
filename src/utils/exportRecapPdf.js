@@ -3,9 +3,10 @@ import 'jspdf-autotable';
 import { formatCurrency } from './format.js';
 
 const SOURCE_LABELS = {
-  shopee: 'Shopee',
-  tokopedia: 'Tokopedia',
-  tiktok_shop: 'TikTok Shop',
+  offline_store: 'Toko Fisik',
+  shopee:        'Shopee',
+  tokopedia:     'Tokopedia',
+  tiktok_shop:   'TikTok Shop',
 };
 
 function fmtDate(dateStr) {

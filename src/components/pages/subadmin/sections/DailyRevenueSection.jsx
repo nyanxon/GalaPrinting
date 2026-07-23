@@ -32,9 +32,7 @@ const CATEGORY_BADGE_CLASS = {
 
 /* ── Nilai awal form ───────────────────────────────────────────────────────── */
 
-const FORM_CATEGORIES = Object.fromEntries(
-  Object.entries(CATEGORY_LABELS).filter(([k]) => k !== 'offline_store')
-);
+const FORM_CATEGORIES = CATEGORY_LABELS;
 
 const EMPTY_FORM = {
   transaction_date: '',
@@ -361,6 +359,18 @@ export default function DailyRevenueSection() {
           ) : (
             <span className="rev-kpi-card__value">
               {formatCurrency(manualByCategory.tiktok_shop ?? 0)}
+            </span>
+          )}
+        </div>
+
+        {/* Toko Fisik */}
+        <div className="rev-kpi-card">
+          <span className="rev-kpi-card__label">🏪 Toko Fisik</span>
+          {loading ? (
+            <div className="rev-daily-skeleton" />
+          ) : (
+            <span className="rev-kpi-card__value">
+              {formatCurrency(manualByCategory.offline_store ?? 0)}
             </span>
           )}
         </div>

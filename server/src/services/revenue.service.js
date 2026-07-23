@@ -56,7 +56,7 @@ export async function getRecapRange(start, end) {
     const mRows = manualByDate[date] ?? [];
 
     const website_total = wRows.reduce((s, r) => s + parseFloat(r.subtotal ?? 0), 0);
-    const manual_by_category = { shopee: 0, tokopedia: 0, tiktok_shop: 0 };
+    const manual_by_category = { offline_store: 0, shopee: 0, tokopedia: 0, tiktok_shop: 0 };
     for (const r of mRows) {
       if (r.source_category in manual_by_category) {
         manual_by_category[r.source_category] += parseFloat(r.amount ?? 0);
