@@ -8,12 +8,12 @@
 export async function getRecapRange(start, end) {
   const [websiteRows] = await query(
     `SELECT o.id, o.order_number, o.customer_id, o.subtotal, o.status, o.source,
-            DATE(oh.created_at) AS pay_date,
+            DATE(CONVERT_TZ(oh.created_at, '+00:00', '+07:00')) AS pay_date,
             oh.created_at AS paid_at
      FROM orders o
      INNER JOIN order_history oh
        ON oh.order_id = o.id AND oh.to_status = 'Payment Accepted'
-     WHERE DATE(oh.created_at) BETWEEN ? AND ?
+     WHERE DATE(CONVERT_TZ(oh.created_at, '+00:00', '+07:00')) BETWEEN ? AND ?
        AND o.status != 'Cancelled'
      ORDER BY oh.created_at ASC`,
     [start, end]
@@ -72,9 +72,10 @@ export async function getRecapRange(start, end) {
     });
 
     // Advance by 1 day using pure string arithmetic (YYYY-MM-DD)
-    const d = new Date(current + 'T12:00:00');
-    d.setDate(d.getDate() + 1);
-    current = d.toISOString().slice(0, 10);
+    // Avoid toISOString() which uses UTC and shifts dates in WIB
+    const parts = current.split('-');
+    const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]) + 1);
+    current = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
 
   return results;
@@ -112,7 +113,7 @@ export async function getDailyRecap(date) {
      FROM orders o
      INNER JOIN order_history oh
        ON oh.order_id = o.id AND oh.to_status = 'Payment Accepted'
-     WHERE DATE(oh.created_at) = ?
+     WHERE DATE(CONVERT_TZ(oh.created_at, '+00:00', '+07:00')) = ?
        AND o.status != 'Cancelled'
      ORDER BY oh.created_at ASC`,
     [date]
