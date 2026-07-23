@@ -91,18 +91,6 @@ export async function createStaff({ name, email, phone, password, role }) {
   return rows[0];
 }
 
-export async function updateUserRole(targetId, newRole, requestingUserId) {
-  if (targetId === requestingUserId) {
-    const err = new Error('Anda tidak dapat mengubah role akun Anda sendiri.');
-    err.status = 403;
-    throw err;
-  }
-
-  await query('UPDATE users SET role = ? WHERE id = ?', [newRole, targetId]);
-  const [rows] = await query(`SELECT ${SAFE_FIELDS} FROM users WHERE id = ?`, [targetId]);
-  return rows[0] || null;
-}
-
 export async function softDeleteUser(id) {
   await query('UPDATE users SET deleted_at = NOW() WHERE id = ?', [id]);
 }

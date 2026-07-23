@@ -209,37 +209,6 @@ export async function listCustomers() {
 }
 
 // ---------------------------------------------------------------------------
-// updateUserRole — owner/admin only
-// ---------------------------------------------------------------------------
-
-/**
- * Update a user's role.
- *
- * @param {string} userId
- * @param {string} newRole
- * @returns {Promise<{ ok: boolean, data?: object, message?: string }>}
- */
-export async function updateUserRole(userId, newRole) {
-  if (USE_BACKEND) {
-    try {
-      const res = await api.patch(`/api/users/${userId}/role`, { role: newRole });
-      return { ok: true, data: res.data.data };
-    } catch (err) {
-      const message =
-        err.response?.data?.message || 'Gagal mengubah role. Coba lagi nanti.';
-      return { ok: false, message };
-    }
-  }
-  // localStorage fallback
-  const users = loadUsers();
-  const idx   = users.findIndex((u) => u.id === userId);
-  if (idx === -1) return { ok: false, message: 'User tidak ditemukan.' };
-  users[idx].role = newRole;
-  saveUsers(users);
-  return { ok: true, data: users[idx] };
-}
-
-// ---------------------------------------------------------------------------
 // deleteUser — owner only
 // ---------------------------------------------------------------------------
 

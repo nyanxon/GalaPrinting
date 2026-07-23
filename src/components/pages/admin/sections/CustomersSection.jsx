@@ -1,22 +1,19 @@
 /**
- * CustomersSection.jsx — Customer list with search, pagination, and role management.
- * Equivalent to vanilla admin/sections/customersSection.js
+ * CustomersSection.jsx — Read-only customer list with search, pagination, and delete (owner only).
  *
  * Requirements: 9.2, 16.4
  *
  * Permissions:
- *  - owner : dapat mengubah role DAN menghapus akun
- *  - admin  : hanya bisa melihat daftar, TIDAK bisa mengubah role atau menghapus
+ *  - owner : dapat melihat daftar DAN menghapus akun
+ *  - admin  : hanya bisa melihat daftar
  */
 
 import { useState, useEffect, useContext, useCallback } from 'react';
-import { listCustomers, updateUserRole, deleteUser } from '../../../../services/auth.js';
+import { listCustomers, deleteUser } from '../../../../services/auth.js';
 import { AuthContext } from '../../../context/AuthContext.jsx';
 import { getSocket } from '../../../../core/socket.js';
 
 const PAGE_SIZE = 10;
-
-const ALL_ROLES = ['customer', 'admin', 'owner', 'cashier', 'cs', 'operational', 'qc', 'offline'];
 
 const ROLE_LABELS = {
   customer:    'Customer',
@@ -75,52 +72,6 @@ function PaginationBar({ page, totalPages, total, limit, onPageChange }) {
         >
           ›
         </button>
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// ConfirmRoleModal — hanya muncul untuk owner
-// ---------------------------------------------------------------------------
-function ConfirmRoleModal({ customer, newRole, onConfirm, onCancel, saving }) {
-  return (
-    <div
-      className="adm-modal-overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="confirm-role-title"
-    >
-      <div className="adm-modal">
-        <h3 className="adm-modal-title" id="confirm-role-title">
-          Ubah Role Akun
-        </h3>
-        <p className="adm-modal-body">
-          Anda akan mengubah role akun <strong>{customer.name || customer.email}</strong> dari{' '}
-          <strong>{ROLE_LABELS[customer.role] ?? customer.role}</strong> menjadi{' '}
-          <strong>{ROLE_LABELS[newRole] ?? newRole}</strong>.
-        </p>
-        <p className="adm-modal-body" style={{ color: '#c0392b', fontSize: '0.85rem' }}>
-          Akun ini akan dipindahkan dari daftar customer dan mendapatkan akses sesuai role baru.
-        </p>
-        <div className="adm-modal-actions">
-          <button
-            className="adm-btn adm-btn-secondary"
-            type="button"
-            onClick={onCancel}
-            disabled={saving}
-          >
-            Batal
-          </button>
-          <button
-            className="adm-btn adm-btn-danger"
-            type="button"
-            onClick={onConfirm}
-            disabled={saving}
-          >
-            {saving ? 'Menyimpan…' : 'Ya, Ubah Role'}
-          </button>
-        </div>
       </div>
     </div>
   );
@@ -221,20 +172,14 @@ export default function CustomersSection() {
   const [searchQuery, setSearchQuery]   = useState('');
   const [currentPage, setCurrentPage]   = useState(1);
 
-  // Role-change state (owner only)
-  const [pendingChange, setPendingChange] = useState(null); // { customer, newRole }
-  const [saving, setSaving]               = useState(false);
-
   // Delete state (owner only)
   const [pendingDelete, setPendingDelete] = useState(null); // customer object
   const [deleting, setDeleting]           = useState(false);
 
   const [toast, setToast] = useState(null); // { type: 'success'|'error', message }
 
-  // Hanya owner yang bisa ubah role atau hapus akun
+  // Hanya owner yang bisa hapus akun
   const isOwner     = currentUser?.role === 'owner';
-  // Admin (superadmin) hanya boleh melihat, tidak boleh edit role / hapus
-  const canChangeRole = isOwner;
   const canDelete     = isOwner;
 
   const loadCustomers = useCallback(async () => {
@@ -293,43 +238,6 @@ export default function CustomersSection() {
     setCurrentPage(1);
   }
 
-  // --- Role change handlers (owner only) ---
-  function handleRoleSelect(customer, newRole) {
-    if (!isOwner) return;
-    if (newRole === customer.role) return;
-    setPendingChange({ customer, newRole });
-  }
-
-  async function handleConfirmRoleChange() {
-    if (!pendingChange) return;
-    const { customer, newRole } = pendingChange;
-    setSaving(true);
-    try {
-      const result = await updateUserRole(customer.id, newRole);
-      if (result.ok) {
-        if (newRole !== 'customer') {
-          setAllCustomers((prev) => prev.filter((u) => u.id !== customer.id));
-        } else {
-          setAllCustomers((prev) =>
-            prev.map((u) => (u.id === customer.id ? { ...u, role: newRole } : u))
-          );
-        }
-        setToast({
-          type: 'success',
-          message: `Role ${customer.name || customer.email} berhasil diubah menjadi ${ROLE_LABELS[newRole] ?? newRole}.`,
-        });
-      } else {
-        setToast({ type: 'error', message: result.message || 'Gagal mengubah role.' });
-      }
-    } catch (err) {
-      console.error('updateUserRole error:', err);
-      setToast({ type: 'error', message: 'Terjadi kesalahan. Coba lagi.' });
-    } finally {
-      setSaving(false);
-      setPendingChange(null);
-    }
-  }
-
   // --- Delete handlers (owner only) ---
   function handleDeleteClick(customer) {
     if (!isOwner) return;
@@ -360,7 +268,7 @@ export default function CustomersSection() {
   }
 
   // Hitung jumlah kolom untuk colspan empty state
-  const colCount = 4 + (canChangeRole ? 1 : 0) + (canDelete ? 1 : 0);
+  const colCount = 4 + (canDelete ? 1 : 0);
 
   return (
     <div className="adm-card">
@@ -397,7 +305,6 @@ export default function CustomersSection() {
               <th>Email</th>
               <th>Telepon</th>
               <th>Bergabung</th>
-              {canChangeRole && <th>Role</th>}
               {canDelete     && <th>Aksi</th>}
             </tr>
           </thead>
@@ -423,22 +330,6 @@ export default function CustomersSection() {
                         })
                       : '—'}
                   </td>
-                  {canChangeRole && (
-                    <td>
-                      <select
-                        className="adm-role-select"
-                        value={u.role}
-                        onChange={(e) => handleRoleSelect(u, e.target.value)}
-                        aria-label={`Ubah role ${u.name || u.email}`}
-                      >
-                        {ALL_ROLES.map((r) => (
-                          <option key={r} value={r}>
-                            {ROLE_LABELS[r]}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                  )}
                   {canDelete && (
                     <td>
                       <button
@@ -465,17 +356,6 @@ export default function CustomersSection() {
         limit={PAGE_SIZE}
         onPageChange={setCurrentPage}
       />
-
-      {/* Modal konfirmasi ubah role (owner only) */}
-      {pendingChange && (
-        <ConfirmRoleModal
-          customer={pendingChange.customer}
-          newRole={pendingChange.newRole}
-          onConfirm={handleConfirmRoleChange}
-          onCancel={() => setPendingChange(null)}
-          saving={saving}
-        />
-      )}
 
       {/* Modal konfirmasi hapus akun (owner only) */}
       {pendingDelete && (

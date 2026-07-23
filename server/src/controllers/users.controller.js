@@ -41,21 +41,6 @@ export async function createStaff(req, res, next) {
   }
 }
 
-export async function updateRole(req, res, next) {
-  try {
-    const user = await svc.updateUserRole(req.params.id, req.body.role, req.user.id);
-    if (!user) {
-      return res.status(404).json({ ok: false, message: 'User tidak ditemukan.' });
-    }
-    return res.json({ ok: true, data: user });
-  } catch (err) {
-    if (err.status === 403) {
-      return res.status(403).json({ ok: false, message: err.message });
-    }
-    next(err);
-  }
-}
-
 export async function deleteUser(req, res, next) {
   try {
     await svc.softDeleteUser(req.params.id);

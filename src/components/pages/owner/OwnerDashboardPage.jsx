@@ -12,7 +12,7 @@ import { logout } from '../../../services/auth.js';
 import { listAllOrders } from '../../../services/orders.js';
 import { listConversations } from '../../../services/chatService.js';
 import OrdersSection from '../admin/sections/OrdersSection.jsx';
-import CustomersSection from '../admin/sections/CustomersSection.jsx';
+import AccountsSection from './sections/AccountsSection.jsx';
 import ProductsSection from '../admin/sections/ProductsSection.jsx';
 import CategoriesSection from '../admin/sections/CategoriesSection.jsx';
 import ReviewsSection from '../admin/sections/ReviewsSection.jsx';
@@ -30,7 +30,7 @@ import '../../../styles/css/pages/dashboard.css';
 const OWNER_NAV = [
   { id: 'dashboard',   label: 'DASHBOARD' },
   { id: 'orders',      label: 'ORDERS' },
-  { id: 'customer',    label: 'CUSTOMER' },
+  { id: 'accounts',   label: 'ACCOUNT' },
   { id: 'products',    label: 'PRODUCT' },
   { id: 'categories',  label: 'CATEGORIES' },
   { id: 'review',      label: 'REVIEW' },
@@ -178,7 +178,7 @@ export default function OwnerDashboardPage() {
   function renderSection() {
     switch (activeNav) {
       case 'orders':      return <OrdersSection />;
-      case 'customer':    return <CustomersSection />;
+      case 'accounts':   return <AccountsSection />;
       case 'products':    return <ProductsSection />;
       case 'categories':  return <CategoriesSection />;
       case 'review':      return <ReviewsSection />;
