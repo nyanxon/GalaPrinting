@@ -73,9 +73,15 @@ export async function getAccount(id) {
     [id]
   );
 
+  // Filter out the __none__ sentinel — it's only used internally to
+  // distinguish "never set" from "explicitly cleared".
+  const permissions = permRows
+    .map((r) => r.permission_key)
+    .filter((k) => k !== '__none__');
+
   return {
     user: rows[0],
-    permissions: permRows.map((r) => r.permission_key),
+    permissions,
   };
 }
 
@@ -112,11 +118,19 @@ export async function updateAccount(id, { role, permissions }, requestingUserId)
     await conn.query('DELETE FROM user_permissions WHERE user_id = ?', [id]);
 
     // 3. Insert new permissions
+    //    When owner explicitly clears ALL permissions, insert a __none__ sentinel
+    //    so getUserById can distinguish "never set" (0 rows → null → show all)
+    //    from "explicitly cleared" (__none__ row → [] → show nothing).
     if (Array.isArray(permissions) && permissions.length > 0) {
       const values = permissions.map((p) => [id, p]);
       await conn.query(
         'INSERT INTO user_permissions (user_id, permission_key) VALUES ?',
         [values]
+      );
+    } else {
+      await conn.query(
+        'INSERT INTO user_permissions (user_id, permission_key) VALUES (?, ?)',
+        [id, '__none__']
       );
     }
 

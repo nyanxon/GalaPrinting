@@ -12,7 +12,7 @@ const VALID_PERMISSION_KEYS = [
   'dashboard', 'orders', 'products', 'categories', 'reviews', 'chats', 'dm',
   'promo', 'homepage', 'accounts', 'revenue', 'reports', 'analytics',
   'invoices', 'customers', 'custom_order', 'order_offline', 'daily_recap',
-  'new_order', 'order_list',
+  'new_order', 'order_list', '__none__',
 ];
 
 /**

@@ -278,13 +278,23 @@ export async function getUserById(id) {
   const user = rows[0];
 
   // Attach granular permissions from user_permissions table.
-  // If no rows exist, permissions is an empty array — dashboards
-  // treat empty as "show all menus for this role" (backward compatible).
+  //
+  // Three states:
+  //   0 rows        → permissions = null  (never edited → backward compat: show all menus)
+  //   only __none__ → permissions = []    (explicitly cleared → show nothing)
+  //   real keys     → permissions = [...] (filter by these keys)
   const [permRows] = await query(
     'SELECT permission_key FROM user_permissions WHERE user_id = ?',
     [id]
   );
-  user.permissions = permRows.map((r) => r.permission_key);
+
+  if (permRows.length === 0) {
+    // Never had permissions set — backward compatible, show all
+    user.permissions = null;
+  } else {
+    const keys = permRows.map((r) => r.permission_key).filter((k) => k !== '__none__');
+    user.permissions = keys; // may be [] if only __none__ existed
+  }
 
   return user;
 }

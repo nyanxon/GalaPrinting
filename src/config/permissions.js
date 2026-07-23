@@ -95,19 +95,21 @@ const PERM_TO_NAV = {
 /**
  * Filter an array of nav items based on user permissions.
  *
- * If the user has NO permissions set (empty/undefined array), all items
- * are returned (backward compatible — role-based access still applies
- * server-side).
- *
- * If the user HAS permissions, only items whose nav ID matches at least
- * one permission key are included.
+ * Three states from the backend:
+ *   null/undefined  → permissions never set (backward compatible: show all menus)
+ *   []              → permissions explicitly cleared (show nothing)
+ *   [keys]          → filter: only show items whose perm key is in the array
  *
  * @param {Array<{ id: string }>} navItems
- * @param {string[] | undefined} userPermissions
+ * @param {string[] | null | undefined} userPermissions
  * @returns {Array<{ id: string }>}
  */
 export function filterNavByPermissions(navItems, userPermissions) {
-  if (!userPermissions || userPermissions.length === 0) return navItems;
+  // null/undefined = never edited → backward compat, show all
+  if (userPermissions == null) return navItems;
+
+  // [] = explicitly cleared → show nothing
+  if (userPermissions.length === 0) return [];
 
   // Build reverse map: navId → permissionKey
   const navToPerm = {};
