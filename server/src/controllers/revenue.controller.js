@@ -68,7 +68,10 @@ export async function getDailyRecap(req, res, next) {
     const date =
       rawDate && ISO_DATE_RE.test(rawDate)
         ? rawDate
-        : new Date().toISOString().slice(0, 10);
+        : (() => {
+            const now = new Date();
+            return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+          })();
 
     const data = await svc.getDailyRecap(date);
     return res.status(200).json({ ok: true, data });

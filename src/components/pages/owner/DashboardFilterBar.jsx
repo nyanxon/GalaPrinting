@@ -26,21 +26,25 @@ const DATE_PRESETS = [
   { key: 'custom',       label: 'Custom' },
 ];
 
+function toLocalDateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 function presetsToRange(preset) {
   const now   = new Date();
-  const today = now.toISOString().slice(0, 10);
+  const today = toLocalDateStr(now);
   if (preset === 'today') return { from: today, to: today };
   if (preset === '7d') {
-    const from = new Date(now.getTime() - 6 * 86400000).toISOString().slice(0, 10);
-    return { from, to: today };
+    const from = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
+    return { from: toLocalDateStr(from), to: today };
   }
   if (preset === '30d') {
-    const from = new Date(now.getTime() - 29 * 86400000).toISOString().slice(0, 10);
-    return { from, to: today };
+    const from = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29);
+    return { from: toLocalDateStr(from), to: today };
   }
   if (preset === 'this_month') {
-    const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-    return { from, to: today };
+    const from = new Date(now.getFullYear(), now.getMonth(), 1);
+    return { from: toLocalDateStr(from), to: today };
   }
   if (preset === 'this_year') {
     const from = `${now.getFullYear()}-01-01`;

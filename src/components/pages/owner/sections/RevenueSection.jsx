@@ -338,13 +338,13 @@ function ResetRevenueModal({ onClose, onConfirmed }) {
 /* ── Main component ────────────────────────────────────────── */
 export default function RevenueSection() {
   // Filter state — lazy initializer so Date.now() is only called once on mount
-  const [filters, setFilters] = useState(() => ({
-    preset: '30d',
-    from: new Date(Date.now() - 29 * 86400000).toISOString().slice(0, 10),
-    to:   new Date().toISOString().slice(0, 10),
-    categoryId: '',
-    status: '',
-  }));
+  const [filters, setFilters] = useState(() => {
+    const now = new Date();
+    const to = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const fromDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29);
+    const from = `${fromDate.getFullYear()}-${String(fromDate.getMonth() + 1).padStart(2, '0')}-${String(fromDate.getDate()).padStart(2, '0')}`;
+    return { preset: '30d', from, to, categoryId: '', status: '' };
+  });
 
   // Data state
   const [metrics,     setMetrics]     = useState(null);
