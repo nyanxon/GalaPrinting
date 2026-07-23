@@ -11,8 +11,9 @@
 export const STAFF_ROLES = ['admin', 'owner', 'cashier', 'cs', 'operational', 'qc', 'offline'];
 
 export const STAFF_ROLE_CONFIG = {
-  admin:       { label: "Super Admin",        color: "#785E40" },
-  owner:       { label: "Owner",              color: "#1e40af" },
+  customer:    { label: "Customer",             color: "#6b7280" },
+  admin:       { label: "Super Admin",          color: "#785E40" },
+  owner:       { label: "Owner",                color: "#1e40af" },
   cashier:     { label: "Kasir",              color: "#16a34a" },
   cs:          { label: "Customer Service",   color: "#9333ea" },
   operational: { label: "Operasional",        color: "#ea580c" },

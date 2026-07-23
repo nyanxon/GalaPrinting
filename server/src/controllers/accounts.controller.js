@@ -8,6 +8,13 @@ import * as svc from '../services/accounts.service.js';
 
 const VALID_ROLES = ['customer', 'admin', 'owner', 'cashier', 'cs', 'operational', 'qc', 'offline'];
 
+const VALID_PERMISSION_KEYS = [
+  'dashboard', 'orders', 'products', 'categories', 'reviews', 'chats', 'dm',
+  'promo', 'homepage', 'accounts', 'revenue', 'reports', 'analytics',
+  'invoices', 'customers', 'custom_order', 'order_offline', 'daily_recap',
+  'new_order', 'order_list',
+];
+
 /**
  * GET /api/admin/accounts
  */
@@ -52,6 +59,9 @@ export async function updateAccount(req, res, next) {
     }
     if (permissions !== undefined && !Array.isArray(permissions)) {
       return res.status(422).json({ ok: false, message: 'Permissions harus berupa array.' });
+    }
+    if (permissions && permissions.some((k) => !VALID_PERMISSION_KEYS.includes(k))) {
+      return res.status(422).json({ ok: false, message: 'Permission key tidak valid.' });
     }
 
     const data = await svc.updateAccount(
