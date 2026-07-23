@@ -10,6 +10,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../../../../core/httpClient.js';
 import { formatCurrency } from '../../../../utils/format.js';
+import { exportRecapPdf } from '../../../../utils/exportRecapPdf.js';
 import { showToast } from '../../../../core/toastEmitter.js';
 import '../../../../styles/css/pages/daily-revenue.css';
 
@@ -30,6 +31,10 @@ const CATEGORY_BADGE_CLASS = {
 };
 
 /* ── Nilai awal form ───────────────────────────────────────────────────────── */
+
+const FORM_CATEGORIES = Object.fromEntries(
+  Object.entries(CATEGORY_LABELS).filter(([k]) => k !== 'offline_store')
+);
 
 const EMPTY_FORM = {
   transaction_date: '',
@@ -64,6 +69,9 @@ export default function DailyRevenueSection() {
   const [form,         setForm]         = useState(EMPTY_FORM);
   const [fieldErrors,  setFieldErrors]  = useState({});
   const [submitting,   setSubmitting]   = useState(false);
+  const [rangeStart,   setRangeStart]   = useState(todayString);
+  const [rangeEnd,     setRangeEnd]     = useState(todayString);
+  const [exporting,    setExporting]    = useState(false);
 
   /* ── Load rekap ────────────────────────────────────────────────────────── */
 
@@ -86,6 +94,39 @@ export default function DailyRevenueSection() {
   useEffect(() => {
     loadRecap(selectedDate);
   }, [selectedDate, loadRecap]);
+
+  /* ── PDF export ─────────────────────────────────────────────────────────── */
+
+  async function handleExportPdf() {
+    if (!rangeStart || !rangeEnd) {
+      showToast('Pilih tanggal awal dan akhir.', 'error');
+      return;
+    }
+    if (rangeStart > rangeEnd) {
+      showToast('Tanggal awal tidak boleh lebih besar dari tanggal akhir.', 'error');
+      return;
+    }
+    setExporting(true);
+    try {
+      const res = await api.get(
+        `/api/revenue/recap-range?start=${rangeStart}&end=${rangeEnd}`
+      );
+      const days = res.data.data;
+      if (!days || days.length === 0) {
+        showToast('Tidak ada data untuk rentang tanggal ini.', 'error');
+        return;
+      }
+      exportRecapPdf(days, rangeStart, rangeEnd);
+      showToast('PDF berhasil diunduh.', 'success');
+    } catch (err) {
+      showToast(
+        err.response?.data?.message || 'Gagal membuat PDF.',
+        'error'
+      );
+    } finally {
+      setExporting(false);
+    }
+  }
 
   /* ── Validasi form ─────────────────────────────────────────────────────── */
 
@@ -240,6 +281,39 @@ export default function DailyRevenueSection() {
         />
       </div>
 
+      {/* ── Export PDF toolbar ─────────────────────────────────────────── */}
+      <div
+        className="adm-toolbar"
+        style={{ marginTop: '8px', gap: '8px', flexWrap: 'wrap' }}
+      >
+        <span style={{ fontWeight: 600, fontSize: '13px' }}>📄 Export PDF</span>
+        <input
+          type="date"
+          className="adm-input"
+          style={{ width: 'auto' }}
+          value={rangeStart}
+          onChange={(e) => setRangeStart(e.target.value)}
+          aria-label="Tanggal awal"
+        />
+        <span style={{ alignSelf: 'center', color: 'var(--muted)' }}>s/d</span>
+        <input
+          type="date"
+          className="adm-input"
+          style={{ width: 'auto' }}
+          value={rangeEnd}
+          onChange={(e) => setRangeEnd(e.target.value)}
+          aria-label="Tanggal akhir"
+        />
+        <button
+          type="button"
+          className="adm-btn adm-btn--primary"
+          disabled={exporting}
+          onClick={handleExportPdf}
+        >
+          {exporting ? 'Membuat PDF…' : '⬇ Download PDF'}
+        </button>
+      </div>
+
       {/* ── KPI Cards ───────────────────────────────────────────────────── */}
       <div className="rev-kpi-grid" style={{ margin: '16px 0' }}>
 
@@ -251,18 +325,6 @@ export default function DailyRevenueSection() {
           ) : (
             <span className="rev-kpi-card__value">
               {formatCurrency(websiteTotal)}
-            </span>
-          )}
-        </div>
-
-        {/* Toko Fisik */}
-        <div className="rev-kpi-card">
-          <span className="rev-kpi-card__label">🏪 Toko Fisik</span>
-          {loading ? (
-            <div className="rev-daily-skeleton" />
-          ) : (
-            <span className="rev-kpi-card__value">
-              {formatCurrency(manualByCategory.offline_store ?? 0)}
             </span>
           )}
         </div>
@@ -497,7 +559,7 @@ export default function DailyRevenueSection() {
                 onChange={(e) => setField('source_category', e.target.value)}
               >
                 <option value="">— Pilih kategori —</option>
-                {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
+                {Object.entries(FORM_CATEGORIES).map(([value, label]) => (
                   <option key={value} value={value}>
                     {label}
                   </option>

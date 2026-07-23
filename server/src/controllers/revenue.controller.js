@@ -39,6 +39,25 @@ function validateTransactionBody({ transaction_date, source_category, amount }) 
 }
 
 /**
+ * GET /api/revenue/recap-range?start=YYYY-MM-DD&end=YYYY-MM-DD
+ */
+export async function getRecapRange(req, res, next) {
+  try {
+    const { start, end } = req.query;
+    if (!start || !ISO_DATE_RE.test(start) || !end || !ISO_DATE_RE.test(end)) {
+      return res.status(422).json({ ok: false, message: 'Parameter start dan end wajib berformat YYYY-MM-DD.' });
+    }
+    if (start > end) {
+      return res.status(422).json({ ok: false, message: 'Tanggal awal tidak boleh lebih besar dari tanggal akhir.' });
+    }
+    const data = await svc.getRecapRange(start, end);
+    return res.status(200).json({ ok: true, data });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
  * GET /api/revenue/daily-recap?date=YYYY-MM-DD
  *
  * Requirement 2.1, 2.6

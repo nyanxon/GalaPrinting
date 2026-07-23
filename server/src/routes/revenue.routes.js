@@ -14,6 +14,7 @@ const router = Router();
 const guard = [authenticate, requireRole('cashier', 'admin', 'owner')];
 
 router.get('/daily-recap',              ...guard, ctrl.getDailyRecap);
+router.get('/recap-range',              ...guard, ctrl.getRecapRange);
 router.post('/manual-transaction',       ...guard, ctrl.createManualTransaction);
 router.put('/manual-transaction/:id',    ...guard, ctrl.updateManualTransaction);
 router.delete('/manual-transaction/:id', ...guard, ctrl.deleteManualTransaction);

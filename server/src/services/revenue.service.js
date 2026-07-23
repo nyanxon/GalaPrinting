@@ -1,4 +1,85 @@
 /**
+ * Hitung rekap pendapatan untuk rentang tanggal.
+ *
+ * @param {string} start - format YYYY-MM-DD
+ * @param {string} end   - format YYYY-MM-DD
+ * @returns {Promise<Array<{ date: string, website_total: number, manual_by_category: object, grand_total: number, website_transactions: object[], manual_transactions: object[] }>>}
+ */
+export async function getRecapRange(start, end) {
+  const [websiteRows] = await query(
+    `SELECT o.id, o.order_number, o.customer_id, o.subtotal, o.status, o.source,
+            DATE(oh.created_at) AS pay_date,
+            oh.created_at AS paid_at
+     FROM orders o
+     INNER JOIN order_history oh
+       ON oh.order_id = o.id AND oh.to_status = 'Payment Accepted'
+     WHERE DATE(oh.created_at) BETWEEN ? AND ?
+       AND o.status != 'Cancelled'
+     ORDER BY oh.created_at ASC`,
+    [start, end]
+  );
+
+  const [manualRows] = await query(
+    `SELECT id, transaction_date, source_category, amount, notes,
+            created_by, updated_by, created_at, updated_at
+     FROM manual_revenue_transactions
+     WHERE transaction_date BETWEEN ? AND ?
+       AND deleted_at IS NULL
+     ORDER BY transaction_date ASC, created_at ASC`,
+    [start, end]
+  );
+
+  // Group website rows by date
+  const websiteByDate = {};
+  for (const row of websiteRows) {
+    const d = row.pay_date;
+    if (!websiteByDate[d]) websiteByDate[d] = [];
+    websiteByDate[d].push(row);
+  }
+
+  // Group manual rows by date
+  const manualByDate = {};
+  for (const row of manualRows) {
+    const d = row.transaction_date;
+    if (!manualByDate[d]) manualByDate[d] = [];
+    manualByDate[d].push(row);
+  }
+
+  // Build per-day results
+  const results = [];
+  const cur = new Date(start + 'T00:00:00');
+  const last = new Date(end + 'T00:00:00');
+  while (cur <= last) {
+    const date = cur.toISOString().slice(0, 10);
+
+    const wRows = websiteByDate[date] ?? [];
+    const mRows = manualByDate[date] ?? [];
+
+    const website_total = wRows.reduce((s, r) => s + parseFloat(r.subtotal ?? 0), 0);
+    const manual_by_category = { shopee: 0, tokopedia: 0, tiktok_shop: 0 };
+    for (const r of mRows) {
+      if (r.source_category in manual_by_category) {
+        manual_by_category[r.source_category] += parseFloat(r.amount ?? 0);
+      }
+    }
+    const manual_sum = Object.values(manual_by_category).reduce((a, b) => a + b, 0);
+
+    results.push({
+      date,
+      website_total,
+      manual_by_category,
+      grand_total: website_total + manual_sum,
+      website_transactions: wRows,
+      manual_transactions: mRows,
+    });
+
+    cur.setDate(cur.getDate() + 1);
+  }
+
+  return results;
+}
+
+/**
  * revenue.service.js — Business logic for daily revenue recap.
  *
  * Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 3.1, 3.2, 4.1, 4.2, 5.1
