@@ -8,12 +8,12 @@
 export async function getRecapRange(start, end) {
   const [websiteRows] = await query(
     `SELECT o.id, o.order_number, o.customer_id, o.subtotal, o.status, o.source,
-            DATE(CONVERT_TZ(oh.created_at, '+00:00', '+07:00')) AS pay_date,
+            DATE(oh.created_at + INTERVAL 7 HOUR) AS pay_date,
             oh.created_at AS paid_at
      FROM orders o
      INNER JOIN order_history oh
        ON oh.order_id = o.id AND oh.to_status = 'Payment Accepted'
-     WHERE DATE(CONVERT_TZ(oh.created_at, '+00:00', '+07:00')) BETWEEN ? AND ?
+     WHERE DATE(oh.created_at + INTERVAL 7 HOUR) BETWEEN ? AND ?
        AND o.status != 'Cancelled'
      ORDER BY oh.created_at ASC`,
     [start, end]
@@ -113,7 +113,7 @@ export async function getDailyRecap(date) {
      FROM orders o
      INNER JOIN order_history oh
        ON oh.order_id = o.id AND oh.to_status = 'Payment Accepted'
-     WHERE DATE(CONVERT_TZ(oh.created_at, '+00:00', '+07:00')) = ?
+     WHERE DATE(oh.created_at + INTERVAL 7 HOUR) = ?
        AND o.status != 'Cancelled'
      ORDER BY oh.created_at ASC`,
     [date]
