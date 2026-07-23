@@ -36,6 +36,7 @@ export default function SidebarShell({
   children,
 }) {
   const navigate = useNavigate();
+  const hasNoAccess = navItems.length === 0;
 
   return (
     <div className="staff-body">
@@ -128,7 +129,19 @@ export default function SidebarShell({
             </div>
           </header>
 
-          {children}
+          {hasNoAccess ? (
+            <div className="staff-no-access">
+              <div className="staff-no-access-card">
+                <div className="staff-no-access-icon">🔒</div>
+                <div className="staff-no-access-title">Tidak Ada Akses</div>
+                <div className="staff-no-access-msg">
+                  Kamu tidak memiliki akses ke menu disini, harap hubungi owner untuk memperbaiki akses menu kamu!
+                </div>
+              </div>
+            </div>
+          ) : (
+            children
+          )}
         </div>
 
       </div>

@@ -263,6 +263,43 @@
   padding-bottom: 24px;
 }
 
+/* ── No-access state (empty permissions) ─────────────────── */
+.staff-no-access {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.staff-no-access-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  padding: 48px 40px;
+  text-align: center;
+  max-width: 440px;
+  width: 100%;
+}
+
+.staff-no-access-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.staff-no-access-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.staff-no-access-msg {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.6;
+}
+
 /* ── Activity sidebar — scrolls independently ────────────── */
 .staff-activity {
   background: rgba(237, 200, 174, 0.18);

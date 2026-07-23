@@ -646,16 +646,28 @@ export default function OfflineDashboardPage() {
           {/* Body */}
           <div className="staff-body-row staff-body-row--full">
             <div className="staff-content">
-              <div id="offline-panel" className="offline-panel-wrap">
-                {effectiveActive === 'new-order' && (
-                  createdOrder
-                    ? <Receipt order={createdOrder} onNewOrder={handleNewOrder} />
-                    : <NewOrderPanel onOrderCreated={handleOrderCreated} />
-                )}
-                {effectiveActive === 'order-list' && <OrderListPanel />}
-                {effectiveActive === 'chat' && <ChatsSection />}
-                {effectiveActive === 'dm' && <DMSection />}
-              </div>
+              {filteredNav.length === 0 ? (
+                <div className="staff-no-access">
+                  <div className="staff-no-access-card">
+                    <div className="staff-no-access-icon">🔒</div>
+                    <div className="staff-no-access-title">Tidak Ada Akses</div>
+                    <div className="staff-no-access-msg">
+                      Kamu tidak memiliki akses ke menu disini, harap hubungi owner untuk memperbaiki akses menu kamu!
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div id="offline-panel" className="offline-panel-wrap">
+                  {effectiveActive === 'new-order' && (
+                    createdOrder
+                      ? <Receipt order={createdOrder} onNewOrder={handleNewOrder} />
+                      : <NewOrderPanel onOrderCreated={handleOrderCreated} />
+                  )}
+                  {effectiveActive === 'order-list' && <OrderListPanel />}
+                  {effectiveActive === 'chat' && <ChatsSection />}
+                  {effectiveActive === 'dm' && <DMSection />}
+                </div>
+              )}
             </div>
           </div>
         </div>

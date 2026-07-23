@@ -30,8 +30,14 @@ export async function listAccounts({ page = 1, limit = 20, q, role } = {}) {
   }
 
   if (role && role.trim().length > 0) {
-    conditions.push('role = ?');
-    params.push(role.trim());
+    const roles = role.split(',').map((r) => r.trim()).filter(Boolean);
+    if (roles.length === 1) {
+      conditions.push('role = ?');
+      params.push(roles[0]);
+    } else if (roles.length > 1) {
+      conditions.push(`role IN (${roles.map(() => '?').join(',')})`);
+      params.push(...roles);
+    }
   }
 
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';

@@ -24,6 +24,8 @@ const ALL_ROLES = [
   { value: 'offline',   label: 'Offline Admin' },
 ];
 
+const STAFF_ROLES = ['admin', 'owner', 'cashier', 'cs', 'operational', 'qc', 'offline'];
+
 // ---------------------------------------------------------------------------
 // PaginationBar (inline — same pattern as CustomersSection)
 // ---------------------------------------------------------------------------
@@ -84,8 +86,9 @@ export default function AccountsSection() {
   const [totalPages, setTotalPages]   = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
-  const [roleFilter, setRoleFilter]   = useState('');
-  const [loading, setLoading]         = useState(false);
+  const [typeFilter, setTypeFilter]     = useState(''); // '', 'customer', 'staff'
+  const [roleFilter, setRoleFilter]     = useState('');
+  const [loading, setLoading]           = useState(false);
 
   const [editingAccount, setEditingAccount] = useState(null); // { user, permissions }
   const [saving, setSaving]                 = useState(false);
@@ -95,11 +98,19 @@ export default function AccountsSection() {
   const loadAccounts = useCallback(async () => {
     setLoading(true);
     try {
+      // Resolve effective role filter from type + role dropdowns
+      let effectiveRole = roleFilter || undefined;
+      if (typeFilter === 'customer') {
+        effectiveRole = 'customer';
+      } else if (typeFilter === 'staff') {
+        effectiveRole = STAFF_ROLES.join(',');
+      }
+
       const result = await listAccounts({
         page:  currentPage,
         limit: PAGE_SIZE,
         q:     searchQuery || undefined,
-        role:  roleFilter || undefined,
+        role:  effectiveRole,
       });
       setAllAccounts(result.items || []);
       setTotal(result.total || 0);
@@ -109,7 +120,7 @@ export default function AccountsSection() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchQuery, roleFilter]);
+  }, [currentPage, searchQuery, typeFilter, roleFilter]);
 
   useEffect(() => {
     loadAccounts();
@@ -129,6 +140,12 @@ export default function AccountsSection() {
 
   function handleRoleFilterChange(e) {
     setRoleFilter(e.target.value);
+    setCurrentPage(1);
+  }
+
+  function handleTypeFilterChange(e) {
+    setTypeFilter(e.target.value);
+    setRoleFilter(''); // reset role dropdown when type changes
     setCurrentPage(1);
   }
 
@@ -180,6 +197,17 @@ export default function AccountsSection() {
       <div className="adm-toolbar">
         <h2 className="adm-section-title">Akun ({total})</h2>
         <div className="adm-toolbar-right" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <select
+            className="adm-input"
+            value={typeFilter}
+            onChange={handleTypeFilterChange}
+            aria-label="Filter tipe akun"
+            style={{ width: 'auto' }}
+          >
+            <option value="">Semua Tipe</option>
+            <option value="customer">Customer</option>
+            <option value="staff">Staff</option>
+          </select>
           <select
             className="adm-input"
             value={roleFilter}
