@@ -11,6 +11,7 @@ import { listAllOrders } from '../../../services/orders.js';
 import { listConversations } from '../../../services/chatService.js';
 import { useSocket } from '../../context/SocketContext.jsx';
 import { useAdminSound } from '../../../hooks/useAdminSound.js';
+import { filterNavByPermissions } from '../../../config/permissions.js';
 import OrdersSection from './sections/OrdersSection.jsx';
 import CustomersSection from './sections/CustomersSection.jsx';
 import ProductsSection from './sections/ProductsSection.jsx';
@@ -171,11 +172,14 @@ export default function AdminDashboardPage() {
   const [sidebarOpen, setSidebarOpen]   = useState(false);
 
   const userName    = user?.name || 'Admin';
-  const isDashboard = activeNav === 'dashboard';
 
   // Fitur 5: suara notifikasi
   const socket = useSocket();
   const { muted, toggleMute, unlockAudio } = useAdminSound(socket);
+
+  const filteredNav = filterNavByPermissions(ADMIN_NAV, user?.permissions);
+  const effectiveActive = filteredNav.some((n) => n.id === activeNav) ? activeNav : (filteredNav[0]?.id ?? 'dashboard');
+  const isDashboard = effectiveActive === 'dashboard';
 
   // Unlock audio on first mount (kalau sudah ada interaksi)
   useEffect(() => {
@@ -199,7 +203,7 @@ export default function AdminDashboardPage() {
   function goToChats()  { setActiveNav('chats'); }
 
   function renderSection() {
-    switch (activeNav) {
+    switch (effectiveActive) {
       case 'orders':      return <OrdersSection />;
       case 'invoices':    return <InvoiceSection />;
       case 'customer':    return <CustomersSection />;
@@ -214,12 +218,12 @@ export default function AdminDashboardPage() {
     }
   }
 
-  const currentNavLabel = ADMIN_NAV.find((n) => n.id === activeNav)?.label ?? 'DASHBOARD';
+  const currentNavLabel = filteredNav.find((n) => n.id === effectiveActive)?.label ?? 'DASHBOARD';
 
   return (
     <SidebarShell
-      navItems={ADMIN_NAV}
-      activeNav={activeNav}
+      navItems={filteredNav}
+      activeNav={effectiveActive}
       onNavClick={handleNavClick}
       currentLabel={currentNavLabel}
       userName={userName}

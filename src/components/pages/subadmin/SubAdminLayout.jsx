@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import { logout } from '../../../services/auth.js';
 import { STAFF_ROLE_CONFIG } from '../../../config/roles.js';
+import { filterNavByPermissions } from '../../../config/permissions.js';
 import { getSocket } from '../../../core/socket.js';
 import { useAdminSound } from '../../../hooks/useAdminSound.js';
 import SidebarShell from '../../staff/SidebarShell.jsx';
@@ -60,13 +61,16 @@ export default function SubAdminLayout({ navItems, sections, title }) {
     navigate('/register');
   }
 
-  const activeSection  = sections?.[activeNav] ?? null;
-  const currentLabel   = navItems?.find((n) => n.id === activeNav)?.label ?? title ?? '';
+  // If the currently active nav is no longer visible after filtering, fall back to first visible item
+  const filteredNav = filterNavByPermissions(navItems ?? [], user?.permissions);
+  const effectiveActive = filteredNav.some((n) => n.id === activeNav) ? activeNav : (filteredNav[0]?.id ?? 'orders');
+  const activeSection  = sections?.[effectiveActive] ?? null;
+  const currentLabel   = filteredNav?.find((n) => n.id === effectiveActive)?.label ?? title ?? '';
 
   return (
     <SidebarShell
-      navItems={navItems}
-      activeNav={activeNav}
+      navItems={filteredNav}
+      activeNav={effectiveActive}
       onNavClick={handleNavClick}
       currentLabel={currentLabel}
       userName={userName}

@@ -3,6 +3,7 @@
  *
  * Used by:
  *   - Frontend: AccountEditModal (checkbox rendering + role-based filtering)
+ *   - Frontend: Dashboard pages (NAV_ITEMS filtering based on user.permissions)
  *   - Backend:  accounts.controller.js (input validation)
  *
  * Structure:
@@ -11,7 +12,8 @@
  *     label  = human-readable display name
  *     roles  = array of role strings that have this menu/feature
  *
- *   getPermissionsForRole(role) — returns only the permissions valid for that role
+ *   PERM_TO_NAV — maps permission keys → sidebar nav item IDs
+ *     (permission keys and nav IDs don't always match)
  */
 
 export const PERMISSIONS = [
@@ -73,4 +75,50 @@ export function getPermissionsForRole(role) {
  */
 export function getPermissionKeysForRole(role) {
   return new Set(PERMISSIONS.filter((p) => p.roles.includes(role)).map((p) => p.key));
+}
+
+/**
+ * Maps permission keys → sidebar nav item IDs.
+ * Only included for keys where the nav ID differs from the permission key.
+ * Keys NOT listed here are assumed to map 1:1 (key === navId).
+ */
+const PERM_TO_NAV = {
+  reviews:       'review',
+  customers:     'customer',
+  custom_order:  'custom-order',
+  order_offline: 'offline',
+  daily_recap:   'recap',
+  new_order:     'new-order',
+  order_list:    'order-list',
+};
+
+/**
+ * Filter an array of nav items based on user permissions.
+ *
+ * If the user has NO permissions set (empty/undefined array), all items
+ * are returned (backward compatible — role-based access still applies
+ * server-side).
+ *
+ * If the user HAS permissions, only items whose nav ID matches at least
+ * one permission key are included.
+ *
+ * @param {Array<{ id: string }>} navItems
+ * @param {string[] | undefined} userPermissions
+ * @returns {Array<{ id: string }>}
+ */
+export function filterNavByPermissions(navItems, userPermissions) {
+  if (!userPermissions || userPermissions.length === 0) return navItems;
+
+  // Build reverse map: navId → permissionKey
+  const navToPerm = {};
+  for (const [permKey, navId] of Object.entries(PERM_TO_NAV)) {
+    navToPerm[navId] = permKey;
+  }
+
+  const permSet = new Set(userPermissions);
+
+  return navItems.filter((item) => {
+    const permKey = navToPerm[item.id] ?? item.id;
+    return permSet.has(permKey);
+  });
 }

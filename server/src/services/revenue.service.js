@@ -45,15 +45,13 @@ export async function getRecapRange(start, end) {
     manualByDate[d].push(row);
   }
 
-  // Build per-day results
+  // Build per-day results — iterate using YYYY-MM-DD strings to avoid
+  // timezone drift (toISOString() uses UTC, which shifts dates in WIB).
   const results = [];
-  const cur = new Date(start + 'T00:00:00');
-  const last = new Date(end + 'T00:00:00');
-  while (cur <= last) {
-    const date = cur.toISOString().slice(0, 10);
-
-    const wRows = websiteByDate[date] ?? [];
-    const mRows = manualByDate[date] ?? [];
+  let current = start;
+  while (current <= end) {
+    const wRows = websiteByDate[current] ?? [];
+    const mRows = manualByDate[current] ?? [];
 
     const website_total = wRows.reduce((s, r) => s + parseFloat(r.subtotal ?? 0), 0);
     const manual_by_category = { offline_store: 0, shopee: 0, tokopedia: 0, tiktok_shop: 0 };
@@ -65,7 +63,7 @@ export async function getRecapRange(start, end) {
     const manual_sum = Object.values(manual_by_category).reduce((a, b) => a + b, 0);
 
     results.push({
-      date,
+      date: current,
       website_total,
       manual_by_category,
       grand_total: website_total + manual_sum,
@@ -73,7 +71,10 @@ export async function getRecapRange(start, end) {
       manual_transactions: mRows,
     });
 
-    cur.setDate(cur.getDate() + 1);
+    // Advance by 1 day using pure string arithmetic (YYYY-MM-DD)
+    const d = new Date(current + 'T12:00:00');
+    d.setDate(d.getDate() + 1);
+    current = d.toISOString().slice(0, 10);
   }
 
   return results;

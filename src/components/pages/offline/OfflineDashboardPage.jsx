@@ -22,6 +22,7 @@ import { AuthContext } from '../../context/AuthContext.jsx';
 import { logout } from '../../../services/auth.js';
 import { createOfflineOrder, listAllOrders, STATUS_CONFIG } from '../../../services/orders.js';
 import { STAFF_ROLE_CONFIG } from '../../../config/roles.js';
+import { filterNavByPermissions } from '../../../config/permissions.js';
 import { formatCurrency } from '../../../utils/format.js';
 import { showToast } from '../../../core/toastEmitter.js';
 import ChatsSection from '../admin/sections/ChatsSection.jsx';
@@ -556,6 +557,15 @@ export default function OfflineDashboardPage() {
   const roleInfo = STAFF_ROLE_CONFIG[user?.role] ?? { label: 'Offline Admin', color: ROLE_COLOR };
   const userName = user?.name || roleInfo.label;
 
+  const offlineNavItems = [
+    { id: 'new-order',   label: '➕ Buat Pesanan Baru' },
+    { id: 'order-list',  label: '📋 Daftar Pesanan'    },
+    { id: 'chat',        label: '💬 Chat Customer'     },
+    { id: 'dm',          label: '📨 Pesan Staff'       },
+  ];
+  const filteredNav = filterNavByPermissions(offlineNavItems, user?.permissions);
+  const effectiveActive = filteredNav.some((n) => n.id === activeNav) ? activeNav : (filteredNav[0]?.id ?? 'new-order');
+
   async function handleLogout() {
     await Promise.resolve(logout());
     updateUser(null);
@@ -596,15 +606,10 @@ export default function OfflineDashboardPage() {
           <div className="subadmin-role-desc">{ROLE_DESC}</div>
 
           <nav className="staff-nav" style={{ marginTop: 24 }}>
-            {[
-              { id: 'new-order',   label: '➕ Buat Pesanan Baru' },
-              { id: 'order-list',  label: '📋 Daftar Pesanan'    },
-              { id: 'chat',        label: '💬 Chat Customer'     },
-              { id: 'dm',          label: '📨 Pesan Staff'       },
-            ].map((item) => (
+            {filteredNav.map((item) => (
               <button
                 key={item.id}
-                className={`staff-nav-item${activeNav === item.id ? ' active' : ''}`}
+                className={`staff-nav-item${effectiveActive === item.id ? ' active' : ''}`}
                 type="button"
                 onClick={() => handleNavClick(item.id)}
               >
@@ -642,14 +647,14 @@ export default function OfflineDashboardPage() {
           <div className="staff-body-row staff-body-row--full">
             <div className="staff-content">
               <div id="offline-panel" className="offline-panel-wrap">
-                {activeNav === 'new-order' && (
+                {effectiveActive === 'new-order' && (
                   createdOrder
                     ? <Receipt order={createdOrder} onNewOrder={handleNewOrder} />
                     : <NewOrderPanel onOrderCreated={handleOrderCreated} />
                 )}
-                {activeNav === 'order-list' && <OrderListPanel />}
-                {activeNav === 'chat' && <ChatsSection />}
-                {activeNav === 'dm' && <DMSection />}
+                {effectiveActive === 'order-list' && <OrderListPanel />}
+                {effectiveActive === 'chat' && <ChatsSection />}
+                {effectiveActive === 'dm' && <DMSection />}
               </div>
             </div>
           </div>

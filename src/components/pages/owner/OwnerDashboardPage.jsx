@@ -11,6 +11,7 @@ import { AuthContext } from '../../context/AuthContext.jsx';
 import { logout } from '../../../services/auth.js';
 import { listAllOrders } from '../../../services/orders.js';
 import { listConversations } from '../../../services/chatService.js';
+import { filterNavByPermissions } from '../../../config/permissions.js';
 import OrdersSection from '../admin/sections/OrdersSection.jsx';
 import AccountsSection from './sections/AccountsSection.jsx';
 import ProductsSection from '../admin/sections/ProductsSection.jsx';
@@ -159,7 +160,10 @@ export default function OwnerDashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const userName    = user?.name || 'Owner';
-  const isDashboard = activeNav === 'dashboard';
+
+  const filteredNav = filterNavByPermissions(OWNER_NAV, user?.permissions);
+  const effectiveActive = filteredNav.some((n) => n.id === activeNav) ? activeNav : (filteredNav[0]?.id ?? 'dashboard');
+  const isDashboard = effectiveActive === 'dashboard';
 
   function handleNavClick(navId) {
     setActiveNav(navId);
@@ -176,7 +180,7 @@ export default function OwnerDashboardPage() {
   function goToChats()  { setActiveNav('chats'); }
 
   function renderSection() {
-    switch (activeNav) {
+    switch (effectiveActive) {
       case 'orders':      return <OrdersSection />;
       case 'accounts':   return <AccountsSection />;
       case 'products':    return <ProductsSection />;
@@ -192,12 +196,12 @@ export default function OwnerDashboardPage() {
     }
   }
 
-  const currentNavLabel = OWNER_NAV.find((n) => n.id === activeNav)?.label ?? 'DASHBOARD';
+  const currentNavLabel = filteredNav.find((n) => n.id === effectiveActive)?.label ?? 'DASHBOARD';
 
   return (
     <SidebarShell
-      navItems={OWNER_NAV}
-      activeNav={activeNav}
+      navItems={filteredNav}
+      activeNav={effectiveActive}
       onNavClick={handleNavClick}
       currentLabel={currentNavLabel}
       userName={userName}

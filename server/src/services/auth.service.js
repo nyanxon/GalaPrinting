@@ -273,7 +273,20 @@ export async function getUserById(id) {
      FROM users WHERE id = ? AND deleted_at IS NULL`,
     [id]
   );
-  return rows[0] || null;
+  if (rows.length === 0) return null;
+
+  const user = rows[0];
+
+  // Attach granular permissions from user_permissions table.
+  // If no rows exist, permissions is an empty array — dashboards
+  // treat empty as "show all menus for this role" (backward compatible).
+  const [permRows] = await query(
+    'SELECT permission_key FROM user_permissions WHERE user_id = ?',
+    [id]
+  );
+  user.permissions = permRows.map((r) => r.permission_key);
+
+  return user;
 }
 
 // ── Email Verification ────────────────────────────────────────────────────────
