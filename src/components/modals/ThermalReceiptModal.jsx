@@ -83,11 +83,11 @@ function ThermalReceiptContent({ invoice, paperSize }) {
     },
     center:  { textAlign: 'center' },
     bold:    { fontWeight: 700 },
-    small:   { fontSize: `${cfg.smallFontSize}px`, color: '#555', WebkitTextStroke: '0.2px #555' },
+    small:   { fontSize: `${cfg.smallFontSize}px`, color: '#000', WebkitTextStroke: '0.3px #000' },
     sep:     { borderTop: '1px dashed #999', margin: '4px 0' },
     sepBold: { borderTop: '2px solid #000', margin: '4px 0' },
     row:     { display: 'flex', justifyContent: 'space-between' },
-    muted:   { color: '#555' },
+    muted:   { color: '#000' },
     green:   { color: '#166534' },
   };
 
@@ -184,7 +184,7 @@ function ThermalReceiptContent({ invoice, paperSize }) {
       <div style={css.sep} />
 
       {/* ── FOOTER ── */}
-      <div style={{ ...css.center, fontSize: `${cfg.smallFontSize}px`, color: '#555', marginTop: '4px' }}>
+      <div style={{ ...css.center, fontSize: `${cfg.smallFontSize}px`, color: '#000', marginTop: '4px' }}>
         <div>Terima kasih atas kepercayaan Anda!</div>
         <div>Barang yang sudah dibeli tidak</div>
         <div>dapat dikembalikan.</div>
