@@ -193,6 +193,28 @@ function normalizeProduct(raw) {
 }
 
 /**
+ * Baca entry harga varian untuk kombinasi `{ukuran}|{bahan}`.
+ * Format baru: { [key]: { customer, broker } }.
+ * Format lama (legacy): { [key]: number } → dipakai untuk customer & broker.
+ * Mengembalikan { customer, broker } atau null jika key tidak ada.
+ */
+export function variantPriceEntry(variantPrices, key) {
+  const raw = variantPrices?.[key];
+  if (typeof raw === 'number' && isFinite(raw)) {
+    return { customer: raw, broker: raw };
+  }
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+    const customer = Number(raw.customer);
+    const broker = Number(raw.broker);
+    return {
+      customer: Number.isFinite(customer) ? customer : null,
+      broker: Number.isFinite(broker) ? broker : null,
+    };
+  }
+  return null;
+}
+
+/**
  * Resolve the price for a specific variant combination.
  *
  * Pricing rules:
@@ -200,6 +222,7 @@ function normalizeProduct(raw) {
  *  - Size and Material each independently affect price.
  *  - Key format: `{size}|{material}` — color is intentionally excluded.
  *  - Falls back to `product.price` (base price) when no variant price is set.
+ *  - Returns the CUSTOMER price (public site / online cart).
  *
  * @param {object} product
  * @param {string|null|undefined} color    — ignored for pricing
@@ -222,9 +245,9 @@ export function resolveVariantPrice(product, color, size, material) {
   }
 
   if (variantPrices && typeof variantPrices === 'object') {
-    const price = variantPrices[key];
-    if (typeof price === 'number' && isFinite(price)) {
-      return price;
+    const entry = variantPriceEntry(variantPrices, key);
+    if (entry && entry.customer !== null) {
+      return entry.customer;
     }
   }
 
@@ -284,6 +307,10 @@ export async function searchProducts(q) {
       price_customer: Number(p.price_customer ?? p.price ?? 0),
       price_broker:   Number(p.price_broker   ?? p.price ?? 0),
       category: p.category || null,
+      colors: p.colors ?? [],
+      sizes: p.sizes ?? [],
+      materials: p.materials ?? [],
+      variant_prices: p.variant_prices ?? null,
     }));
 }
 

@@ -136,14 +136,30 @@ function parseImages(product) {
 }
 
 function ProductModal({ product, categories, onClose, onSaved }) {
-  // Parse existing variantPrices — stored as { "size|material": price }
+  // Parse existing variantPrices — stored as { "size|material": price }.
+  // Format baru: { "size|material": { customer, broker } }.
+  // Format lama (angka tunggal) dinormalisasi → sama untuk customer & broker.
   function parseVariantPrices(raw) {
     if (!raw) return {};
+    let obj = raw;
     if (typeof raw === 'string') {
-      try { return JSON.parse(raw); } catch { return {}; }
+      try { obj = JSON.parse(raw); } catch { return {}; }
     }
-    if (typeof raw === 'object') return raw;
-    return {};
+    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return {};
+    const out = {};
+    for (const [key, val] of Object.entries(obj)) {
+      if (typeof val === 'number' && isFinite(val)) {
+        out[key] = { customer: val, broker: val };
+      } else if (val && typeof val === 'object' && !Array.isArray(val)) {
+        const customer = Number(val.customer);
+        const broker = Number(val.broker);
+        out[key] = {
+          customer: Number.isFinite(customer) ? customer : undefined,
+          broker: Number.isFinite(broker) ? broker : undefined,
+        };
+      }
+    }
+    return out;
   }
 
   const [formData, setFormData] = useState({
@@ -194,15 +210,22 @@ function ProductModal({ product, categories, onClose, onSaved }) {
     }));
   }
 
-  function handleVariantPriceChange(size, material, value) {
+  function handleVariantPriceChange(size, material, side, value) {
     const key = `${size}|${material}`;
     const num = value === '' ? undefined : Number(value);
+    const valid = num !== undefined && !isNaN(num) && num >= 0;
     setVariantPrices((prev) => {
       const next = { ...prev };
-      if (num === undefined || isNaN(num)) {
+      const current = { ...(next[key] || {}) };
+      if (valid) {
+        current[side] = num;
+      } else {
+        delete current[side];
+      }
+      if (Object.keys(current).length === 0) {
         delete next[key];
       } else {
-        next[key] = num;
+        next[key] = current;
       }
       return next;
     });
@@ -484,18 +507,36 @@ function ProductModal({ product, categories, onClose, onSaved }) {
                           </td>
                           {(currentMaterials.length > 0 ? currentMaterials : ['']).map((mat) => {
                             const key = `${size}|${mat}`;
-                            const val = variantPrices[key];
+                            const entry = variantPrices[key] || {};
+                            const inputStyle = { width: '100%', padding: '4px 6px', border: '1px solid #d1d5db', borderRadius: '4px', fontSize: '13px', textAlign: 'right' };
                             return (
                               <td key={mat} style={{ padding: '4px 6px', border: '1px solid #e5e7eb' }}>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  placeholder={String(formData.priceCustomer || 0)}
-                                  value={val !== undefined ? val : ''}
-                                  onChange={(e) => handleVariantPriceChange(size, mat, e.target.value)}
-                                  style={{ width: '100%', padding: '4px 6px', border: '1px solid #d1d5db', borderRadius: '4px', fontSize: '13px', textAlign: 'right' }}
-                                  aria-label={`Harga ${size} / ${mat}`}
-                                />
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                    <span style={{ fontSize: 11, color: '#6b7280', width: 50, flexShrink: 0, textAlign: 'left' }}>Cust</span>
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      placeholder={String(formData.priceCustomer || 0)}
+                                      value={entry.customer !== undefined ? entry.customer : ''}
+                                      onChange={(e) => handleVariantPriceChange(size, mat, 'customer', e.target.value)}
+                                      style={inputStyle}
+                                      aria-label={`Harga customer ${size} / ${mat}`}
+                                    />
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                    <span style={{ fontSize: 11, color: '#6b7280', width: 50, flexShrink: 0, textAlign: 'left' }}>Brkr</span>
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      placeholder={String(formData.priceBroker || 0)}
+                                      value={entry.broker !== undefined ? entry.broker : ''}
+                                      onChange={(e) => handleVariantPriceChange(size, mat, 'broker', e.target.value)}
+                                      style={inputStyle}
+                                      aria-label={`Harga broker ${size} / ${mat}`}
+                                    />
+                                  </div>
+                                </div>
                               </td>
                             );
                           })}
@@ -505,7 +546,7 @@ function ProductModal({ product, categories, onClose, onSaved }) {
                   </table>
                 </div>
                 <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '6px' }}>
-                  💡 Warna tidak mempengaruhi harga. Harga varian menggantikan harga dasar untuk kombinasi ukuran + bahan tertentu.
+                  💡 Warna tidak mempengaruhi harga. Isi Harga Customer &amp; Harga Broker per kombinasi ukuran + bahan; kosongkan untuk memakai harga dasar sesuai tipe pembeli.
                 </p>
               </div>
             )}

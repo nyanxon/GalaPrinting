@@ -97,7 +97,9 @@ export async function getProductById(id) {
 
 /**
  * Search products by name keyword (for cashier autocomplete).
- * Returns a lightweight projection: id, name, both prices, category.
+ * Returns a lightweight projection: id, name, both prices, category,
+ * plus attributes (colors/sizes/materials) and variant_prices so the
+ * cashier form can render dropdowns and resolve variant pricing.
  * @param {string} q - keyword
  * @param {number} [limit=10]
  * @returns {Promise<object[]>}
@@ -108,7 +110,8 @@ export async function searchProducts(q, limit = 10) {
   const maxLimit = Math.min(15, Math.max(1, parseInt(limit, 10) || 10));
 
   const [rows] = await query(
-    `SELECT p.id, p.name, p.price_customer, p.price_broker, c.name AS category
+    `SELECT p.id, p.name, p.price_customer, p.price_broker, c.name AS category,
+            p.colors, p.sizes, p.materials, p.variant_prices
      FROM products p
      LEFT JOIN categories c ON p.category_id = c.id
      WHERE p.name LIKE ?
@@ -122,6 +125,7 @@ export async function searchProducts(q, limit = 10) {
 /**
  * Batch-fetch products by ids (used by cashier order to resolve prices
  * server-side instead of trusting prices sent by the client).
+ * Includes variant_prices so size+material can re-price the unit price.
  * @param {string[]} ids
  * @returns {Promise<object[]>}
  */
@@ -130,7 +134,8 @@ export async function getProductsByIds(ids) {
   if (clean.length === 0) return [];
   const placeholders = clean.map(() => '?').join(', ');
   const [rows] = await query(
-    `SELECT p.id, p.name, p.price_customer, p.price_broker, p.category_id
+    `SELECT p.id, p.name, p.price_customer, p.price_broker, p.category_id,
+            p.colors, p.sizes, p.materials, p.variant_prices
      FROM products p
      WHERE p.id IN (${placeholders})`,
     clean

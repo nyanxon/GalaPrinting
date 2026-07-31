@@ -5121,6 +5121,40 @@
   background: #fffdf8;
 }
 
+/* Atribut item: warna, ukuran, bahan */
+.offline-item-attrs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.offline-item-attr {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.offline-item-attr-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.offline-item-attr-input {
+  font-size: 12px;
+  padding: 5px 8px;
+  background: #fffdf8;
+}
+
+@media (max-width: 760px) {
+  .offline-item-attrs {
+    grid-template-columns: 1fr;
+  }
+}
+
 
 .offline-subtotal-row {
   display: flex;

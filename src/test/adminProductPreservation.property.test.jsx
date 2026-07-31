@@ -453,13 +453,19 @@ describe('Preservation 3.5 -- Saving product saves all non-image fields correctl
       expect(screen.getByText('Harga per Varian')).toBeTruthy();
     });
 
-    // Fill in a variant price
+    // Fill in customer & broker variant prices
     const variantInputs = document.querySelectorAll('input[type="number"][aria-label]');
-    const a4VinylInput = Array.from(variantInputs).find(
-      (el) => el.getAttribute('aria-label') === 'Harga A4 / Vinyl'
+    const customerVariantInput = Array.from(variantInputs).find(
+      (el) => el.getAttribute('aria-label') === 'Harga customer A4 / Vinyl'
     );
-    if (a4VinylInput) {
-      fireEvent.change(a4VinylInput, { target: { value: '15000' } });
+    const brokerVariantInput = Array.from(variantInputs).find(
+      (el) => el.getAttribute('aria-label') === 'Harga broker A4 / Vinyl'
+    );
+    if (customerVariantInput) {
+      fireEvent.change(customerVariantInput, { target: { value: '15000' } });
+    }
+    if (brokerVariantInput) {
+      fireEvent.change(brokerVariantInput, { target: { value: '13000' } });
     }
 
     addProduct.mockResolvedValue({ id: 'new-id' });
@@ -490,10 +496,10 @@ describe('Preservation 3.5 -- Saving product saves all non-image fields correctl
     expect(submitted.sizes).toEqual(['A4', 'A5']);
     expect(submitted.materials).toEqual(['Vinyl']);
 
-    // If variant price was set, it should be in variantPrices
-    if (a4VinylInput) {
+    // If variant price was set, it should be in variantPrices as { customer, broker }
+    if (customerVariantInput) {
       expect(submitted.variantPrices).toBeTruthy();
-      expect(submitted.variantPrices['A4|Vinyl']).toBe(15000);
+      expect(submitted.variantPrices['A4|Vinyl']).toEqual({ customer: 15000, broker: 13000 });
     }
 
     unmount();
