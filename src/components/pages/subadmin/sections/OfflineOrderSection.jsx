@@ -686,32 +686,42 @@ export default function OfflineOrderSection() {
             </button>
           </div>
 
-          {/* Header kolom */}
-          <div className="offline-items-header">
-            <span className="offline-items-col offline-items-col--name">Nama Produk / Layanan</span>
-            <span className="offline-items-col offline-items-col--price">Harga Satuan (Rp)</span>
-            <span className="offline-items-col offline-items-col--qty">Qty</span>
-            <span className="offline-items-col offline-items-col--sub">Subtotal</span>
-            <span className="offline-items-col offline-items-col--del" />
-          </div>
-
-          {items.map((item) => {
+          {items.map((item, index) => {
             const itemSub = (Number(item.price) || 0) * (Number(item.quantity) || 1);
             const nameErr  = fieldErrors[`item_${item.id}_name`];
             const priceErr = fieldErrors[`item_${item.id}_price`];
             return (
-              <div key={item.id} className="offline-item-row">
-                <div className="offline-items-col offline-items-col--name">
-                  <ProductAutocomplete
-                    item={item}
-                    customerType={customerType}
-                    error={nameErr}
-                    onSelect={(patch) => handleSelectProduct(item.id, patch)}
-                    onClear={() => handleClearProduct(item.id)}
-                  />
-                  {nameErr && <span className="offline-field-error">{nameErr}</span>}
+              <div key={item.id} className="offline-item-card">
+                <div className="offline-item-card-head">
+                  <span className="offline-item-card-title">Item {index + 1}</span>
+                  {items.length > 1 && (
+                    <button
+                      type="button"
+                      className="offline-item-remove"
+                      onClick={() => removeItem(item.id)}
+                      aria-label={`Hapus item ${index + 1}`}
+                    >
+                      🗑 Hapus
+                    </button>
+                  )}
                 </div>
-                <div className="offline-item-attrs">
+
+                <div className="offline-item-card-body">
+                  <div className="offline-item-field">
+                    <label className="offline-form-label">
+                      Nama Produk / Layanan <span className="offline-required">*</span>
+                    </label>
+                    <ProductAutocomplete
+                      item={item}
+                      customerType={customerType}
+                      error={nameErr}
+                      onSelect={(patch) => handleSelectProduct(item.id, patch)}
+                      onClear={() => handleClearProduct(item.id)}
+                    />
+                    {nameErr && <span className="offline-field-error">{nameErr}</span>}
+                  </div>
+
+                  <div className="offline-item-attrs">
                     <div className="offline-item-attr">
                       <label className="offline-item-attr-label">Warna</label>
                       {!item.productId ? (
@@ -806,68 +816,67 @@ export default function OfflineOrderSection() {
                       )}
                     </div>
                   </div>
-                  <div className="offline-item-notes-wrap">
+
+                  <div className="offline-item-field">
+                    <label className="offline-form-label">
+                      Keterangan <span className="offline-optional">(opsional)</span>
+                    </label>
                     <textarea
                       className="adm-input offline-item-notes"
                       rows={2}
-                      placeholder="Keterangan item (opsional)…"
+                      placeholder="Keterangan item…"
                       value={item.notes}
                       onChange={(e) => updateItem(item.id, 'notes', e.target.value)}
                     />
                   </div>
-                <div className="offline-items-col offline-items-col--price">
-                  {item.productId ? (
-                    <input
-                      className={`adm-input${priceErr ? ' adm-input--error' : ''}`}
-                      type="number"
-                      min="0"
-                      placeholder="0"
-                      value={item.price}
-                      readOnly
-                      title="Harga otomatis dari katalog sesuai tipe pembeli"
-                    />
-                  ) : (
-                    <input
-                      className={`adm-input${priceErr ? ' adm-input--error' : ''}`}
-                      type="number"
-                      min="0"
-                      placeholder="0"
-                      value={item.price}
-                      onChange={(e) => updateItem(item.id, 'price', e.target.value)}
-                    />
-                  )}
-                  {priceErr && <span className="offline-field-error">{priceErr}</span>}
-                </div>
-                <div className="offline-items-col offline-items-col--qty">
-                  <input
-                    className="adm-input"
-                    type="number"
-                    min="1"
-                    value={item.quantity}
-                    onChange={(e) => updateItem(item.id, 'quantity', e.target.value)}
-                  />
-                </div>
-                <div className="offline-items-col offline-items-col--sub">
-                  <span className="offline-item-subtotal">{formatCurrency(itemSub)}</span>
-                </div>
-                <div className="offline-items-col offline-items-col--del">
-                  {items.length > 1 && (
-                    <button
-                      type="button"
-                      className="offline-item-remove"
-                      onClick={() => removeItem(item.id)}
-                      aria-label="Hapus item"
-                    >
-                      ✕
-                    </button>
-                  )}
+
+                  <div className="offline-price-row">
+                    <div className="offline-price-cell">
+                      <label className="offline-form-label">Harga Satuan (Rp)</label>
+                      {item.productId ? (
+                        <input
+                          className={`adm-input${priceErr ? ' adm-input--error' : ''}`}
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={item.price}
+                          readOnly
+                          title="Harga otomatis dari katalog sesuai tipe pembeli"
+                        />
+                      ) : (
+                        <input
+                          className={`adm-input${priceErr ? ' adm-input--error' : ''}`}
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={item.price}
+                          onChange={(e) => updateItem(item.id, 'price', e.target.value)}
+                        />
+                      )}
+                      {priceErr && <span className="offline-field-error">{priceErr}</span>}
+                    </div>
+                    <div className="offline-price-cell">
+                      <label className="offline-form-label">Qty</label>
+                      <input
+                        className="adm-input"
+                        type="number"
+                        min="1"
+                        value={item.quantity}
+                        onChange={(e) => updateItem(item.id, 'quantity', e.target.value)}
+                      />
+                    </div>
+                    <div className="offline-price-cell offline-price-cell--sub">
+                      <label className="offline-form-label">Subtotal</label>
+                      <span className="offline-card-subtotal">{formatCurrency(itemSub)}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             );
           })}
 
-          <div className="offline-subtotal-row">
-            <span>Subtotal</span>
+          <div className="offline-order-total-row">
+            <span>Total ({items.length} item{items.length !== 1 ? 's' : ''})</span>
             <strong>{formatCurrency(subtotal)}</strong>
           </div>
         </section>
