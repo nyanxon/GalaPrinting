@@ -6,15 +6,171 @@
  * tombol PDF invoice, tombol print resi, dan opsional kirim email.
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { api } from '../../../../core/httpClient.js';
 import { formatCurrency } from '../../../../utils/format.js';
 import { showToast } from '../../../../core/toastEmitter.js';
 import { getInvoiceByOrderId, openInvoicePdf, sendInvoiceEmail } from '../../../../services/api/invoiceService.js';
+import { searchProducts } from '../../../../services/products.js';
 import ThermalReceiptModal from '../../../modals/ThermalReceiptModal.jsx';
 
 function makeItem() {
-  return { id: crypto.randomUUID(), name: '', price: '', quantity: 1 };
+  return {
+    id: crypto.randomUUID(),
+    productId: null,
+    name: '',
+    priceCustomer: '',
+    priceBroker: '',
+    price: '',
+    quantity: 1,
+    notes: '',
+  };
+}
+
+function priceForType(item, customerType) {
+  if (customerType === 'broker') {
+    return item.priceBroker !== '' && item.priceBroker !== undefined && item.priceBroker !== null
+      ? Number(item.priceBroker)
+      : Number(item.price);
+  }
+  return item.priceCustomer !== '' && item.priceCustomer !== undefined && item.priceCustomer !== null
+    ? Number(item.priceCustomer)
+    : Number(item.price);
+}
+
+/* ── Autocomplete produk (search + dropdown) ───────────────────────────────── */
+
+function ProductAutocomplete({ item, customerType, error, onSelect, onClear }) {
+  const [query, setQuery] = useState(item.name || '');
+  const [results, setResults] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const timerRef = useRef(null);
+  const wrapRef = useRef(null);
+
+  // Tutup dropdown saat klik di luar
+  useEffect(() => {
+    function onDocClick(e) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, []);
+
+  function handleQueryChange(val) {
+    setQuery(val);
+    if (item.productId) return; // terkunci ke produk terpilih
+    setOpen(true);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    if (!val.trim()) {
+      setResults([]);
+      setLoading(false);
+      return;
+    }
+    timerRef.current = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const res = await searchProducts(val);
+        setResults(res || []);
+      } catch {
+        setResults([]);
+      } finally {
+        setLoading(false);
+      }
+    }, 300);
+  }
+
+  function handleSelect(prod) {
+    const priceCustomer = Number(prod.price_customer ?? prod.priceCustomer ?? 0);
+    const priceBroker   = Number(prod.price_broker   ?? prod.priceBroker   ?? 0);
+    setQuery(prod.name);
+    setOpen(false);
+    onSelect({
+      productId: prod.id,
+      name: prod.name,
+      priceCustomer,
+      priceBroker,
+      price: customerType === 'broker' ? priceBroker : priceCustomer,
+    });
+  }
+
+  function handleClear() {
+    setQuery('');
+    setResults([]);
+    setOpen(false);
+    onClear();
+  }
+
+  const activePrice = priceForType(item, customerType);
+
+  return (
+    <div className="offline-autocomplete" ref={wrapRef}>
+      {item.productId ? (
+        <div className="offline-locked-product">
+          <input
+            className="adm-input offline-item-name"
+            type="text"
+            value={query}
+            readOnly
+            title="Produk dari katalog — hapus untuk pilih yang lain"
+          />
+          <span className="offline-lock-badge">🔒</span>
+          <button
+            type="button"
+            className="offline-clear-product"
+            onClick={handleClear}
+            aria-label="Hapus pilihan produk"
+          >
+            ✕
+          </button>
+        </div>
+      ) : (
+        <input
+          className={`adm-input offline-item-name${error ? ' adm-input--error' : ''}`}
+          type="text"
+          placeholder="Ketik nama produk untuk mencari…"
+          value={query}
+          onChange={(e) => handleQueryChange(e.target.value)}
+          autoComplete="off"
+        />
+      )}
+      {open && !item.productId && (
+        <div className="offline-search-dropdown">
+          {loading && (
+            <div className="offline-search-empty">Mencari…</div>
+          )}
+          {!loading && results.length === 0 && (
+            <div className="offline-search-empty">
+              {query.trim() ? 'Tidak ada produk ditemukan.' : 'Ketik minimal 1 karakter…'}
+            </div>
+          )}
+          {!loading && results.map((prod) => {
+            const pCust = Number(prod.price_customer ?? prod.priceCustomer ?? 0);
+            const pBrok = Number(prod.price_broker   ?? prod.priceBroker   ?? 0);
+            return (
+              <button
+                type="button"
+                key={prod.id}
+                className="offline-search-item"
+                onClick={() => handleSelect(prod)}
+              >
+                <span className="offline-search-name">{prod.name}</span>
+                <span className="offline-search-meta">
+                  {prod.category ? `${prod.category} · ` : ''}
+                  {formatCurrency(customerType === 'broker' ? pBrok : pCust)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {item.productId && (
+        <span className="offline-field-hint">
+          Harga {customerType === 'broker' ? 'broker' : 'customer'} auto-fill: {formatCurrency(activePrice)}
+        </span>
+      )}
+    </div>
+  );
 }
 
 function SuccessCard({ order, onReset }) {
@@ -180,6 +336,7 @@ export default function OfflineOrderSection() {
   const [customerAddress, setCustomerAddress] = useState('');
   const [customerEmail,   setCustomerEmail]   = useState('');
   const [adminNote,       setAdminNote]       = useState('');
+  const [customerType,    setCustomerType]    = useState('customer');
   const [items,           setItems]           = useState([makeItem()]);
   const [submitting,      setSubmitting]      = useState(false);
   const [fieldErrors,     setFieldErrors]     = useState({});
@@ -212,12 +369,58 @@ export default function OfflineOrderSection() {
     }
   }
 
+  function updateItemFields(id, patch) {
+    setItems((prev) =>
+      prev.map((it) => (it.id === id ? { ...it, ...patch } : it))
+    );
+    if (fieldErrors[`item_${id}_name`]) {
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        delete next[`item_${id}_name`];
+        return next;
+      });
+    }
+  }
+
+  function handleSelectProduct(id, patch) {
+    updateItemFields(id, patch);
+    if (fieldErrors[`item_${id}_name`]) {
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        delete next[`item_${id}_name`];
+        return next;
+      });
+    }
+  }
+
+  function handleClearProduct(id) {
+    updateItemFields(id, {
+      productId: null,
+      name: '',
+      priceCustomer: '',
+      priceBroker: '',
+      price: '',
+    });
+  }
+
+  function handleCustomerTypeChange(value) {
+    setCustomerType(value);
+    // Saat tipe pembeli diganti, harga satuan item dari katalog ikut ter-update.
+    setItems((prev) =>
+      prev.map((it) => {
+        if (!it.productId) return it;
+        return { ...it, price: priceForType(it, value) };
+      })
+    );
+  }
+
   function validate() {
     const errors = {};
     if (!customerName.trim()) errors.customerName = 'Nama customer wajib diisi.';
     items.forEach((it) => {
       if (!it.name.trim()) errors[`item_${it.id}_name`] = 'Nama produk wajib diisi.';
       if (!it.price || Number(it.price) <= 0) errors[`item_${it.id}_price`] = 'Harga wajib diisi.';
+      if (!it.quantity || Number(it.quantity) < 1) errors[`item_${it.id}_quantity`] = 'Qty minimal 1.';
     });
     return errors;
   }
@@ -234,9 +437,11 @@ export default function OfflineOrderSection() {
     setFieldErrors({});
     try {
       const validItems = items.map((it) => ({
-        name:     it.name.trim(),
-        price:    Number(it.price),
-        quantity: Number(it.quantity) || 1,
+        productId: it.productId || null,
+        name:      it.name.trim(),
+        price:     Number(it.price),
+        quantity:  Number(it.quantity) || 1,
+        notes:     (it.notes || '').trim() || null,
       }));
 
       const res = await api.post('/api/orders/offline', {
@@ -245,8 +450,8 @@ export default function OfflineOrderSection() {
         customerAddress: customerAddress.trim(),
         customerEmail:   customerEmail.trim(),
         adminNote:       adminNote.trim(),
+        customerType,
         items:           validItems,
-        subtotal,
       });
 
       setCreatedOrder(res.data.data);
@@ -266,6 +471,7 @@ export default function OfflineOrderSection() {
     setCustomerAddress('');
     setCustomerEmail('');
     setAdminNote('');
+    setCustomerType('customer');
     setItems([makeItem()]);
     setFieldErrors({});
   }
@@ -309,6 +515,20 @@ export default function OfflineOrderSection() {
             </div>
 
             <div className="offline-form-field">
+              <label className="offline-form-label">
+                Tipe Pembeli <span className="offline-required">*</span>
+              </label>
+              <select
+                className="adm-input"
+                value={customerType}
+                onChange={(e) => handleCustomerTypeChange(e.target.value)}
+              >
+                <option value="customer">Customer</option>
+                <option value="broker">Broker</option>
+              </select>
+            </div>
+
+            <div className="offline-form-field">
               <label className="offline-form-label">No. Telepon</label>
               <input
                 className="adm-input"
@@ -316,6 +536,17 @@ export default function OfflineOrderSection() {
                 placeholder="0812xxxxxxxx"
                 value={customerPhone}
                 onChange={(e) => setCustomerPhone(e.target.value)}
+              />
+            </div>
+
+            <div className="offline-form-field">
+              <label className="offline-form-label">Email (untuk kirim invoice)</label>
+              <input
+                className="adm-input"
+                type="email"
+                placeholder="email@customer.com (opsional)…"
+                value={customerEmail}
+                onChange={(e) => setCustomerEmail(e.target.value)}
               />
             </div>
           </div>
@@ -328,17 +559,6 @@ export default function OfflineOrderSection() {
               placeholder="Alamat customer (opsional)…"
               value={customerAddress}
               onChange={(e) => setCustomerAddress(e.target.value)}
-            />
-          </div>
-
-          <div className="offline-form-field" style={{ marginTop: '12px' }}>
-            <label className="offline-form-label">Email (untuk kirim invoice)</label>
-            <input
-              className="adm-input"
-              type="email"
-              placeholder="email@customer.com (opsional)…"
-              value={customerEmail}
-              onChange={(e) => setCustomerEmail(e.target.value)}
             />
           </div>
         </section>
@@ -373,24 +593,45 @@ export default function OfflineOrderSection() {
             return (
               <div key={item.id} className="offline-item-row">
                 <div className="offline-items-col offline-items-col--name">
-                  <input
-                    className={`adm-input${nameErr ? ' adm-input--error' : ''}`}
-                    type="text"
-                    placeholder="Nama produk…"
-                    value={item.name}
-                    onChange={(e) => updateItem(item.id, 'name', e.target.value)}
+                  <ProductAutocomplete
+                    item={item}
+                    customerType={customerType}
+                    error={nameErr}
+                    onSelect={(patch) => handleSelectProduct(item.id, patch)}
+                    onClear={() => handleClearProduct(item.id)}
                   />
                   {nameErr && <span className="offline-field-error">{nameErr}</span>}
+                  <div className="offline-item-notes-wrap">
+                    <input
+                      className="adm-input offline-item-notes"
+                      type="text"
+                      placeholder="Keterangan item (opsional)…"
+                      value={item.notes}
+                      onChange={(e) => updateItem(item.id, 'notes', e.target.value)}
+                    />
+                  </div>
                 </div>
                 <div className="offline-items-col offline-items-col--price">
-                  <input
-                    className={`adm-input${priceErr ? ' adm-input--error' : ''}`}
-                    type="number"
-                    min="0"
-                    placeholder="0"
-                    value={item.price}
-                    onChange={(e) => updateItem(item.id, 'price', e.target.value)}
-                  />
+                  {item.productId ? (
+                    <input
+                      className={`adm-input${priceErr ? ' adm-input--error' : ''}`}
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={item.price}
+                      readOnly
+                      title="Harga otomatis dari katalog sesuai tipe pembeli"
+                    />
+                  ) : (
+                    <input
+                      className={`adm-input${priceErr ? ' adm-input--error' : ''}`}
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={item.price}
+                      onChange={(e) => updateItem(item.id, 'price', e.target.value)}
+                    />
+                  )}
                   {priceErr && <span className="offline-field-error">{priceErr}</span>}
                 </div>
                 <div className="offline-items-col offline-items-col--qty">

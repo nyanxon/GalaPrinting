@@ -29,6 +29,7 @@ vi.mock('../services/products.js', () => ({
   listProductsPaginated: vi.fn(),
   listCategories: vi.fn(),
   deleteProduct: vi.fn(),
+  uploadProductImage: vi.fn(),
 }));
 
 vi.mock('../services/categories.js', () => ({
@@ -55,6 +56,7 @@ import {
   listCategories,
   addProduct,
   deleteProduct,
+  uploadProductImage,
 } from '../services/products.js';
 import ProductsSection from '../components/pages/admin/sections/ProductsSection.jsx';
 
@@ -84,7 +86,8 @@ const productFormArbitrary = fc.record({
     .map((s) => s.trim())
     .filter((s) => s.length > 0),
   category: fc.constantFrom('Stiker', 'Brosur', 'Kartu Nama'),
-  price: fc.integer({ min: 1000, max: 10000000 }),
+  priceCustomer: fc.integer({ min: 1000, max: 10000000 }),
+  priceBroker: fc.integer({ min: 1000, max: 10000000 }),
   shortDescription: fc.string({ minLength: 0, maxLength: 200 }),
   colors: fc.array(fc.constantFrom('Hitam', 'Putih', 'Merah', 'Biru', 'Hijau'), { minLength: 0, maxLength: 4 }),
   sizes: fc.array(fc.constantFrom('A4', 'A5', 'A6', 'Custom'), { minLength: 0, maxLength: 3 }),
@@ -102,7 +105,8 @@ const productListItemArbitrary = fc.record({
     .map((s) => s.trim())
     .filter((s) => s.length > 0),
   category: fc.constantFrom('Stiker', 'Brosur', 'Kartu Nama'),
-  price: fc.integer({ min: 1000, max: 10000000 }),
+  priceCustomer: fc.integer({ min: 1000, max: 10000000 }),
+  priceBroker: fc.integer({ min: 1000, max: 10000000 }),
   image: fc.constantFrom('/assets/img/placeholder.svg', '/assets/img/product1.jpg'),
 });
 
@@ -148,8 +152,11 @@ async function fillAndSubmitForm(formData) {
   const categorySelect = document.getElementById('pf-cat');
   fireEvent.change(categorySelect, { target: { value: formData.category } });
 
-  const priceInput = screen.getByPlaceholderText('0');
-  fireEvent.change(priceInput, { target: { value: String(formData.price) } });
+  const priceCustomerInput = document.getElementById('pf-price-customer');
+  fireEvent.change(priceCustomerInput, { target: { value: String(formData.priceCustomer) } });
+
+  const priceBrokerInput = document.getElementById('pf-price-broker');
+  fireEvent.change(priceBrokerInput, { target: { value: String(formData.priceBroker) } });
 
   if (formData.shortDescription) {
     const descInput = screen.getByPlaceholderText('Deskripsi singkat');
@@ -179,7 +186,8 @@ async function fillAndSubmitForm(formData) {
   }
 
   // Simulate adding a mock image so the image validation passes.
-  // The fix requires images.length > 0 before submitting.
+  // The fix requires at least one image with status 'done' before submitting.
+  uploadProductImage.mockResolvedValue('/uploads/mock.jpg');
   if (typeof URL.createObjectURL !== 'function') {
     Object.defineProperty(URL, 'createObjectURL', {
       writable: true,
@@ -189,10 +197,14 @@ async function fillAndSubmitForm(formData) {
     URL.createObjectURL = vi.fn(() => 'blob:mock-url');
   }
 
-  const fileInput = document.querySelector('input[type="file"][aria-label="Upload foto produk"]');
+  const fileInput = document.querySelector('input[type="file"]');
   if (fileInput) {
     const mockFile = new File(['mock'], 'mock.jpg', { type: 'image/jpeg' });
-    fireEvent.change(fileInput, { target: { files: [mockFile] } });
+    await act(async () => {
+      fireEvent.change(fileInput, { target: { files: [mockFile] } });
+    });
+    // Let the mocked upload resolve so the image reaches status 'done'.
+    await act(async () => {});
   }
 
   const submitButton = screen.getByRole('button', { name: /Tambah Produk/i });
@@ -233,8 +245,9 @@ describe('Preservation 3.4 -- Form displays Name, Category, Price, Description, 
     // Category field — use the form's select by its id to avoid ambiguity with the toolbar filter
     expect(document.getElementById('pf-cat')).toBeTruthy();
 
-    // Price field
-    expect(screen.getByLabelText(/Harga Dasar/i)).toBeTruthy();
+    // Price fields
+    expect(screen.getByLabelText(/Harga Customer/i)).toBeTruthy();
+    expect(screen.getByLabelText(/Harga Broker/i)).toBeTruthy();
 
     // Description field
     expect(screen.getByLabelText(/Deskripsi Singkat/i)).toBeTruthy();
@@ -264,7 +277,8 @@ describe('Preservation 3.4 -- Form displays Name, Category, Price, Description, 
       id: 'prod-1',
       name: 'Stiker Custom',
       category: 'Stiker',
-      price: 25000,
+      priceCustomer: 25000,
+      priceBroker: 22000,
       shortDescription: 'Stiker berkualitas tinggi',
       colors: ['Hitam', 'Putih'],
       sizes: ['A4', 'A5'],
@@ -289,8 +303,11 @@ describe('Preservation 3.4 -- Form displays Name, Category, Price, Description, 
     const nameInput = screen.getByPlaceholderText('Nama produk');
     expect(nameInput.value).toBe('Stiker Custom');
 
-    const priceInput = screen.getByPlaceholderText('0');
-    expect(priceInput.value).toBe('25000');
+    const priceCustomerInput = document.getElementById('pf-price-customer');
+    expect(priceCustomerInput.value).toBe('25000');
+
+    const priceBrokerInput = document.getElementById('pf-price-broker');
+    expect(priceBrokerInput.value).toBe('22000');
 
     const descInput = screen.getByPlaceholderText('Deskripsi singkat');
     expect(descInput.value).toBe('Stiker berkualitas tinggi');
@@ -321,7 +338,8 @@ describe('Preservation 3.5 -- Saving product saves all non-image fields correctl
     const submitted = await fillAndSubmitForm({
       name: 'Brosur Lipat',
       category: 'Brosur',
-      price: 75000,
+      priceCustomer: 75000,
+      priceBroker: 65000,
       shortDescription: 'Brosur lipat tiga',
       colors: ['Hitam', 'Putih'],
       sizes: ['A4'],
@@ -332,7 +350,8 @@ describe('Preservation 3.5 -- Saving product saves all non-image fields correctl
     // Verify all non-image fields are present in the submitted data
     expect(submitted.name).toBe('Brosur Lipat');
     expect(submitted.category).toBe('Brosur');
-    expect(submitted.price).toBe(75000);
+    expect(submitted.priceCustomer).toBe(75000);
+    expect(submitted.priceBroker).toBe(65000);
     expect(submitted.shortDescription).toBe('Brosur lipat tiga');
     expect(submitted.colors).toEqual(['Hitam', 'Putih']);
     expect(submitted.sizes).toEqual(['A4']);
@@ -354,7 +373,8 @@ describe('Preservation 3.5 -- Saving product saves all non-image fields correctl
     const submitted = await fillAndSubmitForm({
       name: 'Kartu Nama Premium',
       category: 'Kartu Nama',
-      price: 50000,
+      priceCustomer: 50000,
+      priceBroker: 45000,
       shortDescription: '',
       colors: [],
       sizes: [],
@@ -399,7 +419,8 @@ describe('Preservation 3.5 -- Saving product saves all non-image fields correctl
       expect(submitted.category).toBe(formData.category);
 
       // Price must be a number matching the input
-      expect(submitted.price).toBe(Number(formData.price));
+      expect(submitted.priceCustomer).toBe(Number(formData.priceCustomer));
+      expect(submitted.priceBroker).toBe(Number(formData.priceBroker));
 
       // requiresDesign must match
       expect(submitted.requiresDesign).toBe(formData.requiresDesign);
@@ -420,7 +441,8 @@ describe('Preservation 3.5 -- Saving product saves all non-image fields correctl
     // Fill name, category, price
     fireEvent.change(screen.getByPlaceholderText('Nama produk'), { target: { value: 'Stiker Varian' } });
     fireEvent.change(document.getElementById('pf-cat'), { target: { value: 'Stiker' } });
-    fireEvent.change(screen.getByPlaceholderText('0'), { target: { value: '10000' } });
+    fireEvent.change(document.getElementById('pf-price-customer'), { target: { value: '10000' } });
+    fireEvent.change(document.getElementById('pf-price-broker'), { target: { value: '9000' } });
 
     // Set sizes and materials to trigger variant price grid
     fireEvent.change(screen.getByPlaceholderText('A4, A5, Custom'), { target: { value: 'A4, A5' } });
@@ -443,11 +465,16 @@ describe('Preservation 3.5 -- Saving product saves all non-image fields correctl
     addProduct.mockResolvedValue({ id: 'new-id' });
 
     // Simulate adding a mock image so the image validation passes.
+    uploadProductImage.mockResolvedValue('/uploads/mock.jpg');
     URL.createObjectURL = vi.fn(() => 'blob:mock-url');
-    const fileInput = document.querySelector('input[type="file"][aria-label="Upload foto produk"]');
+    const fileInput = document.querySelector('input[type="file"]');
     if (fileInput) {
       const mockFile = new File(['mock'], 'mock.jpg', { type: 'image/jpeg' });
-      fireEvent.change(fileInput, { target: { files: [mockFile] } });
+      await act(async () => {
+        fireEvent.change(fileInput, { target: { files: [mockFile] } });
+      });
+      // Let the mocked upload resolve so the image reaches status 'done'.
+      await act(async () => {});
     }
 
     const submitButton = screen.getByRole('button', { name: /Tambah Produk/i });
@@ -626,9 +653,9 @@ describe('Preservation 3.7 -- Product list displays products with correct data',
    */
   it('product list shows Name, Category, and Price for each product', async () => {
     const products = [
-      { id: '1', name: 'Stiker Bulat', category: 'Stiker', price: 5000, image: '/assets/img/placeholder.svg' },
-      { id: '2', name: 'Brosur A4', category: 'Brosur', price: 15000, image: '/assets/img/placeholder.svg' },
-      { id: '3', name: 'Kartu Nama', category: 'Kartu Nama', price: 30000, image: '/assets/img/placeholder.svg' },
+      { id: '1', name: 'Stiker Bulat', category: 'Stiker', priceCustomer: 5000, priceBroker: 5000, image: '/assets/img/placeholder.svg' },
+      { id: '2', name: 'Brosur A4', category: 'Brosur', priceCustomer: 15000, priceBroker: 14000, image: '/assets/img/placeholder.svg' },
+      { id: '3', name: 'Kartu Nama', category: 'Kartu Nama', priceCustomer: 30000, priceBroker: 30000, image: '/assets/img/placeholder.svg' },
     ];
 
     const { unmount } = await renderProductsSection(products);
@@ -638,8 +665,11 @@ describe('Preservation 3.7 -- Product list displays products with correct data',
       // and product names may match category names (e.g., "Kartu Nama")
       expect(screen.getAllByText(p.name).length).toBeGreaterThan(0);
       expect(screen.getAllByText(p.category).length).toBeGreaterThan(0);
-      // Price is formatted via formatCurrency mock which returns String(v)
-      expect(screen.getByText(String(p.price))).toBeTruthy();
+      // Price is formatted via formatCurrency mock which returns String(v).
+      // Customer and broker prices both render; use getAllByText to tolerate
+      // equal values appearing in both price columns.
+      expect(screen.getAllByText(String(p.priceCustomer)).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(String(p.priceBroker)).length).toBeGreaterThan(0);
     }
 
     unmount();

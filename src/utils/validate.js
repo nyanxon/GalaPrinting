@@ -17,9 +17,15 @@ export function validateProduct(data) {
   if (!String(data.category || "").trim()) {
     errors.push("Kategori wajib dipilih.");
   }
-  const price = Number(data.price);
-  if (isNaN(price) || price < 0) {
-    errors.push("Harga harus berupa angka ≥ 0.");
+
+  const priceCustomer = Number(data.priceCustomer ?? data.price_customer ?? data.price);
+  if (isNaN(priceCustomer) || priceCustomer < 0) {
+    errors.push("Harga customer harus berupa angka ≥ 0.");
+  }
+
+  const priceBroker = Number(data.priceBroker ?? data.price_broker ?? data.price);
+  if (isNaN(priceBroker) || priceBroker < 0) {
+    errors.push("Harga broker harus berupa angka ≥ 0.");
   }
 
   return { ok: errors.length === 0, errors };

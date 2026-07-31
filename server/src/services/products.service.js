@@ -96,10 +96,53 @@ export async function getProductById(id) {
 }
 
 /**
+ * Search products by name keyword (for cashier autocomplete).
+ * Returns a lightweight projection: id, name, both prices, category.
+ * @param {string} q - keyword
+ * @param {number} [limit=10]
+ * @returns {Promise<object[]>}
+ */
+export async function searchProducts(q, limit = 10) {
+  const keyword = String(q || '').trim();
+  if (!keyword) return [];
+  const maxLimit = Math.min(15, Math.max(1, parseInt(limit, 10) || 10));
+
+  const [rows] = await query(
+    `SELECT p.id, p.name, p.price_customer, p.price_broker, c.name AS category
+     FROM products p
+     LEFT JOIN categories c ON p.category_id = c.id
+     WHERE p.name LIKE ?
+     ORDER BY p.name ASC
+     LIMIT ?`,
+    [`%${keyword}%`, maxLimit]
+  );
+  return rows;
+}
+
+/**
+ * Batch-fetch products by ids (used by cashier order to resolve prices
+ * server-side instead of trusting prices sent by the client).
+ * @param {string[]} ids
+ * @returns {Promise<object[]>}
+ */
+export async function getProductsByIds(ids) {
+  const clean = (Array.isArray(ids) ? ids : []).filter(Boolean);
+  if (clean.length === 0) return [];
+  const placeholders = clean.map(() => '?').join(', ');
+  const [rows] = await query(
+    `SELECT p.id, p.name, p.price_customer, p.price_broker, p.category_id
+     FROM products p
+     WHERE p.id IN (${placeholders})`,
+    clean
+  );
+  return rows;
+}
+
+/**
  * Create a new product.
  * @returns {Promise<object>} created product row
  */
-export async function createProduct({ name, categoryId, price, shortDescription, requiresDesign, colors, sizes, materials, imagePath, variantPrices }) {
+export async function createProduct({ name, categoryId, price, priceCustomer, priceBroker, shortDescription, requiresDesign, colors, sizes, materials, imagePath, variantPrices }) {
   const id   = randomUUID();
   const slug = await uniqueSlug(name);
 
@@ -121,14 +164,15 @@ export async function createProduct({ name, categoryId, price, shortDescription,
 
   await query(
     `INSERT INTO products
-       (id, category_id, name, slug, price, short_description, requires_design, colors, sizes, materials, image_path, variant_prices)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (id, category_id, name, slug, price_customer, price_broker, short_description, requires_design, colors, sizes, materials, image_path, variant_prices)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       categoryId || null,
       name,
       slug,
-      price || 0,
+      priceCustomer ?? price ?? 0,
+      priceBroker ?? priceCustomer ?? price ?? 0,
       shortDescription || null,
       requiresDesign ? 1 : 0,
       colors ? JSON.stringify(colors) : null,
@@ -150,7 +194,7 @@ export async function updateProduct(id, data) {
   const fields = [];
   const params = [];
 
-  const allowed    = ['name', 'category_id', 'price', 'short_description', 'requires_design', 'image_path'];
+  const allowed    = ['name', 'category_id', 'price_customer', 'price_broker', 'short_description', 'requires_design', 'image_path'];
   const jsonFields = ['colors', 'sizes', 'materials', 'variant_prices'];
 
   for (const [key, val] of Object.entries(data)) {
@@ -160,6 +204,8 @@ export async function updateProduct(id, data) {
               : key === 'imagePath'        ? 'image_path'
               : key === 'image'            ? 'image_path'   // frontend sends 'image' as JSON array string
               : key === 'categoryId'       ? 'category_id'
+              : key === 'priceCustomer'    ? 'price_customer'
+              : key === 'priceBroker'      ? 'price_broker'
               : key === 'variantPrices'    ? 'variant_prices'
               : key; // already snake_case (e.g. category_id sent by controller)
     if (allowed.includes(col)) {

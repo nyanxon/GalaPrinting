@@ -170,8 +170,8 @@ describe('Bug 2 — Input Gambar Produk: Bug Condition Exploration', () => {
     const categorySelect = document.getElementById('pf-cat');
     fireEvent.change(categorySelect, { target: { value: 'Stiker' } });
 
-    const priceInput = screen.getByPlaceholderText('0');
-    fireEvent.change(priceInput, { target: { value: '50000' } });
+    fireEvent.change(document.getElementById('pf-price-customer'), { target: { value: '50000' } });
+    fireEvent.change(document.getElementById('pf-price-broker'), { target: { value: '50000' } });
 
     // Submit the form
     const submitButton = screen.getByRole('button', { name: /Tambah Produk/i });

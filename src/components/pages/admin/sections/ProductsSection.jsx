@@ -149,7 +149,8 @@ function ProductModal({ product, categories, onClose, onSaved }) {
   const [formData, setFormData] = useState({
     name: product?.name || '',
     category: product?.category || '',
-    price: product?.price ?? '',
+    priceCustomer: product?.priceCustomer ?? product?.price_customer ?? product?.price ?? '',
+    priceBroker: product?.priceBroker ?? product?.price_broker ?? product?.priceCustomer ?? product?.price_customer ?? product?.price ?? '',
     shortDescription: product?.shortDescription || product?.short_description || '',
     colors: parseArrayField(product?.colors).join(', '),
     sizes: parseArrayField(product?.sizes).join(', '),
@@ -316,7 +317,8 @@ function ProductModal({ product, categories, onClose, onSaved }) {
     const data = {
       name: formData.name.trim(),
       category: formData.category,
-      price: Number(formData.price || 0),
+      priceCustomer: Number(formData.priceCustomer || 0),
+      priceBroker: Number(formData.priceBroker || 0),
       shortDescription: formData.shortDescription.trim(),
       colors: split(formData.colors),
       sizes: split(formData.sizes),
@@ -402,13 +404,23 @@ function ProductModal({ product, categories, onClose, onSaved }) {
               )}
             </div>
 
-            <div className="adm-field">
-              <label className="adm-label" htmlFor="pf-price">
-                Harga Dasar (Rp) *
-                <span className="adm-hint" style={{ marginLeft: '6px' }}>— digunakan jika tidak ada harga varian</span>
-              </label>
-              <input className="adm-input" id="pf-price" name="price" type="number" min="0" value={formData.price} onChange={handleChange} required placeholder="0" />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="adm-field">
+                <label className="adm-label" htmlFor="pf-price-customer">
+                  Harga Customer (Rp) *
+                </label>
+                <input className="adm-input" id="pf-price-customer" name="priceCustomer" type="number" min="0" value={formData.priceCustomer} onChange={handleChange} required placeholder="0" />
+              </div>
+              <div className="adm-field">
+                <label className="adm-label" htmlFor="pf-price-broker">
+                  Harga Broker (Rp) *
+                </label>
+                <input className="adm-input" id="pf-price-broker" name="priceBroker" type="number" min="0" value={formData.priceBroker} onChange={handleChange} required placeholder="0" />
+              </div>
             </div>
+            <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '6px' }}>
+              💡 Harga broker biasanya lebih murah. Harga customer dipakai di website & order biasa, harga broker untuk order offline via dropdown tipe pembeli.
+            </p>
 
             <div className="adm-field">
               <label className="adm-label" htmlFor="pf-desc">Deskripsi Singkat</label>
@@ -478,7 +490,7 @@ function ProductModal({ product, categories, onClose, onSaved }) {
                                 <input
                                   type="number"
                                   min="0"
-                                  placeholder={String(formData.price || 0)}
+                                  placeholder={String(formData.priceCustomer || 0)}
                                   value={val !== undefined ? val : ''}
                                   onChange={(e) => handleVariantPriceChange(size, mat, e.target.value)}
                                   style={{ width: '100%', padding: '4px 6px', border: '1px solid #d1d5db', borderRadius: '4px', fontSize: '13px', textAlign: 'right' }}
@@ -742,14 +754,15 @@ export default function ProductsSection() {
               <tr>
                 <th>Nama</th>
                 <th>Kategori</th>
-                <th>Harga</th>
+                <th>Harga Customer</th>
+                <th>Harga Broker</th>
                 <th>Aksi</th>
               </tr>
             </thead>
             <tbody>
               {result.items.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="adm-empty">
+                  <td colSpan={5} className="adm-empty">
                     Belum ada produk.
                   </td>
                 </tr>
@@ -758,7 +771,8 @@ export default function ProductsSection() {
                   <tr key={p.id}>
                     <td>{p.name}</td>
                     <td>{p.category || '—'}</td>
-                    <td>{formatCurrency(p.price)}</td>
+                    <td>{formatCurrency(p.priceCustomer ?? p.price)}</td>
+                    <td>{formatCurrency(p.priceBroker ?? p.priceCustomer ?? p.price)}</td>
                     <td>
                       <div className="adm-actions">
                         <button

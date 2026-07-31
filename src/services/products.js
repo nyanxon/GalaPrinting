@@ -180,6 +180,12 @@ function normalizeProduct(raw) {
     })(),
     shortDescription: raw.shortDescription || raw.short_description || '',
     requiresDesign:   raw.requiresDesign   ?? raw.requires_design   ?? false,
+    // Harga Customer/Broker — raw.price_customer adalah sumber utama (kolom DB).
+    // `price` dipertahankan sebagai alias harga customer agar public site
+    // (ProductsPage, CartPage, resolveVariantPrice) tetap berfungsi.
+    priceCustomer:    Number(raw.priceCustomer ?? raw.price_customer ?? raw.price ?? 0),
+    priceBroker:      Number(raw.priceBroker   ?? raw.price_broker   ?? raw.priceCustomer ?? raw.price_customer ?? raw.price ?? 0),
+    price:            Number(raw.priceCustomer ?? raw.price_customer ?? raw.price ?? 0),
     colors:    parseArrayField(raw.colors),
     sizes:     parseArrayField(raw.sizes),
     materials: parseArrayField(raw.materials),
@@ -222,7 +228,7 @@ export function resolveVariantPrice(product, color, size, material) {
     }
   }
 
-  return product?.price ?? 0;
+  return Number(product?.price ?? product?.priceCustomer ?? product?.price_customer ?? 0);
 }
 
 // ---------------------------------------------------------------------------
@@ -255,6 +261,30 @@ export async function listProductsPaginated(opts = {}) {
     return { items: (items ?? []).map(normalizeProduct), total: total ?? 0, page, limit, totalPages: totalPages ?? 1 };
   }
   return listProductsPaginatedFromLocalStorage(opts);
+}
+
+/**
+ * Search products by name keyword (cashier autocomplete).
+ * @param {string} q keyword
+ * @returns {Promise<object[]>} lightweight rows: id, name, price_customer, price_broker, category
+ */
+export async function searchProducts(q) {
+  const keyword = String(q || '').trim();
+  if (!keyword) return [];
+  if (USE_BACKEND) {
+    const res = await api.get('/api/products/search', { params: { q: keyword, limit: 10 } });
+    return res.data.items ?? [];
+  }
+  return listProductsFromLocalStorage()
+    .filter((p) => p.name.toLowerCase().includes(keyword.toLowerCase()))
+    .slice(0, 10)
+    .map((p) => ({
+      id: p.id,
+      name: p.name,
+      price_customer: Number(p.price_customer ?? p.price ?? 0),
+      price_broker:   Number(p.price_broker   ?? p.price ?? 0),
+      category: p.category || null,
+    }));
 }
 
 export async function getProductById(productId) {

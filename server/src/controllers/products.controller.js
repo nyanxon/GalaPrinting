@@ -71,6 +71,8 @@ export async function createProduct(req, res, next) {
       name:             body.name,
       categoryId:       body.categoryId || null,
       price:            body.price,
+      priceCustomer:    body.priceCustomer ?? body.price_customer,
+      priceBroker:      body.priceBroker ?? body.price_broker,
       shortDescription: body.shortDescription,
       requiresDesign:   body.requiresDesign,
       colors:           body.colors,
@@ -85,8 +87,23 @@ export async function createProduct(req, res, next) {
   }
 }
 
+export async function searchProducts(req, res, next) {
+  try {
+    const { q, limit } = req.query;
+    const items = await svc.searchProducts(q, limit);
+    return res.json({ ok: true, items });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function updateProduct(req, res, next) {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json({ ok: false, message: 'Validasi gagal.', errors: errors.mapped() });
+    }
+
     // Resolve category name → category_id if frontend sends { category: "Stiker" }
     const body = { ...req.body };
     if (body.category && !body.categoryId) {

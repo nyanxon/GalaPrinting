@@ -18,13 +18,20 @@ router.post('/upload-image', authenticate, requireRole('admin', 'owner'), upload
 
 // ── Products ──────────────────────────────────────────────────────────────────
 router.get('/',    ctrl.listProducts);
+router.get('/search', ctrl.searchProducts); // WAJIB sebelum /:id
 router.get('/:id', ctrl.getProduct);
 
 router.post(
   '/',
   authenticate,
   requireRole('admin', 'owner'),
-  [body('name').trim().notEmpty().withMessage('Nama produk wajib diisi.')],
+  [
+    body('name').trim().notEmpty().withMessage('Nama produk wajib diisi.'),
+    body('priceCustomer').optional().isFloat({ min: 0 }).withMessage('Harga customer harus berupa angka ≥ 0.'),
+    body('price_customer').optional().isFloat({ min: 0 }).withMessage('Harga customer harus berupa angka ≥ 0.'),
+    body('priceBroker').optional().isFloat({ min: 0 }).withMessage('Harga broker harus berupa angka ≥ 0.'),
+    body('price_broker').optional().isFloat({ min: 0 }).withMessage('Harga broker harus berupa angka ≥ 0.'),
+  ],
   ctrl.createProduct
 );
 
@@ -32,6 +39,12 @@ router.put(
   '/:id',
   authenticate,
   requireRole('admin', 'owner'),
+  [
+    body('priceCustomer').optional().isFloat({ min: 0 }).withMessage('Harga customer harus berupa angka ≥ 0.'),
+    body('price_customer').optional().isFloat({ min: 0 }).withMessage('Harga customer harus berupa angka ≥ 0.'),
+    body('priceBroker').optional().isFloat({ min: 0 }).withMessage('Harga broker harus berupa angka ≥ 0.'),
+    body('price_broker').optional().isFloat({ min: 0 }).withMessage('Harga broker harus berupa angka ≥ 0.'),
+  ],
   ctrl.updateProduct
 );
 

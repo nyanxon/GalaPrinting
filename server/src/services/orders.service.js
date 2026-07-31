@@ -210,7 +210,7 @@ async function attachItemsToOrders(orders) {
  * All inserts are wrapped in a single DB transaction — if any item insert
  * fails, the entire transaction is rolled back and no partial order is left.
  */
-export async function createOrder({ customer, items, subtotal, source = 'online', orderType = 'standard', initialStatus, promoCode, discountAmount, adminNote }) {
+export async function createOrder({ customer, items, subtotal, source = 'online', orderType = 'standard', initialStatus, promoCode, discountAmount, adminNote, customerType = 'customer' }) {
   const id     = randomUUID();
   const status = initialStatus || 'Waiting for Payment';
 
@@ -233,8 +233,8 @@ export async function createOrder({ customer, items, subtotal, source = 'online'
 
     await conn.execute(
       `INSERT INTO orders
-         (id, order_number, order_type, source, customer_id, customer_name, customer_phone, customer_address, customer_address_title, customer_email, status, subtotal, promo_code, discount_amount, admin_note)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (id, order_number, order_type, source, customer_id, customer_name, customer_type, customer_phone, customer_address, customer_address_title, customer_email, status, subtotal, promo_code, discount_amount, admin_note)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         orderNumber,
@@ -242,6 +242,7 @@ export async function createOrder({ customer, items, subtotal, source = 'online'
         source,
         customer?.id || null,
         customer?.name || null,
+        customerType === 'broker' ? 'broker' : 'customer',
         customer?.phone || null,
         customer?.address || null,
         customer?.addressTitle || null,

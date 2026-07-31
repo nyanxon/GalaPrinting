@@ -5,6 +5,7 @@
  */
 
 import * as svc from '../services/orders.service.js';
+import * as productSvc from '../services/products.service.js';
 import { StorageService } from '../utils/storage.js';
 import { getIO } from '../socket/index.js';
 
@@ -152,23 +153,71 @@ export async function createOfflineOrder(req, res, next) {
     // Accept both flat fields (customerName/Phone/Address) and nested customer object
     const {
       items,
-      subtotal,
       customer: customerObj,
       customerName,
       customerPhone,
       customerAddress,
       customerEmail,
       adminNote,
+      customerType,
     } = req.body;
 
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(422).json({ ok: false, message: 'Pesanan harus memiliki minimal 1 item.' });
     }
 
-    const computed = items.reduce((sum, i) => sum + Number(i.price || 0) * Number(i.quantity || 1), 0);
-    if (Math.abs(computed - Number(subtotal || 0)) > 1) {
-      return res.status(422).json({ ok: false, message: 'Subtotal tidak sesuai dengan total item.' });
+    const type = customerType === 'broker' ? 'broker' : 'customer';
+
+    // ── Server-side price resolution ────────────────────────────────────────
+    // Harga tidak dipercaya dari client. Untuk item yang punya product_id,
+    // harga satuan di-resolve dari tabel products sesuai customer_type.
+    // Hasilnya disimpan sebagai snapshot di order_items.price.
+    const productIds = [...new Set(
+      items.map((i) => i.productId ?? i.product_id ?? null).filter(Boolean)
+    )];
+    const productsById = new Map();
+    if (productIds.length > 0) {
+      const prods = await productSvc.getProductsByIds(productIds);
+      for (const p of prods) productsById.set(p.id, p);
     }
+
+    const resolvedItems = items.map((item) => {
+      const pid = item.productId ?? item.product_id ?? null;
+      const quantity = Math.max(1, parseInt(item.quantity, 10) || 1);
+      const notes = item.notes ?? item.keterangan ?? null;
+
+      if (pid) {
+        const prod = productsById.get(pid);
+        if (!prod) {
+          const err = new Error(`Produk tidak ditemukan: ${item.name || pid}`);
+          err.status = 422;
+          throw err;
+        }
+        const unitPrice = Number(type === 'broker' ? prod.price_broker : prod.price_customer) || 0;
+        return {
+          productId: pid,
+          name: item.name || prod.name,
+          price: unitPrice,
+          quantity,
+          notes,
+        };
+      }
+
+      // Item manual tanpa product_id (backward compat) — pakai harga dari form.
+      return {
+        productId: null,
+        name: item.name,
+        price: Number(item.price || 0),
+        quantity,
+        notes,
+      };
+    });
+
+    // Subtotal dihitung ulang dari harga hasil resolve — tidak percaya client.
+    const resolvedSubtotal = resolvedItems.reduce(
+      (sum, i) => sum + Number(i.price || 0) * Number(i.quantity || 1),
+      0
+    );
 
     const customer = {
       id:      null,
@@ -182,16 +231,20 @@ export async function createOfflineOrder(req, res, next) {
     // handled in-store before the order is entered into the system.
     const order = await svc.createOrder({
       customer,
-      items,
-      subtotal,
+      items: resolvedItems,
+      subtotal: resolvedSubtotal,
       source: 'offline',
       orderType: 'standard',
       initialStatus: 'On Progress',
       adminNote: adminNote || '',
+      customerType: type,
     });
     emitOrderNew(order);
     return res.status(201).json({ ok: true, data: order });
   } catch (err) {
+    if (err.status === 422) {
+      return res.status(422).json({ ok: false, message: err.message });
+    }
     next(err);
   }
 }
