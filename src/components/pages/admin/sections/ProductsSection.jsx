@@ -447,7 +447,16 @@ function ProductModal({ product, categories, onClose, onSaved }) {
 
             <div className="adm-field">
               <label className="adm-label" htmlFor="pf-desc">Deskripsi Singkat</label>
-              <input className="adm-input" id="pf-desc" name="shortDescription" value={formData.shortDescription} onChange={handleChange} placeholder="Deskripsi singkat" />
+              <textarea
+                className="adm-input"
+                id="pf-desc"
+                name="shortDescription"
+                value={formData.shortDescription}
+                onChange={handleChange}
+                placeholder="Deskripsi singkat"
+                rows={4}
+                style={{ minHeight: '96px', resize: 'vertical', overflowY: 'auto' }}
+              />
             </div>
 
             <div className="adm-field">

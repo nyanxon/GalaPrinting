@@ -90,6 +90,7 @@ const PERM_TO_NAV = {
   daily_recap:   'recap',
   new_order:     'new-order',
   order_list:    'order-list',
+  chats:         'chat',
 };
 
 /**
