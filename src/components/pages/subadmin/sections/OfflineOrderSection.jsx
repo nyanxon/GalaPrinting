@@ -710,15 +710,6 @@ export default function OfflineOrderSection() {
                     onClear={() => handleClearProduct(item.id)}
                   />
                   {nameErr && <span className="offline-field-error">{nameErr}</span>}
-                  <div className="offline-item-notes-wrap">
-                    <input
-                      className="adm-input offline-item-notes"
-                      type="text"
-                      placeholder="Keterangan item (opsional)…"
-                      value={item.notes}
-                      onChange={(e) => updateItem(item.id, 'notes', e.target.value)}
-                    />
-                  </div>
                   <div className="offline-item-attrs">
                     <div className="offline-item-attr">
                       <label className="offline-item-attr-label">Warna</label>
@@ -789,6 +780,15 @@ export default function OfflineOrderSection() {
                         />
                       )}
                     </div>
+                  </div>
+                  <div className="offline-item-notes-wrap">
+                    <textarea
+                      className="adm-input offline-item-notes"
+                      rows={2}
+                      placeholder="Keterangan item (opsional)…"
+                      value={item.notes}
+                      onChange={(e) => updateItem(item.id, 'notes', e.target.value)}
+                    />
                   </div>
                 </div>
                 <div className="offline-items-col offline-items-col--price">
