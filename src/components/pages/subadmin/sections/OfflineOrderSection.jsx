@@ -710,10 +710,19 @@ export default function OfflineOrderSection() {
                     onClear={() => handleClearProduct(item.id)}
                   />
                   {nameErr && <span className="offline-field-error">{nameErr}</span>}
-                  <div className="offline-item-attrs">
+                </div>
+                <div className="offline-item-attrs">
                     <div className="offline-item-attr">
                       <label className="offline-item-attr-label">Warna</label>
-                      {item.productId && item.colors.length > 0 ? (
+                      {!item.productId ? (
+                        <input
+                          className="adm-input offline-item-attr-input"
+                          type="text"
+                          value="Produk belum dipilih"
+                          disabled
+                          title="Pilih produk terlebih dahulu"
+                        />
+                      ) : item.colors.length > 0 ? (
                         <select
                           className="adm-input offline-item-attr-input"
                           value={item.color}
@@ -736,7 +745,15 @@ export default function OfflineOrderSection() {
                     </div>
                     <div className="offline-item-attr">
                       <label className="offline-item-attr-label">Ukuran</label>
-                      {item.productId && item.sizes.length > 0 ? (
+                      {!item.productId ? (
+                        <input
+                          className="adm-input offline-item-attr-input"
+                          type="text"
+                          value="Produk belum dipilih"
+                          disabled
+                          title="Pilih produk terlebih dahulu"
+                        />
+                      ) : item.sizes.length > 0 ? (
                         <select
                           className="adm-input offline-item-attr-input"
                           value={item.size}
@@ -759,7 +776,15 @@ export default function OfflineOrderSection() {
                     </div>
                     <div className="offline-item-attr">
                       <label className="offline-item-attr-label">Bahan</label>
-                      {item.productId && item.materials.length > 0 ? (
+                      {!item.productId ? (
+                        <input
+                          className="adm-input offline-item-attr-input"
+                          type="text"
+                          value="Produk belum dipilih"
+                          disabled
+                          title="Pilih produk terlebih dahulu"
+                        />
+                      ) : item.materials.length > 0 ? (
                         <select
                           className="adm-input offline-item-attr-input"
                           value={item.material}
@@ -790,7 +815,6 @@ export default function OfflineOrderSection() {
                       onChange={(e) => updateItem(item.id, 'notes', e.target.value)}
                     />
                   </div>
-                </div>
                 <div className="offline-items-col offline-items-col--price">
                   {item.productId ? (
                     <input
