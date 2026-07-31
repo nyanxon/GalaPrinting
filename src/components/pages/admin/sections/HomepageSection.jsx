@@ -1,5 +1,5 @@
 ﻿/**
- * HomepageSection.jsx â€” Admin panel section for managing Homepage content.
+ * HomepageSection.jsx — Admin panel section for managing Homepage content.
  *
  * Tabs:
  *   A. Landing Page Banner (hero)
@@ -46,7 +46,7 @@ async function fetchCategoriesWithIds() {
   }
 }
 
-// â”€â”€ Small shared helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Small shared helpers ──────────────────────────────────────────────────────
 
 function resolveImg(url) {
   if (!url) return null;
@@ -63,7 +63,7 @@ async function doUpload(file) {
   }
 }
 
-// â”€â”€ ImagePickerField â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── ImagePickerField ──────────────────────────────────────────────────────────
 /**
  * Reusable image-picker: shows current image preview + DropZone.
  * Calls onUrlChange(url) after upload completes.
@@ -93,7 +93,7 @@ function ImagePickerField({ label, currentUrl, onUrlChange, uploading, setUpload
       {preview && (
         <img
           src={preview}
-          alt="Preview"
+          alt="Pratinjau"
           style={{ maxWidth: 320, maxHeight: 180, objectFit: 'cover',
             borderRadius: 6, border: '1px solid var(--border)', marginBottom: 8, display: 'block' }}
           onError={(e) => { e.currentTarget.style.display = 'none'; }}
@@ -104,14 +104,14 @@ function ImagePickerField({ label, currentUrl, onUrlChange, uploading, setUpload
         onFiles={handleFiles}
         disabled={uploading}
         compact
-        label={uploading ? 'Mengunggahâ€¦' : (preview ? 'Ganti gambar' : undefined)}
-        hint="JPG, PNG, WEBP Â· Maks. 10 MB"
+        label={uploading ? 'Mengunggah…' : (preview ? 'Ganti gambar' : undefined)}
+        hint="JPG, PNG, WEBP · Maks. 10 MB"
       />
     </div>
   );
 }
 
-// â”€â”€ A. Hero Banners Tab (carousel â€” up to 8 slides) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── A. Hero Banners Tab (carousel — up to 8 slides) ──────────────────────────
 
 function HeroBannerModal({ banner, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -167,7 +167,7 @@ function HeroBannerModal({ banner, onClose, onSaved }) {
           <h2 className="adm-modal-title" id="hb-modal-title">
             {banner ? 'Edit Banner' : 'Tambah Banner'}
           </h2>
-          <button className="adm-modal-close" type="button" aria-label="Tutup" onClick={onClose}>âœ•</button>
+          <button className="adm-modal-close" type="button" aria-label="Tutup" onClick={onClose}>✕</button>
         </div>
         <div className="adm-modal-body">
           <form className="adm-form" onSubmit={handleSubmit} noValidate>
@@ -206,7 +206,7 @@ function HeroBannerModal({ banner, onClose, onSaved }) {
             </div>
             {/* Mini preview */}
             <div style={{ marginBottom: 12 }}>
-              <p className="adm-label" style={{ marginBottom: 6 }}>Preview</p>
+              <p className="adm-label" style={{ marginBottom: 6 }}>Pratinjau</p>
               <div style={{
                 height: 100, borderRadius: 6, overflow: 'hidden', position: 'relative',
                 background: form.imagePath ? 'none' : 'rgba(237,200,174,0.45)',
@@ -240,7 +240,7 @@ function HeroBannerModal({ banner, onClose, onSaved }) {
             {error && <div className="adm-form-alert" role="alert">{error}</div>}
             <div className="adm-form-actions">
               <button className="adm-btn adm-btn--primary" type="submit" disabled={saving || uploading}>
-                {saving ? 'Menyimpanâ€¦' : (banner ? 'Simpan Perubahan' : 'Tambah Banner')}
+                {saving ? 'Menyimpan…' : (banner ? 'Simpan Perubahan' : 'Tambah Banner')}
               </button>
               <button className="adm-btn" type="button" onClick={onClose} disabled={saving}>Batal</button>
             </div>
@@ -292,7 +292,7 @@ function HeroTab() {
       <div className="adm-card">
         <div className="adm-toolbar">
           <h2 className="adm-section-title">
-            Landing Page Banner
+            Banner Halaman Utama
             <span style={{ fontSize: 13, fontWeight: 400, color: '#6b7280', marginLeft: 8 }}>
               (carousel · maks. 8 slide)
             </span>
@@ -355,9 +355,9 @@ function HeroTab() {
                   )}
                   <div className="adm-actions" style={{ marginTop: 8 }}>
                     <button className="adm-btn" type="button" style={{ padding: '3px 8px', fontSize: 12 }}
-                      onClick={() => handleMove(idx, 'up')} disabled={idx === 0} aria-label="Pindah ke atas">â†‘</button>
+                      onClick={() => handleMove(idx, 'up')} disabled={idx === 0} aria-label="Pindah ke atas">↑</button>
                     <button className="adm-btn" type="button" style={{ padding: '3px 8px', fontSize: 12 }}
-                      onClick={() => handleMove(idx, 'down')} disabled={idx >= banners.length - 1} aria-label="Pindah ke bawah">â†“</button>
+                      onClick={() => handleMove(idx, 'down')} disabled={idx >= banners.length - 1} aria-label="Pindah ke bawah">↓</button>
                     <button className="adm-btn adm-btn--edit" type="button"
                       onClick={() => { setEditing(b); setModalOpen(true); }}>Edit</button>
                     <button className="adm-btn adm-btn--delete" type="button"
@@ -381,7 +381,7 @@ function HeroTab() {
   );
 }
 
-// â”€â”€ B. Design Showcase Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── B. Design Showcase Tab ────────────────────────────────────────────────────
 
 function DesignItemModal({ item, onClose, onSaved }) {
   const [form, setForm]           = useState({
@@ -415,15 +415,15 @@ function DesignItemModal({ item, onClose, onSaved }) {
       };
       if (item) {
         await updateDesignItem(item.id, payload);
-        showToast('Design item diperbarui.', 'success');
+        showToast('Item design diperbarui.', 'success');
       } else {
         await createDesignItem(payload);
-        showToast('Design item ditambahkan.', 'success');
+        showToast('Item design ditambahkan.', 'success');
       }
       onSaved();
       onClose();
     } catch (_err) {
-      setError('Gagal menyimpan design item.');
+      setError('Gagal menyimpan item design.');
     } finally {
       setSaving(false);
     }
@@ -434,14 +434,14 @@ function DesignItemModal({ item, onClose, onSaved }) {
       <div className="adm-modal" style={{ maxWidth: 540 }}>
         <div className="adm-modal-header">
           <h2 className="adm-modal-title" id="di-modal-title">
-            {item ? 'Edit Design Item' : 'Tambah Design Item'}
+            {item ? 'Edit Item Design' : 'Tambah Item Design'}
           </h2>
-          <button className="adm-modal-close" type="button" aria-label="Tutup" onClick={onClose}>âœ•</button>
+          <button className="adm-modal-close" type="button" aria-label="Tutup" onClick={onClose}>✕</button>
         </div>
         <div className="adm-modal-body">
           <form className="adm-form" onSubmit={handleSubmit} noValidate>
             <ImagePickerField
-              label="Gambar Design *"
+              label="Gambar Item Design *"
               currentUrl={form.imagePath}
               onUrlChange={(url) => setForm((prev) => ({ ...prev, imagePath: url }))}
               uploading={uploading}
@@ -471,7 +471,7 @@ function DesignItemModal({ item, onClose, onSaved }) {
             {error && <div className="adm-form-alert" role="alert">{error}</div>}
             <div className="adm-form-actions">
               <button className="adm-btn adm-btn--primary" type="submit" disabled={saving || uploading}>
-                {saving ? 'Menyimpanâ€¦' : (item ? 'Simpan Perubahan' : 'Tambah')}
+                {saving ? 'Menyimpan…' : (item ? 'Simpan Perubahan' : 'Tambah')}
               </button>
               <button className="adm-btn" type="button" onClick={onClose} disabled={saving}>Batal</button>
             </div>
@@ -491,17 +491,17 @@ function DesignShowcaseTab() {
   async function load() {
     setLoading(true);
     try { setItems(await listAllDesignItems()); }
-    catch { showToast('Gagal memuat design items.', 'error'); }
+    catch { showToast('Gagal memuat item design.', 'error'); }
     finally { setLoading(false); }
   }
 
   useEffect(() => { load(); }, []);
 
   async function handleDelete(id) {
-    if (!window.confirm('Hapus design item ini?')) return;
+    if (!window.confirm('Hapus item design ini?')) return;
     try {
       await deleteDesignItem(id);
-      showToast('Design item dihapus.', 'success');
+      showToast('Item design dihapus.', 'success');
       load();
     } catch { showToast('Gagal menghapus.', 'error'); }
   }
@@ -532,7 +532,7 @@ function DesignShowcaseTab() {
     <>
       <div className="adm-card">
         <div className="adm-toolbar">
-          <h2 className="adm-section-title">Design Showcase
+          <h2 className="adm-section-title">Showcase Design
             <span style={{ fontSize: 13, fontWeight: 400, color: '#6b7280', marginLeft: 8 }}>
               (maks. 4 tampil di Homepage)
             </span>
@@ -541,15 +541,15 @@ function DesignShowcaseTab() {
             <button className="adm-btn adm-btn--primary" type="button"
               onClick={() => { setEditing(null); setModalOpen(true); }}
               disabled={items.length >= 8}>
-              + Tambah Design
+              + Tambah Item Design
             </button>
           </div>
         </div>
 
         {loading ? (
-          <p style={{ padding: 16, color: '#6b7280' }}>Memuatâ€¦</p>
+          <p style={{ padding: 16, color: '#6b7280' }}>Memuat…</p>
         ) : items.length === 0 ? (
-          <p style={{ padding: 16, color: '#6b7280' }}>Belum ada design item.</p>
+          <p style={{ padding: 16, color: '#6b7280' }}>Belum ada item design.</p>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px,1fr))', gap: 14, padding: '4px 0' }}>
             {items.map((item, idx) => (
@@ -585,9 +585,9 @@ function DesignShowcaseTab() {
                   )}
                   <div className="adm-actions" style={{ marginTop: 8 }}>
                     <button className="adm-btn" type="button" style={{ padding: '3px 8px', fontSize: 12 }}
-                      onClick={() => handleMoveUp(idx)} disabled={idx === 0} aria-label="Pindah ke atas">â†‘</button>
+                      onClick={() => handleMoveUp(idx)} disabled={idx === 0} aria-label="Pindah ke atas">↑</button>
                     <button className="adm-btn" type="button" style={{ padding: '3px 8px', fontSize: 12 }}
-                      onClick={() => handleMoveDown(idx)} disabled={idx >= items.length - 1} aria-label="Pindah ke bawah">â†“</button>
+                      onClick={() => handleMoveDown(idx)} disabled={idx >= items.length - 1} aria-label="Pindah ke bawah">↓</button>
                     <button className="adm-btn adm-btn--edit" type="button"
                       onClick={() => { setEditing(item); setModalOpen(true); }}>Edit</button>
                     <button className="adm-btn adm-btn--delete" type="button"
@@ -611,7 +611,7 @@ function DesignShowcaseTab() {
   );
 }
 
-// â”€â”€ C. Category Banners Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── C. Category Banners Tab ───────────────────────────────────────────────────
 
 function CatBannerModal({ banner, categories, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -619,7 +619,7 @@ function CatBannerModal({ banner, categories, onClose, onSaved }) {
     title:      banner?.title        || '',
     imagePath:  banner?.image_path   || '',
     linkUrl:    banner?.link_url     || '',
-    ctaText:    banner?.cta_text     || 'Lihat Semua â†’',
+    ctaText:    banner?.cta_text     || 'Lihat Semua →',
   });
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving]       = useState(false);
@@ -640,9 +640,9 @@ function CatBannerModal({ banner, categories, onClose, onSaved }) {
         title:      form.title      || null,
         imagePath:  form.imagePath  || null,
         linkUrl:    form.linkUrl    || null,
-        ctaText:    form.ctaText    || 'Lihat Semua â†’',
+        ctaText:    form.ctaText    || 'Lihat Semua →',
       });
-      showToast('Category banner disimpan.', 'success');
+      showToast('Banner kategori disimpan.', 'success');
       onSaved();
       onClose();
     } catch {
@@ -657,9 +657,9 @@ function CatBannerModal({ banner, categories, onClose, onSaved }) {
       <div className="adm-modal" style={{ maxWidth: 540 }}>
         <div className="adm-modal-header">
           <h2 className="adm-modal-title" id="cb-modal-title">
-            {banner ? 'Edit Category Banner' : 'Tambah Category Banner'}
+            {banner ? 'Edit Banner Kategori' : 'Tambah Banner Kategori'}
           </h2>
-          <button className="adm-modal-close" type="button" aria-label="Tutup" onClick={onClose}>âœ•</button>
+          <button className="adm-modal-close" type="button" aria-label="Tutup" onClick={onClose}>✕</button>
         </div>
         <div className="adm-modal-body">
           <form className="adm-form" onSubmit={handleSubmit} noValidate>
@@ -667,7 +667,7 @@ function CatBannerModal({ banner, categories, onClose, onSaved }) {
               <label className="adm-label" htmlFor="cb-cat">Kategori</label>
               <select className="adm-input" id="cb-cat" name="categoryId"
                 value={form.categoryId} onChange={handleChange}>
-                <option value="">â€” Produk (tanpa kategori) â€”</option>
+                <option value="">— Produk (tanpa kategori) —</option>
                 {categories.map((c) => (
                   <option key={c.id || c} value={c.id || c}>{c.name || c}</option>
                 ))}
@@ -693,11 +693,11 @@ function CatBannerModal({ banner, categories, onClose, onSaved }) {
             <div className="adm-field">
               <label className="adm-label" htmlFor="cb-cta">Teks Tombol CTA</label>
               <input className="adm-input" id="cb-cta" name="ctaText"
-                value={form.ctaText} onChange={handleChange} placeholder="Lihat Semua â†’" />
+                value={form.ctaText} onChange={handleChange} placeholder="Lihat Semua →" />
             </div>
             {/* Preview */}
             <div style={{ marginBottom: 12 }}>
-              <p className="adm-label" style={{ marginBottom: 6 }}>Preview Banner</p>
+              <p className="adm-label" style={{ marginBottom: 6 }}>Pratinjau Banner</p>
               <div style={{
                 width: 160, height: 200, borderRadius: 6, overflow: 'hidden',
                 position: 'relative', background: 'rgba(237,200,174,0.5)',
@@ -712,7 +712,7 @@ function CatBannerModal({ banner, categories, onClose, onSaved }) {
                 }}>
                   <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#fff',
                     textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>
-                    {form.title || 'â€”'}
+                    {form.title || '—'}
                   </p>
                   <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>
                     {form.ctaText}
@@ -723,7 +723,7 @@ function CatBannerModal({ banner, categories, onClose, onSaved }) {
             {error && <div className="adm-form-alert" role="alert">{error}</div>}
             <div className="adm-form-actions">
               <button className="adm-btn adm-btn--primary" type="submit" disabled={saving || uploading}>
-                {saving ? 'Menyimpanâ€¦' : 'Simpan'}
+                {saving ? 'Menyimpan…' : 'Simpan'}
               </button>
               <button className="adm-btn" type="button" onClick={onClose} disabled={saving}>Batal</button>
             </div>
@@ -751,7 +751,7 @@ function CatBannersTab() {
       setBanners(b);
       setCategories(cats);
     } catch {
-      showToast('Gagal memuat category banners.', 'error');
+      showToast('Gagal memuat banner kategori.', 'error');
     } finally {
       setLoading(false);
     }
@@ -760,7 +760,7 @@ function CatBannersTab() {
   useEffect(() => { load(); }, []);
 
   async function handleDelete(id) {
-    if (!window.confirm('Hapus category banner ini?')) return;
+    if (!window.confirm('Hapus banner kategori ini?')) return;
     try {
       await deleteCatBanner(id);
       showToast('Banner dihapus.', 'success');
@@ -772,7 +772,7 @@ function CatBannersTab() {
     <>
       <div className="adm-card">
         <div className="adm-toolbar">
-          <h2 className="adm-section-title">Category Banners</h2>
+          <h2 className="adm-section-title">Banner Kategori</h2>
           <div className="adm-toolbar-right">
             <button className="adm-btn adm-btn--primary" type="button"
               onClick={() => { setEditing(null); setModalOpen(true); }}>
@@ -782,10 +782,10 @@ function CatBannersTab() {
         </div>
 
         {loading ? (
-          <p style={{ padding: 16, color: '#6b7280' }}>Memuatâ€¦</p>
+          <p style={{ padding: 16, color: '#6b7280' }}>Memuat…</p>
         ) : banners.length === 0 ? (
           <p style={{ padding: 16, color: '#6b7280' }}>
-            Belum ada category banner. Tambahkan banner untuk setiap section kategori di Homepage.
+            Belum ada banner kategori. Tambahkan banner untuk setiap section kategori di Homepage.
           </p>
         ) : (
           <div className="adm-table-wrap">
@@ -808,12 +808,12 @@ function CatBannersTab() {
                         <img src={b.imageUrl} alt="" style={{ width: 60, height: 40,
                           objectFit: 'cover', borderRadius: 4, border: '1px solid var(--border)' }}
                           onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                      ) : <span style={{ color: '#ccc', fontSize: 12 }}>â€”</span>}
+                      ) : <span style={{ color: '#ccc', fontSize: 12 }}>—</span>}
                     </td>
                     <td>{b.category_name || b.categoryName || '(Produk)'}</td>
-                    <td>{b.title || 'â€”'}</td>
+                    <td>{b.title || '—'}</td>
                     <td style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12 }}>
-                      {b.linkUrl || 'â€”'}
+                      {b.linkUrl || '—'}
                     </td>
                     <td style={{ fontSize: 12 }}>{b.ctaText}</td>
                     <td>
@@ -844,9 +844,9 @@ function CatBannersTab() {
   );
 }
 
-// â”€â”€ Root HomepageSection with tab switching â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Root HomepageSection with tab switching ───────────────────────────────────
 
-// â”€â”€ E. Full Homepage Preview â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── E. Full Homepage Preview ──────────────────────────────────────────────────
 // Uses the exact same CSS classes as home.css + real ProductCard component
 // so the preview looks pixel-identical to what the customer sees.
 
@@ -951,7 +951,7 @@ function PreviewDesignShowcase({ items }) {
 
 function PreviewProductSection({ products, category, reverse, bannerData }) {
   const name    = bannerData?.title || category?.name || 'Produk';
-  const ctaText = bannerData?.cta_text || 'Lihat Semua â†’';
+  const ctaText = bannerData?.cta_text || 'Lihat Semua →';
   const bgImage = bannerData?.image_path ? `url(${resolveImg(bannerData.image_path)})` : undefined;
 
   const bannerEl = (
@@ -1031,12 +1031,12 @@ function HomepageFullPreview() {
   if (loading) {
     return (
       <div className="adm-card" style={{ padding: 32, textAlign: 'center', color: '#6b7280' }}>
-        <p>Memuat preview homepageâ€¦</p>
+        <p>Memuat preview homepage…</p>
       </div>
     );
   }
 
-  // Group products by category â€” same logic as real HomePage
+  // Group products by category — same logic as real HomePage
   const grouped = categories
     .map((cat) => ({
       category: cat,
@@ -1055,13 +1055,13 @@ function HomepageFullPreview() {
         padding: '9px 16px', background: 'var(--brand-brown, #785e40)', color: '#fff',
         fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8,
       }}>
-        <span>ðŸ  PREVIEW HOMEPAGE â€” tampilan customer</span>
+        <span>🏠  PREVIEW HOMEPAGE — tampilan customer</span>
         <span style={{ marginLeft: 'auto', fontWeight: 400, fontSize: 12, opacity: 0.75 }}>
           scroll untuk melihat seluruh halaman
         </span>
       </div>
 
-      {/* â”€â”€ Exact same structure as public HomePage â”€â”€ */}
+      {/* ── Exact same structure as public HomePage ── */}
       <main style={{ background: '#fff' }}>
         {/* Hero carousel */}
         <div className="container">
@@ -1101,7 +1101,7 @@ function HomepageFullPreview() {
               <DropZone
                 accept=".jpg,.jpeg,.png,.pdf,.ai,.cdr,image/jpeg,image/png,application/pdf"
                 onFiles={() => {}}
-                label="Drop your design here"
+                label="Letakkan design kamu di sini"
                 hint="JPG, PNG, PDF, AI, CDR"
               />
             </div>
@@ -1150,10 +1150,10 @@ function HomepageFullPreview() {
 }
 
 const TABS = [
-  { id: 'hero',        label: 'Landing Page Banner' },
-  { id: 'design',      label: 'Design Showcase' },
-  { id: 'banners',     label: 'Category Banners' },
-  { id: 'fullpreview', label: 'ðŸ  Preview Homepage' },
+  { id: 'hero',        label: 'Banner Halaman Utama' },
+  { id: 'design',      label: 'Showcase Design' },
+  { id: 'banners',     label: 'Banner Kategori' },
+  { id: 'fullpreview', label: '🏠  Pratinjau Homepage' },
 ];
 
 export default function HomepageSection() {
