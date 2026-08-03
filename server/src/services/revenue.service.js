@@ -1,4 +1,26 @@
 /**
+ * Ubah nilai tanggal dari DB menjadi kunci string YYYY-MM-DD.
+ *
+ * mysql2 mengembalikan kolom DATE/DATETIME sebagai objek Date, bukan string.
+ * Tanpa normalisasi ini, `pay_date`/`transaction_date` tidak akan pernah
+ * cocok dengan kunci iterasi tanggal (mis. "2026-07-26"), sehingga seluruh
+ * transaksi ter-drop dan semua total menjadi 0 di PDF rekap.
+ *
+ * @param {Date|string} value
+ * @returns {string} Kunci tanggal berformat YYYY-MM-DD
+ */
+function toDateKey(value) {
+  if (value instanceof Date) {
+    const y = value.getFullYear();
+    const m = String(value.getMonth() + 1).padStart(2, '0');
+    const d = String(value.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  const s = String(value);
+  return s.length > 10 ? s.slice(0, 10) : s;
+}
+
+/**
  * Hitung rekap pendapatan untuk rentang tanggal.
  *
  * @param {string} start - format YYYY-MM-DD
@@ -32,7 +54,7 @@ export async function getRecapRange(start, end) {
   // Group website rows by date
   const websiteByDate = {};
   for (const row of websiteRows) {
-    const d = row.pay_date;
+    const d = toDateKey(row.pay_date);
     if (!websiteByDate[d]) websiteByDate[d] = [];
     websiteByDate[d].push(row);
   }
@@ -40,7 +62,7 @@ export async function getRecapRange(start, end) {
   // Group manual rows by date
   const manualByDate = {};
   for (const row of manualRows) {
-    const d = row.transaction_date;
+    const d = toDateKey(row.transaction_date);
     if (!manualByDate[d]) manualByDate[d] = [];
     manualByDate[d].push(row);
   }
