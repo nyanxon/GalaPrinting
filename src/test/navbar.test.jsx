@@ -3,7 +3,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import * as fc from 'fast-check';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import { AuthContext } from '../components/context/AuthContext.jsx';
 import { CartContext } from '../components/context/CartContext.jsx';
 import Navbar from '../components/shared/Navbar.jsx';

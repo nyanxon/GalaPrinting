@@ -13,7 +13,7 @@
  *   - Role badge (passed as preNavSlot)
  */
 
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import StaffAvatarButton from '../staff/StaffAvatarButton.jsx';
 import logoImg from '../../assets/logo.png';
 

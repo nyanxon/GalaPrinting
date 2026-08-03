@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { formatCurrency } from '../../utils/format.js';
 import placeholderImg from '../../assets/placeholder.svg';
 
@@ -13,7 +13,7 @@ import placeholderImg from '../../assets/placeholder.svg';
  *   eager   {boolean} — when true, disables lazy loading (use for above-the-fold cards)
  *
  * Renders name, price, image, and a link to /products/:id.
- * Uses Link from react-router-dom for navigation.
+ * Uses Link from react-router for navigation.
  * Uses formatCurrency from src/utils/format.js for price display.
  * Image fades in on load to avoid flash of empty placeholder box.
  *

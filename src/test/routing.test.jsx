@@ -3,7 +3,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import * as fc from 'fast-check';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { MemoryRouter, Routes, Route } from 'react-router';
 import { AuthContext } from '../components/context/AuthContext.jsx';
 import { CartContext } from '../components/context/CartContext.jsx';
 import RoleGuard from '../components/guards/RoleGuard.jsx';

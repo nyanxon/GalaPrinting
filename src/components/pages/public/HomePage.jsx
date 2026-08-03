@@ -9,7 +9,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback, useContext, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import { showToast } from '../../../core/toastEmitter.js';

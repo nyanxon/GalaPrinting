@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react';
-import { useSearchParams, Link, useNavigate } from 'react-router-dom';
+import { useSearchParams, Link, useNavigate } from 'react-router';
 import { resetPassword } from '../../../services/auth.js';
 
 function ResetPasswordPage() {

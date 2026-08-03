@@ -5,7 +5,7 @@
  * Requirements: 2.2
  */
 
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 
 function NotFoundPage() {
   return (

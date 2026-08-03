@@ -8,7 +8,7 @@
  */
 
 import { useState, useEffect, useContext } from 'react';
-import { Navigate, Link, useLocation } from 'react-router-dom';
+import { Navigate, Link, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import ProfileForm from '../../profile/ProfileForm.jsx';

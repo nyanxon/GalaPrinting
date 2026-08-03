@@ -17,7 +17,7 @@
  */
 
 import { useState, useContext, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import { logout } from '../../../services/auth.js';
 import { createOfflineOrder, listAllOrders, STATUS_CONFIG } from '../../../services/orders.js';

@@ -7,7 +7,7 @@
  */
 
 import { useState, useContext, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import { api } from '../../../core/httpClient.js';
 import { showToast } from '../../../core/toastEmitter.js';

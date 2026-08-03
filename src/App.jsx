@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router';
 import { AuthProvider, AuthNavigationHandler } from './components/context/AuthContext.jsx';
 import { SocketProvider } from './components/context/SocketContext.jsx';
 import { CartProvider } from './components/context/CartContext.jsx';

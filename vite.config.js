@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => {
           assetFileNames: 'assets/[name]-[hash][extname]',
           manualChunks: {
             // Core React ecosystem — loaded on every page
-            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+            'vendor-react': ['react', 'react-dom', 'react-router'],
             // HTTP + realtime
             'vendor-network': ['axios', 'socket.io-client'],
             // i18n — loaded eagerly (needed before first paint for translations)

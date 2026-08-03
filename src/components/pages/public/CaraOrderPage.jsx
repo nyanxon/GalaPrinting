@@ -5,7 +5,7 @@
  * Requirements: 7.9, 13.4
  */
 
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import '../../../styles/css/pages/caraOrder.css';
 

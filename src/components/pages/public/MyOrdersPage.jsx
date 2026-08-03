@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useContext } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import PaymentModal from '../../modals/PaymentModal.jsx';
 import {

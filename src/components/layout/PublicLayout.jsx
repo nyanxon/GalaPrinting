@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router';
 import { lazy, Suspense } from 'react';
 import Navbar from '../shared/Navbar.jsx';
 import Footer from '../shared/Footer.jsx';

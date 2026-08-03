@@ -20,7 +20,7 @@
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { render } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import * as fc from 'fast-check';
 import ProductCard from '../../components/ui/ProductCard.jsx';
 

@@ -8,7 +8,7 @@
  */
 
 import { createContext, useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { getCurrentUser } from '../../services/auth.js';
 
 export const AuthContext = createContext(null);
