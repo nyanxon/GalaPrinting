@@ -84,7 +84,7 @@ describe('getRecapRange groups rows by YYYY-MM-DD key', () => {
           },
           {
             id: 'm2',
-            source_category: 'offline_store',
+            source_category: 'tiktok_shop',
             amount: '75000',
             notes: '',
             transaction_date: mysqlDate(2026, 7, 22),
@@ -106,7 +106,7 @@ describe('getRecapRange groups rows by YYYY-MM-DD key', () => {
     expect(days[0].date).toBe('2026-07-22');
     expect(days[0].manual_transactions).toHaveLength(2);
     expect(days[0].manual_by_category.shopee).toBe(150000);
-    expect(days[0].manual_by_category.offline_store).toBe(75000);
+    expect(days[0].manual_by_category.tiktok_shop).toBe(75000);
     expect(days[0].grand_total).toBe(225000);
     expect(days[1].date).toBe('2026-07-23');
     expect(days[1].manual_transactions).toHaveLength(1);

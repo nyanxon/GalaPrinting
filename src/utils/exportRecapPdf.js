@@ -3,7 +3,6 @@ import { autoTable } from 'jspdf-autotable';
 import { formatCurrency } from './format.js';
 
 const SOURCE_LABELS = {
-  offline_store: 'Toko Fisik',
   shopee:        'Shopee',
   tokopedia:     'Tokopedia',
   tiktok_shop:   'TikTok Shop',

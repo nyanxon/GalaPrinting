@@ -17,14 +17,12 @@ import '../../../../styles/css/pages/daily-revenue.css';
 /* ── Konstanta label & badge ───────────────────────────────────────────────── */
 
 const CATEGORY_LABELS = {
-  offline_store: 'Toko Fisik',
   shopee:        'Shopee',
   tokopedia:     'Tokopedia',
   tiktok_shop:   'TikTok Shop',
 };
 
 const CATEGORY_BADGE_CLASS = {
-  offline_store: 'rev-source-badge--offline',
   shopee:        'rev-source-badge--shopee',
   tokopedia:     'rev-source-badge--tokopedia',
   tiktok_shop:   'rev-source-badge--tiktok',
@@ -363,18 +361,6 @@ export default function DailyRevenueSection() {
           ) : (
             <span className="rev-kpi-card__value">
               {formatCurrency(manualByCategory.tiktok_shop ?? 0)}
-            </span>
-          )}
-        </div>
-
-        {/* Toko Fisik */}
-        <div className="rev-kpi-card">
-          <span className="rev-kpi-card__label">🏪 Toko Fisik</span>
-          {loading ? (
-            <div className="rev-daily-skeleton" />
-          ) : (
-            <span className="rev-kpi-card__value">
-              {formatCurrency(manualByCategory.offline_store ?? 0)}
             </span>
           )}
         </div>

@@ -12,7 +12,7 @@
 
 import * as svc from '../services/revenue.service.js';
 
-const VALID_CATEGORIES = ['offline_store', 'shopee', 'tokopedia', 'tiktok_shop'];
+const VALID_CATEGORIES = ['shopee', 'tokopedia', 'tiktok_shop'];
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 /**

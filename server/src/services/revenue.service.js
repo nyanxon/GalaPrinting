@@ -47,6 +47,7 @@ export async function getRecapRange(start, end) {
      FROM manual_revenue_transactions
      WHERE transaction_date BETWEEN ? AND ?
        AND deleted_at IS NULL
+       AND source_category != 'offline_store'
      ORDER BY transaction_date ASC, created_at ASC`,
     [start, end]
   );
@@ -76,7 +77,7 @@ export async function getRecapRange(start, end) {
     const mRows = manualByDate[current] ?? [];
 
     const website_total = wRows.reduce((s, r) => s + parseFloat(r.subtotal ?? 0), 0);
-    const manual_by_category = { offline_store: 0, shopee: 0, tokopedia: 0, tiktok_shop: 0 };
+    const manual_by_category = { shopee: 0, tokopedia: 0, tiktok_shop: 0 };
     for (const r of mRows) {
       if (r.source_category in manual_by_category) {
         manual_by_category[r.source_category] += parseFloat(r.amount ?? 0);
@@ -112,7 +113,7 @@ export async function getRecapRange(start, end) {
 import { query } from '../db/connection.js';
 import { randomUUID } from 'crypto';
 
-const SOURCE_CATEGORIES = ['offline_store', 'shopee', 'tokopedia', 'tiktok_shop'];
+const SOURCE_CATEGORIES = ['shopee', 'tokopedia', 'tiktok_shop'];
 
 /**
  * Hitung rekap pendapatan harian untuk satu tanggal.
@@ -121,7 +122,7 @@ const SOURCE_CATEGORIES = ['offline_store', 'shopee', 'tokopedia', 'tiktok_shop'
  * @returns {Promise<{
  *   date: string,
  *   website_total: number,
- *   manual_by_category: { offline_store: number, shopee: number, tokopedia: number, tiktok_shop: number },
+ *   manual_by_category: { shopee: number, tokopedia: number, tiktok_shop: number },
  *   grand_total: number,
  *   website_transactions: object[],
  *   manual_transactions: object[],
@@ -150,13 +151,13 @@ export async function getDailyRecap(date) {
      FROM manual_revenue_transactions
      WHERE transaction_date = ?
        AND deleted_at IS NULL
+       AND source_category != 'offline_store'
      ORDER BY created_at ASC`,
     [date]
   );
 
   // Aggregate per source category
   const manual_by_category = {
-    offline_store: 0,
     shopee: 0,
     tokopedia: 0,
     tiktok_shop: 0,
