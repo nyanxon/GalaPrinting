@@ -221,6 +221,11 @@
 .product-info-short {
   font-size: 14px;
   margin: 4px 0 0;
+  white-space: pre-line;
+}
+
+.product-panel-body {
+  white-space: pre-line;
 }
 
 /* Rating */

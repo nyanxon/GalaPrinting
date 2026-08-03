@@ -650,7 +650,7 @@ function CatalogProductPage() {
           {activeTab === 'rincian' && (
             <>
               <div className="section-title" data-panel-title>{product.name}</div>
-              <p className="muted" data-panel-body>
+              <p className="muted product-panel-body" data-panel-body>
                 {product.shortDescription || 'Silakan pilih opsi, tambahkan catatan, lalu unggah desain.'}
               </p>
             </>

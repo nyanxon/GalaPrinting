@@ -1,5 +1,5 @@
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { jsPDF } from 'jspdf';
+import { autoTable } from 'jspdf-autotable';
 import { formatCurrency } from './format.js';
 
 const SOURCE_LABELS = {
@@ -70,7 +70,8 @@ export function exportRecapPdf(days, start, end) {
       doc.text('Transaksi Website', 14, y);
       y += 1;
 
-      doc.autoTable({
+      let endY = y;
+      autoTable(doc, {
         startY: y,
         margin: { left: 14, right: 14 },
         head: [['No. Order', 'Tanggal Bayar', 'Status', 'Sumber', 'Nominal']],
@@ -84,9 +85,9 @@ export function exportRecapPdf(days, start, end) {
         theme: 'grid',
         styles: { fontSize: 8, cellPadding: 2 },
         headStyles: { fillColor: [75, 85, 99] },
-        didDrawPage: (data) => { y = data.cursor.y; },
+        didDrawPage: (data) => { if (data.cursor) endY = data.cursor.y; },
       });
-      y = doc.lastAutoTable.finalY + 5;
+      y = endY + 5;
     }
 
     // ── Manual transactions table ──
@@ -101,7 +102,8 @@ export function exportRecapPdf(days, start, end) {
       doc.text('Transaksi Manual', 14, y);
       y += 1;
 
-      doc.autoTable({
+      let endY = y;
+      autoTable(doc, {
         startY: y,
         margin: { left: 14, right: 14 },
         head: [['Tanggal', 'Sumber', 'Nominal', 'Catatan']],
@@ -114,9 +116,9 @@ export function exportRecapPdf(days, start, end) {
         theme: 'grid',
         styles: { fontSize: 8, cellPadding: 2 },
         headStyles: { fillColor: [75, 85, 99] },
-        didDrawPage: (data) => { y = data.cursor.y; },
+        didDrawPage: (data) => { if (data.cursor) endY = data.cursor.y; },
       });
-      y = doc.lastAutoTable.finalY + 8;
+      y = endY + 8;
     } else {
       y += 2;
     }
