@@ -9,7 +9,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 500px;
+  aspect-ratio: 16 / 7;
   text-align: center;
   margin-top: 15px;
   margin-bottom: 28px;
@@ -59,7 +59,6 @@
   justify-content: center;
   width: 100%;
   height: 100%;
-  min-height: 500px;
 }
 
 /* Carousel text color — data attribute on the section toggles dark/light */
@@ -148,7 +147,7 @@
   display: flex;
   width: 100%;
   height: 100%;
-  min-height: 260px;
+  min-height: 0;
   align-items: center;
   justify-content: center;
   text-decoration: none;
@@ -626,15 +625,10 @@
 
 /* ── Tablet (≤ 1023px) ───────────────────────────────────── */
 @media (max-width: 1023px) {
-  /* Hero: slightly shorter on tablet */
-  .home-hero,
-  .home-hero-content {
-    min-height: 220px;
-  }
-
-  /* Design showcase: 3 cols on tablet */
+  /* Design showcase stays 4-across on tablet so the row never wraps */
   .home-cat-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
   }
 }
 
@@ -662,11 +656,7 @@
 /* ── Mobile (≤ 600px) ────────────────────────────────────── */
 @media (max-width: 600px) {
 
-  /* ── Hero carousel ── */
-  .home-hero,
-  .home-hero-content {
-    min-height: 180px;
-  }
+  /* ── Hero carousel: height driven by aspect-ratio, no fixed heights ── */
 
   /* Always show arrows on touch — hover doesn't work on mobile */
   .home-hero-arrow {
@@ -689,20 +679,22 @@
     gap: 8px;
   }
 
-  /* ── Design showcase: 2 cols ── */
+  /* ── Design showcase: keep 4-across (never wraps to a new row) ── */
   .home-cat-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 8px;
   }
 
-  /* Slightly less tall on small screens */
   .home-cat-item {
-    aspect-ratio: 3 / 2;
+    aspect-ratio: 4 / 3;
   }
 
   .home-cat-item-label {
-    font-size: 11px;
-    padding: 6px 8px;
+    font-size: 10px;
+    padding: 4px 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   /* ── Custom order: stack ── */

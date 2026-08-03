@@ -214,7 +214,7 @@ function HeroCarousel({ slides }) {
             className={`home-hero-slide${i === current ? ' home-hero-slide--active' : ''}${loadedMap[s.id] ? ' home-hero-slide--ready' : ''}`}
             style={
               s.imageUrl
-                ? { backgroundImage: `url(${s.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+                ? { backgroundImage: `url(${s.imageUrl})`, backgroundSize: 'contain', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }
                 : undefined
             }
             aria-hidden={i !== current}
