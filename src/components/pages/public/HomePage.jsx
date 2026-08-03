@@ -141,6 +141,9 @@ function HeroCarousel({ slides }) {
   const [paused, setPaused]   = useState(false);
   // Track which slide images have finished loading
   const [loadedMap, setLoadedMap] = useState({});
+  // Natural width/height ratio of each slide image — used to size the
+  // hero box so the placeholder never peeks out on the left/right.
+  const [ratioMap, setRatioMap] = useState({});
   const timerRef = useRef(null);
 
   const total = slides.length;
@@ -153,7 +156,14 @@ function HeroCarousel({ slides }) {
         return;
       }
       const img = new Image();
-      img.onload  = () => setLoadedMap((prev) => ({ ...prev, [s.id]: true }));
+      img.onload  = () => {
+        const ratio =
+          img.naturalWidth && img.naturalHeight
+            ? img.naturalWidth / img.naturalHeight
+            : null;
+        if (ratio) setRatioMap((prev) => ({ ...prev, [s.id]: ratio }));
+        setLoadedMap((prev) => ({ ...prev, [s.id]: true }));
+      };
       img.onerror = () => setLoadedMap((prev) => ({ ...prev, [s.id]: true }));
       img.src = s.imageUrl;
     });
@@ -189,6 +199,9 @@ function HeroCarousel({ slides }) {
 
   const slide = slides[current];
   const bgImage = slide.imageUrl ? `url(${slide.imageUrl})` : undefined;
+  // Size the hero box to the current photo's real ratio so the placeholder
+  // background never shows on the sides of the image.
+  const slideRatio = slide.imageUrl ? ratioMap[slide.id] : null;
 
   const slideContent = (
     <div className="home-hero-inner">
@@ -203,6 +216,7 @@ function HeroCarousel({ slides }) {
       aria-label="Hero banner"
       aria-roledescription="carousel"
       data-has-image={bgImage ? 'true' : 'false'}
+      style={slideRatio ? { aspectRatio: String(slideRatio) } : undefined}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
