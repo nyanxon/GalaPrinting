@@ -509,6 +509,17 @@ function Navbar() {
               {user && <Link to="/my-orders" onClick={() => setMobileOpen(false)}>{t('nav.myOrders')}</Link>}
               {user && <Link to="/profile" onClick={() => setMobileOpen(false)}>{t('nav.myProfile')}</Link>}
               {user && <Link to="/cart" onClick={() => setMobileOpen(false)}>{t('nav.cart')} ({cartCount})</Link>}
+              {role === 'admin' && (
+                <Link to="/admin" onClick={() => setMobileOpen(false)}>⚙️ {t('nav.adminPage')}</Link>
+              )}
+              {role === 'owner' && (
+                <Link to="/owner" onClick={() => setMobileOpen(false)}>👑 {t('nav.ownerPage')}</Link>
+              )}
+              {isStaff && role !== 'admin' && role !== 'owner' && STAFF_DASHBOARD[role] && (
+                <Link to={STAFF_DASHBOARD[role].path} onClick={() => setMobileOpen(false)}>
+                  {STAFF_DASHBOARD[role].label.split(' ')[0]} {t('nav.dashboard')}
+                </Link>
+              )}
               {!user && <Link to="/register" onClick={() => setMobileOpen(false)}>{t('nav.register')}</Link>}
               {user && (
                 <button className="nav-mobile-logout" type="button" onClick={handleLogout}>
