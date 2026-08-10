@@ -5074,6 +5074,11 @@
   border-top: 1px dashed var(--border, #e5e7eb);
 }
 
+/* Baris harga produk per m²: [Total Luas] [Harga/m²] [Qty] [Subtotal] */
+.offline-price-row--4col {
+  grid-template-columns: 0.9fr 1.2fr 0.7fr 1fr;
+}
+
 .offline-price-cell {
   display: flex;
   flex-direction: column;

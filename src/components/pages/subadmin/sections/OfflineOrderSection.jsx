@@ -998,7 +998,22 @@ export default function OfflineOrderSection() {
                     />
                   </div>
 
-                  <div className="offline-price-row">
+                  <div className={`offline-price-row${isPerM2 ? ' offline-price-row--4col' : ''}`}>
+                    {isPerM2 && (
+                      <div className="offline-price-cell">
+                        <label className="offline-form-label">Total Luas (m²)</label>
+                        <input
+                          className="adm-input"
+                          type="number"
+                          min="0"
+                          step="any"
+                          placeholder="0"
+                          value={billedAreaM2(item.lengthCm, item.widthCm) > 0 ? billedAreaM2(item.lengthCm, item.widthCm) : ''}
+                          readOnly
+                          title="Dihitung dari panjang × lebar (setiap sisi < 100cm dibulatkan naik ke 1m)"
+                        />
+                      </div>
+                    )}
                     <div className="offline-price-cell">
                       <label className="offline-form-label">
                         {isPerM2 ? 'Harga per m² (Rp)' : 'Harga Satuan (Rp)'}
