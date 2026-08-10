@@ -31,9 +31,16 @@ async function uniqueSlug(base) {
 
 /**
  * List products with optional pagination and filters.
+ * @param {object} opts
+ * @param {number} [opts.page=1]
+ * @param {number} [opts.limit=10]
+ * @param {string} [opts.category]
+ * @param {string} [opts.search]
+ * @param {boolean|string} [opts.visible] - when truthy, only return products
+ *   visible on the public storefront (is_hidden_from_customer = 0).
  * @returns {Promise<{ items: object[], total: number, page: number, limit: number, totalPages: number }>}
  */
-export async function listProducts({ page = 1, limit = 10, category, search } = {}) {
+export async function listProducts({ page = 1, limit = 10, category, search, visible } = {}) {
   const pageNum  = Math.max(1, parseInt(page, 10) || 1);
   const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 10));
   const offset   = (pageNum - 1) * limitNum;
@@ -48,6 +55,9 @@ export async function listProducts({ page = 1, limit = 10, category, search } = 
   if (search) {
     conditions.push('p.name LIKE ?');
     params.push(`%${search}%`);
+  }
+  if (visible === true || visible === 1 || visible === 'true' || visible === '1') {
+    conditions.push('p.is_hidden_from_customer = 0');
   }
 
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -82,14 +92,20 @@ export async function listProducts({ page = 1, limit = 10, category, search } = 
 
 /**
  * Get a single product by UUID.
+ * @param {string} id
+ * @param {object} [opts]
+ * @param {boolean|string} [opts.visible] - when truthy, a product hidden from
+ *   the storefront (is_hidden_from_customer = 1) is treated as not found.
  * @returns {Promise<object|null>}
  */
-export async function getProductById(id) {
+export async function getProductById(id, { visible } = {}) {
+  const publicOnly = visible === true || visible === 1 || visible === 'true' || visible === '1';
   const [rows] = await query(
     `SELECT p.*, c.name AS category
      FROM products p
      LEFT JOIN categories c ON p.category_id = c.id
-     WHERE p.id = ?`,
+     WHERE p.id = ?
+     ${publicOnly ? 'AND p.is_hidden_from_customer = 0' : ''}`,
     [id]
   );
   return rows[0] || null;
@@ -111,7 +127,8 @@ export async function searchProducts(q, limit = 10) {
 
   const [rows] = await query(
     `SELECT p.id, p.name, p.price_customer, p.price_broker, c.name AS category,
-            p.colors, p.sizes, p.materials, p.variant_prices
+            p.colors, p.sizes, p.materials, p.variant_prices,
+            p.size_type, p.is_hidden_from_customer
      FROM products p
      LEFT JOIN categories c ON p.category_id = c.id
      WHERE p.name LIKE ?
@@ -135,7 +152,8 @@ export async function getProductsByIds(ids) {
   const placeholders = clean.map(() => '?').join(', ');
   const [rows] = await query(
     `SELECT p.id, p.name, p.price_customer, p.price_broker, p.category_id,
-            p.colors, p.sizes, p.materials, p.variant_prices
+            p.colors, p.sizes, p.materials, p.variant_prices,
+            p.size_type, p.is_hidden_from_customer
      FROM products p
      WHERE p.id IN (${placeholders})`,
     clean
@@ -147,9 +165,12 @@ export async function getProductsByIds(ids) {
  * Create a new product.
  * @returns {Promise<object>} created product row
  */
-export async function createProduct({ name, categoryId, price, priceCustomer, priceBroker, shortDescription, requiresDesign, colors, sizes, materials, imagePath, variantPrices }) {
+export async function createProduct({ name, categoryId, price, priceCustomer, priceBroker, shortDescription, requiresDesign, colors, sizes, materials, imagePath, variantPrices, sizeType, isHiddenFromCustomer }) {
   const id   = randomUUID();
   const slug = await uniqueSlug(name);
+
+  // Normalize sizeType — default to 'fixed' for legacy products
+  const normalizedSizeType = sizeType === 'per_m2' ? 'per_m2' : 'fixed';
 
   // Normalize imagePath: accept Array, JSON string, or plain URL string.
   // Always persist as a JSON array string so multiple images are supported.
@@ -169,8 +190,8 @@ export async function createProduct({ name, categoryId, price, priceCustomer, pr
 
   await query(
     `INSERT INTO products
-       (id, category_id, name, slug, price_customer, price_broker, short_description, requires_design, colors, sizes, materials, image_path, variant_prices)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (id, category_id, name, slug, price_customer, price_broker, short_description, requires_design, colors, sizes, materials, image_path, variant_prices, size_type, is_hidden_from_customer)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       categoryId || null,
@@ -185,6 +206,8 @@ export async function createProduct({ name, categoryId, price, priceCustomer, pr
       materials ? JSON.stringify(materials) : null,
       normalizedImagePath,
       variantPrices != null ? JSON.stringify(variantPrices) : null,
+      normalizedSizeType,
+      isHiddenFromCustomer ? 1 : 0,
     ]
   );
 
@@ -199,7 +222,7 @@ export async function updateProduct(id, data) {
   const fields = [];
   const params = [];
 
-  const allowed    = ['name', 'category_id', 'price_customer', 'price_broker', 'short_description', 'requires_design', 'image_path'];
+  const allowed    = ['name', 'category_id', 'price_customer', 'price_broker', 'short_description', 'requires_design', 'image_path', 'size_type', 'is_hidden_from_customer'];
   const jsonFields = ['colors', 'sizes', 'materials', 'variant_prices'];
 
   for (const [key, val] of Object.entries(data)) {
@@ -212,12 +235,17 @@ export async function updateProduct(id, data) {
               : key === 'priceCustomer'    ? 'price_customer'
               : key === 'priceBroker'      ? 'price_broker'
               : key === 'variantPrices'    ? 'variant_prices'
+              : key === 'sizeType'         ? 'size_type'
+              : key === 'isHiddenFromCustomer' ? 'is_hidden_from_customer'
               : key; // already snake_case (e.g. category_id sent by controller)
     if (allowed.includes(col)) {
       fields.push(`${col} = ?`);
-      if (col === 'requires_design') {
+      if (col === 'requires_design' || col === 'is_hidden_from_customer') {
         // Coerce boolean to 0/1 for TINYINT column
         params.push(val ? 1 : 0);
+      } else if (col === 'size_type') {
+        // Only accept the two known ENUM values
+        params.push(val === 'per_m2' ? 'per_m2' : 'fixed');
       } else if (col === 'image_path') {
         // Normalize: accept Array, JSON string, or plain string.
         // Always persist as a JSON array string so multiple images are preserved.

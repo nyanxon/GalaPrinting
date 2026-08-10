@@ -243,6 +243,36 @@ export async function createOfflineOrder(req, res, next) {
           err.status = 422;
           throw err;
         }
+        const color = item.color ?? item.warna ?? null;
+
+        // Produk per m²: harga = luas (min. 1 m²) × harga/m², dimensi wajib.
+        if (prod.size_type === 'per_m2') {
+          const lengthCm = item.lengthCm ?? item.length_cm ?? item.panjang ?? null;
+          const widthCm  = item.widthCm  ?? item.width_cm  ?? item.lebar  ?? null;
+          const l = Number(lengthCm);
+          const w = Number(widthCm);
+          if (!(l > 0) || !(w > 0)) {
+            const err = new Error(`Panjang dan lebar wajib diisi untuk produk per m²: ${item.name || prod.name}`);
+            err.status = 422;
+            throw err;
+          }
+          const base = Number(type === 'broker' ? prod.price_broker : prod.price_customer) || 0;
+          const billedArea = Math.max((l / 100) * (w / 100), 1);
+          const linePrice = Math.round(billedArea * base);
+          return {
+            productId: pid,
+            name: item.name || prod.name,
+            price: linePrice,
+            quantity,
+            notes,
+            color,
+            size: `${l} × ${w} cm`,
+            material: null,
+            lengthCm: l,
+            widthCm: w,
+          };
+        }
+
         const unitPrice = resolveOfflineUnitPrice(
           prod,
           type,
@@ -255,9 +285,11 @@ export async function createOfflineOrder(req, res, next) {
           price: unitPrice,
           quantity,
           notes,
-          color:    item.color    ?? item.warna    ?? null,
+          color,
           size:     item.size     ?? item.ukuran   ?? null,
           material: item.material ?? item.bahan    ?? null,
+          lengthCm: null,
+          widthCm:  null,
         };
       }
 
@@ -271,6 +303,8 @@ export async function createOfflineOrder(req, res, next) {
         color:    item.color    ?? item.warna    ?? null,
         size:     item.size     ?? item.ukuran   ?? null,
         material: item.material ?? item.bahan    ?? null,
+        lengthCm: null,
+        widthCm:  null,
       };
     });
 

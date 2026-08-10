@@ -383,7 +383,7 @@ function HomePage() {
     async function load() {
       // Products + categories
       try {
-        const [prods, cats] = await Promise.all([listProducts(), listCategories()]);
+        const [prods, cats] = await Promise.all([listProducts({ visible: true }), listCategories()]);
         setProducts(prods);
         setCategories(Array.isArray(cats) ? cats : []);
       } catch (err) {

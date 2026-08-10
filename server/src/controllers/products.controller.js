@@ -33,8 +33,8 @@ export async function uploadProductImage(req, res, next) {
 
 export async function listProducts(req, res, next) {
   try {
-    const { page, limit, category, search } = req.query;
-    const result = await svc.listProducts({ page, limit, category, search });
+    const { page, limit, category, search, visible } = req.query;
+    const result = await svc.listProducts({ page, limit, category, search, visible });
     return res.json({ ok: true, ...result });
   } catch (err) {
     next(err);
@@ -43,7 +43,7 @@ export async function listProducts(req, res, next) {
 
 export async function getProduct(req, res, next) {
   try {
-    const product = await svc.getProductById(req.params.id);
+    const product = await svc.getProductById(req.params.id, { visible: req.query.visible });
     if (!product) {
       return res.status(404).json({ ok: false, message: 'Produk tidak ditemukan.' });
     }
@@ -80,6 +80,8 @@ export async function createProduct(req, res, next) {
       materials:        body.materials,
       imagePath:        body.image || body.imagePath || null,
       variantPrices:    body.variantPrices ?? null,
+      sizeType:         body.sizeType ?? body.size_type ?? 'fixed',
+      isHiddenFromCustomer: body.isHiddenFromCustomer ?? body.is_hidden_from_customer ?? false,
     });
     return res.status(201).json({ ok: true, data: product });
   } catch (err) {

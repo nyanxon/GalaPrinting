@@ -91,7 +91,7 @@ function CatalogProductPage() {
   useEffect(() => {
     async function load() {
       try {
-        const raw = await getProductById(id);
+        const raw = await getProductById(id, { visible: true });
         if (!raw) { setNotFound(true); return; }
 
         // Normalize backend snake_case fields and parse JSON array fields

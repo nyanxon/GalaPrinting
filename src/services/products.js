@@ -180,6 +180,8 @@ function normalizeProduct(raw) {
     })(),
     shortDescription: raw.shortDescription || raw.short_description || '',
     requiresDesign:   raw.requiresDesign   ?? raw.requires_design   ?? false,
+    sizeType:         raw.sizeType         ?? raw.size_type         ?? 'fixed',
+    isHiddenFromCustomer: Boolean(raw.isHiddenFromCustomer ?? raw.is_hidden_from_customer ?? false),
     // Harga Customer/Broker — raw.price_customer adalah sumber utama (kolom DB).
     // `price` dipertahankan sebagai alias harga customer agar public site
     // (ProductsPage, CartPage, resolveVariantPrice) tetap berfungsi.
@@ -258,13 +260,24 @@ export function resolveVariantPrice(product, color, size, material) {
 // Public API — delegates to backend or localStorage based on USE_BACKEND flag
 // ---------------------------------------------------------------------------
 
-export async function listProducts() {
+/**
+ * List all products (unpaginated).
+ * @param {{ visible?: boolean }} [opts] - when `visible` is true, only
+ *   products that are not hidden from the customer storefront are returned
+ *   (filter diterapkan di backend: WHERE is_hidden_from_customer = 0).
+ * @returns {Promise<object[]>}
+ */
+export async function listProducts(opts = {}) {
   if (USE_BACKEND) {
-    const res = await api.get("/api/products");
+    const params = {};
+    if (opts.visible) params.visible = 'true';
+    const res = await api.get("/api/products", { params });
     const items = res.data.items ?? [];
     return items.map(normalizeProduct);
   }
-  return listProductsFromLocalStorage();
+  let items = listProductsFromLocalStorage();
+  if (opts.visible) items = items.filter((p) => !p.isHiddenFromCustomer);
+  return items;
 }
 
 /**
@@ -311,13 +324,24 @@ export async function searchProducts(q) {
       sizes: p.sizes ?? [],
       materials: p.materials ?? [],
       variant_prices: p.variant_prices ?? null,
+      size_type: p.size_type ?? p.sizeType ?? 'fixed',
     }));
 }
 
-export async function getProductById(productId) {
+/**
+ * Get a single product by id.
+ * @param {string} productId
+ * @param {{ visible?: boolean }} [opts] - when `visible` is true, a product
+ *   hidden from the customer storefront is treated as not found (backend:
+ *   AND is_hidden_from_customer = 0).
+ * @returns {Promise<object|null>}
+ */
+export async function getProductById(productId, opts = {}) {
   if (USE_BACKEND) {
     try {
-      const res = await api.get(`/api/products/${productId}`);
+      const params = {};
+      if (opts.visible) params.visible = 'true';
+      const res = await api.get(`/api/products/${productId}`, { params });
       return normalizeProduct(res.data.data ?? null);
     } catch (err) {
       if (err.response?.status === 404) return null;
@@ -325,7 +349,9 @@ export async function getProductById(productId) {
     }
   }
   const products = listProductsFromLocalStorage();
-  return products.find((p) => p.id === productId) ?? null;
+  const product = products.find((p) => p.id === productId) ?? null;
+  if (opts.visible && product?.isHiddenFromCustomer) return null;
+  return product;
 }
 
 export async function listCategories() {

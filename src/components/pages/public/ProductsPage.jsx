@@ -35,7 +35,7 @@ function ProductsPage() {
 
   useEffect(() => {
     async function load() {
-      try { setProducts(await listProducts()); }
+      try { setProducts(await listProducts({ visible: true })); }
       catch (err) { console.error('Failed to load products:', err); }
       try { setCategories(await listCategories()); }
       catch (err) { console.error('Failed to load categories:', err); }

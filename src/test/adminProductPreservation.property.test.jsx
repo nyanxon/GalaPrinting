@@ -255,8 +255,8 @@ describe('Preservation 3.4 -- Form displays Name, Category, Price, Description, 
     // Colors field
     expect(screen.getByLabelText(/Warna/i)).toBeTruthy();
 
-    // Sizes field
-    expect(screen.getByLabelText(/Ukuran/i)).toBeTruthy();
+    // Sizes field (input only — "Tipe Ukuran Produk" select shares the word "Ukuran")
+    expect(screen.getByLabelText(/Ukuran/i, { selector: 'input' })).toBeTruthy();
 
     // Materials field
     expect(screen.getByLabelText(/Bahan/i)).toBeTruthy();

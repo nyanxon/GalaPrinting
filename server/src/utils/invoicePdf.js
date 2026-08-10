@@ -182,7 +182,9 @@ export async function generateInvoicePdf(invoice) {
 
       items.forEach((item, idx) => {
         const rowBg = idx % 2 === 0 ? '#ffffff' : '#faf8f5';
-        const rowH = 22;
+        // Item produk per m² menampilkan dimensi (P × L cm) di baris kedua.
+        const hasDim = Boolean(item.size && item.length_cm);
+        const rowH = hasDim ? 34 : 22;
 
         doc.fillColor(rowBg).rect(margin, currentY, contentWidth, rowH).fill();
 
@@ -203,6 +205,14 @@ export async function generateInvoicePdf(invoice) {
           .text(String(item.quantity || 1), colX.qty, currentY + 7)
           .text(formatIDR(item.price), colX.price, currentY + 7, { width: colX.sub - colX.price - 5 })
           .text(formatIDR(subTotal), colX.sub, currentY + 7, { width: margin + contentWidth - colX.sub - 5 });
+
+        if (hasDim) {
+          doc
+            .fillColor(GRAY_HEX)
+            .font('Helvetica')
+            .fontSize(7.5)
+            .text(escStr(item.size), colX.item, currentY + 19, { width: colX.qty - colX.item - 10, ellipsis: true });
+        }
 
         currentY += rowH;
       });

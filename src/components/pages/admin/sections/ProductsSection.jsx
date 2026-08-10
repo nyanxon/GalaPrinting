@@ -172,6 +172,8 @@ function ProductModal({ product, categories, onClose, onSaved }) {
     sizes: parseArrayField(product?.sizes).join(', '),
     materials: parseArrayField(product?.materials).join(', '),
     requiresDesign: product?.requiresDesign ?? product?.requires_design ?? false,
+    sizeType: product?.sizeType ?? product?.size_type ?? 'fixed',
+    isHiddenFromCustomer: Boolean(product?.isHiddenFromCustomer ?? product?.is_hidden_from_customer ?? false),
   });
   const [variantPrices, setVariantPrices] = useState(
     parseVariantPrices(product?.variantPrices ?? product?.variant_prices ?? null)
@@ -193,6 +195,9 @@ function ProductModal({ product, categories, onClose, onSaved }) {
 
   const currentSizes     = splitField(formData.sizes);
   const currentMaterials = splitField(formData.materials);
+
+  // Per-M2 products use panjang × lebar input at order time — size table is disabled.
+  const isPerM2 = formData.sizeType === 'per_m2';
 
   // Close on Escape is intentionally disabled — use the × button to close.
   // (The modal has an explicit close button so we don't need keyboard dismiss.)
@@ -344,12 +349,15 @@ function ProductModal({ product, categories, onClose, onSaved }) {
       priceBroker: Number(formData.priceBroker || 0),
       shortDescription: formData.shortDescription.trim(),
       colors: split(formData.colors),
-      sizes: split(formData.sizes),
-      materials: split(formData.materials),
+      // Per-M2: size table tidak dipakai — kirim kosong agar DB tidak menyimpan data ukuran.
+      sizes: isPerM2 ? [] : split(formData.sizes),
+      materials: isPerM2 ? [] : split(formData.materials),
       requiresDesign: formData.requiresDesign,
       image: JSON.stringify(doneImages.map((i) => i.url)),
       // Only save non-empty variant prices
-      variantPrices: Object.keys(variantPrices).length > 0 ? variantPrices : null,
+      variantPrices: isPerM2 || Object.keys(variantPrices).length === 0 ? null : variantPrices,
+      sizeType: formData.sizeType === 'per_m2' ? 'per_m2' : 'fixed',
+      isHiddenFromCustomer: formData.isHiddenFromCustomer,
     };
 
     const { ok, errors } = validateProduct(data);
@@ -460,6 +468,19 @@ function ProductModal({ product, categories, onClose, onSaved }) {
             </div>
 
             <div className="adm-field">
+              <label className="adm-label" htmlFor="pf-size-type">Tipe Ukuran Produk *</label>
+              <select className="adm-input" id="pf-size-type" name="sizeType" value={formData.sizeType} onChange={handleChange}>
+                <option value="fixed">Fix Size (ukuran sudah ditentukan)</option>
+                <option value="per_m2">Per M2 (panjang × lebar saat order)</option>
+              </select>
+              <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '6px' }}>
+                {isPerM2
+                  ? '💡 Produk dihitung per m² — customer/kasir memasukkan panjang × lebar saat order, tabel ukuran tidak dipakai.'
+                  : '💡 Produk memakai tabel ukuran (fix size) seperti sekarang — isi daftar ukuran & bahan di bawah.'}
+              </p>
+            </div>
+
+            <div className="adm-field">
               <label className="adm-label" htmlFor="pf-colors">
                 Warna <span className="adm-hint">(pisahkan koma — tidak mempengaruhi harga)</span>
               </label>
@@ -470,18 +491,18 @@ function ProductModal({ product, categories, onClose, onSaved }) {
               <label className="adm-label" htmlFor="pf-sizes">
                 Ukuran <span className="adm-hint">(pisahkan koma — mempengaruhi harga)</span>
               </label>
-              <input className="adm-input" id="pf-sizes" name="sizes" value={formData.sizes} onChange={handleChange} placeholder="A4, A5, Custom" />
+              <input className="adm-input" id="pf-sizes" name="sizes" value={formData.sizes} onChange={handleChange} disabled={isPerM2} placeholder={isPerM2 ? 'Tidak dipakai untuk produk per m²' : 'A4, A5, Custom'} style={isPerM2 ? { opacity: 0.5, background: '#f3f4f6', cursor: 'not-allowed' } : undefined} />
             </div>
 
             <div className="adm-field">
               <label className="adm-label" htmlFor="pf-mats">
                 Bahan <span className="adm-hint">(pisahkan koma — mempengaruhi harga)</span>
               </label>
-              <input className="adm-input" id="pf-mats" name="materials" value={formData.materials} onChange={handleChange} placeholder="Vinyl, Art Paper" />
+              <input className="adm-input" id="pf-mats" name="materials" value={formData.materials} onChange={handleChange} disabled={isPerM2} placeholder={isPerM2 ? 'Tidak dipakai untuk produk per m²' : 'Vinyl, Art Paper'} style={isPerM2 ? { opacity: 0.5, background: '#f3f4f6', cursor: 'not-allowed' } : undefined} />
             </div>
 
             {/* ── Variant Price Grid ── */}
-            {(currentSizes.length > 0 || currentMaterials.length > 0) && (
+            {!isPerM2 && (currentSizes.length > 0 || currentMaterials.length > 0) && (
               <div className="adm-field">
                 <label className="adm-label">
                   Harga per Varian
@@ -668,6 +689,18 @@ function ProductModal({ product, categories, onClose, onSaved }) {
               </label>
             </div>
 
+            <div className="adm-field adm-field--check">
+              <label className="adm-label">
+                <input type="checkbox" name="isHiddenFromCustomer" checked={formData.isHiddenFromCustomer} onChange={handleChange} />
+                {' '}Sembunyikan produk ini dari customer (hanya untuk data internal/kasir)
+              </label>
+              {formData.isHiddenFromCustomer && (
+                <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '6px' }}>
+                  Produk tidak muncul di homepage &amp; halaman produk customer, tapi tetap tampil &amp; bisa dipilih di kasir/admin.
+                </p>
+              )}
+            </div>
+
             {formError && (
               <div className="adm-form-alert" role="alert">{formError}</div>
             )}
@@ -819,7 +852,15 @@ export default function ProductsSection() {
               ) : (
                 result.items.map((p) => (
                   <tr key={p.id}>
-                    <td>{p.name}</td>
+                    <td>
+                      {p.name}
+                      {p.sizeType === 'per_m2' && (
+                        <span style={{ marginLeft: 6, fontSize: 11, padding: '2px 6px', borderRadius: 4, background: '#ede9fe', color: '#6d28d9', fontWeight: 600, whiteSpace: 'nowrap' }}>Per M²</span>
+                      )}
+                      {p.isHiddenFromCustomer && (
+                        <span style={{ marginLeft: 6, fontSize: 11, padding: '2px 6px', borderRadius: 4, background: '#fee2e2', color: '#b91c1c', fontWeight: 600, whiteSpace: 'nowrap' }}>Tersembunyi</span>
+                      )}
+                    </td>
                     <td>{p.category || '—'}</td>
                     <td>{formatCurrency(p.priceCustomer ?? p.price)}</td>
                     <td>{formatCurrency(p.priceBroker ?? p.priceCustomer ?? p.price)}</td>
