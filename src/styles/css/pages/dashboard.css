@@ -5068,16 +5068,11 @@
 
 .offline-price-row {
   display: grid;
-  grid-template-columns: 1.2fr 0.7fr 1fr;
+  grid-template-columns: 1.4fr 0.9fr 0.6fr 1fr;
   gap: 10px;
-  padding-top: 12px;
-  border-top: 1px dashed var(--border, #e5e7eb);
 }
 
-/* Baris harga produk per m²: [Total Luas] [Harga/m²] [Qty] [Subtotal] */
-.offline-price-row--4col {
-  grid-template-columns: 0.9fr 1.2fr 0.7fr 1fr;
-}
+/* Baris harga: [Nama Produk] [Harga] [Qty] [Subtotal] */
 
 .offline-price-cell {
   display: flex;
@@ -5245,14 +5240,6 @@
   color: #6b7280;
 }
 
-.offline-field-hint {
-  display: block;
-  margin-top: 5px;
-  font-size: 12px;
-  color: #166534;
-  font-weight: 600;
-}
-
 /* Keterangan per item — field opsional, tampilan sekunder */
 .offline-item-notes {
   min-height: 56px;
@@ -5293,6 +5280,35 @@
   cursor: not-allowed;
 }
 
+/* Baris dimensi produk per m²: [Panjang] [×] [Lebar] [Luas] */
+.offline-item-attrs--dims {
+  grid-template-columns: 1fr 0.2fr 1fr 1.2fr;
+  align-items: end;
+}
+
+.offline-item-dims-x {
+  font-size: 18px;
+  font-weight: 700;
+  color: #9ca3af;
+  text-align: center;
+  padding-bottom: 10px;
+  user-select: none;
+}
+
+.offline-item-luas-value {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 700;
+  min-height: 39px;
+  padding: 9px 12px;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
 @media (max-width: 760px) {
   .offline-item-attrs {
     grid-template-columns: 1fr;
@@ -5300,6 +5316,10 @@
 
   .offline-price-row {
     grid-template-columns: 1fr;
+  }
+
+  .offline-item-dims-x {
+    display: none;
   }
 }
 

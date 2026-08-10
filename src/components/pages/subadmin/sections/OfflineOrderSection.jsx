@@ -231,8 +231,6 @@ function ProductAutocomplete({ item, customerType, error, onSelect, onClear }) {
     onClear();
   }
 
-  const activePrice = resolveUnitPrice(item, customerType);
-
   return (
     <div className="offline-autocomplete" ref={wrapRef}>
       {item.productId ? (
@@ -294,13 +292,6 @@ function ProductAutocomplete({ item, customerType, error, onSelect, onClear }) {
             );
           })}
         </div>
-      )}
-      {item.productId && (
-        <span className="offline-field-hint">
-          {item.sizeType === 'per_m2'
-            ? `Harga ${customerType === 'broker' ? 'broker' : 'customer'} auto-fill: ${formatCurrency(activePrice)} / m² — masukkan panjang × lebar`
-            : `Harga ${customerType === 'broker' ? 'broker' : 'customer'} auto-fill: ${formatCurrency(activePrice)}`}
-        </span>
       )}
     </div>
   );
@@ -444,11 +435,6 @@ function SuccessCard({ order, onReset }) {
           >
             {emailSending ? 'Mengirim…' : '📧 Kirim Invoice'}
           </button>
-        )}
-        {invoiceSent && (
-          <span style={{ fontSize: '12px', color: '#16a34a', fontWeight: 600, alignSelf: 'center' }}>
-            ✅ Invoice terkirim
-          </span>
         )}
       </div>
 
@@ -789,105 +775,122 @@ export default function OfflineOrderSection() {
                 </div>
 
                 <div className="offline-item-card-body">
-                  <div className="offline-item-field">
-                    <label className="offline-form-label">
-                      Nama Produk / Layanan <span className="offline-required">*</span>
-                    </label>
-                    <ProductAutocomplete
-                      item={item}
-                      customerType={customerType}
-                      error={nameErr}
-                      onSelect={(patch) => handleSelectProduct(item.id, patch)}
-                      onClear={() => handleClearProduct(item.id)}
-                    />
-                    {nameErr && <span className="offline-field-error">{nameErr}</span>}
+                  <div className="offline-price-row">
+                    <div className="offline-price-cell offline-price-cell--name">
+                      <label className="offline-form-label">
+                        Nama Produk / Layanan <span className="offline-required">*</span>
+                      </label>
+                      <ProductAutocomplete
+                        item={item}
+                        customerType={customerType}
+                        error={nameErr}
+                        onSelect={(patch) => handleSelectProduct(item.id, patch)}
+                        onClear={() => handleClearProduct(item.id)}
+                      />
+                      {nameErr && <span className="offline-field-error">{nameErr}</span>}
+                    </div>
+                    <div className="offline-price-cell">
+                      <label className="offline-form-label">
+                        {isPerM2 ? 'Harga Per m² (Rp)' : 'Harga Satuan (Rp)'}
+                      </label>
+                      {item.productId ? (
+                        <input
+                          className={`adm-input${priceErr ? ' adm-input--error' : ''}`}
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={item.price}
+                          readOnly
+                          title={isPerM2
+                            ? 'Harga per m² dari katalog — total = luas × harga/m²'
+                            : 'Harga otomatis dari katalog sesuai tipe pembeli'}
+                        />
+                      ) : (
+                        <input
+                          className={`adm-input${priceErr ? ' adm-input--error' : ''}`}
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={item.price}
+                          onChange={(e) => updateItem(item.id, 'price', e.target.value)}
+                        />
+                      )}
+                      {priceErr && <span className="offline-field-error">{priceErr}</span>}
+                    </div>
+                    <div className="offline-price-cell">
+                      <label className="offline-form-label">Qty</label>
+                      <input
+                        className="adm-input"
+                        type="number"
+                        min="1"
+                        value={item.quantity}
+                        onChange={(e) => updateItem(item.id, 'quantity', e.target.value)}
+                      />
+                    </div>
+                    <div className="offline-price-cell offline-price-cell--sub">
+                      <label className="offline-form-label">Subtotal</label>
+                      <span className="offline-card-subtotal">{formatCurrency(itemSub)}</span>
+                    </div>
                   </div>
 
                   {isPerM2 ? (
-                    <>
-                      <div className="offline-item-attrs">
-                        <div className="offline-item-attr">
-                          <label className="offline-item-attr-label">Warna</label>
-                          {!item.productId ? (
-                            <input
-                              className="adm-input offline-item-attr-input"
-                              type="text"
-                              value="Produk belum dipilih"
-                              disabled
-                              title="Pilih produk terlebih dahulu"
-                            />
-                          ) : item.colors.length > 0 ? (
-                            <select
-                              className="adm-input offline-item-attr-input"
-                              value={item.color}
-                              onChange={(e) => handleAttrChange(item.id, 'color', e.target.value)}
-                            >
-                              <option value="">— pilih —</option>
-                              {item.colors.map((c) => (
-                                <option key={c} value={c}>{c}</option>
-                              ))}
-                            </select>
-                          ) : (
-                            <input
-                              className="adm-input offline-item-attr-input"
-                              type="text"
-                              placeholder="Warna (opsional)…"
-                              value={item.color}
-                              onChange={(e) => handleAttrChange(item.id, 'color', e.target.value)}
-                            />
-                          )}
-                        </div>
-                        <div className="offline-item-attr">
-                          <label className="offline-item-attr-label">Panjang (cm)</label>
-                          {!item.productId ? (
-                            <input
-                              className="adm-input offline-item-attr-input"
-                              type="text"
-                              value="Produk belum dipilih"
-                              disabled
-                              title="Pilih produk terlebih dahulu"
-                            />
-                          ) : (
-                            <input
-                              className={`adm-input offline-item-attr-input${lenErr ? ' adm-input--error' : ''}`}
-                              type="number"
-                              min="0"
-                              step="any"
-                              placeholder="mis. 120"
-                              value={item.lengthCm}
-                              onChange={(e) => handleDimensionChange(item.id, 'lengthCm', e.target.value)}
-                            />
-                          )}
-                          {lenErr && <span className="offline-field-error">{lenErr}</span>}
-                        </div>
-                        <div className="offline-item-attr">
-                          <label className="offline-item-attr-label">Lebar (cm)</label>
-                          {!item.productId ? (
-                            <input
-                              className="adm-input offline-item-attr-input"
-                              type="text"
-                              value="Produk belum dipilih"
-                              disabled
-                              title="Pilih produk terlebih dahulu"
-                            />
-                          ) : (
-                            <input
-                              className={`adm-input offline-item-attr-input${widErr ? ' adm-input--error' : ''}`}
-                              type="number"
-                              min="0"
-                              step="any"
-                              placeholder="mis. 80"
-                              value={item.widthCm}
-                              onChange={(e) => handleDimensionChange(item.id, 'widthCm', e.target.value)}
-                            />
-                          )}
-                          {widErr && <span className="offline-field-error">{widErr}</span>}
+                    <div className="offline-item-attrs offline-item-attrs--dims">
+                      <div className="offline-item-attr">
+                        <label className="offline-item-attr-label">Panjang (cm)</label>
+                        {!item.productId ? (
+                          <input
+                            className="adm-input offline-item-attr-input"
+                            type="text"
+                            value="Produk belum dipilih"
+                            disabled
+                            title="Pilih produk terlebih dahulu"
+                          />
+                        ) : (
+                          <input
+                            className={`adm-input offline-item-attr-input${lenErr ? ' adm-input--error' : ''}`}
+                            type="number"
+                            min="0"
+                            step="any"
+                            placeholder="mis. 120"
+                            value={item.lengthCm}
+                            onChange={(e) => handleDimensionChange(item.id, 'lengthCm', e.target.value)}
+                          />
+                        )}
+                        {lenErr && <span className="offline-field-error">{lenErr}</span>}
+                      </div>
+                      <div className="offline-item-dims-x" aria-hidden="true">×</div>
+                      <div className="offline-item-attr">
+                        <label className="offline-item-attr-label">Lebar (cm)</label>
+                        {!item.productId ? (
+                          <input
+                            className="adm-input offline-item-attr-input"
+                            type="text"
+                            value="Produk belum dipilih"
+                            disabled
+                            title="Pilih produk terlebih dahulu"
+                          />
+                        ) : (
+                          <input
+                            className={`adm-input offline-item-attr-input${widErr ? ' adm-input--error' : ''}`}
+                            type="number"
+                            min="0"
+                            step="any"
+                            placeholder="mis. 80"
+                            value={item.widthCm}
+                            onChange={(e) => handleDimensionChange(item.id, 'widthCm', e.target.value)}
+                          />
+                        )}
+                        {widErr && <span className="offline-field-error">{widErr}</span>}
+                      </div>
+                      <div className="offline-item-attr offline-item-attr--luas">
+                        <label className="offline-item-attr-label">Luas (m²)</label>
+                        <div className="offline-item-luas-value">
+                          {billedAreaM2(item.lengthCm, item.widthCm) > 0
+                            ? billedAreaM2(item.lengthCm, item.widthCm)
+                            : '—'}
                         </div>
                       </div>
-                      <div className="offline-field-hint" style={{ marginTop: '6px' }}>
-                        Harga = luas × harga/m². Luas (m²) = (panjang × lebar) / 10000 — desimal, tanpa pembulatan (mis. 200 cm × 20 cm = 0,4 m²).
-                      </div>
-                    </>
+                    </div>
                   ) : (
                     <div className="offline-item-attrs">
                       <div className="offline-item-attr">
@@ -999,72 +1002,6 @@ export default function OfflineOrderSection() {
                     />
                   </div>
 
-                  <div className={`offline-price-row${isPerM2 ? ' offline-price-row--4col' : ''}`}>
-                    {isPerM2 && (
-                      <div className="offline-price-cell">
-                        <label className="offline-form-label">Total Luas (m²)</label>
-                        <input
-                          className="adm-input"
-                          type="number"
-                          min="0"
-                          step="any"
-                          placeholder="0"
-                          value={billedAreaM2(item.lengthCm, item.widthCm) > 0 ? billedAreaM2(item.lengthCm, item.widthCm) : ''}
-                          readOnly
-                          title="Dihitung dari panjang × lebar (m²) — desimal, tanpa pembulatan"
-                        />
-                      </div>
-                    )}
-                    <div className="offline-price-cell">
-                      <label className="offline-form-label">
-                        {isPerM2 ? 'Harga per m² (Rp)' : 'Harga Satuan (Rp)'}
-                      </label>
-                      {item.productId ? (
-                        <input
-                          className={`adm-input${priceErr ? ' adm-input--error' : ''}`}
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          value={item.price}
-                          readOnly
-                          title={isPerM2
-                            ? 'Harga per m² dari katalog — total = luas × harga/m²'
-                            : 'Harga otomatis dari katalog sesuai tipe pembeli'}
-                        />
-                      ) : (
-                        <input
-                          className={`adm-input${priceErr ? ' adm-input--error' : ''}`}
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          value={item.price}
-                          onChange={(e) => updateItem(item.id, 'price', e.target.value)}
-                        />
-                      )}
-                      {isPerM2 && item.productId && (
-                        <span className="offline-field-hint">
-                          {billedAreaM2(item.lengthCm, item.widthCm) > 0
-                            ? `Luas ${billedAreaM2(item.lengthCm, item.widthCm)} m² × ${formatCurrency(Number(item.price) || 0)}/m² = ${formatCurrency(perM2LineTotal(item))}`
-                            : 'Masukkan panjang × lebar untuk menghitung luas'}
-                        </span>
-                      )}
-                      {priceErr && <span className="offline-field-error">{priceErr}</span>}
-                    </div>
-                    <div className="offline-price-cell">
-                      <label className="offline-form-label">Qty</label>
-                      <input
-                        className="adm-input"
-                        type="number"
-                        min="1"
-                        value={item.quantity}
-                        onChange={(e) => updateItem(item.id, 'quantity', e.target.value)}
-                      />
-                    </div>
-                    <div className="offline-price-cell offline-price-cell--sub">
-                      <label className="offline-form-label">Subtotal</label>
-                      <span className="offline-card-subtotal">{formatCurrency(itemSub)}</span>
-                    </div>
-                  </div>
                 </div>
               </div>
             );
