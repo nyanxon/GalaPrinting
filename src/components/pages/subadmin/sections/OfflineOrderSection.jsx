@@ -122,15 +122,16 @@ function parseNumber(v) {
 }
 
 /**
- * Luas yang ditagihkan (m²) — setiap sisi dibulatkan ke atas ke kelipatan 1 m:
- * panjang = 200cm & lebar = 20cm → 2m × 1m = 2 m².
+ * Luas (m²) dalam desimal, tanpa pembulatan ke atas:
+ * (panjang_cm × lebar_cm) / 10000 — mis. 200cm × 20cm = 0,4 m².
+ * Dibulatkan ke 4 desimal hanya untuk membersihkan error float.
  * Return 0 jika dimensi belum lengkap.
  */
 function billedAreaM2(lengthCm, widthCm) {
   const l = parseNumber(lengthCm);
   const w = parseNumber(widthCm);
   if (!l || !w) return 0;
-  return Math.ceil(l / 100) * Math.ceil(w / 100);
+  return Math.round((l / 100) * (w / 100) * 10000) / 10000;
 }
 
 /** Total harga panel = luas (m²) × harga per m² (dibulatkan ke Rupiah). 0 jika dimensi belum lengkap. */
@@ -884,7 +885,7 @@ export default function OfflineOrderSection() {
                         </div>
                       </div>
                       <div className="offline-field-hint" style={{ marginTop: '6px' }}>
-                        Harga = luas × harga/m². Luas: setiap sisi dibulatkan ke atas ke kelipatan 1 m — mis. 200 cm × 20 cm → 2 m × 1 m = 2 m².
+                        Harga = luas × harga/m². Luas (m²) = (panjang × lebar) / 10000 — desimal, tanpa pembulatan (mis. 200 cm × 20 cm = 0,4 m²).
                       </div>
                     </>
                   ) : (
@@ -1010,7 +1011,7 @@ export default function OfflineOrderSection() {
                           placeholder="0"
                           value={billedAreaM2(item.lengthCm, item.widthCm) > 0 ? billedAreaM2(item.lengthCm, item.widthCm) : ''}
                           readOnly
-                          title="Dihitung dari panjang × lebar (setiap sisi < 100cm dibulatkan naik ke 1m)"
+                          title="Dihitung dari panjang × lebar (m²) — desimal, tanpa pembulatan"
                         />
                       </div>
                     )}
