@@ -257,8 +257,12 @@ export async function createOfflineOrder(req, res, next) {
             throw err;
           }
           const base = Number(type === 'broker' ? prod.price_broker : prod.price_customer) || 0;
-          const billedArea = Math.max((l / 100) * (w / 100), 1);
-          const linePrice = Math.round(billedArea * base);
+          // Setiap sisi dibulatkan ke atas ke kelipatan 1 m (mis. 20cm → 1m),
+          // luas = panjang(m) × lebar(m), harga = luas × harga/m².
+          const panjangM = Math.ceil(l / 100);
+          const lebarM   = Math.ceil(w / 100);
+          const totalLuas = panjangM * lebarM;
+          const linePrice = Math.round(totalLuas * base);
           return {
             productId: pid,
             name: item.name || prod.name,

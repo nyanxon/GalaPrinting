@@ -122,27 +122,39 @@ function parseNumber(v) {
 }
 
 /**
- * Luas yang ditagihkan (m²) — min. 1 m²: input di bawah 100cm×100cm
- * tetap dihitung 1 m². Return 0 jika dimensi belum lengkap.
+ * Luas yang ditagihkan (m²) — setiap sisi dibulatkan ke atas ke kelipatan 1 m:
+ * panjang = 200cm & lebar = 20cm → 2m × 1m = 2 m².
+ * Return 0 jika dimensi belum lengkap.
  */
 function billedAreaM2(lengthCm, widthCm) {
   const l = parseNumber(lengthCm);
   const w = parseNumber(widthCm);
   if (!l || !w) return 0;
-  return Math.max((l / 100) * (w / 100), 1);
+  return Math.ceil(l / 100) * Math.ceil(w / 100);
 }
 
-/** Harga panel per m² = luas × harga/m² (dibulatkan). 0 jika dimensi belum lengkap. */
-function perM2LinePrice(item, customerType) {
+/** Total harga panel = luas (m²) × harga per m² (dibulatkan ke Rupiah). 0 jika dimensi belum lengkap. */
+function perM2LineTotal(item) {
   const area = billedAreaM2(item.lengthCm, item.widthCm);
   if (area <= 0) return 0;
-  return Math.round(area * priceForType(item, customerType));
+  return Math.round(area * (Number(item.price) || 0));
 }
 
-/** Harga satuan per item sesuai size type produk. */
+/**
+ * Harga yang tampil di kotak "Harga":
+ * - per m² → harga dasar per m² sesuai customer_type (bukan total panel).
+ * - fixed  → harga varian (jika ada) atau harga dasar.
+ */
 function computeLinePrice(item, customerType) {
-  if (item.sizeType === 'per_m2') return perM2LinePrice(item, customerType);
+  if (item.sizeType === 'per_m2') return priceForType(item, customerType);
   return resolveUnitPrice(item, customerType);
+}
+
+/** Total line item (termasuk qty). Per m² = luas × harga/m² × qty. */
+function itemLineTotal(item) {
+  const qty = Number(item.quantity) || 1;
+  if (item.sizeType === 'per_m2') return perM2LineTotal(item) * qty;
+  return (Number(item.price) || 0) * qty;
 }
 
 /* ── Autocomplete produk (search + dropdown) ───────────────────────────────── */
@@ -190,7 +202,6 @@ function ProductAutocomplete({ item, customerType, error, onSelect, onClear }) {
   function handleSelect(prod) {
     const priceCustomer = Number(prod.price_customer ?? prod.priceCustomer ?? 0);
     const priceBroker   = Number(prod.price_broker   ?? prod.priceBroker   ?? 0);
-    const isPerM2       = (prod.size_type ?? prod.sizeType ?? 'fixed') === 'per_m2';
     setQuery(prod.name);
     setOpen(false);
     onSelect({
@@ -198,7 +209,7 @@ function ProductAutocomplete({ item, customerType, error, onSelect, onClear }) {
       name: prod.name,
       priceCustomer,
       priceBroker,
-      price: isPerM2 ? 0 : (customerType === 'broker' ? priceBroker : priceCustomer),
+      price: customerType === 'broker' ? priceBroker : priceCustomer,
       colors: parseArrayField(prod.colors),
       sizes: parseArrayField(prod.sizes),
       materials: parseArrayField(prod.materials),
@@ -469,7 +480,7 @@ export default function OfflineOrderSection() {
   const [createdOrder,    setCreatedOrder]    = useState(null);
 
   const subtotal = items.reduce(
-    (sum, it) => sum + (Number(it.price) || 0) * (Number(it.quantity) || 1),
+    (sum, it) => sum + itemLineTotal(it),
     0
   );
 
@@ -552,12 +563,7 @@ export default function OfflineOrderSection() {
 
   function handleDimensionChange(id, field, value) {
     setItems((prev) =>
-      prev.map((it) => {
-        if (it.id !== id) return it;
-        const next = { ...it, [field]: value };
-        next.price = perM2LinePrice(next, customerType);
-        return next;
-      })
+      prev.map((it) => (it.id === id ? { ...it, [field]: value } : it))
     );
     ['lengthCm', 'widthCm'].forEach((f) => {
       if (fieldErrors[`item_${id}_${f}`]) {
@@ -592,7 +598,7 @@ export default function OfflineOrderSection() {
       if (it.sizeType === 'per_m2') {
         if (!parseNumber(it.lengthCm)) errors[`item_${it.id}_lengthCm`] = 'Panjang (cm) wajib diisi.';
         if (!parseNumber(it.widthCm))  errors[`item_${it.id}_widthCm`]  = 'Lebar (cm) wajib diisi.';
-        if (!(Number(it.price) > 0)) errors[`item_${it.id}_price`] = 'Harga belum terhitung — cek panjang × lebar.';
+        if (!(Number(it.price) > 0)) errors[`item_${it.id}_price`] = 'Harga per m² tidak valid.';
       } else if (!it.price || Number(it.price) <= 0) {
         errors[`item_${it.id}_price`] = 'Harga wajib diisi.';
       }
@@ -759,7 +765,7 @@ export default function OfflineOrderSection() {
           </div>
 
           {items.map((item, index) => {
-            const itemSub = (Number(item.price) || 0) * (Number(item.quantity) || 1);
+            const itemSub = itemLineTotal(item);
             const nameErr  = fieldErrors[`item_${item.id}_name`];
             const priceErr = fieldErrors[`item_${item.id}_price`];
             const lenErr   = fieldErrors[`item_${item.id}_lengthCm`];
@@ -878,7 +884,7 @@ export default function OfflineOrderSection() {
                         </div>
                       </div>
                       <div className="offline-field-hint" style={{ marginTop: '6px' }}>
-                        Harga = luas × harga/m². Tagihan minimum 1 m² — luas di bawah 1 m² tetap dihitung 1 m².
+                        Harga = luas × harga/m². Luas: setiap sisi dibulatkan ke atas ke kelipatan 1 m — mis. 200 cm × 20 cm → 2 m × 1 m = 2 m².
                       </div>
                     </>
                   ) : (
@@ -995,7 +1001,7 @@ export default function OfflineOrderSection() {
                   <div className="offline-price-row">
                     <div className="offline-price-cell">
                       <label className="offline-form-label">
-                        {isPerM2 ? 'Harga Panel (Rp)' : 'Harga Satuan (Rp)'}
+                        {isPerM2 ? 'Harga per m² (Rp)' : 'Harga Satuan (Rp)'}
                       </label>
                       {item.productId ? (
                         <input
@@ -1006,7 +1012,7 @@ export default function OfflineOrderSection() {
                           value={item.price}
                           readOnly
                           title={isPerM2
-                            ? 'Dihitung dari panjang × lebar × harga per m²'
+                            ? 'Harga per m² dari katalog — total = luas × harga/m²'
                             : 'Harga otomatis dari katalog sesuai tipe pembeli'}
                         />
                       ) : (
@@ -1022,8 +1028,8 @@ export default function OfflineOrderSection() {
                       {isPerM2 && item.productId && (
                         <span className="offline-field-hint">
                           {billedAreaM2(item.lengthCm, item.widthCm) > 0
-                            ? `${billedAreaM2(item.lengthCm, item.widthCm)} m² × ${formatCurrency(priceForType(item, customerType))}/m²`
-                            : 'Masukkan panjang × lebar untuk menghitung harga'}
+                            ? `Luas ${billedAreaM2(item.lengthCm, item.widthCm)} m² × ${formatCurrency(Number(item.price) || 0)}/m² = ${formatCurrency(perM2LineTotal(item))}`
+                            : 'Masukkan panjang × lebar untuk menghitung luas'}
                         </span>
                       )}
                       {priceErr && <span className="offline-field-error">{priceErr}</span>}
