@@ -106,6 +106,27 @@
   min-width: 0;
 }
 
+.catalog-search-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.catalog-search-input {
+  flex: 1;
+  min-width: 160px;
+  padding: 9px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+}
+
+.catalog-search-input:focus {
+  border-color: var(--brand-brown);
+}
+
 .catalog-product-grid {
   gap: 16px;
 }

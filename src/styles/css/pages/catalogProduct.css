@@ -224,6 +224,13 @@
   white-space: pre-line;
 }
 
+.product-info-price {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--brand-brown, #785E40);
+  margin: 0;
+}
+
 .product-panel-body {
   white-space: pre-line;
 }

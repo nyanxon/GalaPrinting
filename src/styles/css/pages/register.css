@@ -80,6 +80,12 @@
   gap: 14px;
 }
 
+.register-login-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
 .register-field {
   display: flex;
   flex-direction: column;

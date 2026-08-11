@@ -12,6 +12,11 @@
   white-space: nowrap;
 }
 
+/* ── Thermal receipt (sizing fallback; styling is inline) ── */
+.thermal-receipt {
+  max-width: 100%;
+}
+
 /* ── Modal overlay ─────────────────────────────────────── */
 .inv-modal-overlay {
   position: fixed;

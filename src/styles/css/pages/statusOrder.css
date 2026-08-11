@@ -246,6 +246,11 @@
   }
 }
 
+.so-left,
+.so-right {
+  min-width: 0;
+}
+
 .so-section-label {
   font-size: 13px;
   font-weight: 700;
@@ -545,6 +550,11 @@
 }
 
 /* ── Per-item review section ─────────────────────────────── */
+.so-review-section {
+  display: flex;
+  flex-direction: column;
+}
+
 .so-review-intro {
   font-size: 13px;
   color: #6b6b6b;

@@ -24,6 +24,15 @@
   background: transparent;
 }
 
+.btn--primary{
+  background: var(--primary);
+  border-color: rgba(0,0,0,0.0);
+  color: var(--primary-contrast);
+}
+.btn--ghost{
+  background: transparent;
+}
+
 .btn.danger{
   background: #dc2626;
   border-color: rgba(0,0,0,0.0);

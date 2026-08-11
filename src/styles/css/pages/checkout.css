@@ -25,6 +25,10 @@
   }
 }
 
+.co-form-section {
+  min-width: 0;
+}
+
 /* ── Form section ────────────────────────────────────────── */
 .co-title {
   font-size: 26px;
@@ -338,6 +342,13 @@
   font-size: 12px;
   opacity: 0.75;
   margin-top: 6px;
+}
+
+.co-payment-order-number {
+  text-align: center;
+  font-size: 13px;
+  color: #6b6b6b;
+  margin: 10px 0 0;
 }
 
 /* ── Methods ─────────────────────────────────────────────── */

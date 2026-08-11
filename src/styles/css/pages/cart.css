@@ -39,6 +39,17 @@
   margin-top: 8px;
 }
 
+/* Qty stepper (minus / input / plus) */
+.nav-pill{
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px;
+  background: var(--surface);
+}
+
 /* Nominal harga — tinggi dan alignment sejajar dengan tombol +/- */
 .cart-item-price{
   display: inline-flex;
