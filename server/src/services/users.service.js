@@ -7,13 +7,12 @@
 import { randomUUID } from 'crypto';
 import { query } from '../db/connection.js';
 import { hashPassword } from '../utils/hash.js';
+import { parsePagination } from '../utils/pagination.js';
 
 const SAFE_FIELDS = 'id, role, name, email, phone, created_at, updated_at, deleted_at';
 
 export async function listCustomers({ page = 1, limit = 20, q } = {}) {
-  const pageNum  = Math.max(1, parseInt(page, 10) || 1);
-  const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
-  const offset   = (pageNum - 1) * limitNum;
+  const { pageNum, limitNum, offset } = parsePagination(page, limit, 100, 20);
 
   const hasSearch = q && q.trim().length > 0;
   const searchPattern = hasSearch ? `%${q.trim()}%` : null;

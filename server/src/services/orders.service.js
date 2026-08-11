@@ -7,6 +7,7 @@
 import { randomUUID } from 'crypto';
 import { query, pool } from '../db/connection.js';
 import { StorageService } from '../utils/storage.js';
+import { parsePagination } from '../utils/pagination.js';
 import { incrementUsage, recordUsageLog } from './promo.service.js';
 import {
   sendOrderNotification,
@@ -384,11 +385,9 @@ export async function createOrder({ customer, items, subtotal, source = 'online'
  * List orders with pagination and optional status filter.
  */
 export async function listOrders({ page = 1, limit = 20, status } = {}) {
-  const pageNum  = Math.max(1, parseInt(page, 10) || 1);
   // Staff can request up to 2000 orders at once (for "list all" views).
   // The default 20 cap stays for paginated views.
-  const limitNum = Math.min(2000, Math.max(1, parseInt(limit, 10) || 20));
-  const offset   = (pageNum - 1) * limitNum;
+  const { pageNum, limitNum, offset } = parsePagination(page, limit, 2000, 20);
 
   const conditions = [];
   const params     = [];

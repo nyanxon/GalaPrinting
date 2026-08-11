@@ -6,6 +6,7 @@
 
 import { randomUUID } from 'crypto';
 import { query } from '../db/connection.js';
+import { parsePagination } from '../utils/pagination.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -41,9 +42,7 @@ async function uniqueSlug(base) {
  * @returns {Promise<{ items: object[], total: number, page: number, limit: number, totalPages: number }>}
  */
 export async function listProducts({ page = 1, limit = 10, category, search, visible } = {}) {
-  const pageNum  = Math.max(1, parseInt(page, 10) || 1);
-  const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 10));
-  const offset   = (pageNum - 1) * limitNum;
+  const { pageNum, limitNum, offset } = parsePagination(page, limit, 100, 10);
 
   const conditions = [];
   const params     = [];

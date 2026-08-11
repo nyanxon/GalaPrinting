@@ -12,12 +12,11 @@ import fsp from 'fs/promises';
 import path from 'path';
 import { query } from '../db/connection.js';
 import { config } from '../config/env.js';
+import { SUBDIRS } from '../utils/storage.js';
 
 /* ─────────────────────────────────────────────────────────────
    Helpers
 ───────────────────────────────────────────────────────────── */
-
-const SUBDIRS = ['designs', 'payments', 'chat', 'avatars', 'products'];
 
 function resolveUploadRoot() {
   const dir = config.uploadDir;

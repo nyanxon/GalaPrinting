@@ -11,12 +11,12 @@
  *
  *   UPLOAD_DIR=/home/u<account_id>/persistent_uploads
  *
- * Steps on Hostinger:
- *   1. Open File Manager → create folder at /home/u<account_id>/persistent_uploads
- *      with subfolders: designs, payments, chat, avatars, products
- *   2. In hPanel → Node.js → Environment Variables, set:
- *      UPLOAD_DIR=/home/u<account_id>/persistent_uploads
- *   3. Restart the Node.js app.
+   * Steps on Hostinger:
+   *   1. Open File Manager → create folder at /home/u<account_id>/persistent_uploads
+   *      with subfolders: designs, payments, chat, avatars, products, homepage, reviews
+   *   2. In hPanel → Node.js → Environment Variables, set:
+   *      UPLOAD_DIR=/home/u<account_id>/persistent_uploads
+   *   3. Restart the Node.js app.
  *
  * The static serving in app.js already uses the absolute path from config.uploadDir,
  * so /uploads/** will continue to resolve correctly after this change.
@@ -29,6 +29,7 @@ import { randomUUID } from 'crypto';
 import { config } from '../config/env.js';
 
 const SUBDIRS = ['designs', 'payments', 'chat', 'avatars', 'products', 'homepage', 'reviews'];
+export { SUBDIRS };
 
 /**
  * Resolve the absolute path to the upload root directory.
@@ -59,7 +60,7 @@ export const StorageService = {
   /**
    * Move a multer temp file to the appropriate upload subdirectory.
    * @param {Express.Multer.File} file
-   * @param {'designs'|'payments'|'chat'|'avatars'|'products'} subdir
+   * @param {'designs'|'payments'|'chat'|'avatars'|'products'|'homepage'|'reviews'} subdir
    * @returns {Promise<{ path: string, url: string, fileName: string }>}
    */
   async save(file, subdir) {
