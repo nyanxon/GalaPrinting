@@ -575,17 +575,54 @@ function attachPaymentProofLocal(orderId, proof) {
 /**
  * Admin: list all orders (unfiltered).
  *
- * - USE_BACKEND=true : GET /api/orders (no pagination, large limit) → returns Promise<object[]>
+ * - USE_BACKEND=true : loops every page of GET /api/orders until all orders
+ *   are collected (follows totalPages from the response), returns Promise<object[]>
  * - USE_BACKEND=false: original localStorage implementation (unchanged), returns object[] synchronously
  *
  * @returns {object[]|Promise<object[]>}
  */
 export function listAllOrders() {
   if (USE_BACKEND) {
-    return api.get("/api/orders", { params: { page: 1, limit: 1000 } })
-      .then((res) => (res.data.items ?? []).map(mapOrder));
+    return listAllOrdersPaginated();
   }
   return load();
+}
+
+/**
+ * Fetch every page of /api/orders and flatten into a single array.
+ * The backend caps the per-request limit (2000), so a single large request
+ * would silently miss orders once the total exceeds that cap — loop instead.
+ *
+ * @private
+ */
+async function listAllOrdersPaginated() {
+  const PAGE_SIZE = 2000; // matches the backend per-request cap (2000)
+  const MAX_PAGES = 20; // safety guard — up to 40k orders, then stop
+  const all = [];
+
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    const res = await api.get('/api/orders', { params: { page, limit: PAGE_SIZE } });
+    const { items = [], total = 0, totalPages = 1 } = res.data;
+    const mapped = (Array.isArray(items) ? items : []).map(mapOrder);
+    all.push(...mapped);
+
+    // Stop when: we reached the reported last page, we have everything the
+    // API counts, or a page came back short (end of data).
+    const done =
+      page >= Number(totalPages ?? 1) ||
+      all.length >= Number(total ?? 0) ||
+      mapped.length < PAGE_SIZE;
+    if (done) break;
+
+    if (page === MAX_PAGES) {
+      console.warn(
+        `[orders] listAllOrders() reached safety cap of ${MAX_PAGES} pages (${all.length} orders). ` +
+        `Either pagination is not advancing or there are more than ${MAX_PAGES * PAGE_SIZE} orders.`
+      );
+    }
+  }
+
+  return all;
 }
 
 /**

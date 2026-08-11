@@ -5,6 +5,7 @@
 
 import { randomUUID } from 'crypto';
 import { query, pool } from '../db/connection.js';
+import { parsePagination } from '../utils/pagination.js';
 
 /**
  * Generate invoice number: INV/YYYY/MM/NNNNNN.
@@ -154,7 +155,7 @@ export async function getInvoiceByOrderId(orderId) {
  * @param {{ page?, limit?, payment_status? }}
  */
 export async function listInvoices({ page = 1, limit = 20, payment_status } = {}) {
-  const offset = (Number(page) - 1) * Number(limit);
+  const { pageNum, limitNum, offset } = parsePagination(page, limit, 2000, 20);
 
   let whereClause = '';
   const params = [];
@@ -187,15 +188,15 @@ export async function listInvoices({ page = 1, limit = 20, payment_status } = {}
      ${whereClause}
      ORDER BY i.created_at DESC
      LIMIT ? OFFSET ?`,
-    [...params, Number(limit), offset]
+    [...params, limitNum, offset]
   );
 
   return {
     items,
     total: Number(total),
-    page: Number(page),
-    limit: Number(limit),
-    totalPages: Math.ceil(Number(total) / Number(limit)),
+    page: pageNum,
+    limit: limitNum,
+    totalPages: Math.ceil(Number(total) / limitNum),
   };
 }
 

@@ -12,8 +12,14 @@ export function errorHandler(err, req, res, next) {
   console.error('[error]', err);
 
   // Multer / body-parser payload too large → 422 (Req 9.4)
-  if (err.type === 'entity.too.large' || err.code === 'LIMIT_FILE_SIZE') {
-    return res.status(422).json({ ok: false, message: 'Ukuran file maksimal 5 MB.' });
+  if (err.type === 'entity.too.large') {
+    return res.status(422).json({ ok: false, message: 'Ukuran payload melebihi batas (1 MB).' });
+  }
+
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    const maxBytes = req.uploadMaxSize || 100 * 1024 * 1024;
+    const maxMB = Math.round(maxBytes / (1024 * 1024));
+    return res.status(422).json({ ok: false, message: `Ukuran file maksimal ${maxMB} MB.` });
   }
 
   // Unsupported media type (custom error thrown by upload middleware) → 422 (Req 9.3)

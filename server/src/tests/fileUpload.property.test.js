@@ -14,9 +14,10 @@ import fc from 'fast-check';
 
 // Size limits mirroring upload.js
 const LIMITS = {
-  design:  20 * 1024 * 1024,
-  payment: 10 * 1024 * 1024,
-  chat:     5 * 1024 * 1024,
+  design:  100 * 1024 * 1024,
+  payment: 100 * 1024 * 1024,
+  chat:    100 * 1024 * 1024,
+  homepage: 10 * 1024 * 1024,
 };
 
 /**
@@ -32,7 +33,7 @@ function checkFileSize(type, fileSizeBytes) {
 }
 
 describe('Property 5: File size rejection', () => {
-  it('design files exceeding 20 MB always return 413 (100 iterations)', () => {
+  it('design files exceeding 100 MB always return 413 (100 iterations)', () => {
     fc.assert(
       fc.property(
         fc.integer({ min: LIMITS.design + 1, max: LIMITS.design * 3 }),
@@ -46,7 +47,7 @@ describe('Property 5: File size rejection', () => {
     );
   });
 
-  it('payment files exceeding 10 MB always return 413 (100 iterations)', () => {
+  it('payment files exceeding 100 MB always return 413 (100 iterations)', () => {
     fc.assert(
       fc.property(
         fc.integer({ min: LIMITS.payment + 1, max: LIMITS.payment * 3 }),
@@ -60,7 +61,7 @@ describe('Property 5: File size rejection', () => {
     );
   });
 
-  it('chat files exceeding 5 MB always return 413 (100 iterations)', () => {
+  it('chat files exceeding 100 MB always return 413 (100 iterations)', () => {
     fc.assert(
       fc.property(
         fc.integer({ min: LIMITS.chat + 1, max: LIMITS.chat * 3 }),
@@ -74,10 +75,24 @@ describe('Property 5: File size rejection', () => {
     );
   });
 
+  it('homepage images exceeding 10 MB always return 413 (100 iterations)', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: LIMITS.homepage + 1, max: LIMITS.homepage * 3 }),
+        (fileSize) => {
+          const result = checkFileSize('homepage', fileSize);
+          expect(result.status).toBe(413);
+          expect(result.ok).toBe(false);
+        }
+      ),
+      { numRuns: 100 }
+    );
+  });
+
   it('files within the size limit are accepted (100 iterations)', () => {
     fc.assert(
       fc.property(
-        fc.constantFrom('design', 'payment', 'chat'),
+        fc.constantFrom('design', 'payment', 'chat', 'homepage'),
         fc.integer({ min: 1, max: 1024 * 1024 }), // 1 byte to 1 MB — always within all limits
         (type, fileSize) => {
           const result = checkFileSize(type, fileSize);

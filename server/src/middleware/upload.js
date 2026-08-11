@@ -15,6 +15,7 @@ const ALLOWED_MIME = {
   avatar:  ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
   product: ['image/jpeg', 'image/png', 'image/webp'],
   review:  ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
+  homepage: ['image/jpeg', 'image/png', 'image/webp'],
 };
 
 const MAX_SIZE = {
@@ -24,10 +25,11 @@ const MAX_SIZE = {
   avatar:  100 * 1024 * 1024, // 100 MB (updated from 5 MB)
   product: 100 * 1024 * 1024, // 100 MB (updated from 10 MB)
   review:  100 * 1024 * 1024, // 100 MB (updated from 5 MB)
+  homepage:  10 * 1024 * 1024, // 10 MB — storefront banners stay lighter
 };
 
 function buildUpload(type) {
-  return multer({
+  const mw = multer({
     dest: os.tmpdir(),
     limits: { fileSize: MAX_SIZE[type] },
     fileFilter(_req, file, cb) {
@@ -40,6 +42,12 @@ function buildUpload(type) {
       }
     },
   });
+
+  // Expose the actual size limit so the global error handler can report it.
+  return (req, res, next) => {
+    req.uploadMaxSize = MAX_SIZE[type];
+    return mw(req, res, next);
+  };
 }
 
 export const uploadDesign  = buildUpload('design');
@@ -48,3 +56,4 @@ export const uploadChat    = buildUpload('chat');
 export const uploadAvatar  = buildUpload('avatar');
 export const uploadProduct = buildUpload('product');
 export const uploadReview  = buildUpload('review');
+export const uploadHomepage = buildUpload('homepage');

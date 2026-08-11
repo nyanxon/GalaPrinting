@@ -19,7 +19,7 @@ import { StorageService } from '../utils/storage.js';
  */
 export async function uploadProductImage(req, res, next) {
   if (!req.file) {
-    return res.status(400).json({ ok: false, message: 'File gambar wajib diunggah.' });
+    return res.status(422).json({ ok: false, message: 'File gambar wajib diunggah.' });
   }
   try {
     const saved = await StorageService.save(req.file, 'products');

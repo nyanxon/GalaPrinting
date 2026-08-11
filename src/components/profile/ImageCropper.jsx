@@ -177,7 +177,7 @@ export default function ImageCropper({ isOpen, onClose, onAvatarUpdated }) {
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      setFileError('Ukuran file maksimal 5 MB.');
+      setFileError(`Ukuran file maksimal ${MAX_FILE_SIZE / (1024 * 1024)} MB.`);
       e.target.value = '';
       return;
     }

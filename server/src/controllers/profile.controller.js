@@ -29,7 +29,7 @@ export async function updateProfile(req, res, next) {
 
 export async function uploadAvatar(req, res, next) {
   if (!req.file) {
-    return res.status(400).json({ ok: false, message: 'File gambar wajib diunggah.' });
+    return res.status(422).json({ ok: false, message: 'File gambar wajib diunggah.' });
   }
 
   try {
