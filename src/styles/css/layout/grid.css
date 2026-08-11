@@ -10,7 +10,6 @@
 }
 
 .stack{ display: grid; gap: 14px; }
-.stack-lg{ display: grid; gap: 22px; }
 
 .grid{
   display: grid;

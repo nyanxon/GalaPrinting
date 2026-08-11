@@ -134,12 +134,6 @@
   white-space: nowrap;
 }
 
-/* Offline / toko fisik — kept for backward-compat display of existing data */
-.rev-source-badge--offline {
-  background: #fef3c7;
-  color: #92400e;
-}
-
 /* Shopee */
 .rev-source-badge--shopee {
   background: #ffedd5;

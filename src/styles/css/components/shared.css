@@ -1,15 +1,4 @@
-/* ══════════════════════════════════════════════════════════
-   SHARED UTILITY STYLES
-   Used across multiple pages / features
-   ══════════════════════════════════════════════════════════ */
 
-/* ── Search highlight (product search results) ───────────── */
-mark.search-highlight {
-  background: rgba(120, 94, 64, 0.18);
-  color: inherit;
-  border-radius: 2px;
-  padding: 0 1px;
-}
 
 /* ── Checkout: auth-required screen ─────────────────────── */
 .co-auth-required {

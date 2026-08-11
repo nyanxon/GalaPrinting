@@ -263,8 +263,6 @@
   flex-wrap: wrap;
 }
 
-.pf-view-value--email { color: #3a3a3a; }
-
 /* ── Read-only badge ─────────────────────────────────────── */
 .pf-readonly-badge {
   display: inline-block;
@@ -405,13 +403,6 @@
 .pf-avatar-btn:hover {
   background: var(--brand-brown, #785E40);
   color: #fff;
-}
-
-/* ── Section placeholder (legacy) ───────────────────────── */
-.pf-section-placeholder {
-  color: #9b9b9b;
-  font-size: 14px;
-  padding: 16px 0;
 }
 
 /* ── Email verification status ───────────────────────────── */

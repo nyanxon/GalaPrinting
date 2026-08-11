@@ -146,20 +146,6 @@
   opacity: 0.8;
 }
 
-.cw-close {
-  background: none;
-  border: none;
-  color: #fff;
-  font-size: 18px;
-  cursor: pointer;
-  padding: 4px 6px;
-  border-radius: 6px;
-  opacity: 0.8;
-  transition: opacity 0.15s;
-}
-
-.cw-close:hover { opacity: 1; }
-
 /* ── Message body ────────────────────────────────────────── */
 .cw-body {
   flex: 1;
@@ -274,14 +260,6 @@
 }
 
 .cw-file-btn:hover { background: #f0f0f0; }
-
-.cw-file-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  pointer-events: none;
-}
 
 .cw-send {
   width: 38px;

@@ -788,15 +788,6 @@
   color: #6a6a6a;
 }
 
-.staff-placeholder-msg {
-  background: #fff;
-  border-radius: 24px;
-  padding: 30px;
-  border: 1px solid rgba(120, 94, 64, 0.12);
-  box-shadow: 0 20px 60px rgba(68, 41, 7, 0.06);
-  color: #3a3a3a;
-}
-
 @media (max-width: 1150px) {
   /* Collapse the activity sidebar column on narrower screens */
   .staff-body-row:not(.staff-body-row--full) {
@@ -820,45 +811,6 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-}
-
-.adm-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 24px 16px 48px;
-}
-
-/* ── Header ──────────────────────────────────────────────── */
-.adm-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.adm-title {
-  font-size: 24px;
-  font-weight: 800;
-  margin: 0;
-  color: #1f1f1f;
-}
-
-.adm-user {
-  font-size: 14px;
-  color: #6b6b6b;
-  background: #f5f5f5;
-  padding: 6px 14px;
-  border-radius: 999px;
-}
-
-/* ── Tabs ────────────────────────────────────────────────── */
-.adm-tabs {
-  display: flex;
-  gap: 0;
-  border-bottom: 2px solid #e5e5e5;
-  margin-bottom: 20px;
 }
 
 .adm-tab {
@@ -1068,22 +1020,6 @@
   padding: 14px 20px 20px;
 }
 
-/* ── Role select in customer table ─────────────────────────── */
-.adm-role-select {
-  border: 1px solid #d1c5b8;
-  border-radius: 6px;
-  padding: 5px 8px;
-  font-size: 13px;
-  color: #1f1f1f;
-  background: #faf8f5;
-  cursor: pointer;
-  outline: none;
-  min-width: 120px;
-}
-
-.adm-role-select:hover  { border-color: #a0856a; }
-.adm-role-select:focus  { border-color: var(--brand-brown, #7a5c3e); box-shadow: 0 0 0 2px rgba(122,92,62,0.15); }
-
 /* ── Secondary & Danger buttons (used in confirmation modal) ─ */
 .adm-btn-secondary {
   display: inline-flex;
@@ -1199,11 +1135,6 @@
   border: 1px solid rgba(120, 94, 64, 0.12);
   border-radius: 14px;
   padding: 18px 20px;
-}
-
-.rev-kpi-card--total {
-  background: var(--brand-brown, #785E40);
-  border-color: transparent;
 }
 
 .rev-kpi-card--total .rev-kpi-label,
@@ -1336,24 +1267,6 @@
   text-align: right;
 }
 
-/* ── Invoice list ────────────────────────────────────────── */
-.invoice-section {
-  margin-top: 28px;
-}
-
-.invoice-section-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: #1f1f1f;
-  margin: 0 0 12px;
-}
-
-.invoice-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
 .invoice-row {
   display: flex;
   align-items: center;
@@ -1364,51 +1277,6 @@
   border-radius: 10px;
   gap: 12px;
   flex-wrap: wrap;
-}
-
-.invoice-row-left { min-width: 0; }
-
-.invoice-num {
-  font-size: 13px;
-  font-weight: 700;
-  color: #1f1f1f;
-  font-family: monospace;
-}
-
-.invoice-customer {
-  font-size: 12px;
-  color: #6b6b6b;
-  margin-top: 2px;
-}
-
-.invoice-row-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
-}
-
-.invoice-status {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 999px;
-}
-
-.invoice-status--diterima  { background: #fef3c7; color: #92400e; }
-.invoice-status--diproses  { background: #dbeafe; color: #1e40af; }
-.invoice-status--dikirim   { background: #e0f2fe; color: #0369a1; }
-.invoice-status--selesai   { background: #dcfce7; color: #166534; }
-
-.invoice-amount {
-  font-size: 14px;
-  font-weight: 800;
-  color: #1f1f1f;
-}
-
-.invoice-date {
-  font-size: 12px;
-  color: #9b9b9b;
 }
 
 /* ── Report header ───────────────────────────────────────── */
@@ -1567,128 +1435,6 @@
 .so-status-badge.status--in-delivery        { background: #f0fdf4; color: #15803d; }
 .so-status-badge.status--finished           { background: #dcfce7; color: #166534; }
 .so-status-badge.status--cancelled          { background: #fee2e2; color: #991b1b; }
-.owner-loading {
-  padding: 40px;
-  text-align: center;
-  color: #9b9b9b;
-  font-size: 14px;
-}
-.dir-kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 14px;
-  margin-bottom: 24px;
-}
-
-@media (min-width: 640px) {
-  .dir-kpi-grid { grid-template-columns: repeat(4, 1fr); }
-}
-
-.dir-kpi-card {
-  background: #fff;
-  border: 1px solid #e5e5e5;
-  border-radius: 10px;
-  padding: 16px;
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.dir-kpi-icon { font-size: 28px; line-height: 1; }
-
-.dir-kpi-value {
-  font-size: 20px;
-  font-weight: 800;
-  color: #1f1f1f;
-  line-height: 1.2;
-}
-
-.dir-kpi-label {
-  font-size: 12px;
-  color: #6b6b6b;
-  font-weight: 600;
-  margin-top: 2px;
-}
-
-.dir-kpi-sub { font-size: 11px; color: #9b9b9b; margin-top: 2px; }
-
-/* Charts grid */
-.dir-charts-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-@media (min-width: 768px) {
-  .dir-charts-grid { grid-template-columns: 1fr 1fr; }
-}
-
-.dir-chart-card {
-  background: #fff;
-  border: 1px solid #e5e5e5;
-  border-radius: 10px;
-  padding: 18px;
-  margin-bottom: 16px;
-}
-
-.dir-chart-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: #1f1f1f;
-  margin: 0 0 16px;
-}
-
-/* Bar chart */
-.dir-bar-chart {
-  display: flex;
-  align-items: flex-end;
-  gap: 6px;
-  height: 120px;
-}
-
-.dir-bar-item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  height: 100%;
-}
-
-.dir-bar-track {
-  flex: 1;
-  width: 100%;
-  background: #f0f0f0;
-  border-radius: 4px 4px 0 0;
-  display: flex;
-  align-items: flex-end;
-  overflow: hidden;
-}
-
-.dir-bar-fill {
-  width: 100%;
-  background: var(--brand-brown);
-  border-radius: 4px 4px 0 0;
-  min-height: 4px;
-  transition: height 0.3s ease;
-}
-
-.dir-bar-label {
-  font-size: 10px;
-  color: #6b6b6b;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
-
-.dir-bar-val {
-  font-size: 10px;
-  font-weight: 700;
-  color: #1f1f1f;
-}
 
 /* ══════════════════════════════════════════════════════════
    PAGINATION
@@ -1825,80 +1571,10 @@
 .toast-icon { font-size: 16px; flex-shrink: 0; }
 .toast-msg  { flex: 1; }
 
-/* ── Staff credentials card (admin welcome) ─────────────── */
-.staff-credentials {
-  margin-top: 20px;
-  padding-top: 18px;
-  border-top: 1px solid rgba(120, 94, 64, 0.12);
-}
-
-.staff-credentials-title {
-  font-size: 12px;
-  font-weight: 700;
-  color: #9b9b9b;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 12px;
-}
-
-.staff-credentials-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.staff-cred-item {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  background: #f9f5f0;
-  border-radius: 8px;
-  padding: 8px 12px;
-}
-
-.staff-cred-role {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--brand-brown, #785E40);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.staff-cred-email {
-  font-size: 12px;
-  color: #1f1f1f;
-  font-family: monospace;
-}
-
-.staff-cred-pw {
-  font-size: 12px;
-  color: #6b6b6b;
-}
-
-/* ── Owner loading state ─────────────────────────────────── */
-.owner-loading {
-  padding: 40px;
-  text-align: center;
-  color: #9b9b9b;
-  font-size: 14px;
-}
-
 /* ── Remaining so-status-badge new classes ───────────────── */
 .so-status-badge.status--qc           { background: #e0f2fe; color: #0369a1; }
 .so-status-badge.status--in-delivery  { background: #f0fdf4; color: #15803d; }
 .so-status-badge.status--finished     { background: #dcfce7; color: #166534; }
-
-/* ── Invoice status badges for new flow ──────────────────── */
-.invoice-status--waiting-payment    { background: #fef3c7; color: #92400e; }
-.invoice-status--payment-accepted   { background: #dcfce7; color: #166534; }
-.invoice-status--waiting-design     { background: #ede9fe; color: #5b21b6; }
-.invoice-status--design-accepted    { background: #dbeafe; color: #1e40af; }
-.invoice-status--on-progress        { background: #ffedd5; color: #9a3412; }
-.invoice-status--quality-checking   { background: #e0f2fe; color: #0369a1; }
-.invoice-status--in-delivery        { background: #f0fdf4; color: #15803d; }
-.invoice-status--finished           { background: #dcfce7; color: #166534; }
-.invoice-status--cancelled          { background: #fee2e2; color: #991b1b; }
 
 /* ── Pagination ──────────────────────────────────────────── */
 .adm-pagination {
@@ -2005,62 +1681,6 @@
 .toast-icon { font-size: 16px; flex-shrink: 0; }
 .toast-msg  { flex: 1; }
 
-/* ══════════════════════════════════════════════════════════
-   SUB-ADMIN ROLE-SPECIFIC UI
-   ══════════════════════════════════════════════════════════ */
-
-/* ── CS: design file + chat link cell ───────────────────── */
-.subadmin-cs-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.subadmin-design-file {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: #f9f5f0;
-  border: 1px solid rgba(120, 94, 64, 0.15);
-  border-radius: 6px;
-  padding: 5px 10px;
-  max-width: 200px;
-}
-
-.subadmin-design-icon {
-  font-size: 14px;
-  flex-shrink: 0;
-}
-
-.subadmin-design-name {
-  font-size: 12px;
-  color: #1f1f1f;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 140px;
-}
-
-.subadmin-chat-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 12px;
-  padding: 5px 12px;
-  border-radius: 6px;
-  text-decoration: none;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  color: #166534;
-  font-weight: 600;
-  transition: background 0.15s;
-  width: fit-content;
-}
-
-.subadmin-chat-link:hover {
-  background: #dcfce7;
-}
-
 /* ── QC: tracking number form ────────────────────────────── */
 .subadmin-qc-cell {
   display: flex;
@@ -2165,17 +1785,6 @@
   width: 100%;
   font-size: 12px;
   padding: 7px 12px;
-}
-
-/* ── Ghost button (used for chat link in table) ──────────── */
-.adm-btn--ghost {
-  background: transparent;
-  border-color: rgba(120, 94, 64, 0.25);
-  color: var(--brand-brown, #785E40);
-}
-
-.adm-btn--ghost:hover {
-  background: rgba(120, 94, 64, 0.06);
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -2511,10 +2120,6 @@
   gap: 6px;
 }
 
-.cw-file-hidden {
-  display: none;
-}
-
 /* ══════════════════════════════════════════════════════════
    CS CUSTOM ORDER FORM
    ══════════════════════════════════════════════════════════ */
@@ -2577,242 +2182,6 @@
 }
 
 /* ══════════════════════════════════════════════════════════
-   CASHIER — PAYMENT PROOF CELL & VIEWER MODAL
-   ══════════════════════════════════════════════════════════ */
-
-/* ── Table cell ──────────────────────────────────────────── */
-.cashier-proof-cell {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 180px;
-}
-
-.cashier-proof-thumb {
-  width: 44px;
-  height: 44px;
-  object-fit: cover;
-  border-radius: 6px;
-  border: 1px solid #e5e5e5;
-  flex-shrink: 0;
-  cursor: pointer;
-  transition: opacity 0.15s;
-}
-
-.cashier-proof-thumb:hover { opacity: 0.85; }
-
-.cashier-proof-icon {
-  font-size: 28px;
-  flex-shrink: 0;
-  width: 44px;
-  text-align: center;
-}
-
-.cashier-proof-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  flex: 1;
-}
-
-.cashier-proof-name {
-  font-size: 12px;
-  color: #1f1f1f;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100px;
-}
-
-.cashier-no-proof {
-  font-style: italic;
-  color: #f59e0b;
-  font-weight: 600;
-}
-
-.cashier-proof-view-btn {
-  font-size: 12px;
-  padding: 5px 10px;
-  white-space: nowrap;
-  flex-shrink: 0;
-  background: #f0f4ff;
-  border-color: #c7d2fe;
-  color: #3730a3;
-}
-
-.cashier-proof-view-btn:hover { background: #e0e7ff; }
-
-/* ── Proof viewer modal ──────────────────────────────────── */
-.proof-modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.65);
-  z-index: 2000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  backdrop-filter: blur(4px);
-}
-
-.proof-modal {
-  background: #fff;
-  border-radius: 20px;
-  width: 100%;
-  max-width: 560px;
-  max-height: 92vh;
-  overflow-y: auto;
-  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.3);
-  display: flex;
-  flex-direction: column;
-}
-
-/* ── Header ──────────────────────────────────────────────── */
-.proof-modal-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding: 20px 24px 14px;
-  border-bottom: 1px solid #f0f0f0;
-  position: sticky;
-  top: 0;
-  background: #fff;
-  z-index: 1;
-  border-radius: 20px 20px 0 0;
-}
-
-.proof-modal-title {
-  font-size: 18px;
-  font-weight: 800;
-  margin: 0 0 4px;
-  color: #1f1f1f;
-}
-
-.proof-modal-order {
-  font-size: 13px;
-  font-family: monospace;
-  color: var(--brand-brown, #785E40);
-  font-weight: 700;
-}
-
-.proof-modal-close {
-  background: none;
-  border: none;
-  font-size: 18px;
-  cursor: pointer;
-  color: #6b6b6b;
-  padding: 4px 8px;
-  border-radius: 6px;
-  transition: background 0.15s;
-  flex-shrink: 0;
-}
-
-.proof-modal-close:hover { background: #f0f0f0; }
-
-/* ── Meta info ───────────────────────────────────────────── */
-.proof-modal-meta {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  padding: 16px 24px;
-  background: #f9f5f0;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.proof-modal-meta-row {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.proof-modal-meta-label {
-  font-size: 11px;
-  font-weight: 700;
-  color: #9b9b9b;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-/* ── Image body ──────────────────────────────────────────── */
-.proof-modal-body {
-  padding: 20px 24px;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  flex: 1;
-}
-
-.proof-modal-img {
-  max-width: 100%;
-  max-height: 420px;
-  border-radius: 10px;
-  border: 1px solid #e5e5e5;
-  object-fit: contain;
-  background: #fafafa;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-}
-
-/* ── PDF body ────────────────────────────────────────────── */
-.proof-modal-pdf {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 24px 0;
-  text-align: center;
-}
-
-.proof-modal-pdf-icon { font-size: 56px; }
-
-.proof-modal-pdf-name {
-  font-size: 14px;
-  font-weight: 700;
-  color: #1f1f1f;
-  word-break: break-all;
-}
-
-.proof-modal-pdf-note {
-  font-size: 13px;
-  color: #6b6b6b;
-  line-height: 1.6;
-  margin: 0;
-}
-
-.proof-modal-download {
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-/* ── No data ─────────────────────────────────────────────── */
-.proof-modal-no-data {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 24px 0;
-  text-align: center;
-  color: #6b6b6b;
-  font-size: 14px;
-}
-
-/* ── Footer ──────────────────────────────────────────────── */
-.proof-modal-footer {
-  display: flex;
-  gap: 10px;
-  padding: 14px 24px 20px;
-  border-top: 1px solid #f0f0f0;
-  position: sticky;
-  bottom: 0;
-  background: #fff;
-  border-radius: 0 0 20px 20px;
-  justify-content: flex-end;
-}
-
-/* ══════════════════════════════════════════════════════════
    SUB-ADMIN & OFFLINE PANEL WRAPPERS
    Ensure panels fill full height properly
    ══════════════════════════════════════════════════════════ */
@@ -2832,34 +2201,6 @@
   min-height: 0;
 }
 
-/* ══════════════════════════════════════════════════════════
-   ORDER DETAIL MODAL (shared: admin, owner, sub-admin)
-   ══════════════════════════════════════════════════════════ */
-
-.odm-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 1500;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  backdrop-filter: blur(3px);
-}
-
-.odm-modal {
-  background: #fff;
-  border-radius: 20px;
-  width: 100%;
-  max-width: 640px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.25);
-  display: flex;
-  flex-direction: column;
-}
-
 /* ── Header ──────────────────────────────────────────────── */
 .odm-header {
   display: flex;
@@ -2875,21 +2216,12 @@
   gap: 12px;
 }
 
-.odm-header-left { min-width: 0; flex: 1; }
-
 .odm-order-num {
   font-size: 18px;
   font-weight: 800;
   color: var(--brand-brown, #785E40);
   font-family: monospace;
   margin-bottom: 6px;
-}
-
-.odm-header-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
 }
 
 .odm-close {
@@ -2905,17 +2237,6 @@
 }
 
 .odm-close:hover { background: #f0f0f0; }
-
-/* ── Source tags ─────────────────────────────────────────── */
-.odm-source-tag {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 999px;
-}
-
-.odm-source-tag--offline { background: #fce7f3; color: #be185d; }
-.odm-source-tag--custom  { background: #ede9fe; color: #5b21b6; }
 
 /* ── Body ────────────────────────────────────────────────── */
 .odm-body {
@@ -2941,30 +2262,6 @@
   color: #6b6b6b;
   padding-bottom: 6px;
   border-bottom: 1px solid #f0f0f0;
-}
-
-/* ── Customer grid ───────────────────────────────────────── */
-.odm-customer-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.odm-customer-row {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-size: 14px;
-}
-
-.odm-customer-row--full { grid-column: 1 / -1; }
-
-.odm-customer-label {
-  font-size: 11px;
-  font-weight: 700;
-  color: #9b9b9b;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 /* ── Items list ──────────────────────────────────────────── */
@@ -3006,58 +2303,6 @@
   flex-shrink: 0;
 }
 
-.odm-item-price {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--brand-brown, #785E40);
-  flex-shrink: 0;
-}
-
-.odm-item-specs {
-  font-size: 12px;
-  color: #6b6b6b;
-  line-height: 1.5;
-}
-
-/* ── Design file row ─────────────────────────────────────── */
-.odm-design-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 2px;
-}
-
-.odm-design-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #6b6b6b;
-  flex-shrink: 0;
-}
-
-.odm-design-thumb-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: #f9f5f0;
-  border: 1px solid rgba(120, 94, 64, 0.2);
-  border-radius: 8px;
-  padding: 5px 10px 5px 5px;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.odm-design-thumb-btn:hover { background: #f0e8dc; }
-
-.odm-design-thumb {
-  width: 36px;
-  height: 36px;
-  object-fit: cover;
-  border-radius: 5px;
-  border: 1px solid #e5e5e5;
-  flex-shrink: 0;
-}
-
 .odm-design-name {
   font-size: 12px;
   font-weight: 600;
@@ -3066,29 +2311,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.odm-design-file-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #3730a3;
-  background: #f0f4ff;
-  border: 1px solid #c7d2fe;
-  border-radius: 6px;
-  padding: 4px 10px;
-  text-decoration: none;
-  transition: background 0.15s;
-}
-
-.odm-design-file-link:hover { background: #e0e7ff; }
-
-.odm-design-name-only {
-  font-size: 12px;
-  color: #6b6b6b;
-  font-style: italic;
 }
 
 /* ── Total row ───────────────────────────────────────────── */
@@ -3101,30 +2323,6 @@
   font-size: 15px;
   font-weight: 700;
   color: #1f1f1f;
-}
-
-/* ── Payment proof ───────────────────────────────────────── */
-.odm-proof-wrap {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.odm-proof-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-/* ── Admin note ──────────────────────────────────────────── */
-.odm-note-text {
-  font-size: 14px;
-  color: #3a3a3a;
-  background: #f9f5f0;
-  border-radius: 8px;
-  padding: 10px 14px;
-  line-height: 1.6;
 }
 
 /* ── Empty ───────────────────────────────────────────────── */
@@ -3183,70 +2381,6 @@
   border-top: 1px solid #e5e7eb;
 }
 
-/* ── Lightbox ────────────────────────────────────────────── */
-.odm-lightbox {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.88);
-  z-index: 2000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-
-.odm-lightbox-inner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-  max-width: 90vw;
-  max-height: 90vh;
-}
-
-.odm-lightbox-close {
-  position: fixed;
-  top: 16px;
-  right: 16px;
-  background: rgba(255,255,255,0.15);
-  border: none;
-  color: #fff;
-  font-size: 22px;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s;
-}
-
-.odm-lightbox-close:hover { background: rgba(255,255,255,0.25); }
-
-.odm-lightbox-img {
-  max-width: 100%;
-  max-height: 75vh;
-  object-fit: contain;
-  border-radius: 8px;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.4);
-}
-
-.odm-lightbox-actions {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.odm-lightbox-name {
-  font-size: 13px;
-  color: rgba(255,255,255,0.7);
-  max-width: 300px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 /* ── "Detail" button in order rows ──────────────────────── */
 .adm-btn--detail {
   background: #f9f5f0;
@@ -3257,18 +2391,6 @@
 }
 
 .adm-btn--detail:hover { background: #f0e8dc; }
-
-@media (max-width: 480px) {
-  .odm-modal {
-    border-radius: 16px 16px 0 0;
-    max-height: 95vh;
-  }
-  .odm-overlay {
-    align-items: flex-end;
-    padding: 0;
-  }
-  .odm-customer-grid { grid-template-columns: 1fr; }
-}
 
 /* ── Order item chips in table rows ──────────────────────── */
 .odm-items-chips {
@@ -3299,83 +2421,6 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-
-.odm-file-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: #1f1f1f;
-  word-break: break-all;
-}
-
-.odm-file-name-only {
-  font-size: 13px;
-  color: #6b6b6b;
-  font-style: italic;
-}
-
-.odm-file-no-data {
-  font-size: 11px;
-  color: #9b9b9b;
-}
-
-/* Row of action buttons */
-.odm-file-btns {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-/* "Lihat" button */
-.odm-btn-view {
-  background: #f0f4ff;
-  border-color: #c7d2fe;
-  color: #3730a3;
-  font-size: 13px;
-  padding: 6px 14px;
-}
-
-.odm-btn-view:hover { background: #e0e7ff; }
-
-/* "Download" button */
-.odm-btn-download {
-  font-size: 13px;
-  padding: 6px 14px;
-  text-decoration: none !important;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-/* Design section inside item card */
-.odm-design-section {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding-top: 8px;
-  border-top: 1px dashed #e5e5e5;
-  margin-top: 4px;
-}
-
-.odm-design-label {
-  font-size: 12px;
-  font-weight: 700;
-  color: #6b6b6b;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-/* Payment proof block */
-.odm-proof-block {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.odm-proof-meta {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -3717,35 +2762,6 @@
   padding-top: 2px;
 }
 
-/* ── File attachment (design files) ── */
-.odm-file-attachment {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: #fff;
-  border: 1px solid #e5e5e5;
-  border-radius: 8px;
-  padding: 8px 12px;
-  flex-wrap: wrap;
-  margin-top: 4px;
-}
-
-.odm-file-icon {
-  font-size: 16px;
-  flex-shrink: 0;
-}
-
-.odm-file-name {
-  font-size: 13px;
-  color: #1f1f1f;
-  font-weight: 600;
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .odm-file-actions {
   display: flex;
   gap: 6px;
@@ -3810,22 +2826,6 @@
   font-size: 14px;
   color: #78350f;
   line-height: 1.6;
-}
-
-/* ── Payment proof ── */
-.odm-proof-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.odm-proof-img {
-  max-width: 100%;
-  max-height: 280px;
-  object-fit: contain;
-  border-radius: 8px;
-  border: 1px solid #e5e5e5;
-  background: #f9f9f9;
 }
 
 /* ── Order history timeline ── */
@@ -3906,27 +2906,6 @@
   background: #f9f5f0;
   border-color: rgba(120, 94, 64, 0.2);
   color: var(--brand-brown, #785e40);
-}
-
-/* ── Design file cards in OrderDetailModal ── */
-.odm-design-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.odm-design-item-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.odm-design-item-label {
-  font-size: 12px;
-  font-weight: 700;
-  color: #6b6b6b;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .odm-design-card {

@@ -266,19 +266,6 @@
   font-weight: 400;
   font-size: 10px;
 }
-
-/* ── Delivery method badge (Fitur 3) ──────────────────── */
-.delivery-method-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 8px;
-  border-radius: 99px;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.delivery-method-badge--delivery    { background: #dbeafe; color: #1e40af; }
 .delivery-method-badge--pickup_factory { background: #fef3c7; color: #92400e; }
 .delivery-method-badge--pickup_store   { background: #f3e8ff; color: #6b21a8; }
 

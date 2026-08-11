@@ -278,36 +278,8 @@
 
 .mo-empty-btn:hover { filter: brightness(0.9); }
 
-/* ── Navbar "Pesanan Saya" link ──────────────────────────── */
-.nav-orders-link {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--brand-brown, #785E40);
-  text-decoration: none;
-  padding: 6px 12px;
-  border-radius: 8px;
-  border: 1px solid rgba(120, 94, 64, 0.2);
-  transition: background 0.15s;
-  white-space: nowrap;
-}
-
-.nav-orders-link:hover { background: rgba(120, 94, 64, 0.06); }
-
-/* ── Table overflow wrapper ──────────────────────────────── */
-.my-orders-table-wrap {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
 @media (max-width: 640px) {
   .mo-card-footer { flex-direction: column; align-items: flex-start; }
   .mo-card-actions { width: 100%; }
   .mo-pay-btn, .mo-track-btn, .mo-review-btn { flex: 1; text-align: center; }
-}
-
-@media (max-width: 767px) {
-  .my-orders-card-footer {
-    flex-wrap: wrap;
-    gap: 8px;
-  }
 }

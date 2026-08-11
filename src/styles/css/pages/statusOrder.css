@@ -125,25 +125,6 @@
 
 .so-input:focus { border-color: var(--brand-brown); }
 
-.so-alert {
-  border-radius: 8px;
-  padding: 10px 14px;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.so-alert--error {
-  background: rgba(220,38,38,0.08);
-  border: 1px solid rgba(220,38,38,0.25);
-  color: #dc2626;
-}
-
-.so-alert--info {
-  background: rgba(237,200,174,0.25);
-  border: 1px solid rgba(120,94,64,0.2);
-  color: #785E40;
-}
-
 .so-submit-btn {
   height: 50px;
   background: var(--brand-brown);
@@ -209,12 +190,6 @@
 .so-status-badge.status--in-delivery         { background: #f0fdf4; color: #15803d; }
 .so-status-badge.status--finished            { background: #dcfce7; color: #166534; }
 .so-status-badge.status--cancelled           { background: #fee2e2; color: #991b1b; }
-
-/* Legacy badge classes (kept for backward compat with old orders) */
-.so-status-badge--diterima  { background: #fef3c7; color: #92400e; }
-.so-status-badge--diproses  { background: #dbeafe; color: #1e40af; }
-.so-status-badge--dikirim   { background: #e0f2fe; color: #0369a1; }
-.so-status-badge--selesai   { background: #dcfce7; color: #166534; }
 
 /* ── Courier tracking box (In Delivery status) ───────────── */
 .so-courier-box {
@@ -367,13 +342,6 @@
   font-weight: 800;
 }
 
-/* ── Customer info ───────────────────────────────────────── */
-.so-customer-info {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
 .so-customer-row {
   display: grid;
   grid-template-columns: 80px 1fr;
@@ -447,59 +415,6 @@
 }
 
 .so-empty { color: #6b6b6b; font-size: 14px; }
-
-/* ── Audit history ───────────────────────────────────────── */
-.so-history {
-  margin-bottom: 20px;
-}
-
-.so-history-toggle {
-  font-size: 13px;
-  font-weight: 700;
-  color: #6b6b6b;
-  cursor: pointer;
-  list-style: none;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 0;
-  border-top: 1px solid #f0f0f0;
-  user-select: none;
-}
-
-.so-history-toggle::-webkit-details-marker { display: none; }
-
-.so-history-toggle::before {
-  content: "▸";
-  font-size: 11px;
-  transition: transform 0.15s;
-}
-
-details[open] .so-history-toggle::before {
-  transform: rotate(90deg);
-}
-
-.so-history-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px 0 4px;
-}
-
-.so-history-row {
-  display: flex;
-  gap: 12px;
-  font-size: 13px;
-  color: #1f1f1f;
-  align-items: baseline;
-}
-
-.so-history-time {
-  color: #9b9b9b;
-  white-space: nowrap;
-  flex-shrink: 0;
-  min-width: 140px;
-}
 
 /* ── Footer ──────────────────────────────────────────────── */
 .so-result-footer {
@@ -582,28 +497,6 @@ details[open] .so-history-toggle::before {
   font-size: 12px;
   color: #6b7280;
   font-style: italic;
-}
-
-/* ── Alamat Pengiriman ─────────────────────────────────────── */
-.so-shipping-address {
-  margin-top: 16px;
-  padding: 14px 16px;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 8px;
-}
-
-.so-shipping-title {
-  font-weight: 600;
-  font-size: 14px;
-  color: #1e40af;
-  margin-bottom: 6px;
-}
-
-.so-shipping-text {
-  font-size: 14px;
-  color: #1e3a8a;
-  line-height: 1.5;
 }
 
 /* ── Promo / Diskon row ──────────────────────────────────── */
@@ -792,21 +685,7 @@ details[open] .so-history-toggle::before {
    Requirements: 9.2, 9.3
    ══════════════════════════════════════════════════════════ */
 
-@media (max-width: 767px) {
-  .so-detail-grid {
-    grid-template-columns: 1fr;
-  }
-}
 
-@media (max-width: 767px) {
-  .so-timeline-step {
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-}
 
 /* ── Review photo upload ─────────────────────────────────── */
 .so-review-photo-wrap {
