@@ -5,6 +5,7 @@ import { api, resolveApiUrl } from '../../core/httpClient.js';
 import DeliveryMethodPanel from '../staff/DeliveryMethodPanel.jsx';
 import { getInvoiceByOrderId, updateInvoicePaymentStatus, openInvoicePdf } from '../../services/api/invoiceService.js';
 import { showToast } from '../../core/toastEmitter.js';
+import { STATUS_CONFIG } from '../../services/orders.js';
 
 /**
  * OrderDetailModal — detail pesanan untuk admin, subadmin, dan owner.
@@ -14,18 +15,6 @@ import { showToast } from '../../core/toastEmitter.js';
  * Fitur 1: tampilkan approval audit trail.
  * Fitur 3: tampilkan DeliveryMethodPanel untuk QC/admin di stage relevan.
  */
-
-const STATUS_CONFIG = {
-  'Waiting for Payment':        { label: 'Menunggu Pembayaran',       color: '#92400e', bg: '#fef3c7' },
-  'Payment Accepted':           { label: 'Pembayaran Diterima',        color: '#166534', bg: '#dcfce7' },
-  'Waiting for Design Approval':{ label: 'Menunggu Konfirmasi Desain', color: '#5b21b6', bg: '#ede9fe' },
-  'Design Accepted':            { label: 'Desain Disetujui',           color: '#1e40af', bg: '#dbeafe' },
-  'On Progress':                { label: 'Sedang Diproses',            color: '#9a3412', bg: '#ffedd5' },
-  'Quality Checking':           { label: 'Quality Check',              color: '#0369a1', bg: '#e0f2fe' },
-  'In Delivery':                { label: 'Dalam Pengiriman',           color: '#15803d', bg: '#f0fdf4' },
-  'Finished':                   { label: 'Selesai',                    color: '#166534', bg: '#dcfce7' },
-  'Cancelled':                  { label: 'Dibatalkan',                 color: '#991b1b', bg: '#fee2e2' },
-};
 
 // Stages di mana QC/admin bisa set delivery method (Fitur 3)
 const DELIVERY_METHOD_STAGES = ['Quality Checking', 'In Delivery', 'Finished'];

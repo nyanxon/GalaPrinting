@@ -139,15 +139,15 @@ export function getAllowedNextStatuses(currentStatus, actorRole, orderType = "st
 
 /** Status display config (icon + badge color class) */
 export const STATUS_CONFIG = {
-  "Waiting for Payment":        { icon: "💳", badge: "status--waiting-payment" },
-  "Payment Accepted":           { icon: "✅", badge: "status--payment-accepted" },
-  "Waiting for Design Approval":{ icon: "🎨", badge: "status--waiting-design" },
-  "Design Accepted":            { icon: "👍", badge: "status--design-accepted" },
-  "On Progress":                { icon: "⚙️", badge: "status--on-progress" },
-  "Quality Checking":           { icon: "🔍", badge: "status--qc" },
-  "In Delivery":                { icon: "🚚", badge: "status--in-delivery" },
-  "Finished":                   { icon: "🎉", badge: "status--finished" },
-  "Cancelled":                  { icon: "❌", badge: "status--cancelled" },
+  'Waiting for Payment':         { icon: '💳', badge: 'status--waiting-payment',  label: 'Menunggu Pembayaran',       color: '#92400e', bg: '#fef3c7' },
+  'Payment Accepted':            { icon: '✅', badge: 'status--payment-accepted', label: 'Pembayaran Diterima',       color: '#166534', bg: '#dcfce7' },
+  'Waiting for Design Approval': { icon: '🎨', badge: 'status--waiting-design',   label: 'Menunggu Konfirmasi Desain', color: '#5b21b6', bg: '#ede9fe' },
+  'Design Accepted':             { icon: '👍', badge: 'status--design-accepted',  label: 'Desain Disetujui',          color: '#1e40af', bg: '#dbeafe' },
+  'On Progress':                 { icon: '⚙️', badge: 'status--on-progress',      label: 'Sedang Diproses',           color: '#9a3412', bg: '#ffedd5' },
+  'Quality Checking':            { icon: '🔍', badge: 'status--qc',               label: 'Quality Check',             color: '#0369a1', bg: '#e0f2fe' },
+  'In Delivery':                 { icon: '🚚', badge: 'status--in-delivery',      label: 'Dalam Pengiriman',          color: '#15803d', bg: '#f0fdf4' },
+  'Finished':                    { icon: '🎉', badge: 'status--finished',         label: 'Selesai',                   color: '#166534', bg: '#dcfce7' },
+  'Cancelled':                   { icon: '❌', badge: 'status--cancelled',        label: 'Dibatalkan',                color: '#991b1b', bg: '#fee2e2' },
 };
 
 /* ══════════════════════════════════════════════════════════
