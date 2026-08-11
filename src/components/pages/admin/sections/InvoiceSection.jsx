@@ -19,6 +19,7 @@ import {
 import { api } from '../../../../core/httpClient.js';
 import { showToast } from '../../../../core/toastEmitter.js';
 import { formatCurrency } from '../../../../utils/format.js';
+import PaginationBar from '../../../ui/PaginationBar.jsx';
 import ThermalReceiptModal from '../../../modals/ThermalReceiptModal.jsx';
 import { getSocket } from '../../../../core/socket.js';
 
@@ -29,27 +30,6 @@ const PAYMENT_STATUS_LABELS = {
   paid:    { label: 'Lunas',       color: '#166534', bg: '#dcfce7' },
   partial: { label: 'Partial',     color: '#92400e', bg: '#fef3c7' },
 };
-
-function PaginationBar({ page, totalPages, total, limit, onPageChange }) {
-  if (totalPages <= 1) return null;
-  const start = (page - 1) * limit + 1;
-  const end   = Math.min(page * limit, total);
-  return (
-    <div className="adm-pagination">
-      <span className="adm-page-info">{start}–{end} dari {total}</span>
-      <div className="adm-page-btns">
-        <button className="adm-page-btn" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>‹</button>
-        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-          const p = Math.max(1, Math.min(page - 2 + i, totalPages - 4 + i));
-          return (
-            <button key={p} className={`adm-page-btn${p === page ? ' active' : ''}`} onClick={() => onPageChange(p)}>{p}</button>
-          );
-        })}
-        <button className="adm-page-btn" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>›</button>
-      </div>
-    </div>
-  );
-}
 
 // ── Create Offline Order Modal ────────────────────────────────────────────────
 
