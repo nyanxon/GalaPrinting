@@ -36,9 +36,6 @@ export async function uploadAvatar(req, res, next) {
     const updatedProfile = await svc.uploadAvatar(req.user.id, req.file);
     return res.json({ ok: true, data: updatedProfile });
   } catch (err) {
-    if (err.status === 415) {
-      return res.status(415).json({ ok: false, message: err.message });
-    }
     next(err);
   }
 }

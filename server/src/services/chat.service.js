@@ -6,8 +6,9 @@
 
 import { randomUUID } from 'crypto';
 import { query } from '../db/connection.js';
+import { STAFF_ROLES } from '../config/roles.js';
 
-const STAFF_ROLES = new Set(['admin', 'owner', 'cashier', 'cs', 'operational', 'qc', 'offline']);
+const STAFF_ROLES_SET = new Set(STAFF_ROLES);
 
 /**
  * List all customer conversations with lastMessage and unreadCount, sorted by last_at DESC.
@@ -105,7 +106,7 @@ export async function saveMessage({ conversationId, senderId, senderRole, type =
     [id, conversationId, senderId, senderRole, type, content || null, filePath || null, fileName || null, fileSize || null, mimeType || null]
   );
 
-  const isStaff = STAFF_ROLES.has(senderRole);
+  const isStaff = STAFF_ROLES_SET.has(senderRole);
 
   if (isStaff) {
     // Admin/staff membalas → tandai sebagai "Ditangani"

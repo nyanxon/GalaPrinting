@@ -8,9 +8,8 @@ import { Router } from 'express';
 import { body } from 'express-validator';
 import { authenticate } from '../middleware/auth.js';
 import { requireRole } from '../middleware/requireRole.js';
+import { STAFF_ROLES } from '../config/roles.js';
 import * as ctrl from '../controllers/users.controller.js';
-
-const VALID_STAFF_ROLES = ['admin', 'owner', 'cashier', 'cs', 'operational', 'qc', 'offline'];
 
 const router = Router();
 
@@ -25,7 +24,7 @@ router.post(
     body('name').trim().notEmpty().withMessage('Nama wajib diisi.'),
     body('email').isEmail().normalizeEmail().withMessage('Email tidak valid.'),
     body('password').isLength({ min: 6 }).withMessage('Password minimal 6 karakter.'),
-    body('role').isIn(VALID_STAFF_ROLES).withMessage('Role tidak valid.'),
+    body('role').isIn(STAFF_ROLES).withMessage('Role tidak valid.'),
   ],
   ctrl.createStaff
 );

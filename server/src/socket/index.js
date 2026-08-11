@@ -8,10 +8,9 @@ import { Server } from 'socket.io';
 import { config } from '../config/env.js';
 import { verifyAccessToken } from '../utils/jwt.js';
 import { query } from '../db/connection.js';
+import { STAFF_ROLES } from '../config/roles.js';
 
 let io = null;
-
-const STAFF_ROLES = ['admin', 'owner', 'cashier', 'cs', 'operational', 'qc', 'offline'];
 
 /**
  * Join all DM conversation rooms for a given staff user.

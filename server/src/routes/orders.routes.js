@@ -8,12 +8,11 @@ import { Router } from 'express';
 import { authenticate } from '../middleware/auth.js';
 import { requireRole } from '../middleware/requireRole.js';
 import { uploadPayment, uploadDesign } from '../middleware/upload.js';
+import { STAFF_ROLES } from '../config/roles.js';
 import * as ctrl from '../controllers/orders.controller.js';
 import { getInvoiceByOrder } from '../controllers/invoice.controller.js';
 
 const router = Router();
-
-const STAFF_ROLES = ['admin', 'owner', 'cashier', 'cs', 'operational', 'qc', 'offline'];
 
 // Public
 router.get('/track', ctrl.trackOrder);

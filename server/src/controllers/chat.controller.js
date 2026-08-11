@@ -6,25 +6,10 @@
 
 import * as svc from '../services/chat.service.js';
 import { StorageService } from '../utils/storage.js';
+import { escapeHtml } from '../utils/escapeHtml.js';
 import { getIO } from '../socket/index.js';
 import { query } from '../db/connection.js';
-
-/**
- * Escapes HTML special characters to prevent XSS when content is rendered.
- * Req 9.5
- * @param {string} str
- * @returns {string}
- */
-function escapeHtml(str) {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;');
-}
-
-const STAFF_ROLES = ['admin', 'owner', 'cashier', 'cs', 'operational', 'qc', 'offline'];
+import { STAFF_ROLES } from '../config/roles.js';
 
 function emitMessageNew(conversationId, message) {
   try {

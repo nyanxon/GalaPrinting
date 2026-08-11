@@ -6,11 +6,11 @@
  */
 
 import PDFDocument from 'pdfkit';
+import { BRAND_COLOR } from '../config/brand.js';
 
 const BRAND_COLOR_R = 120;
 const BRAND_COLOR_G = 94;
 const BRAND_COLOR_B = 64;
-const BRAND_HEX = '#785E40';
 const GRAY_HEX  = '#6b7280';
 const BLACK_HEX = '#111827';
 const LIGHT_BG  = '#faf8f5';
@@ -54,7 +54,7 @@ export async function generateInvoicePdf(invoice) {
       const contentWidth = pageWidth - margin * 2;
 
       // ── Header ──────────────────────────────────────────────────────────
-      doc.fillColor(BRAND_HEX).rect(0, 0, pageWidth, 90).fill();
+      doc.fillColor(BRAND_COLOR).rect(0, 0, pageWidth, 90).fill();
 
       // Nama perusahaan
       doc
@@ -127,7 +127,7 @@ export async function generateInvoicePdf(invoice) {
       // ── Billing Info ──────────────────────────────────────────────────────
       const billY = infoY + 70;
       doc
-        .fillColor(BRAND_HEX)
+        .fillColor(BRAND_COLOR)
         .rect(margin, billY, contentWidth, 22)
         .fill();
 
@@ -156,7 +156,7 @@ export async function generateInvoicePdf(invoice) {
       const tableY = billY + 130;
 
       // Header row
-      doc.fillColor(BRAND_HEX).rect(margin, tableY, contentWidth, 24).fill();
+      doc.fillColor(BRAND_COLOR).rect(margin, tableY, contentWidth, 24).fill();
 
       const colX = {
         no:    margin,
@@ -241,7 +241,7 @@ export async function generateInvoicePdf(invoice) {
         const displayVal = raw ? val : formatIDR(val);
 
         if (isBold) {
-          doc.fillColor(BRAND_HEX).rect(totalsLabelX - 10, currentY - 2, contentWidth - (totalsLabelX - margin - 10) + 10, 22).fill();
+          doc.fillColor(BRAND_COLOR).rect(totalsLabelX - 10, currentY - 2, contentWidth - (totalsLabelX - margin - 10) + 10, 22).fill();
           doc
             .fillColor('#ffffff')
             .font('Helvetica-Bold')

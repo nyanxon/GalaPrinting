@@ -16,6 +16,8 @@
 
 import { Resend } from 'resend';
 import { config } from '../config/env.js';
+import { escapeHtml } from '../utils/escapeHtml.js';
+import { BRAND_COLOR } from '../config/brand.js';
 
 // ── Client init ───────────────────────────────────────────────────────────────
 
@@ -29,7 +31,6 @@ if (config.email.resendApiKey) {
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
-const BRAND_COLOR   = '#785E40';
 const YEAR          = new Date().getFullYear();
 
 function baseWrapper(bodyHtml) {
@@ -146,7 +147,7 @@ export async function sendVerificationEmail({ to, name, verifyUrl }) {
   <tr><td style="padding:32px;">
     <h2 style="margin:0 0 12px;color:#111827;font-size:20px;">Verifikasi Email Anda</h2>
     <p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.6;">
-      Halo <strong>${escHtml(name)}</strong>,<br/>
+      Halo <strong>${escapeHtml(name)}</strong>,<br/>
       Terima kasih telah mendaftar di Gala Printing. Klik tombol di bawah untuk
       memverifikasi alamat email Anda dan mengaktifkan akun Anda.
     </p>
@@ -179,7 +180,7 @@ export async function sendPasswordResetEmail({ to, name, resetUrl }) {
   <tr><td style="padding:32px;">
     <h2 style="margin:0 0 12px;color:#111827;font-size:20px;">Reset Password Anda</h2>
     <p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.6;">
-      Halo <strong>${escHtml(name)}</strong>,<br/>
+      Halo <strong>${escapeHtml(name)}</strong>,<br/>
       Kami menerima permintaan untuk mereset password akun Anda di Gala Printing.
       Klik tombol di bawah untuk membuat password baru.
     </p>
@@ -221,26 +222,26 @@ export async function sendOrderNotification(order, notifType) {
 
   const trackRow = order.tracking_number
     ? `<tr><td style="padding:10px 16px;color:#6b7280;font-size:13px;font-weight:600;border-top:1px solid #e5e7eb;">Nomor Resi</td>
-          <td style="padding:10px 16px;font-size:14px;border-top:1px solid #e5e7eb;">${escHtml(order.tracking_number)}${order.courier_name ? ' (' + escHtml(order.courier_name) + ')' : ''}</td></tr>`
+          <td style="padding:10px 16px;font-size:14px;border-top:1px solid #e5e7eb;">${escapeHtml(order.tracking_number)}${order.courier_name ? ' (' + escapeHtml(order.courier_name) + ')' : ''}</td></tr>`
     : '';
 
   const cancelRow = notifType === 'Cancelled' && order.cancellation_reason
     ? `<tr><td style="padding:10px 16px;color:#6b7280;font-size:13px;font-weight:600;border-top:1px solid #e5e7eb;">Alasan</td>
-          <td style="padding:10px 16px;font-size:14px;border-top:1px solid #e5e7eb;">${escHtml(order.cancellation_reason)}</td></tr>`
+          <td style="padding:10px 16px;font-size:14px;border-top:1px solid #e5e7eb;">${escapeHtml(order.cancellation_reason)}</td></tr>`
     : '';
 
   const body = `
   <tr><td style="padding:32px;">
     <h2 style="margin:0 0 12px;color:#111827;font-size:20px;">${meta.label}</h2>
     <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.6;">
-      Halo <strong>${escHtml(order.customer_name || 'Pelanggan')}</strong>,<br/>
+      Halo <strong>${escapeHtml(order.customer_name || 'Pelanggan')}</strong>,<br/>
       Berikut adalah update terbaru mengenai pesanan Anda.
     </p>
     <table width="100%" cellpadding="0" cellspacing="0"
            style="border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;margin-bottom:24px;">
       <tr style="background:#faf8f5;">
         <td style="padding:10px 16px;color:#6b7280;font-size:13px;font-weight:600;width:42%;">Nomor Pesanan</td>
-        <td style="padding:10px 16px;font-size:14px;font-weight:600;">${escHtml(order.order_number || order.id)}</td>
+        <td style="padding:10px 16px;font-size:14px;font-weight:600;">${escapeHtml(order.order_number || order.id)}</td>
       </tr>
       <tr>
         <td style="padding:10px 16px;color:#6b7280;font-size:13px;font-weight:600;border-top:1px solid #e5e7eb;">Status</td>
@@ -273,7 +274,7 @@ export async function sendNewOrderAdminAlert(order) {
 
   const itemRows = (order.items || []).map((item) =>
     `<tr>
-       <td style="padding:6px 12px;border-top:1px solid #f3f3f3;">${escHtml(item.name)}</td>
+       <td style="padding:6px 12px;border-top:1px solid #f3f3f3;">${escapeHtml(item.name)}</td>
        <td style="padding:6px 12px;border-top:1px solid #f3f3f3;text-align:center;">${item.quantity}</td>
        <td style="padding:6px 12px;border-top:1px solid #f3f3f3;text-align:right;">${formatIDR(item.price * item.quantity)}</td>
      </tr>`
@@ -286,15 +287,15 @@ export async function sendNewOrderAdminAlert(order) {
            style="border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;margin-bottom:20px;">
       <tr style="background:#faf8f5;">
         <td style="padding:10px 16px;color:#6b7280;font-size:13px;font-weight:600;width:42%;">Nomor Pesanan</td>
-        <td style="padding:10px 16px;font-size:14px;font-weight:600;">${escHtml(order.order_number || order.id)}</td>
+        <td style="padding:10px 16px;font-size:14px;font-weight:600;">${escapeHtml(order.order_number || order.id)}</td>
       </tr>
       <tr>
         <td style="padding:10px 16px;color:#6b7280;font-size:13px;font-weight:600;border-top:1px solid #e5e7eb;">Pelanggan</td>
-        <td style="padding:10px 16px;font-size:14px;border-top:1px solid #e5e7eb;">${escHtml(order.customer_name || '—')}</td>
+        <td style="padding:10px 16px;font-size:14px;border-top:1px solid #e5e7eb;">${escapeHtml(order.customer_name || '—')}</td>
       </tr>
       <tr style="background:#faf8f5;">
         <td style="padding:10px 16px;color:#6b7280;font-size:13px;font-weight:600;border-top:1px solid #e5e7eb;">Telepon</td>
-        <td style="padding:10px 16px;font-size:14px;border-top:1px solid #e5e7eb;">${escHtml(order.customer_phone || '—')}</td>
+        <td style="padding:10px 16px;font-size:14px;border-top:1px solid #e5e7eb;">${escapeHtml(order.customer_phone || '—')}</td>
       </tr>
       <tr>
         <td style="padding:10px 16px;color:#6b7280;font-size:13px;font-weight:600;border-top:1px solid #e5e7eb;">Total</td>
@@ -334,12 +335,12 @@ export async function sendInvoiceEmail({ invoice, pdfBuffer }) {
   const to = invoice.customer_email;
   if (!to) return;
 
-  const subject = `Pesanan Diterima — ${escHtml(invoice.invoice_number)} — Gala Printing`;
+  const subject = `Pesanan Diterima — ${escapeHtml(invoice.invoice_number)} — Gala Printing`;
 
   // Build item rows for the invoice table
   const itemRows = (invoice.items || []).map((item) =>
     `<tr>
-       <td style="padding:8px 14px;border-top:1px solid #e5e7eb;">${escHtml(item.name || '—')}</td>
+       <td style="padding:8px 14px;border-top:1px solid #e5e7eb;">${escapeHtml(item.name || '—')}</td>
        <td style="padding:8px 14px;border-top:1px solid #e5e7eb;text-align:center;">${item.quantity ?? 1}</td>
        <td style="padding:8px 14px;border-top:1px solid #e5e7eb;text-align:right;">${formatIDR(Number(item.price ?? 0))}</td>
        <td style="padding:8px 14px;border-top:1px solid #e5e7eb;text-align:right;">${formatIDR(Number(item.price ?? 0) * Number(item.quantity ?? 1))}</td>
@@ -353,7 +354,7 @@ export async function sendInvoiceEmail({ invoice, pdfBuffer }) {
       Pesanan Anda Telah Kami Terima! 🎉
     </h2>
     <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.7;">
-      Halo <strong>${escHtml(invoice.customer_name || 'Pelanggan')}</strong>,<br/>
+      Halo <strong>${escapeHtml(invoice.customer_name || 'Pelanggan')}</strong>,<br/>
       Terima kasih telah mempercayakan pesanan Anda kepada <strong>Gala Printing</strong>.
       Kami telah menerima pesanan Anda dan saat ini sedang melakukan
       <strong>pengecekan pembayaran</strong>. Anda akan mendapat konfirmasi
@@ -376,17 +377,17 @@ export async function sendInvoiceEmail({ invoice, pdfBuffer }) {
       <tr style="background:#faf8f5;">
         <td style="padding:10px 16px;color:#6b7280;font-size:12px;font-weight:700;
                    text-transform:uppercase;letter-spacing:.04em;width:42%;">No. Invoice</td>
-        <td style="padding:10px 16px;font-size:14px;font-weight:700;">${escHtml(invoice.invoice_number)}</td>
+        <td style="padding:10px 16px;font-size:14px;font-weight:700;">${escapeHtml(invoice.invoice_number)}</td>
       </tr>
       <tr>
         <td style="padding:10px 16px;color:#6b7280;font-size:12px;font-weight:700;
                    text-transform:uppercase;letter-spacing:.04em;border-top:1px solid #e5e7eb;">No. Pesanan</td>
-        <td style="padding:10px 16px;font-size:14px;border-top:1px solid #e5e7eb;">${escHtml(invoice.order_number || '—')}</td>
+        <td style="padding:10px 16px;font-size:14px;border-top:1px solid #e5e7eb;">${escapeHtml(invoice.order_number || '—')}</td>
       </tr>
       <tr style="background:#faf8f5;">
         <td style="padding:10px 16px;color:#6b7280;font-size:12px;font-weight:700;
                    text-transform:uppercase;letter-spacing:.04em;border-top:1px solid #e5e7eb;">Total</td>
-        <td style="padding:10px 16px;font-size:15px;font-weight:800;color:#785E40;
+        <td style="padding:10px 16px;font-size:15px;font-weight:800;color:${BRAND_COLOR};
                    border-top:1px solid #e5e7eb;">${formatIDR(Number(invoice.total ?? invoice.subtotal ?? 0))}</td>
       </tr>
     </table>
@@ -458,29 +459,29 @@ export async function sendPromoNotification(promoData) {
   <tr><td style="padding:32px;">
     <h2 style="margin:0 0 12px;color:#111827;font-size:20px;">Promo Terbaru untuk Anda! 🎁</h2>
     <p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.6;">
-      Halo <strong>${escHtml(recipientName || 'Pelanggan')}</strong>,<br/>
+      Halo <strong>${escapeHtml(recipientName || 'Pelanggan')}</strong>,<br/>
       Kami memiliki penawaran spesial yang sayang untuk dilewatkan.
     </p>
     <table width="100%" cellpadding="0" cellspacing="0"
            style="border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;margin-bottom:24px;">
       <tr style="background:#faf8f5;">
         <td style="padding:10px 16px;color:#6b7280;font-size:13px;font-weight:600;width:40%;">Judul</td>
-        <td style="padding:10px 16px;font-size:14px;font-weight:600;">${escHtml(promoTitle)}</td>
+        <td style="padding:10px 16px;font-size:14px;font-weight:600;">${escapeHtml(promoTitle)}</td>
       </tr>
       <tr>
         <td style="padding:10px 16px;color:#6b7280;font-size:13px;font-weight:600;border-top:1px solid #e5e7eb;">Deskripsi</td>
-        <td style="padding:10px 16px;font-size:14px;border-top:1px solid #e5e7eb;">${escHtml(promoDescription)}</td>
+        <td style="padding:10px 16px;font-size:14px;border-top:1px solid #e5e7eb;">${escapeHtml(promoDescription)}</td>
       </tr>
       <tr style="background:#faf8f5;">
         <td style="padding:10px 16px;color:#6b7280;font-size:13px;font-weight:600;border-top:1px solid #e5e7eb;">Diskon</td>
-        <td style="padding:10px 16px;font-size:14px;border-top:1px solid #e5e7eb;">${escHtml(String(discountValue))}</td>
+        <td style="padding:10px 16px;font-size:14px;border-top:1px solid #e5e7eb;">${escapeHtml(String(discountValue))}</td>
       </tr>
       <tr>
         <td style="padding:10px 16px;color:#6b7280;font-size:13px;font-weight:600;border-top:1px solid #e5e7eb;">Kode Promo</td>
         <td style="padding:10px 16px;border-top:1px solid #e5e7eb;">
           <span style="background:#fef3c7;color:#b45309;font-size:16px;font-weight:700;
                        padding:6px 14px;border-radius:4px;letter-spacing:0.1em;">
-            ${escHtml(promoCode)}
+            ${escapeHtml(promoCode)}
           </span>
         </td>
       </tr>
@@ -512,7 +513,7 @@ export async function sendOrderReceivedEmail({ customerEmail, customerName, orde
 
   const itemRows = items.map((item) =>
     `<tr>
-       <td style="padding:7px 14px;border-top:1px solid #e5e7eb;">${escHtml(item.name || '—')}</td>
+       <td style="padding:7px 14px;border-top:1px solid #e5e7eb;">${escapeHtml(item.name || '—')}</td>
        <td style="padding:7px 14px;border-top:1px solid #e5e7eb;text-align:center;">${item.quantity ?? 1}</td>
        <td style="padding:7px 14px;border-top:1px solid #e5e7eb;text-align:right;">${formatIDR(Number(item.price ?? 0) * Number(item.quantity ?? 1))}</td>
      </tr>`
@@ -522,7 +523,7 @@ export async function sendOrderReceivedEmail({ customerEmail, customerName, orde
   <tr><td style="padding:32px;">
     <h2 style="margin:0 0 8px;color:#111827;font-size:22px;font-weight:800;">Pesanan Anda Diterima! 🎉</h2>
     <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.7;">
-      Halo <strong>${escHtml(customerName || 'Pelanggan')}</strong>,<br/>
+      Halo <strong>${escapeHtml(customerName || 'Pelanggan')}</strong>,<br/>
       Terima kasih telah memesan di <strong>Gala Printing</strong>!
       Kami telah menerima pesanan Anda dan sedang menunggu konfirmasi pembayaran.
     </p>
@@ -531,12 +532,12 @@ export async function sendOrderReceivedEmail({ customerEmail, customerName, orde
       <tr style="background:#faf8f5;">
         <td style="padding:10px 16px;color:#6b7280;font-size:12px;font-weight:700;
                    text-transform:uppercase;letter-spacing:.04em;width:42%;">No. Pesanan</td>
-        <td style="padding:10px 16px;font-size:14px;font-weight:700;">${escHtml(orderNumber)}</td>
+        <td style="padding:10px 16px;font-size:14px;font-weight:700;">${escapeHtml(orderNumber)}</td>
       </tr>
       <tr>
         <td style="padding:10px 16px;color:#6b7280;font-size:12px;font-weight:700;
                    text-transform:uppercase;letter-spacing:.04em;border-top:1px solid #e5e7eb;">Total</td>
-        <td style="padding:10px 16px;font-size:15px;font-weight:800;color:#785E40;
+        <td style="padding:10px 16px;font-size:15px;font-weight:800;color:${BRAND_COLOR};
                    border-top:1px solid #e5e7eb;">${formatIDR(Number(subtotal ?? 0))}</td>
       </tr>
     </table>
@@ -581,7 +582,7 @@ export async function sendMockupAcceptedEmail({ customerEmail, customerName, ord
   <tr><td style="padding:32px;">
     <h2 style="margin:0 0 8px;color:#111827;font-size:22px;font-weight:800;">Mockup Anda Telah Diterima! ✅</h2>
     <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.7;">
-      Halo <strong>${escHtml(customerName || 'Pelanggan')}</strong>,<br/>
+      Halo <strong>${escapeHtml(customerName || 'Pelanggan')}</strong>,<br/>
       Kabar baik! Mockup / desain untuk pesanan Anda telah disetujui dan
       kami akan segera memulai proses produksi.
     </p>
@@ -590,7 +591,7 @@ export async function sendMockupAcceptedEmail({ customerEmail, customerName, ord
       <tr style="background:#faf8f5;">
         <td style="padding:10px 16px;color:#6b7280;font-size:12px;font-weight:700;
                    text-transform:uppercase;letter-spacing:.04em;">No. Pesanan</td>
-        <td style="padding:10px 16px;font-size:14px;font-weight:700;">${escHtml(orderNumber)}</td>
+        <td style="padding:10px 16px;font-size:14px;font-weight:700;">${escapeHtml(orderNumber)}</td>
       </tr>
       <tr>
         <td style="padding:10px 16px;color:#6b7280;font-size:12px;font-weight:700;
@@ -630,7 +631,7 @@ export async function sendLoginNewDeviceEmail({ to, name, device, ip, time }) {
   <tr><td style="padding:32px;">
     <h2 style="margin:0 0 8px;color:#111827;font-size:20px;font-weight:800;">Login dari Perangkat Baru</h2>
     <p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.7;">
-      Halo <strong>${escHtml(name || 'Pengguna')}</strong>,<br/>
+      Halo <strong>${escapeHtml(name || 'Pengguna')}</strong>,<br/>
       Kami mendeteksi login ke akun Anda dari perangkat atau lokasi baru.
     </p>
     <table width="100%" cellpadding="0" cellspacing="0"
@@ -638,17 +639,17 @@ export async function sendLoginNewDeviceEmail({ to, name, device, ip, time }) {
       <tr style="background:#faf8f5;">
         <td style="padding:10px 16px;color:#6b7280;font-size:12px;font-weight:700;
                    text-transform:uppercase;letter-spacing:.04em;width:38%;">Perangkat</td>
-        <td style="padding:10px 16px;font-size:14px;">${escHtml(device || 'Tidak diketahui')}</td>
+        <td style="padding:10px 16px;font-size:14px;">${escapeHtml(device || 'Tidak diketahui')}</td>
       </tr>
       <tr>
         <td style="padding:10px 16px;color:#6b7280;font-size:12px;font-weight:700;
                    text-transform:uppercase;letter-spacing:.04em;border-top:1px solid #e5e7eb;">IP</td>
-        <td style="padding:10px 16px;font-size:14px;border-top:1px solid #e5e7eb;">${escHtml(ip || '—')}</td>
+        <td style="padding:10px 16px;font-size:14px;border-top:1px solid #e5e7eb;">${escapeHtml(ip || '—')}</td>
       </tr>
       <tr style="background:#faf8f5;">
         <td style="padding:10px 16px;color:#6b7280;font-size:12px;font-weight:700;
                    text-transform:uppercase;letter-spacing:.04em;border-top:1px solid #e5e7eb;">Waktu</td>
-        <td style="padding:10px 16px;font-size:14px;border-top:1px solid #e5e7eb;">${escHtml(time || '—')}</td>
+        <td style="padding:10px 16px;font-size:14px;border-top:1px solid #e5e7eb;">${escapeHtml(time || '—')}</td>
       </tr>
     </table>
     <table cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
@@ -690,7 +691,7 @@ export async function sendLoginFailedAlertEmail({ to, name, attempts, ip, time }
       ⚠️ Peringatan: Percobaan Login Gagal
     </h2>
     <p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.7;">
-      Halo <strong>${escHtml(name || 'Pengguna')}</strong>,<br/>
+      Halo <strong>${escapeHtml(name || 'Pengguna')}</strong>,<br/>
       Kami mendeteksi <strong>${Number(attempts)} percobaan login yang gagal</strong>
       pada akun Anda dalam waktu singkat.
     </p>
@@ -706,13 +707,13 @@ export async function sendLoginFailedAlertEmail({ to, name, attempts, ip, time }
         <td style="padding:10px 16px;color:#b91c1c;font-size:12px;font-weight:700;
                    text-transform:uppercase;letter-spacing:.04em;border-top:1px solid #fca5a5;">IP</td>
         <td style="padding:10px 16px;font-size:14px;color:#991b1b;
-                   border-top:1px solid #fca5a5;">${escHtml(ip || '—')}</td>
+                   border-top:1px solid #fca5a5;">${escapeHtml(ip || '—')}</td>
       </tr>
       <tr>
         <td style="padding:10px 16px;color:#b91c1c;font-size:12px;font-weight:700;
                    text-transform:uppercase;letter-spacing:.04em;border-top:1px solid #fca5a5;">Waktu</td>
         <td style="padding:10px 16px;font-size:14px;color:#991b1b;
-                   border-top:1px solid #fca5a5;">${escHtml(time || '—')}</td>
+                   border-top:1px solid #fca5a5;">${escapeHtml(time || '—')}</td>
       </tr>
     </table>
     <table cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
@@ -739,14 +740,4 @@ export async function sendLoginFailedAlertEmail({ to, name, attempts, ip, time }
   } catch (err) {
     console.error('[email] Login failed alert email failed:', err.message);
   }
-}
-
-/** Minimal HTML escape to prevent XSS in email templates */
-function escHtml(str) {
-  if (typeof str !== 'string') return String(str ?? '');
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
 }
