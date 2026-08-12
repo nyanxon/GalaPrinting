@@ -5,12 +5,15 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth.js';
 import { requireRole } from '../middleware/requireRole.js';
+import { checkFeature } from '../middleware/checkFeature.js';
 import { exportDatabase, exportUploads, exportAll } from '../controllers/export.controller.js';
 
 const router = Router();
 
 // GET /api/export/database — full database snapshot (JSON)
-router.get('/database', authenticate, requireRole('owner', 'admin'), exportDatabase);
+// Dynamic-permissions trial (Step 6): checkFeature runs BESIDE requireRole,
+// not instead of it — legacy roles still pass, promoted admins need grant.
+router.get('/database', authenticate, requireRole('owner', 'admin'), checkFeature('export.database'), exportDatabase);
 
 // GET /api/export/uploads  — all uploaded files as a ZIP
 router.get('/uploads',  authenticate, requireRole('owner', 'admin'), exportUploads);
