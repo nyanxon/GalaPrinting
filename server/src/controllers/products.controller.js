@@ -75,12 +75,8 @@ export async function createProduct(req, res, next) {
       priceBroker:      body.priceBroker ?? body.price_broker,
       shortDescription: body.shortDescription,
       requiresDesign:   body.requiresDesign,
-      colors:           body.colors,
-      sizes:            body.sizes,
-      materials:        body.materials,
       imagePath:        body.image || body.imagePath || null,
-      variantPrices:    body.variantPrices ?? null,
-      sizeType:         body.sizeType ?? body.size_type ?? 'fixed',
+      sizeType:         body.sizeType ?? body.size_type ?? 'none',
       isHiddenFromCustomer: body.isHiddenFromCustomer ?? body.is_hidden_from_customer ?? false,
     });
     return res.status(201).json({ ok: true, data: product });

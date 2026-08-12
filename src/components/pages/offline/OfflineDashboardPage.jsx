@@ -219,9 +219,6 @@ function NewOrderPanel({ onOrderCreated }) {
         name:           itemName,
         price,
         quantity:       qty,
-        color:          null,
-        size:           null,
-        material:       null,
         designFileName: null,
       });
     }

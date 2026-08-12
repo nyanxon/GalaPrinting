@@ -197,9 +197,6 @@ function OrderDetailModal({ isOpen, onClose, order, actorRole, onOrderUpdated })
                         <span className="odm-item-qty">
                           {item.quantity || 1} pcs × {formatCurrency(item.price)}
                         </span>
-                        {item.color    && <span className="odm-item-tag">🎨 {item.color}</span>}
-                        {item.size     && <span className="odm-item-tag">📐 {item.size}</span>}
-                        {item.material && <span className="odm-item-tag">🧱 {item.material}</span>}
                       </div>
                       {item.notes && <div className="odm-item-notes">📝 {item.notes}</div>}
                       <div className="odm-item-design">

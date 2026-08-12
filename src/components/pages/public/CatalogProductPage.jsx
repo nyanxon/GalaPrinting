@@ -12,29 +12,12 @@ import { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { CartContext } from '../../context/CartContext.jsx';
 import { AuthContext } from '../../context/AuthContext.jsx';
-import { getProductById, resolveVariantPrice } from '../../../services/products.js';
+import { getProductById } from '../../../services/products.js';
 import { listReviews } from '../../../services/reviews.js';
 import DropZone from '../../ui/DropZone.jsx';
 import placeholderImg from '../../../assets/placeholder.svg';
 import { showToast } from '../../../core/toastEmitter.js';
 import '../../../styles/css/pages/catalogProduct.css';
-
-/**
- * Parse a field that may be a JSON string array or already an array.
- * Backend stores colors/sizes/materials as JSON strings in MySQL.
- */
-function parseArrayField(val) {
-  if (Array.isArray(val)) return val;
-  if (typeof val === 'string' && val.trim()) {
-    try {
-      const parsed = JSON.parse(val);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return val.split(',').map((s) => s.trim()).filter(Boolean);
-    }
-  }
-  return [];
-}
 
 function CatalogProductPage() {
   const { id } = useParams();
@@ -58,9 +41,6 @@ function CatalogProductPage() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
   // Selectors
-  const [selectedColor, setSelectedColor] = useState(null);
-  const [selectedSize, setSelectedSize] = useState(null);
-  const [selectedMaterial, setSelectedMaterial] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState('');
 
@@ -94,30 +74,17 @@ function CatalogProductPage() {
         const raw = await getProductById(id, { visible: true });
         if (!raw) { setNotFound(true); return; }
 
-        // Normalize backend snake_case fields and parse JSON array fields
+        // Normalize backend snake_case fields
         const prod = {
           ...raw,
           shortDescription: raw.shortDescription || raw.short_description || '',
           requiresDesign:   raw.requiresDesign   ?? raw.requires_design   ?? false,
           image:            raw.image            || raw.image_path        || null,
-          colors:    parseArrayField(raw.colors),
-          sizes:     parseArrayField(raw.sizes),
-          materials: parseArrayField(raw.materials),
-          variantPrices: (() => {
-            const vp = raw.variantPrices ?? raw.variant_prices ?? null;
-            if (typeof vp === 'string' && vp.trim()) {
-              try { return JSON.parse(vp); } catch { return null; }
-            }
-            return vp;
-          })(),
         };
 
         setProduct(prod);
         setThumbStart(0);
         setActiveIndex(0);
-        setSelectedColor(prod.colors[0] || null);
-        setSelectedSize(prod.sizes[0] || null);
-        setSelectedMaterial(prod.materials[0] || '');
 
         // Load reviews for this product
         try {
@@ -170,14 +137,6 @@ function CatalogProductPage() {
         return;
       }
     }
-    if ((product.colors || []).length > 0 && !selectedColor) {
-      showToast('Silakan pilih warna.', 'error');
-      return;
-    }
-    if ((product.sizes || []).length > 0 && !selectedSize) {
-      showToast('Silakan pilih ukuran.', 'error');
-      return;
-    }
 
     addItem({
       id: crypto.randomUUID(),
@@ -186,9 +145,6 @@ function CatalogProductPage() {
       price: displayPrice,
       image: product.image,
       quantity: Math.max(1, quantity),
-      color: selectedColor,
-      size: selectedSize,
-      material: selectedMaterial,
       notes,
       designFileName: designFile ? designFile.name : null,
       designDataUrl: designFile ? designDataUrl : null,
@@ -269,11 +225,7 @@ function CatalogProductPage() {
     );
   }
 
-  const hasColors    = (product.colors    || []).length > 0;
-  const hasSizes     = (product.sizes     || []).length > 0;
-  const hasMaterials = (product.materials || []).length > 0;
-
-  const displayPrice = resolveVariantPrice(product, selectedColor, selectedSize, selectedMaterial);
+  const displayPrice = product.price ?? 0;
 
   return (
     <main className="container product-detail">
@@ -425,11 +377,6 @@ function CatalogProductPage() {
           </div>
           <p className="product-info-price">
             Rp {displayPrice.toLocaleString('id-ID')}
-            {displayPrice !== (product.price ?? 0) && (
-              <span style={{ fontSize: '13px', color: '#6b7280', marginLeft: '8px', fontWeight: 400 }}>
-                {/* (harga dasar: Rp {(product.price ?? 0).toLocaleString('id-ID')}) */}
-              </span>
-            )}
           </p>
 
           {/* Star Rating */}
@@ -447,66 +394,6 @@ function CatalogProductPage() {
               ({averageRating.toFixed(1)} • {totalReviews} Ulasan)
             </span>
           </div>
-
-          {/* Pilih Produk dan Bahan */}
-          {hasMaterials && (
-            <div className="option-group">
-              <div className="option-label">Pilih Produk dan Bahan</div>
-              <select
-                className="select"
-                data-material
-                aria-label="Pilih produk dan bahan"
-                value={selectedMaterial}
-                onChange={(e) => setSelectedMaterial(e.target.value)}
-              >
-                {product.materials.map((m) => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* Warna */}
-          {hasColors && (
-            <div className="option-group">
-              <div className="option-label">Warna</div>
-              <div className="chip-row" data-colors>
-                {product.colors.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    className="chip"
-                    aria-pressed={selectedColor === color ? 'true' : 'false'}
-                    data-value={encodeURIComponent(color)}
-                    onClick={() => setSelectedColor(color)}
-                  >
-                    {color}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Ukuran Print */}
-          {hasSizes && (
-            <div className="option-group">
-              <div className="option-label">Ukuran Print</div>
-              <div className="chip-row" data-sizes>
-                {product.sizes.map((size) => (
-                  <button
-                    key={size}
-                    type="button"
-                    className="chip"
-                    aria-pressed={selectedSize === size ? 'true' : 'false'}
-                    data-value={encodeURIComponent(size)}
-                    onClick={() => setSelectedSize(size)}
-                  >
-                    {size}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Keterangan */}
           <div className="option-group">
@@ -659,8 +546,7 @@ function CatalogProductPage() {
             <>
               <div className="section-title">Spesifikasi</div>
               <p className="muted">
-                {hasMaterials && `Bahan: ${product.materials.join(', ')}. `}
-                {hasSizes && `Ukuran: ${product.sizes.slice(0, 6).join(', ')}.`}
+                {product.specifications || 'Tidak ada spesifikasi tambahan.'}
               </p>
             </>
           )}

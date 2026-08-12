@@ -141,9 +141,6 @@ function ThermalReceiptContent({ invoice, paperSize }) {
           return (
             <div key={item.id || i} style={{ marginBottom: '3px' }}>
               <div style={{ wordBreak: 'break-word' }}>{item.name}</div>
-              {item.size && (
-                <div style={{ ...css.muted, fontSize: `${cfg.smallFontSize}px` }}>{item.size}</div>
-              )}
               <div style={{ ...css.row, ...css.muted, fontSize: `${cfg.smallFontSize}px` }}>
                 <span>{item.quantity} x {formatCurrency(item.price)}</span>
                 <span>{formatCurrency(sub)}</span>

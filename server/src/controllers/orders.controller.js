@@ -40,56 +40,6 @@ function emitOrderStatusChanged(order, previousStatus) {
   } catch { /* ignore */ }
 }
 
-/**
- * Parse variant_prices — stored as a JSON string in products.variant_prices,
- * keyed by `{ukuran}|{bahan}`. Returns a plain object.
- */
-function parseVariantPrices(raw) {
-  if (raw == null) return {};
-  if (typeof raw === 'string') {
-    try {
-      const parsed = JSON.parse(raw);
-      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
-    } catch {
-      return {};
-    }
-  }
-  return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
-}
-
-/**
- * Resolve unit price for an offline order item, server-side.
- *
- * Harga dasar mengikuti customer_type (price_customer / price_broker).
- * Jika item memilih ukuran dan/atau bahan dan produk punya variant price
- * untuk kombinasi `{ukuran}|{bahan}`, harga varian menggantikan harga dasar
- * dengan harga yang disesuaikan customer_type:
- *   - format baru: { key: { customer, broker } }
- *   - format lama: { key: number } → sama untuk customer & broker.
- * Warna tidak memengaruhi harga.
- */
-function resolveOfflineUnitPrice(product, customerType, size, material) {
-  const base = Number(customerType === 'broker' ? product.price_broker : product.price_customer) || 0;
-  if (size || material) {
-    const key = `${size || ''}|${material || ''}`;
-    const raw = parseVariantPrices(product.variant_prices)[key];
-    let customer = null;
-    let broker = null;
-    if (typeof raw === 'number' && Number.isFinite(raw)) {
-      customer = raw;
-      broker = raw;
-    } else if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
-      const c = Number(raw.customer);
-      const b = Number(raw.broker);
-      customer = Number.isFinite(c) ? c : null;
-      broker = Number.isFinite(b) ? b : null;
-    }
-    const variant = customerType === 'broker' ? broker : customer;
-    if (variant !== null && variant >= 0) return variant;
-  }
-  return base;
-}
-
 // ── Controllers ───────────────────────────────────────────────────────────────
 
 export async function createOrder(req, res, next) {
@@ -243,7 +193,6 @@ export async function createOfflineOrder(req, res, next) {
           err.status = 422;
           throw err;
         }
-        const color = item.color ?? item.warna ?? null;
 
         // Produk per m²: harga = luas (min. 1 m²) × harga/m², dimensi wajib.
         if (prod.size_type === 'per_m2') {
@@ -267,31 +216,18 @@ export async function createOfflineOrder(req, res, next) {
             price: linePrice,
             quantity,
             notes,
-            color,
-            size: `${l} × ${w} cm`,
-            material: null,
             lengthCm: l,
             widthCm: w,
           };
         }
 
-        const unitPrice = resolveOfflineUnitPrice(
-          prod,
-          type,
-          item.size ?? item.ukuran,
-          item.material ?? item.bahan
-        );
+        const unitPrice = Number(type === 'broker' ? prod.price_broker : prod.price_customer) || 0;
         return {
           productId: pid,
           name: item.name || prod.name,
           price: unitPrice,
           quantity,
           notes,
-          color,
-          size:     item.size     ?? item.ukuran   ?? null,
-          material: item.material ?? item.bahan    ?? null,
-          lengthCm: null,
-          widthCm:  null,
         };
       }
 
@@ -302,11 +238,6 @@ export async function createOfflineOrder(req, res, next) {
         price: Number(item.price || 0),
         quantity,
         notes,
-        color:    item.color    ?? item.warna    ?? null,
-        size:     item.size     ?? item.ukuran   ?? null,
-        material: item.material ?? item.bahan    ?? null,
-        lengthCm: null,
-        widthCm:  null,
       };
     });
 

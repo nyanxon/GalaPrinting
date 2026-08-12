@@ -67,24 +67,6 @@ function CartItemDetailModal({ item, onClose }) {
               <span className="cdm-spec-value">{item.name}</span>
             </div>
 
-            {/* Bahan */}
-            <div className="cdm-spec-row">
-              <span className="cdm-spec-label">Bahan</span>
-              <span className="cdm-spec-value">{item.material || <span style={{ color: '#9ca3af' }}>—</span>}</span>
-            </div>
-
-            {/* Warna */}
-            <div className="cdm-spec-row">
-              <span className="cdm-spec-label">Warna</span>
-              <span className="cdm-spec-value">{item.color || <span style={{ color: '#9ca3af' }}>—</span>}</span>
-            </div>
-
-            {/* Ukuran */}
-            <div className="cdm-spec-row">
-              <span className="cdm-spec-label">Ukuran</span>
-              <span className="cdm-spec-value">{item.size || <span style={{ color: '#9ca3af' }}>—</span>}</span>
-            </div>
-
             {/* Keterangan */}
             <div className="cdm-spec-row">
               <span className="cdm-spec-label">Keterangan</span>
@@ -205,7 +187,7 @@ function CartPage() {
             </div>
           ) : (
             items.map((item) => {
-              const meta = [item.material, item.color, item.size].filter(Boolean).join(' • ');
+              const meta = [item.notes].filter(Boolean).join(' • ');
               const imgSrc = (() => {
                 if (!item.image) return placeholderImg;
                 const raw = item.image;

@@ -4308,7 +4308,7 @@
   color: #6b7280;
 }
 
-/* Atribut item: warna, ukuran, bahan */
+/* Atribut item: dimensi (panjang/lebar) */
 .offline-item-attrs {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

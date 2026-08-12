@@ -113,8 +113,7 @@ export async function getProductById(id, { visible } = {}) {
 /**
  * Search products by name keyword (for cashier autocomplete).
  * Returns a lightweight projection: id, name, both prices, category,
- * plus attributes (colors/sizes/materials) and variant_prices so the
- * cashier form can render dropdowns and resolve variant pricing.
+ * size_type and visibility.
  * @param {string} q - keyword
  * @param {number} [limit=10]
  * @returns {Promise<object[]>}
@@ -126,7 +125,6 @@ export async function searchProducts(q, limit = 10) {
 
   const [rows] = await query(
     `SELECT p.id, p.name, p.price_customer, p.price_broker, c.name AS category,
-            p.colors, p.sizes, p.materials, p.variant_prices,
             p.size_type, p.is_hidden_from_customer
      FROM products p
      LEFT JOIN categories c ON p.category_id = c.id
@@ -141,7 +139,6 @@ export async function searchProducts(q, limit = 10) {
 /**
  * Batch-fetch products by ids (used by cashier order to resolve prices
  * server-side instead of trusting prices sent by the client).
- * Includes variant_prices so size+material can re-price the unit price.
  * @param {string[]} ids
  * @returns {Promise<object[]>}
  */
@@ -151,7 +148,6 @@ export async function getProductsByIds(ids) {
   const placeholders = clean.map(() => '?').join(', ');
   const [rows] = await query(
     `SELECT p.id, p.name, p.price_customer, p.price_broker, p.category_id,
-            p.colors, p.sizes, p.materials, p.variant_prices,
             p.size_type, p.is_hidden_from_customer
      FROM products p
      WHERE p.id IN (${placeholders})`,
@@ -164,12 +160,12 @@ export async function getProductsByIds(ids) {
  * Create a new product.
  * @returns {Promise<object>} created product row
  */
-export async function createProduct({ name, categoryId, price, priceCustomer, priceBroker, shortDescription, requiresDesign, colors, sizes, materials, imagePath, variantPrices, sizeType, isHiddenFromCustomer }) {
+export async function createProduct({ name, categoryId, price, priceCustomer, priceBroker, shortDescription, requiresDesign, imagePath, sizeType, isHiddenFromCustomer }) {
   const id   = randomUUID();
   const slug = await uniqueSlug(name);
 
-  // Normalize sizeType — default to 'fixed' for legacy products
-  const normalizedSizeType = sizeType === 'per_m2' ? 'per_m2' : 'fixed';
+  // Normalize sizeType — 'per_m2' (Per M2) or 'none' (Tidak ada)
+  const normalizedSizeType = sizeType === 'per_m2' ? 'per_m2' : 'none';
 
   // Normalize imagePath: accept Array, JSON string, or plain URL string.
   // Always persist as a JSON array string so multiple images are supported.
@@ -189,8 +185,8 @@ export async function createProduct({ name, categoryId, price, priceCustomer, pr
 
   await query(
     `INSERT INTO products
-       (id, category_id, name, slug, price_customer, price_broker, short_description, requires_design, colors, sizes, materials, image_path, variant_prices, size_type, is_hidden_from_customer)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (id, category_id, name, slug, price_customer, price_broker, short_description, requires_design, image_path, size_type, is_hidden_from_customer)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       categoryId || null,
@@ -200,11 +196,7 @@ export async function createProduct({ name, categoryId, price, priceCustomer, pr
       priceBroker ?? priceCustomer ?? price ?? 0,
       shortDescription || null,
       requiresDesign ? 1 : 0,
-      colors ? JSON.stringify(colors) : null,
-      sizes  ? JSON.stringify(sizes)  : null,
-      materials ? JSON.stringify(materials) : null,
       normalizedImagePath,
-      variantPrices != null ? JSON.stringify(variantPrices) : null,
       normalizedSizeType,
       isHiddenFromCustomer ? 1 : 0,
     ]
@@ -221,8 +213,7 @@ export async function updateProduct(id, data) {
   const fields = [];
   const params = [];
 
-  const allowed    = ['name', 'category_id', 'price_customer', 'price_broker', 'short_description', 'requires_design', 'image_path', 'size_type', 'is_hidden_from_customer'];
-  const jsonFields = ['colors', 'sizes', 'materials', 'variant_prices'];
+  const allowed = ['name', 'category_id', 'price_customer', 'price_broker', 'short_description', 'requires_design', 'image_path', 'size_type', 'is_hidden_from_customer'];
 
   for (const [key, val] of Object.entries(data)) {
     // Support both camelCase (from frontend) and snake_case
@@ -233,7 +224,6 @@ export async function updateProduct(id, data) {
               : key === 'categoryId'       ? 'category_id'
               : key === 'priceCustomer'    ? 'price_customer'
               : key === 'priceBroker'      ? 'price_broker'
-              : key === 'variantPrices'    ? 'variant_prices'
               : key === 'sizeType'         ? 'size_type'
               : key === 'isHiddenFromCustomer' ? 'is_hidden_from_customer'
               : key; // already snake_case (e.g. category_id sent by controller)
@@ -244,7 +234,7 @@ export async function updateProduct(id, data) {
         params.push(val ? 1 : 0);
       } else if (col === 'size_type') {
         // Only accept the two known ENUM values
-        params.push(val === 'per_m2' ? 'per_m2' : 'fixed');
+        params.push(val === 'per_m2' ? 'per_m2' : 'none');
       } else if (col === 'image_path') {
         // Normalize: accept Array, JSON string, or plain string.
         // Always persist as a JSON array string so multiple images are preserved.
@@ -265,10 +255,6 @@ export async function updateProduct(id, data) {
       } else {
         params.push(val);
       }
-    } else if (jsonFields.includes(col)) {
-      fields.push(`${col} = ?`);
-      // null → SQL NULL; everything else → JSON string
-      params.push(val != null ? JSON.stringify(val) : null);
     }
   }
 

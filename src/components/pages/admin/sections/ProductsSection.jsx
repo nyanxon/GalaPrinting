@@ -24,24 +24,6 @@ import { showToast } from '../../../../core/toastEmitter.js';
 const PAGE_SIZE = 10;
 
 /**
- * Parse a field that may be a JSON string array or already an array.
- * Backend stores colors/sizes/materials as JSON strings.
- */
-function parseArrayField(val) {
-  if (Array.isArray(val)) return val;
-  if (typeof val === 'string') {
-    try {
-      const parsed = JSON.parse(val);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      // Not JSON — treat as comma-separated plain string
-      return val ? val.split(',').map((s) => s.trim()).filter(Boolean) : [];
-    }
-  }
-  return [];
-}
-
-/**
  * Parse existing images from a product object.
  * Returns Image_Entry[] — each existing URL becomes { url, status: 'done' }.
  * Handles JSON array strings, single URL strings, and placeholder values.
@@ -89,48 +71,16 @@ function parseImages(product) {
 }
 
 function ProductModal({ product, categories, onClose, onSaved }) {
-  // Parse existing variantPrices — stored as { "size|material": price }.
-  // Format baru: { "size|material": { customer, broker } }.
-  // Format lama (angka tunggal) dinormalisasi → sama untuk customer & broker.
-  function parseVariantPrices(raw) {
-    if (!raw) return {};
-    let obj = raw;
-    if (typeof raw === 'string') {
-      try { obj = JSON.parse(raw); } catch { return {}; }
-    }
-    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return {};
-    const out = {};
-    for (const [key, val] of Object.entries(obj)) {
-      if (typeof val === 'number' && isFinite(val)) {
-        out[key] = { customer: val, broker: val };
-      } else if (val && typeof val === 'object' && !Array.isArray(val)) {
-        const customer = Number(val.customer);
-        const broker = Number(val.broker);
-        out[key] = {
-          customer: Number.isFinite(customer) ? customer : undefined,
-          broker: Number.isFinite(broker) ? broker : undefined,
-        };
-      }
-    }
-    return out;
-  }
-
   const [formData, setFormData] = useState({
     name: product?.name || '',
     category: product?.category || '',
     priceCustomer: product?.priceCustomer ?? product?.price_customer ?? product?.price ?? '',
     priceBroker: product?.priceBroker ?? product?.price_broker ?? product?.priceCustomer ?? product?.price_customer ?? product?.price ?? '',
     shortDescription: product?.shortDescription || product?.short_description || '',
-    colors: parseArrayField(product?.colors).join(', '),
-    sizes: parseArrayField(product?.sizes).join(', '),
-    materials: parseArrayField(product?.materials).join(', '),
     requiresDesign: product?.requiresDesign ?? product?.requires_design ?? false,
-    sizeType: product?.sizeType ?? product?.size_type ?? 'fixed',
+    sizeType: product?.sizeType ?? product?.size_type ?? 'none',
     isHiddenFromCustomer: Boolean(product?.isHiddenFromCustomer ?? product?.is_hidden_from_customer ?? false),
   });
-  const [variantPrices, setVariantPrices] = useState(
-    parseVariantPrices(product?.variantPrices ?? product?.variant_prices ?? null)
-  );
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [images, setImages] = useState(parseImages(product));
@@ -142,14 +92,7 @@ function ProductModal({ product, categories, onClose, onSaved }) {
 
   const overlayRef = useRef(null);
 
-  // Derive size/material arrays from current form values
-  const splitField = (v) =>
-    String(v || '').split(',').map((s) => s.trim()).filter(Boolean);
-
-  const currentSizes     = splitField(formData.sizes);
-  const currentMaterials = splitField(formData.materials);
-
-  // Per-M2 products use panjang × lebar input at order time — size table is disabled.
+  // Per-M2 products use panjang × lebar input at order time.
   const isPerM2 = formData.sizeType === 'per_m2';
 
   // Close on Escape is intentionally disabled — use the × button to close.
@@ -166,27 +109,6 @@ function ProductModal({ product, categories, onClose, onSaved }) {
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
-  }
-
-  function handleVariantPriceChange(size, material, side, value) {
-    const key = `${size}|${material}`;
-    const num = value === '' ? undefined : Number(value);
-    const valid = num !== undefined && !isNaN(num) && num >= 0;
-    setVariantPrices((prev) => {
-      const next = { ...prev };
-      const current = { ...(next[key] || {}) };
-      if (valid) {
-        current[side] = num;
-      } else {
-        delete current[side];
-      }
-      if (Object.keys(current).length === 0) {
-        delete next[key];
-      } else {
-        next[key] = current;
-      }
-      return next;
-    });
   }
 
   async function handleImageUpload(files) {
@@ -289,27 +211,15 @@ function ProductModal({ product, categories, onClose, onSaved }) {
       return;
     }
 
-    const split = (v) =>
-      String(v || '')
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean);
-
     const data = {
       name: formData.name.trim(),
       category: formData.category,
       priceCustomer: Number(formData.priceCustomer || 0),
       priceBroker: Number(formData.priceBroker || 0),
       shortDescription: formData.shortDescription.trim(),
-      colors: split(formData.colors),
-      // Per-M2: size table tidak dipakai — kirim kosong agar DB tidak menyimpan data ukuran.
-      sizes: isPerM2 ? [] : split(formData.sizes),
-      materials: isPerM2 ? [] : split(formData.materials),
       requiresDesign: formData.requiresDesign,
       image: JSON.stringify(doneImages.map((i) => i.url)),
-      // Only save non-empty variant prices
-      variantPrices: isPerM2 || Object.keys(variantPrices).length === 0 ? null : variantPrices,
-      sizeType: formData.sizeType === 'per_m2' ? 'per_m2' : 'fixed',
+      sizeType: formData.sizeType === 'per_m2' ? 'per_m2' : 'none',
       isHiddenFromCustomer: formData.isHiddenFromCustomer,
     };
 
@@ -423,116 +333,15 @@ function ProductModal({ product, categories, onClose, onSaved }) {
             <div className="adm-field">
               <label className="adm-label" htmlFor="pf-size-type">Tipe Ukuran Produk *</label>
               <select className="adm-input" id="pf-size-type" name="sizeType" value={formData.sizeType} onChange={handleChange}>
-                <option value="fixed">Fix Size (ukuran sudah ditentukan)</option>
                 <option value="per_m2">Per M2 (panjang × lebar saat order)</option>
+                <option value="none">Tidak Ada</option>
               </select>
               <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '6px' }}>
                 {isPerM2
-                  ? '💡 Produk dihitung per m² — customer/kasir memasukkan panjang × lebar saat order, tabel ukuran tidak dipakai.'
-                  : '💡 Produk memakai tabel ukuran (fix size) seperti sekarang — isi daftar ukuran & bahan di bawah.'}
+                  ? '💡 Produk dihitung per m² — customer/kasir memasukkan panjang × lebar saat order.'
+                  : '💡 Produk tidak memakai panjang × lebar — harga satuan langsung dipakai saat order.'}
               </p>
             </div>
-
-            <div className="adm-field">
-              <label className="adm-label" htmlFor="pf-colors">
-                Warna <span className="adm-hint">(pisahkan koma — tidak mempengaruhi harga)</span>
-              </label>
-              <input className="adm-input" id="pf-colors" name="colors" value={formData.colors} onChange={handleChange} placeholder="Hitam, Putih, Merah" />
-            </div>
-
-            <div className="adm-field">
-              <label className="adm-label" htmlFor="pf-sizes">
-                Ukuran <span className="adm-hint">(pisahkan koma — mempengaruhi harga)</span>
-              </label>
-              <input className="adm-input" id="pf-sizes" name="sizes" value={formData.sizes} onChange={handleChange} disabled={isPerM2} placeholder={isPerM2 ? 'Tidak dipakai untuk produk per m²' : 'A4, A5, Custom'} style={isPerM2 ? { opacity: 0.5, background: '#f3f4f6', cursor: 'not-allowed' } : undefined} />
-            </div>
-
-            <div className="adm-field">
-              <label className="adm-label" htmlFor="pf-mats">
-                Bahan <span className="adm-hint">(pisahkan koma — mempengaruhi harga)</span>
-              </label>
-              <input className="adm-input" id="pf-mats" name="materials" value={formData.materials} onChange={handleChange} disabled={isPerM2} placeholder={isPerM2 ? 'Tidak dipakai untuk produk per m²' : 'Vinyl, Art Paper'} style={isPerM2 ? { opacity: 0.5, background: '#f3f4f6', cursor: 'not-allowed' } : undefined} />
-            </div>
-
-            {/* ── Variant Price Grid ── */}
-            {!isPerM2 && (currentSizes.length > 0 || currentMaterials.length > 0) && (
-              <div className="adm-field">
-                <label className="adm-label">
-                  Harga per Varian
-                  <span className="adm-hint" style={{ marginLeft: '6px' }}>— kosongkan untuk pakai harga dasar</span>
-                </label>
-                <div style={{ overflowX: 'auto', marginTop: '8px' }}>
-                  <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: '13px' }}>
-                    <thead>
-                      <tr>
-                        <th style={{ padding: '6px 10px', background: '#f3f4f6', border: '1px solid #e5e7eb', textAlign: 'left', fontWeight: 600 }}>
-                          Ukuran \ Bahan
-                        </th>
-                        {currentMaterials.length > 0
-                          ? currentMaterials.map((mat) => (
-                              <th key={mat} style={{ padding: '6px 10px', background: '#f3f4f6', border: '1px solid #e5e7eb', textAlign: 'center', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                                {mat}
-                              </th>
-                            ))
-                          : (
-                              <th style={{ padding: '6px 10px', background: '#f3f4f6', border: '1px solid #e5e7eb', textAlign: 'center', fontWeight: 600 }}>
-                                (semua bahan)
-                              </th>
-                            )
-                        }
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(currentSizes.length > 0 ? currentSizes : ['']).map((size) => (
-                        <tr key={size}>
-                          <td style={{ padding: '6px 10px', border: '1px solid #e5e7eb', fontWeight: 500, background: '#fafafa', whiteSpace: 'nowrap' }}>
-                            {size || '(semua ukuran)'}
-                          </td>
-                          {(currentMaterials.length > 0 ? currentMaterials : ['']).map((mat) => {
-                            const key = `${size}|${mat}`;
-                            const entry = variantPrices[key] || {};
-                            const inputStyle = { width: '100%', padding: '4px 6px', border: '1px solid #d1d5db', borderRadius: '4px', fontSize: '13px', textAlign: 'right' };
-                            return (
-                              <td key={mat} style={{ padding: '4px 6px', border: '1px solid #e5e7eb' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                    <span style={{ fontSize: 11, color: '#6b7280', width: 50, flexShrink: 0, textAlign: 'left' }}>Cust</span>
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      placeholder={String(formData.priceCustomer || 0)}
-                                      value={entry.customer !== undefined ? entry.customer : ''}
-                                      onChange={(e) => handleVariantPriceChange(size, mat, 'customer', e.target.value)}
-                                      style={inputStyle}
-                                      aria-label={`Harga customer ${size} / ${mat}`}
-                                    />
-                                  </div>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                    <span style={{ fontSize: 11, color: '#6b7280', width: 50, flexShrink: 0, textAlign: 'left' }}>Brkr</span>
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      placeholder={String(formData.priceBroker || 0)}
-                                      value={entry.broker !== undefined ? entry.broker : ''}
-                                      onChange={(e) => handleVariantPriceChange(size, mat, 'broker', e.target.value)}
-                                      style={inputStyle}
-                                      aria-label={`Harga broker ${size} / ${mat}`}
-                                    />
-                                  </div>
-                                </div>
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '6px' }}>
-                  💡 Warna tidak mempengaruhi harga. Isi Harga Customer &amp; Harga Broker per kombinasi ukuran + bahan; kosongkan untuk memakai harga dasar sesuai tipe pembeli.
-                </p>
-              </div>
-            )}
 
             {/* ── Image Upload ── */}
             <div className="adm-field">

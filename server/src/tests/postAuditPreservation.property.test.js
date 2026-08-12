@@ -592,7 +592,7 @@ describe('Preservation 7 — Successful cart load unchanged', () => {
 
   it('items are exactly the server response — no transformation', async () => {
     const serverItems = [
-      { id: 'item-x', name: 'Custom Product', price: 99999, quantity: 3, color: 'red' },
+      { id: 'item-x', name: 'Custom Product', price: 99999, quantity: 3 },
     ];
 
     const mockGetCart = vi.fn(async () => serverItems);

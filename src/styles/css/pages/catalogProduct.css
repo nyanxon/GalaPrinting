@@ -263,30 +263,6 @@
   font-weight: 700;
 }
 
-.chip-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.chip {
-  border: 1px solid rgba(0, 0, 0, 0.45);
-  background: var(--surface);
-  border-radius: 6px;
-  padding: 6px 14px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.12s, border-color 0.12s;
-}
-
-.chip[aria-pressed="true"],
-.chip.active {
-  background: rgba(120, 94, 64, 0.15);
-  border-color: var(--brand-brown);
-  color: var(--brand-brown);
-}
-
 /* Quantity + Add to Cart row */
 .qty-add-row {
   display: flex;

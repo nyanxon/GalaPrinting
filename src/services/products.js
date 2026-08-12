@@ -14,9 +14,7 @@ const DEFAULT_PRODUCTS = [
     image: "/assets/img/placeholder.svg",
     shortDescription: "Stiker tahan air, cocok untuk branding.",
     requiresDesign: true,
-    colors: ["Hitam", "Putih", "Emas", "Perak"],
-    sizes: ["5x5cm", "5x10cm", "8x8cm", "10x10cm", "12x12cm", "Full Badan", "Full All", "Polos"],
-    materials: ["Vinyl", "HVS", "Art Paper"],
+    sizeType: "none",
   },
   {
     id: "p-brosur",
@@ -26,9 +24,7 @@ const DEFAULT_PRODUCTS = [
     image: "/assets/img/placeholder.svg",
     shortDescription: "Brosur promosi full color.",
     requiresDesign: true,
-    colors: ["Full Color", "Hitam Putih"],
-    sizes: ["A5", "A4"],
-    materials: ["Art Paper 150gsm", "Art Paper 210gsm"],
+    sizeType: "none",
   },
   {
     id: "p-kartu-nama",
@@ -38,9 +34,7 @@ const DEFAULT_PRODUCTS = [
     image: "/assets/img/placeholder.svg",
     shortDescription: "Kartu nama elegan untuk profesional.",
     requiresDesign: true,
-    colors: ["Full Color", "Hitam Putih"],
-    sizes: ["9x5.5cm"],
-    materials: ["Art Carton 260gsm", "Art Carton 310gsm"],
+    sizeType: "none",
   },
   {
     id: "p-custom",
@@ -50,9 +44,7 @@ const DEFAULT_PRODUCTS = [
     image: "/assets/img/placeholder.svg",
     shortDescription: "Tidak menemukan yang cocok? Buat pesanan custom.",
     requiresDesign: false,
-    colors: [],
-    sizes: [],
-    materials: ["Konsultasi dulu"],
+    sizeType: "none",
   },
   {
     id: "p-mug",
@@ -62,9 +54,7 @@ const DEFAULT_PRODUCTS = [
     image: "/assets/img/placeholder.svg",
     shortDescription: "Gelas keramik berkualitas dengan tempelan warna custom",
     requiresDesign: false,
-    colors: [],
-    sizes: [],
-    materials: ["Ceramic", "Transparent Glass"],
+    sizeType: "none",
   },
   {
     id: "p-acrylic",
@@ -74,9 +64,7 @@ const DEFAULT_PRODUCTS = [
     image: "/assets/img/placeholder.svg",
     shortDescription: "Stand akrilik berkualitas dengan custom design",
     requiresDesign: false,
-    colors: [],
-    sizes: [],
-    materials: ["Stand A4", "Stand A3"],
+    sizeType: "none",
   },
 ];
 
@@ -124,19 +112,6 @@ function listProductsPaginatedFromLocalStorage(opts = {}) {
 // Converts snake_case fields and parses JSON array fields
 // ---------------------------------------------------------------------------
 
-function parseArrayField(val) {
-  if (Array.isArray(val)) return val;
-  if (typeof val === 'string' && val.trim()) {
-    try {
-      const parsed = JSON.parse(val);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return val.split(',').map((s) => s.trim()).filter(Boolean);
-    }
-  }
-  return [];
-}
-
 function normalizeProduct(raw) {
   if (!raw) return raw;
   // Parse image_path — may be a JSON array string (new format) or a single URL (legacy)
@@ -180,80 +155,14 @@ function normalizeProduct(raw) {
     })(),
     shortDescription: raw.shortDescription || raw.short_description || '',
     requiresDesign:   raw.requiresDesign   ?? raw.requires_design   ?? false,
-    sizeType:         raw.sizeType         ?? raw.size_type         ?? 'fixed',
+    sizeType:         raw.sizeType         ?? raw.size_type         ?? 'none',
     isHiddenFromCustomer: Boolean(raw.isHiddenFromCustomer ?? raw.is_hidden_from_customer ?? false),
     // Harga Customer/Broker — raw.price_customer adalah sumber utama (kolom DB).
-    // `price` dipertahankan sebagai alias harga customer agar public site
-    // (ProductsPage, CartPage, resolveVariantPrice) tetap berfungsi.
+    // `price` dipertahankan sebagai alias harga customer agar public site tetap berfungsi.
     priceCustomer:    Number(raw.priceCustomer ?? raw.price_customer ?? raw.price ?? 0),
     priceBroker:      Number(raw.priceBroker   ?? raw.price_broker   ?? raw.priceCustomer ?? raw.price_customer ?? raw.price ?? 0),
     price:            Number(raw.priceCustomer ?? raw.price_customer ?? raw.price ?? 0),
-    colors:    parseArrayField(raw.colors),
-    sizes:     parseArrayField(raw.sizes),
-    materials: parseArrayField(raw.materials),
   };
-}
-
-/**
- * Baca entry harga varian untuk kombinasi `{ukuran}|{bahan}`.
- * Format baru: { [key]: { customer, broker } }.
- * Format lama (legacy): { [key]: number } → dipakai untuk customer & broker.
- * Mengembalikan { customer, broker } atau null jika key tidak ada.
- */
-export function variantPriceEntry(variantPrices, key) {
-  const raw = variantPrices?.[key];
-  if (typeof raw === 'number' && isFinite(raw)) {
-    return { customer: raw, broker: raw };
-  }
-  if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
-    const customer = Number(raw.customer);
-    const broker = Number(raw.broker);
-    return {
-      customer: Number.isFinite(customer) ? customer : null,
-      broker: Number.isFinite(broker) ? broker : null,
-    };
-  }
-  return null;
-}
-
-/**
- * Resolve the price for a specific variant combination.
- *
- * Pricing rules:
- *  - Color does NOT affect price.
- *  - Size and Material each independently affect price.
- *  - Key format: `{size}|{material}` — color is intentionally excluded.
- *  - Falls back to `product.price` (base price) when no variant price is set.
- *  - Returns the CUSTOMER price (public site / online cart).
- *
- * @param {object} product
- * @param {string|null|undefined} color    — ignored for pricing
- * @param {string|null|undefined} size
- * @param {string|null|undefined} material
- * @returns {number}
- */
-export function resolveVariantPrice(product, color, size, material) {
-  // Build key from size + material only (color does not affect price)
-  const key = `${size ?? ''}|${material ?? ''}`;
-
-  let variantPrices = product?.variantPrices ?? product?.variant_prices ?? null;
-
-  if (typeof variantPrices === 'string' && variantPrices.trim()) {
-    try {
-      variantPrices = JSON.parse(variantPrices);
-    } catch {
-      variantPrices = null;
-    }
-  }
-
-  if (variantPrices && typeof variantPrices === 'object') {
-    const entry = variantPriceEntry(variantPrices, key);
-    if (entry && entry.customer !== null) {
-      return entry.customer;
-    }
-  }
-
-  return Number(product?.price ?? product?.priceCustomer ?? product?.price_customer ?? 0);
 }
 
 // ---------------------------------------------------------------------------
@@ -320,11 +229,7 @@ export async function searchProducts(q) {
       price_customer: Number(p.price_customer ?? p.price ?? 0),
       price_broker:   Number(p.price_broker   ?? p.price ?? 0),
       category: p.category || null,
-      colors: p.colors ?? [],
-      sizes: p.sizes ?? [],
-      materials: p.materials ?? [],
-      variant_prices: p.variant_prices ?? null,
-      size_type: p.size_type ?? p.sizeType ?? 'fixed',
+      size_type: p.size_type ?? p.sizeType ?? 'none',
     }));
 }
 

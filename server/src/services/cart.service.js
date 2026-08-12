@@ -29,8 +29,8 @@ export async function addItem(userId, item) {
   const id = randomUUID();
   await query(
     `INSERT INTO cart_items
-       (id, user_id, product_id, name, price, quantity, color, size, material, notes, design_file_path)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (id, user_id, product_id, name, price, quantity, notes, design_file_path)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       userId,
@@ -38,9 +38,6 @@ export async function addItem(userId, item) {
       item.name,
       item.price,
       item.quantity || 1,
-      item.color || null,
-      item.size || null,
-      item.material || null,
       item.notes || null,
       item.designFilePath || null,
     ]

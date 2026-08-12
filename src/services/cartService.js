@@ -115,7 +115,7 @@ export async function getCart(_userId) {
  * - Otherwise                    : writes to localStorage
  *
  * @param {string} [userId]
- * @param {{ productId: string, name: string, price: number, quantity?: number, color?: string, size?: string, material?: string, notes?: string, designFileName?: string, designDataUrl?: string, image?: string }} item
+ * @param {{ productId: string, name: string, price: number, quantity?: number, notes?: string, designFileName?: string, designDataUrl?: string, image?: string }} item
  * @returns {Promise<{ ok: boolean, message: string }>}
  */
 export async function addToCart(_userId, item) {
@@ -126,9 +126,6 @@ export async function addToCart(_userId, item) {
         name:           item.name,
         price:          item.price,
         quantity:       Math.max(1, Number(item.quantity || 1)),
-        color:          item.color   || null,
-        size:           item.size    || null,
-        material:       item.material || null,
         notes:          item.notes   || "",
         designFileName: item.designFileName || null,
       });
@@ -149,9 +146,6 @@ export async function addToCart(_userId, item) {
     price:          item.price,
     image:          item.image || null,
     quantity:       Math.max(1, Number(item.quantity || 1)),
-    color:          item.color    || null,
-    size:           item.size     || null,
-    material:       item.material || null,
     notes:          item.notes    || "",
     designFileName: item.designFileName || null,
     designDataUrl:  item.designDataUrl  || null,

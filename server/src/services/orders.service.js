@@ -260,8 +260,8 @@ export async function createOrder({ customer, items, subtotal, source = 'online'
     for (const item of (items || [])) {
       await conn.execute(
         `INSERT INTO order_items
-           (id, order_id, product_id, name, price, quantity, color, size, material, length_cm, width_cm, notes, design_file_path)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           (id, order_id, product_id, name, price, quantity, length_cm, width_cm, notes, design_file_path)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           randomUUID(),
           id,
@@ -269,9 +269,6 @@ export async function createOrder({ customer, items, subtotal, source = 'online'
           item.name,
           item.price,
           item.quantity || 1,
-          item.color || null,
-          item.size || null,
-          item.material || null,
           item.lengthCm ?? item.length_cm ?? null,
           item.widthCm  ?? item.width_cm  ?? null,
           item.notes || null,

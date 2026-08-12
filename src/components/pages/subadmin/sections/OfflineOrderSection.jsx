@@ -24,13 +24,6 @@ function makeItem() {
     price: '',
     quantity: 1,
     notes: '',
-    color: '',
-    size: '',
-    material: '',
-    colors: [],
-    sizes: [],
-    materials: [],
-    variantPrices: {},
     sizeType: 'fixed',
     lengthCm: '',
     widthCm: '',
@@ -48,69 +41,13 @@ function priceForType(item, customerType) {
     : Number(item.price);
 }
 
-function parseArrayField(val) {
-  if (Array.isArray(val)) return val;
-  if (typeof val === 'string' && val.trim()) {
-    try {
-      const parsed = JSON.parse(val);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return val.split(',').map((s) => s.trim()).filter(Boolean);
-    }
-  }
-  return [];
-}
-
-function parseVariantPrices(raw) {
-  if (raw == null) return {};
-  if (typeof raw === 'string') {
-    try {
-      const parsed = JSON.parse(raw);
-      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
-    } catch {
-      return {};
-    }
-  }
-  return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
-}
-
-/**
- * Harga varian untuk kombinasi ukuran|bahan item (jika ada di produk),
- * disesuaikan dengan customerType.
- * - Format baru variant_prices: { key: { customer, broker } }
- * - Format lama (angka tunggal): dipakai sama untuk customer & broker.
- * Warna TIDAK memengaruhi harga. Return null jika tidak ada varian cocok.
- */
-function variantPriceFor(item, customerType) {
-  if (!item.productId) return null;
-  if (!item.size && !item.material) return null;
-  const key = `${item.size || ''}|${item.material || ''}`;
-  const raw = item.variantPrices?.[key];
-  let customer = null;
-  let broker = null;
-  if (typeof raw === 'number' && Number.isFinite(raw)) {
-    customer = raw;
-    broker = raw;
-  } else if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
-    const c = Number(raw.customer);
-    const b = Number(raw.broker);
-    customer = Number.isFinite(c) ? c : null;
-    broker = Number.isFinite(b) ? b : null;
-  }
-  const value = customerType === 'broker' ? broker : customer;
-  return value !== null ? value : null;
-}
-
 /**
  * Harga satuan final item:
- * - Item katalog: harga varian (jika kombinasi ukuran|bahan cocok),
- *   selain itu harga dasar sesuai customer_type (customer/broker).
+ * - Item katalog: harga dasar sesuai customer_type (customer/broker).
  * - Item manual: harga yang diketik cashier.
  */
 function resolveUnitPrice(item, customerType) {
   if (!item.productId) return Number(item.price) || 0;
-  const variant = variantPriceFor(item, customerType);
-  if (variant !== null) return variant;
   return priceForType(item, customerType);
 }
 
@@ -211,16 +148,9 @@ function ProductAutocomplete({ item, customerType, error, onSelect, onClear }) {
       priceCustomer,
       priceBroker,
       price: customerType === 'broker' ? priceBroker : priceCustomer,
-      colors: parseArrayField(prod.colors),
-      sizes: parseArrayField(prod.sizes),
-      materials: parseArrayField(prod.materials),
-      variantPrices: parseVariantPrices(prod.variant_prices),
       sizeType: prod.size_type ?? prod.sizeType ?? 'fixed',
       lengthCm: '',
       widthCm: '',
-      color: '',
-      size: '',
-      material: '',
     });
   }
 
@@ -388,7 +318,7 @@ function SuccessCard({ order, onReset }) {
         )}
         <div className="offline-receipt-mini-divider" />
         {items.map((item, i) => {
-          const attrs = [item.color, item.size, item.material].filter(Boolean);
+          const attrs = [item.notes].filter(Boolean);
           return (
             <div key={item.id || i} className="offline-receipt-mini-row">
               <span className="offline-receipt-mini-key">
@@ -524,13 +454,6 @@ export default function OfflineOrderSection() {
       priceCustomer: '',
       priceBroker: '',
       price: '',
-      colors: [],
-      sizes: [],
-      materials: [],
-      variantPrices: {},
-      color: '',
-      size: '',
-      material: '',
       sizeType: 'fixed',
       lengthCm: '',
       widthCm: '',
@@ -561,20 +484,6 @@ export default function OfflineOrderSection() {
         });
       }
     });
-  }
-
-  function handleAttrChange(id, field, value) {
-    setItems((prev) =>
-      prev.map((it) => {
-        if (it.id !== id) return it;
-        const next = { ...it, [field]: value };
-        // Ukuran & bahan memengaruhi harga (via variant_prices); warna tidak.
-        if (field === 'size' || field === 'material') {
-          next.price = resolveUnitPrice(next, customerType);
-        }
-        return next;
-      })
-    );
   }
 
   function validate() {
@@ -611,9 +520,6 @@ export default function OfflineOrderSection() {
         price:     Number(it.price),
         quantity:  Number(it.quantity) || 1,
         notes:     (it.notes || '').trim() || null,
-        color:     (it.color || '').trim() || null,
-        size:      (it.size || '').trim() || null,
-        material:  (it.material || '').trim() || null,
         lengthCm:  it.sizeType === 'per_m2' ? (parseNumber(it.lengthCm) || null) : null,
         widthCm:   it.sizeType === 'per_m2' ? (parseNumber(it.widthCm)  || null) : null,
       }));
@@ -833,7 +739,7 @@ export default function OfflineOrderSection() {
                     </div>
                   </div>
 
-                  {isPerM2 ? (
+                  {isPerM2 && (
                     <div className="offline-item-attrs offline-item-attrs--dims">
                       <div className="offline-item-attr">
                         <label className="offline-item-attr-label">Panjang (cm)</label>
@@ -889,102 +795,6 @@ export default function OfflineOrderSection() {
                             ? billedAreaM2(item.lengthCm, item.widthCm)
                             : '—'}
                         </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="offline-item-attrs">
-                      <div className="offline-item-attr">
-                        <label className="offline-item-attr-label">Warna</label>
-                        {!item.productId ? (
-                          <input
-                            className="adm-input offline-item-attr-input"
-                            type="text"
-                            value="Produk belum dipilih"
-                            disabled
-                            title="Pilih produk terlebih dahulu"
-                          />
-                        ) : item.colors.length > 0 ? (
-                          <select
-                            className="adm-input offline-item-attr-input"
-                            value={item.color}
-                            onChange={(e) => handleAttrChange(item.id, 'color', e.target.value)}
-                          >
-                            <option value="">— pilih —</option>
-                            {item.colors.map((c) => (
-                              <option key={c} value={c}>{c}</option>
-                            ))}
-                          </select>
-                        ) : (
-                          <input
-                            className="adm-input offline-item-attr-input"
-                            type="text"
-                            placeholder="Warna (opsional)…"
-                            value={item.color}
-                            onChange={(e) => handleAttrChange(item.id, 'color', e.target.value)}
-                          />
-                        )}
-                      </div>
-                      <div className="offline-item-attr">
-                        <label className="offline-item-attr-label">Ukuran</label>
-                        {!item.productId ? (
-                          <input
-                            className="adm-input offline-item-attr-input"
-                            type="text"
-                            value="Produk belum dipilih"
-                            disabled
-                            title="Pilih produk terlebih dahulu"
-                          />
-                        ) : item.sizes.length > 0 ? (
-                          <select
-                            className="adm-input offline-item-attr-input"
-                            value={item.size}
-                            onChange={(e) => handleAttrChange(item.id, 'size', e.target.value)}
-                          >
-                            <option value="">— pilih —</option>
-                            {item.sizes.map((s) => (
-                              <option key={s} value={s}>{s}</option>
-                            ))}
-                          </select>
-                        ) : (
-                          <input
-                            className="adm-input offline-item-attr-input"
-                            type="text"
-                            placeholder="Ukuran (opsional)…"
-                            value={item.size}
-                            onChange={(e) => handleAttrChange(item.id, 'size', e.target.value)}
-                          />
-                        )}
-                      </div>
-                      <div className="offline-item-attr">
-                        <label className="offline-item-attr-label">Bahan</label>
-                        {!item.productId ? (
-                          <input
-                            className="adm-input offline-item-attr-input"
-                            type="text"
-                            value="Produk belum dipilih"
-                            disabled
-                            title="Pilih produk terlebih dahulu"
-                          />
-                        ) : item.materials.length > 0 ? (
-                          <select
-                            className="adm-input offline-item-attr-input"
-                            value={item.material}
-                            onChange={(e) => handleAttrChange(item.id, 'material', e.target.value)}
-                          >
-                            <option value="">— pilih —</option>
-                            {item.materials.map((m) => (
-                              <option key={m} value={m}>{m}</option>
-                            ))}
-                          </select>
-                        ) : (
-                          <input
-                            className="adm-input offline-item-attr-input"
-                            type="text"
-                            placeholder="Bahan (opsional)…"
-                            value={item.material}
-                            onChange={(e) => handleAttrChange(item.id, 'material', e.target.value)}
-                          />
-                        )}
                       </div>
                     </div>
                   )}

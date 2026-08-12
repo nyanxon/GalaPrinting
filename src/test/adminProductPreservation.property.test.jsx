@@ -8,9 +8,8 @@
  * to preserve after the fix is applied.
  *
  * These tests verify that non-image fields (Name, Category, Price, Description,
- * Colors, Sizes, Materials, Variant Prices, Requires Design), delete functionality,
- * and product display in the list continue to work correctly both before and
- * after the Bug 2 fix.
+ * Requires Design), delete functionality, and product display in the list
+ * continue to work correctly both before and after the Bug 2 fix.
  *
  * Validates: Requirements 3.4, 3.5, 3.6, 3.7
  */
@@ -89,9 +88,6 @@ const productFormArbitrary = fc.record({
   priceCustomer: fc.integer({ min: 1000, max: 10000000 }),
   priceBroker: fc.integer({ min: 1000, max: 10000000 }),
   shortDescription: fc.string({ minLength: 0, maxLength: 200 }),
-  colors: fc.array(fc.constantFrom('Hitam', 'Putih', 'Merah', 'Biru', 'Hijau'), { minLength: 0, maxLength: 4 }),
-  sizes: fc.array(fc.constantFrom('A4', 'A5', 'A6', 'Custom'), { minLength: 0, maxLength: 3 }),
-  materials: fc.array(fc.constantFrom('Vinyl', 'Art Paper', 'Glossy'), { minLength: 0, maxLength: 3 }),
   requiresDesign: fc.boolean(),
 });
 
@@ -163,21 +159,6 @@ async function fillAndSubmitForm(formData) {
     fireEvent.change(descInput, { target: { value: formData.shortDescription } });
   }
 
-  if (formData.colors && formData.colors.length > 0) {
-    const colorsInput = screen.getByPlaceholderText('Hitam, Putih, Merah');
-    fireEvent.change(colorsInput, { target: { value: formData.colors.join(', ') } });
-  }
-
-  if (formData.sizes && formData.sizes.length > 0) {
-    const sizesInput = screen.getByPlaceholderText('A4, A5, Custom');
-    fireEvent.change(sizesInput, { target: { value: formData.sizes.join(', ') } });
-  }
-
-  if (formData.materials && formData.materials.length > 0) {
-    const matsInput = screen.getByPlaceholderText('Vinyl, Art Paper');
-    fireEvent.change(matsInput, { target: { value: formData.materials.join(', ') } });
-  }
-
   if (formData.requiresDesign) {
     const checkbox = document.querySelector('input[name="requiresDesign"]');
     if (checkbox && !checkbox.checked) {
@@ -229,7 +210,7 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 // Requirement 3.4 -- Form displays all non-image fields
 // ---------------------------------------------------------------------------
-describe('Preservation 3.4 -- Form displays Name, Category, Price, Description, Colors, Sizes, Materials, Variant Prices, Requires Design', () => {
+describe('Preservation 3.4 -- Form displays Name, Category, Price, Description, Requires Design', () => {
   /**
    * Concrete test: add modal renders all required non-image form fields.
    *
@@ -252,15 +233,6 @@ describe('Preservation 3.4 -- Form displays Name, Category, Price, Description, 
     // Description field
     expect(screen.getByLabelText(/Deskripsi Singkat/i)).toBeTruthy();
 
-    // Colors field
-    expect(screen.getByLabelText(/Warna/i)).toBeTruthy();
-
-    // Sizes field (input only — "Tipe Ukuran Produk" select shares the word "Ukuran")
-    expect(screen.getByLabelText(/Ukuran/i, { selector: 'input' })).toBeTruthy();
-
-    // Materials field
-    expect(screen.getByLabelText(/Bahan/i)).toBeTruthy();
-
     // Requires Design checkbox
     expect(screen.getByText(/Wajib upload desain/i)).toBeTruthy();
 
@@ -280,9 +252,6 @@ describe('Preservation 3.4 -- Form displays Name, Category, Price, Description, 
       priceCustomer: 25000,
       priceBroker: 22000,
       shortDescription: 'Stiker berkualitas tinggi',
-      colors: ['Hitam', 'Putih'],
-      sizes: ['A4', 'A5'],
-      materials: ['Vinyl'],
       requiresDesign: true,
       image: '/assets/img/placeholder.svg',
     };
@@ -312,9 +281,6 @@ describe('Preservation 3.4 -- Form displays Name, Category, Price, Description, 
     const descInput = screen.getByPlaceholderText('Deskripsi singkat');
     expect(descInput.value).toBe('Stiker berkualitas tinggi');
 
-    const colorsInput = screen.getByPlaceholderText('Hitam, Putih, Merah');
-    expect(colorsInput.value).toContain('Hitam');
-
     const checkbox = document.querySelector('input[name="requiresDesign"]');
     expect(checkbox.checked).toBe(true);
 
@@ -331,7 +297,7 @@ describe('Preservation 3.5 -- Saving product saves all non-image fields correctl
    *
    * Validates: Requirements 3.5
    */
-  it('form submit sends name, category, price, description, colors, sizes, materials, requiresDesign to addProduct', async () => {
+  it('form submit sends name, category, price, description, requiresDesign to addProduct', async () => {
     const { unmount } = await renderProductsSection();
     await openAddModal();
 
@@ -341,9 +307,6 @@ describe('Preservation 3.5 -- Saving product saves all non-image fields correctl
       priceCustomer: 75000,
       priceBroker: 65000,
       shortDescription: 'Brosur lipat tiga',
-      colors: ['Hitam', 'Putih'],
-      sizes: ['A4'],
-      materials: ['Art Paper'],
       requiresDesign: false,
     });
 
@@ -353,9 +316,6 @@ describe('Preservation 3.5 -- Saving product saves all non-image fields correctl
     expect(submitted.priceCustomer).toBe(75000);
     expect(submitted.priceBroker).toBe(65000);
     expect(submitted.shortDescription).toBe('Brosur lipat tiga');
-    expect(submitted.colors).toEqual(['Hitam', 'Putih']);
-    expect(submitted.sizes).toEqual(['A4']);
-    expect(submitted.materials).toEqual(['Art Paper']);
     expect(submitted.requiresDesign).toBe(false);
 
     unmount();
@@ -376,9 +336,6 @@ describe('Preservation 3.5 -- Saving product saves all non-image fields correctl
       priceCustomer: 50000,
       priceBroker: 45000,
       shortDescription: '',
-      colors: [],
-      sizes: [],
-      materials: [],
       requiresDesign: true,
     });
 
@@ -427,82 +384,6 @@ describe('Preservation 3.5 -- Saving product saves all non-image fields correctl
 
       unmount();
     }
-  });
-
-  /**
-   * Concrete test: variant prices are saved correctly when sizes and materials are set.
-   *
-   * Validates: Requirements 3.5
-   */
-  it('variant prices are saved correctly when sizes and materials are provided', async () => {
-    const { unmount } = await renderProductsSection();
-    await openAddModal();
-
-    // Fill name, category, price
-    fireEvent.change(screen.getByPlaceholderText('Nama produk'), { target: { value: 'Stiker Varian' } });
-    fireEvent.change(document.getElementById('pf-cat'), { target: { value: 'Stiker' } });
-    fireEvent.change(document.getElementById('pf-price-customer'), { target: { value: '10000' } });
-    fireEvent.change(document.getElementById('pf-price-broker'), { target: { value: '9000' } });
-
-    // Set sizes and materials to trigger variant price grid
-    fireEvent.change(screen.getByPlaceholderText('A4, A5, Custom'), { target: { value: 'A4, A5' } });
-    fireEvent.change(screen.getByPlaceholderText('Vinyl, Art Paper'), { target: { value: 'Vinyl' } });
-
-    // Wait for variant price grid to appear
-    await waitFor(() => {
-      expect(screen.getByText('Harga per Varian')).toBeTruthy();
-    });
-
-    // Fill in customer & broker variant prices
-    const variantInputs = document.querySelectorAll('input[type="number"][aria-label]');
-    const customerVariantInput = Array.from(variantInputs).find(
-      (el) => el.getAttribute('aria-label') === 'Harga customer A4 / Vinyl'
-    );
-    const brokerVariantInput = Array.from(variantInputs).find(
-      (el) => el.getAttribute('aria-label') === 'Harga broker A4 / Vinyl'
-    );
-    if (customerVariantInput) {
-      fireEvent.change(customerVariantInput, { target: { value: '15000' } });
-    }
-    if (brokerVariantInput) {
-      fireEvent.change(brokerVariantInput, { target: { value: '13000' } });
-    }
-
-    addProduct.mockResolvedValue({ id: 'new-id' });
-
-    // Simulate adding a mock image so the image validation passes.
-    uploadProductImage.mockResolvedValue('/uploads/mock.jpg');
-    URL.createObjectURL = vi.fn(() => 'blob:mock-url');
-    const fileInput = document.querySelector('input[type="file"]');
-    if (fileInput) {
-      const mockFile = new File(['mock'], 'mock.jpg', { type: 'image/jpeg' });
-      await act(async () => {
-        fireEvent.change(fileInput, { target: { files: [mockFile] } });
-      });
-      // Let the mocked upload resolve so the image reaches status 'done'.
-      await act(async () => {});
-    }
-
-    const submitButton = screen.getByRole('button', { name: /Tambah Produk/i });
-    await act(async () => {
-      fireEvent.click(submitButton);
-    });
-
-    await waitFor(() => {
-      expect(addProduct).toHaveBeenCalled();
-    });
-
-    const submitted = addProduct.mock.calls[0][0];
-    expect(submitted.sizes).toEqual(['A4', 'A5']);
-    expect(submitted.materials).toEqual(['Vinyl']);
-
-    // If variant price was set, it should be in variantPrices as { customer, broker }
-    if (customerVariantInput) {
-      expect(submitted.variantPrices).toBeTruthy();
-      expect(submitted.variantPrices['A4|Vinyl']).toEqual({ customer: 15000, broker: 13000 });
-    }
-
-    unmount();
   });
 });
 
