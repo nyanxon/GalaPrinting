@@ -7,6 +7,7 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth.js';
 import { requireRole } from '../middleware/requireRole.js';
+import { checkFeature } from '../middleware/checkFeature.js';
 import * as ctrl from '../controllers/promo.controller.js';
 
 const router = Router();
@@ -20,7 +21,8 @@ router.post('/validate', authenticate, requireRole('customer'), ctrl.validatePro
 router.get('/stats',    authenticate, requireRole('admin', 'owner'), ctrl.getPromoStats);
 
 // GET  /api/promo         — list all promo codes
-router.get('/',         authenticate, requireRole('admin', 'owner'), ctrl.listPromoCodes);
+// Dynamic-permissions trial 2 (Step 6): checkFeature runs BESIDE requireRole.
+router.get('/',         authenticate, requireRole('admin', 'owner'), checkFeature('promo.view'), ctrl.listPromoCodes);
 
 // POST /api/promo         — create a new promo code
 router.post('/',        authenticate, requireRole('admin', 'owner'), ctrl.createPromoCode);
