@@ -32,6 +32,7 @@ const ResetPasswordPage    = lazy(() => import('./components/pages/public/ResetP
 // Staff pages — lazy loaded, only fetched when navigating to /admin, /owner, etc.
 const AdminDashboardPage       = lazy(() => import('./components/pages/admin/AdminDashboardPage.jsx'));
 const OwnerDashboardPage       = lazy(() => import('./components/pages/owner/OwnerDashboardPage.jsx'));
+const AdminManagementPage      = lazy(() => import('./components/pages/owner/AdminManagementPage.jsx'));
 const CashierDashboardPage     = lazy(() => import('./components/pages/subadmin/CashierDashboardPage.jsx'));
 const CSDashboardPage          = lazy(() => import('./components/pages/subadmin/CSDashboardPage.jsx'));
 const OperationalDashboardPage = lazy(() => import('./components/pages/subadmin/OperationalDashboardPage.jsx'));
@@ -151,6 +152,22 @@ function App() {
               element={
                 <RoleGuard requiredRole="owner">
                   <OwnerDashboardPage />
+                </RoleGuard>
+              }
+            />
+            <Route
+              path="/owner/admin-management"
+              element={
+                <RoleGuard requiredRole="owner">
+                  <AdminManagementPage />
+                </RoleGuard>
+              }
+            />
+            <Route
+              path="/owner/admin-management/:userId"
+              element={
+                <RoleGuard requiredRole="owner">
+                  <AdminManagementPage />
                 </RoleGuard>
               }
             />
