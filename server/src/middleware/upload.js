@@ -43,11 +43,20 @@ function buildUpload(type) {
     },
   });
 
-  // Expose the actual size limit so the global error handler can report it.
-  return (req, res, next) => {
+  // Express middleware that also exposes multer's instance methods
+  // (.single/.array/.fields/.any/.none), so routes can keep calling
+  // e.g. uploadProduct.single('image') exactly like before.
+  const wrapped = (req, res, next) => {
+    // Expose the actual size limit so the global error handler can report it.
     req.uploadMaxSize = MAX_SIZE[type];
     return mw(req, res, next);
   };
+  wrapped.single = mw.single.bind(mw);
+  wrapped.array  = mw.array.bind(mw);
+  wrapped.fields = mw.fields.bind(mw);
+  wrapped.any    = mw.any.bind(mw);
+  wrapped.none   = mw.none.bind(mw);
+  return wrapped;
 }
 
 export const uploadDesign  = buildUpload('design');
