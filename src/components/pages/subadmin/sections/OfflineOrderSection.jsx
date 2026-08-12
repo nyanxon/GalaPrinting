@@ -12,6 +12,7 @@ import { formatCurrency } from '../../../../utils/format.js';
 import { showToast } from '../../../../core/toastEmitter.js';
 import { getInvoiceByOrderId, openInvoicePdf, sendInvoiceEmail } from '../../../../services/api/invoiceService.js';
 import { searchProducts } from '../../../../services/products.js';
+import { parseNumber, billedAreaM2 } from '../../../../utils/billing.js';
 import ThermalReceiptModal from '../../../modals/ThermalReceiptModal.jsx';
 
 function makeItem() {
@@ -52,24 +53,6 @@ function resolveUnitPrice(item, customerType) {
 }
 
 /* ── Harga produk per m² ──────────────────────────────────────────────────── */
-
-function parseNumber(v) {
-  const n = Number(v);
-  return Number.isFinite(n) && n > 0 ? n : 0;
-}
-
-/**
- * Luas (m²) dalam desimal, tanpa pembulatan ke atas:
- * (panjang_cm × lebar_cm) / 10000 — mis. 200cm × 20cm = 0,4 m².
- * Dibulatkan ke 4 desimal hanya untuk membersihkan error float.
- * Return 0 jika dimensi belum lengkap.
- */
-function billedAreaM2(lengthCm, widthCm) {
-  const l = parseNumber(lengthCm);
-  const w = parseNumber(widthCm);
-  if (!l || !w) return 0;
-  return Math.round((l / 100) * (w / 100) * 10000) / 10000;
-}
 
 /** Total harga panel = luas (m²) × harga per m² (dibulatkan ke Rupiah). 0 jika dimensi belum lengkap. */
 function perM2LineTotal(item) {

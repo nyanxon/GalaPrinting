@@ -206,9 +206,12 @@ export async function createOfflineOrder(req, res, next) {
             throw err;
           }
           const base = Number(type === 'broker' ? prod.price_broker : prod.price_customer) || 0;
-          // Luas dalam desimal, tanpa pembulatan: (P × L) / 10000 m².
+          // Dimensi yang ditagih: panjang/lebar < 100 cm dibulatkan naik ke 100 cm (1 m), ≥ 100 cm tetap.
+          const billableL = l < 100 ? 100 : l;
+          const billableW = w < 100 ? 100 : w;
+          // Luas yang ditagih dalam desimal: (billableL × billableW) / 10000 m².
           // 4 desimal hanya untuk membersihkan error float.
-          const totalLuas = Math.round((l / 100) * (w / 100) * 10000) / 10000;
+          const totalLuas = Math.round((billableL / 100) * (billableW / 100) * 10000) / 10000;
           const linePrice = Math.round(totalLuas * base);
           return {
             productId: pid,
