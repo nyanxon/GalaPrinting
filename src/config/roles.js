@@ -20,3 +20,14 @@ export const STAFF_ROLE_CONFIG = {
   qc:          { label: "Quality Control",    color: "#0891b2" },
   offline:     { label: "Offline Admin",      color: "#be185d" },
 };
+
+/** Path dashboard untuk tiap role admin/staff — dipakai tombol "Dashboard Admin". */
+export const STAFF_ROLE_DASHBOARD_PATH = {
+  admin:       '/admin',
+  owner:       '/owner',
+  cashier:     '/cashier',
+  cs:          '/cs',
+  operational: '/operational',
+  qc:          '/qc',
+  offline:     '/offline',
+};

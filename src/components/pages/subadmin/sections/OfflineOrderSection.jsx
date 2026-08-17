@@ -667,7 +667,7 @@ export default function OfflineOrderSection() {
                   <div className="offline-price-row">
                     <div className="offline-price-cell offline-price-cell--name">
                       <label className="offline-form-label">
-                        Nama Produk / Layanan <span className="offline-required">*</span>
+                        Nama Produk <span className="offline-required">*</span>
                       </label>
                       <ProductAutocomplete
                         item={item}

@@ -28,6 +28,7 @@ import { showToast } from '../../../core/toastEmitter.js';
 import ChatsSection from '../admin/sections/ChatsSection.jsx';
 import DMSection from '../admin/sections/DMSection.jsx';
 import StaffAvatarButton from '../../staff/StaffAvatarButton.jsx';
+import AdminDashboardButton from '../../staff/AdminDashboardButton.jsx';
 import logoImg from '../../../assets/logo.png';
 import '../../../styles/css/pages/dashboard.css';
 
@@ -626,6 +627,9 @@ export default function OfflineDashboardPage() {
               </span>
             </div>
             <div className="staff-header-right">
+              <AdminDashboardButton
+                onClick={() => setActiveNav('new-order')}
+              />
               <StaffAvatarButton />
               <div className="staff-header-auth">
                 <span className="staff-header-name">{userName}</span>

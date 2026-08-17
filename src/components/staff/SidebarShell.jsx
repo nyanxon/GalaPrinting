@@ -15,6 +15,7 @@
 
 import { useNavigate } from 'react-router';
 import StaffAvatarButton from '../staff/StaffAvatarButton.jsx';
+import AdminDashboardButton from '../staff/AdminDashboardButton.jsx';
 import logoImg from '../../assets/logo.png';
 
 export default function SidebarShell({
@@ -108,6 +109,9 @@ export default function SidebarShell({
             <div className="staff-header-section-label">{currentLabel}</div>
 
             <div className="staff-header-right">
+              <AdminDashboardButton
+                onClick={() => onNavClick?.(navItems[0]?.id)}
+              />
               <StaffAvatarButton />
               {headerSlot}
               <div className="staff-header-auth">
