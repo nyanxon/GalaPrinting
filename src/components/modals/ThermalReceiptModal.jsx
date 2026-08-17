@@ -23,22 +23,22 @@ const PAPER_CONFIG = {
     paperWidthMm: 58,
     marginHorizontalMm: 3,
     contentWidthPx: 181,
-    fontSize: 12,
-    headerFontSize: 15,
-    totalFontSize: 14,
-    smallFontSize: 10,
-    lineHeight: 1.3,
+    fontSize: 14,
+    headerFontSize: 18,
+    totalFontSize: 16,
+    smallFontSize: 12,
+    lineHeight: 1.4,
   },
   '80mm': {
     label: '80mm',
     paperWidthMm: 80,
     marginHorizontalMm: 4,
     contentWidthPx: 272,
-    fontSize: 13,
-    headerFontSize: 17,
-    totalFontSize: 15,
-    smallFontSize: 11,
-    lineHeight: 1.35,
+    fontSize: 16,
+    headerFontSize: 22,
+    totalFontSize: 18,
+    smallFontSize: 13,
+    lineHeight: 1.45,
   },
 };
 
@@ -73,7 +73,7 @@ function ThermalReceiptContent({ invoice, paperSize }) {
   const css = {
     root: {
       width: `${cfg.contentWidthPx}px`,
-      fontFamily: "'Courier New', 'Lucida Console', 'Consolas', monospace",
+      fontFamily: "'Consolas', 'Courier New', monospace",
       fontSize: `${cfg.fontSize}px`,
       fontWeight: 700,
       lineHeight: `${cfg.lineHeight}`,
@@ -81,11 +81,11 @@ function ThermalReceiptContent({ invoice, paperSize }) {
       background: '#fff',
       padding: `6px ${cfg.marginHorizontalMm}px`,
       boxSizing: 'border-box',
-      WebkitTextStroke: '0.3px #000',
+      WebkitTextStroke: '0px',
     },
     center:  { textAlign: 'center' },
     bold:    { fontWeight: 700 },
-    small:   { fontSize: `${cfg.smallFontSize}px`, color: '#000', WebkitTextStroke: '0.3px #000' },
+    small:   { fontSize: `${cfg.smallFontSize}px`, color: '#000', WebkitTextStroke: '0px' },
     sep:     { borderTop: '1px dashed #999', margin: '4px 0' },
     sepBold: { borderTop: '2px solid #000', margin: '4px 0' },
     row:     { display: 'flex', justifyContent: 'space-between' },
@@ -108,7 +108,7 @@ function ThermalReceiptContent({ invoice, paperSize }) {
           alt="Gala Logo"
           style={{ width: `${logoSize}px`, height: `${logoSize}px`, margin: '0 auto 2px', display: 'block' }}
         />
-        <div style={{ ...css.bold, fontSize: `${cfg.headerFontSize}px`, letterSpacing: '0.05em', WebkitTextStroke: '0.5px #000' }}>
+        <div style={{ ...css.bold, fontSize: `${cfg.headerFontSize}px`, letterSpacing: '0.05em' }}>
           GALA PRINTING
         </div>
         <div style={css.small}>galaprintofficialbali.co.id</div>
@@ -149,7 +149,7 @@ function ThermalReceiptContent({ invoice, paperSize }) {
 
       <div style={css.sepBold} />
 
-      <div style={{ ...css.row, ...css.bold, fontSize: `${cfg.totalFontSize}px`, marginBottom: '4px', WebkitTextStroke: '0.4px #000' }}>
+      <div style={{ ...css.row, ...css.bold, fontSize: `${cfg.totalFontSize}px`, marginBottom: '4px' }}>
         <span>TOTAL</span><span>{formatCurrency(total)}</span>
       </div>
 
@@ -206,10 +206,10 @@ export default function ThermalReceiptModal({ invoice, onClose, autoPrint }) {
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: 'Courier New', 'Lucida Console', 'Consolas', monospace;
+      font-family: 'Consolas', 'Courier New', monospace;
       font-size: ${cfg.fontSize}px;
       font-weight: 700;
-      -webkit-text-stroke: 0.3px #000;
+      -webkit-text-stroke: 0;
       width: ${cfg.paperWidthMm}mm;
       margin: 0 auto;
       background: #fff;
