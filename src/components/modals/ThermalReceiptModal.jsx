@@ -68,6 +68,8 @@ function ThermalReceiptContent({ invoice, paperSize }) {
   const tax      = Number(invoice.tax_amount || 0);
   const total    = Number(invoice.total || subtotal - discount + tax);
 
+  const logoSize = paperSize === '80mm' ? 40 : 32;
+
   const css = {
     root: {
       width: `${cfg.contentWidthPx}px`,
@@ -91,46 +93,44 @@ function ThermalReceiptContent({ invoice, paperSize }) {
     green:   { color: '#166534' },
   };
 
+  const paymentStatusLabel = {
+    paid: 'Lunas',
+    unpaid: 'Belum Bayar',
+    partial: 'Bayar Sebagian',
+  };
+
   return (
     <div className="thermal-receipt" style={css.root}>
       {/* ── HEADER ── */}
       <div style={{ ...css.center, marginBottom: '4px' }}>
+        <img
+          src="/gala-logo2.svg"
+          alt="Gala Logo"
+          style={{ width: `${logoSize}px`, height: `${logoSize}px`, margin: '0 auto 2px', display: 'block' }}
+        />
         <div style={{ ...css.bold, fontSize: `${cfg.headerFontSize}px`, letterSpacing: '0.05em', WebkitTextStroke: '0.5px #000' }}>
-          GALA PRINTING
+          GALA
+        </div>
+        <div style={{ ...css.bold, fontSize: `${cfg.headerFontSize - 2}px`, letterSpacing: '0.08em', WebkitTextStroke: '0.4px #000' }}>
+          PRINTING
         </div>
         <div style={css.small}>galaprintofficialbali.co.id</div>
         <div style={css.small}>Dalung, Kuta Utara, Badung, Bali</div>
       </div>
 
-      <div style={css.sep} />
+      <div style={css.sepBold} />
 
       {/* ── INVOICE META ── */}
       <div style={{ marginBottom: '4px' }}>
-        <div><span style={css.bold}>No. Inv</span> : {invoice.invoice_number}</div>
-        <div><span style={css.bold}>No. Ord</span> : {invoice.order_number || '—'}</div>
-        <div><span style={css.bold}>Tanggal</span> : {formatDate(invoice.created_at)}</div>
-        {invoice.paid_at && (
-          <div><span style={css.bold}>Dibayar</span> : {formatDate(invoice.paid_at)}</div>
-        )}
-        {invoice.payment_status === 'paid' && (
-          <div style={{ ...css.bold, ...css.green, marginTop: '2px' }}>
-            ** LUNAS **
-          </div>
-        )}
+        <div><span style={css.bold}>No. Nota</span>  : {invoice.invoice_number}</div>
+        <div><span style={css.bold}>Tanggal</span>   : {formatDate(invoice.created_at)}</div>
+        <div><span style={css.bold}>Pelanggan</span> : {invoice.customer_name || '—'}</div>
+        <div><span style={css.bold}>No. Telp</span>  : {invoice.customer_phone || '—'}</div>
+        <div><span style={css.bold}>Operator</span>  : {invoice.operator || invoice.created_by_name || '—'}</div>
+        <div><span style={css.bold}>Status</span>    : {paymentStatusLabel[invoice.payment_status] || invoice.payment_status || '—'}</div>
       </div>
 
-      <div style={css.sep} />
-
-      {/* ── CUSTOMER ── */}
-      <div style={{ marginBottom: '4px' }}>
-        <div><span style={css.bold}>Customer</span></div>
-        <div>{invoice.customer_name || '—'}</div>
-        {invoice.customer_phone && (
-          <div style={css.muted}>Telp: {invoice.customer_phone}</div>
-        )}
-      </div>
-
-      <div style={css.sep} />
+      <div style={css.sepBold} />
 
       {/* ── ITEMS ── */}
       <div style={{ marginBottom: '4px' }}>
@@ -140,33 +140,14 @@ function ThermalReceiptContent({ invoice, paperSize }) {
           const sub = Number(item.price || 0) * Number(item.quantity || 1);
           return (
             <div key={item.id || i} style={{ marginBottom: '3px' }}>
-              <div style={{ wordBreak: 'break-word' }}>{item.name}</div>
-              <div style={{ ...css.row, ...css.muted, fontSize: `${cfg.smallFontSize}px` }}>
+              <div style={{ wordBreak: 'break-word' }}>{i + 1}. {item.name}</div>
+              <div style={{ ...css.muted, fontSize: `${cfg.smallFontSize}px`, paddingLeft: '12px' }}>
                 <span>{item.quantity} x {formatCurrency(item.price)}</span>
-                <span>{formatCurrency(sub)}</span>
+                <span style={{ float: 'right' }}>{formatCurrency(sub)}</span>
               </div>
             </div>
           );
         })}
-      </div>
-
-      <div style={css.sep} />
-
-      {/* ── TOTALS ── */}
-      <div style={{ marginBottom: '2px' }}>
-        <div style={css.row}>
-          <span>Subtotal</span><span>{formatCurrency(subtotal)}</span>
-        </div>
-        {discount > 0 && (
-          <div style={{ ...css.row, ...css.green }}>
-            <span>Diskon</span><span>-{formatCurrency(discount)}</span>
-          </div>
-        )}
-        {tax > 0 && (
-          <div style={css.row}>
-            <span>Pajak</span><span>{formatCurrency(tax)}</span>
-          </div>
-        )}
       </div>
 
       <div style={css.sepBold} />
@@ -175,19 +156,16 @@ function ThermalReceiptContent({ invoice, paperSize }) {
         <span>TOTAL</span><span>{formatCurrency(total)}</span>
       </div>
 
-      {invoice.payment_method && (
-        <div style={{ marginBottom: '4px', fontSize: `${cfg.smallFontSize}px` }}>
-          <span style={css.bold}>Bayar:</span> {invoice.payment_method}
-        </div>
-      )}
-
-      <div style={css.sep} />
+      <div style={css.sepBold} />
 
       {/* ── FOOTER ── */}
-      <div style={{ ...css.center, fontSize: `${cfg.smallFontSize}px`, color: '#000', marginTop: '4px' }}>
-        <div>Terima kasih atas kepercayaan Anda!</div>
-        <div>Barang yang sudah dibeli tidak</div>
-        <div>dapat dikembalikan.</div>
+      <div style={{ fontSize: `${cfg.smallFontSize}px`, color: '#000', marginTop: '4px' }}>
+        <div>* Barang yang sudah dibeli tidak</div>
+        <div>  dapat dikembalikan</div>
+        <div style={{ marginTop: '2px' }}>* Barang yang sudah 2 minggu dan</div>
+        <div>  tidak diambil bukan tanggung</div>
+        <div>  jawab kami</div>
+        <div style={{ ...css.center, marginTop: '6px' }}>Terima kasih atas kepercayaan anda!</div>
       </div>
     </div>
   );
@@ -222,6 +200,7 @@ export default function ThermalReceiptModal({ invoice, onClose, autoPrint }) {
       window.print();
       return;
     }
+    const logoSize = paperSize === '80mm' ? 40 : 32;
     printWindow.document.write(`<!DOCTYPE html>
 <html lang="id">
 <head>
@@ -239,6 +218,7 @@ export default function ThermalReceiptModal({ invoice, onClose, autoPrint }) {
       background: #fff;
       color: #000;
     }
+    img { display: block; margin: 0 auto 2px; }
     @media print {
       @page {
         size: ${cfg.paperWidthMm}mm auto;
