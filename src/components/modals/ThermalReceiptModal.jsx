@@ -11,8 +11,9 @@
  *   80mm → 72mm printable (4mm margin each side) ≈ 272px at 96dpi
  */
 
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState, useCallback, useContext } from 'react';
 import { formatCurrency } from '../../utils/format.js';
+import { AuthContext } from '../context/AuthContext.jsx';
 
 const STORAGE_KEY = 'gala.thermal.paperSize';
 
@@ -60,7 +61,7 @@ function formatDate(date) {
 
 /* ── Receipt Content ──────────────────────────────────────────────────────── */
 
-function ThermalReceiptContent({ invoice, paperSize }) {
+function ThermalReceiptContent({ invoice, paperSize, operatorName }) {
   const cfg = PAPER_CONFIG[paperSize];
   const items = Array.isArray(invoice.items) ? invoice.items : [];
   const subtotal = Number(invoice.subtotal || 0);
@@ -123,7 +124,7 @@ function ThermalReceiptContent({ invoice, paperSize }) {
         <div><span style={css.bold}>Tanggal</span>   : {formatDate(invoice.created_at)}</div>
         <div><span style={css.bold}>Pelanggan</span> : {invoice.customer_name || '—'}</div>
         <div><span style={css.bold}>No. Telp</span>  : {invoice.customer_phone || '—'}</div>
-        <div><span style={css.bold}>Operator</span>  : {invoice.operator || invoice.created_by_name || '—'}</div>
+        <div><span style={css.bold}>Operator</span>  : {operatorName || '—'}</div>
         <div><span style={css.bold}>Status</span>    : {paymentStatusLabel[invoice.payment_status] || invoice.payment_status || '—'}</div>
       </div>
 
@@ -173,6 +174,7 @@ function ThermalReceiptContent({ invoice, paperSize }) {
 export default function ThermalReceiptModal({ invoice, onClose, autoPrint }) {
   const printRef = useRef(null);
   const [paperSize, setPaperSize] = useState(getSavedPaperSize);
+  const { user } = useContext(AuthContext);
 
   const cfg = PAPER_CONFIG[paperSize];
 
@@ -321,7 +323,7 @@ export default function ThermalReceiptModal({ invoice, onClose, autoPrint }) {
             }}
           >
             <div ref={printRef}>
-              <ThermalReceiptContent invoice={invoice} paperSize={paperSize} />
+              <ThermalReceiptContent invoice={invoice} paperSize={paperSize} operatorName={user?.name} />
             </div>
           </div>
         </div>
