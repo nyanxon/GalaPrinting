@@ -107,7 +107,7 @@ function ThermalReceiptContent({ invoice, paperSize, operatorName }) {
         <img
           src="/gala-logo2.svg"
           alt="Gala Logo"
-          style={{ width: `${logoSize}px`, height: `${logoSize}px`, margin: '0 auto 2px', display: 'block' }}
+          style={{ width: `${logoSize}px`, height: `${logoSize}px`, margin: '0 auto 2px', display: 'block', filter: 'grayscale(1) contrast(1.2)' }}
         />
         <div style={{ ...css.bold, fontSize: `${cfg.headerFontSize}px`, letterSpacing: '0.05em' }}>
           GALA PRINTING
@@ -217,7 +217,7 @@ export default function ThermalReceiptModal({ invoice, onClose, autoPrint }) {
       background: #fff;
       color: #000;
     }
-    img { display: block; margin: 0 auto 2px; }
+    img { display: block; margin: 0 auto 2px; filter: grayscale(1) contrast(1.2); }
     @media print {
       @page {
         size: ${cfg.paperWidthMm}mm auto;
