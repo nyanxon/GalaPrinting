@@ -68,7 +68,7 @@ function ThermalReceiptContent({ invoice, paperSize }) {
   const tax      = Number(invoice.tax_amount || 0);
   const total    = Number(invoice.total || subtotal - discount + tax);
 
-  const logoSize = paperSize === '80mm' ? 40 : 32;
+    const logoSize = paperSize === '80mm' ? 60 : 48;
 
   const css = {
     root: {
@@ -109,10 +109,7 @@ function ThermalReceiptContent({ invoice, paperSize }) {
           style={{ width: `${logoSize}px`, height: `${logoSize}px`, margin: '0 auto 2px', display: 'block' }}
         />
         <div style={{ ...css.bold, fontSize: `${cfg.headerFontSize}px`, letterSpacing: '0.05em', WebkitTextStroke: '0.5px #000' }}>
-          GALA
-        </div>
-        <div style={{ ...css.bold, fontSize: `${cfg.headerFontSize - 2}px`, letterSpacing: '0.08em', WebkitTextStroke: '0.4px #000' }}>
-          PRINTING
+          GALA PRINTING
         </div>
         <div style={css.small}>galaprintofficialbali.co.id</div>
         <div style={css.small}>Dalung, Kuta Utara, Badung, Bali</div>
@@ -200,7 +197,7 @@ export default function ThermalReceiptModal({ invoice, onClose, autoPrint }) {
       window.print();
       return;
     }
-    const logoSize = paperSize === '80mm' ? 40 : 32;
+  const logoSize = paperSize === '80mm' ? 60 : 48;
     printWindow.document.write(`<!DOCTYPE html>
 <html lang="id">
 <head>
