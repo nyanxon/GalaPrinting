@@ -43,6 +43,8 @@ function CatalogProductPage() {
   // Selectors
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState('');
+  // Pilihan atribut dinamis produk: { [namaAtribut]: nilaiTerpilih }
+  const [selectedAttributes, setSelectedAttributes] = useState({});
 
   // Design file
   const [designFile, setDesignFile] = useState(null);
@@ -85,6 +87,7 @@ function CatalogProductPage() {
         setProduct(prod);
         setThumbStart(0);
         setActiveIndex(0);
+        setSelectedAttributes({});
 
         // Load reviews for this product
         try {
@@ -112,10 +115,21 @@ function CatalogProductPage() {
     reader.readAsDataURL(f);
   }
 
+  const productAttributes = Array.isArray(product?.attributes) ? product.attributes : [];
+
   function handleAddToCart() {
     if (!user) {
       showToast('Silakan login terlebih dahulu untuk menambahkan produk ke keranjang.', 'error');
       setTimeout(() => navigate('/register'), 1500);
+      return;
+    }
+
+    // Wajib pilih nilai untuk setiap atribut yang didefinisikan admin
+    const missing = productAttributes
+      .filter((a) => a.values?.length > 0 && !selectedAttributes[a.name])
+      .map((a) => a.name);
+    if (missing.length > 0) {
+      showToast(`Silakan pilih ${missing.join(', ')} terlebih dahulu.`, 'error');
       return;
     }
 
@@ -145,6 +159,9 @@ function CatalogProductPage() {
       price: displayPrice,
       image: product.image,
       quantity: Math.max(1, quantity),
+      attributes: productAttributes
+        .filter((a) => a.values?.length > 0 && selectedAttributes[a.name])
+        .map((a) => ({ name: a.name, value: selectedAttributes[a.name] })),
       notes,
       designFileName: designFile ? designFile.name : null,
       designDataUrl: designFile ? designDataUrl : null,
@@ -395,6 +412,39 @@ function CatalogProductPage() {
             </span>
           </div>
 
+          {/* Pilihan Atribut Dinamis (Warna / Tipe Laminasi / Tipe Kertas / dll) */}
+          {productAttributes.filter((a) => a.values?.length > 0).length > 0 && (
+            <div className="option-group">
+              {productAttributes
+                .filter((a) => a.values?.length > 0)
+                .map((attr) => (
+                  <div key={attr.name} style={{ marginBottom: '12px' }}>
+                    <div className="option-label">
+                      {attr.name}
+                      <span className="muted" style={{ fontWeight: 400, fontSize: '14px' }}> *</span>
+                    </div>
+                    <select
+                      className="input"
+                      aria-label={attr.name}
+                      value={selectedAttributes[attr.name] || ''}
+                      onChange={(e) =>
+                        setSelectedAttributes((prev) => ({
+                          ...prev,
+                          [attr.name]: e.target.value,
+                        }))
+                      }
+                      style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', outline: 'none' }}
+                    >
+                      <option value="">Pilih {attr.name}</option>
+                      {attr.values.map((v) => (
+                        <option key={v} value={v}>{v}</option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+            </div>
+          )}
+
           {/* Keterangan */}
           <div className="option-group">
             <div className="option-label">Keterangan</div>
@@ -545,9 +595,20 @@ function CatalogProductPage() {
           {activeTab === 'spesifikasi' && (
             <>
               <div className="section-title">Spesifikasi</div>
-              <p className="muted">
-                {product.specifications || 'Tidak ada spesifikasi tambahan.'}
-              </p>
+              {productAttributes.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+                  {productAttributes.map((attr) => (
+                    <div key={attr.name} style={{ display: 'flex', gap: '10px', fontSize: '14px' }}>
+                      <span style={{ fontWeight: 600, minWidth: '140px', color: '#374151' }}>{attr.name}</span>
+                      <span className="muted">{(attr.values || []).join(', ') || '—'}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="muted">
+                  {product.specifications || 'Tidak ada spesifikasi tambahan.'}
+                </p>
+              )}
             </>
           )}
           {activeTab === 'ulasan' && (

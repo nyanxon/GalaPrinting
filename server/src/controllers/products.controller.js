@@ -78,6 +78,7 @@ export async function createProduct(req, res, next) {
       imagePath:        body.image || body.imagePath || null,
       sizeType:         body.sizeType ?? body.size_type ?? 'none',
       isHiddenFromCustomer: body.isHiddenFromCustomer ?? body.is_hidden_from_customer ?? false,
+      attributes:       body.attributes ?? null,
     });
     return res.status(201).json({ ok: true, data: product });
   } catch (err) {

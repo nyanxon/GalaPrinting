@@ -132,6 +132,35 @@ async function sendEmailIfEnabled(updatedOrder, newStatus, customerId) {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /**
+ * Normalize selected attribute values into a storable JSON string.
+ * Format: [{ name: "Tipe Laminasi", value: "Glossy" }, ...]
+ * Returns null when empty/invalid.
+ */
+function normalizeSelectedAttributes(raw) {
+  if (!raw) return null;
+  let list = raw;
+  if (typeof raw === 'string') {
+    try {
+      list = JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+  if (!Array.isArray(list)) return null;
+  const cleaned = list
+    .map((a) => {
+      if (!a || typeof a !== 'object') return null;
+      const name = String(a.name ?? '').trim();
+      const value = String(a.value ?? '').trim();
+      if (!name || !value) return null;
+      return { name: name.slice(0, 100), value: value.slice(0, 200) };
+    })
+    .filter(Boolean)
+    .slice(0, 30);
+  return cleaned.length > 0 ? JSON.stringify(cleaned) : null;
+}
+
+/**
  * Generate a sequential order number in format: GALA-YYYY/MM/DD-NNNNNN
  * Uses SELECT ... FOR UPDATE inside the caller's transaction to guarantee
  * atomicity — the row lock is held until the transaction commits/rolls back,
@@ -260,8 +289,8 @@ export async function createOrder({ customer, items, subtotal, source = 'online'
     for (const item of (items || [])) {
       await conn.execute(
         `INSERT INTO order_items
-           (id, order_id, product_id, name, price, quantity, length_cm, width_cm, notes, design_file_path)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           (id, order_id, product_id, name, price, quantity, attributes, length_cm, width_cm, notes, design_file_path)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           randomUUID(),
           id,
@@ -269,6 +298,7 @@ export async function createOrder({ customer, items, subtotal, source = 'online'
           item.name,
           item.price,
           item.quantity || 1,
+          normalizeSelectedAttributes(item.attributes),
           item.lengthCm ?? item.length_cm ?? null,
           item.widthCm  ?? item.width_cm  ?? null,
           item.notes || null,

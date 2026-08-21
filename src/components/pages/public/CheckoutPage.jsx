@@ -306,15 +306,25 @@ function CheckoutPage() {
           <aside className="co-summary-section">
             <h2 className="co-summary-title">{t('checkout.orderSummary')}</h2>
             <div className="co-summary-list">
-              {items.map((item) => (
-                <div key={item.id} className="co-summary-row">
-                  <span className="co-summary-name">
-                    {item.name}
-                    <span className="co-summary-qty">×{item.quantity}</span>
-                  </span>
-                  <span className="co-summary-price">{formatCurrency(item.price * item.quantity)}</span>
-                </div>
-              ))}
+              {items.map((item) => {
+                const attrs = Array.isArray(item.attributes)
+                  ? item.attributes.filter((a) => a?.name && a?.value)
+                  : [];
+                return (
+                  <div key={item.id} className="co-summary-row">
+                    <span className="co-summary-name">
+                      {item.name}
+                      <span className="co-summary-qty">×{item.quantity}</span>
+                      {attrs.length > 0 && (
+                        <span style={{ display: 'block', fontSize: '12px', color: '#6b7280', fontWeight: 400 }}>
+                          {attrs.map((a) => `${a.name}: ${a.value}`).join(' • ')}
+                        </span>
+                      )}
+                    </span>
+                    <span className="co-summary-price">{formatCurrency(item.price * item.quantity)}</span>
+                  </div>
+                );
+              })}
             </div>
             {/* Promo Code */}
             <div className="co-promo-section">

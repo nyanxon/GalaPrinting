@@ -28,6 +28,50 @@ async function uniqueSlug(base) {
   }
 }
 
+/**
+ * Normalize dynamic product attributes into a storable JSON string.
+ * Accepts an array of { name, values[] } objects (or a JSON string of one),
+ * trims names/values, drops empty rows, and caps sizes defensively.
+ * Returns null when the input is empty/invalid.
+ * @param {unknown} raw
+ * @returns {string|null}
+ */
+export function normalizeAttributes(raw) {
+  if (!raw) return null;
+  let list = raw;
+  if (typeof raw === 'string') {
+    try {
+      list = JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+  if (!Array.isArray(list)) return null;
+
+  const cleaned = list
+    .map((attr) => {
+      if (!attr || typeof attr !== 'object') return null;
+      const name = String(attr.name ?? attr.title ?? '').trim();
+      if (!name) return null;
+      let values = attr.values ?? attr.options ?? [];
+      if (typeof values === 'string') {
+        // Allow "Merah, Biru, Hitam" shorthand
+        values = values.split(',');
+      }
+      if (!Array.isArray(values)) values = [];
+      const cleanValues = values
+        .map((v) => String(v ?? '').trim())
+        .filter(Boolean)
+        .slice(0, 100);
+      return { name: name.slice(0, 100), values: cleanValues };
+    })
+    .filter(Boolean)
+    .slice(0, 30);
+
+  if (cleaned.length === 0) return null;
+  return JSON.stringify(cleaned);
+}
+
 // ── Products ──────────────────────────────────────────────────────────────────
 
 /**
@@ -160,12 +204,14 @@ export async function getProductsByIds(ids) {
  * Create a new product.
  * @returns {Promise<object>} created product row
  */
-export async function createProduct({ name, categoryId, price, priceCustomer, priceBroker, shortDescription, requiresDesign, imagePath, sizeType, isHiddenFromCustomer }) {
+export async function createProduct({ name, categoryId, price, priceCustomer, priceBroker, shortDescription, requiresDesign, imagePath, sizeType, isHiddenFromCustomer, attributes }) {
   const id   = randomUUID();
   const slug = await uniqueSlug(name);
 
   // Normalize sizeType — 'per_m2' (Per M2) or 'none' (Tidak ada)
   const normalizedSizeType = sizeType === 'per_m2' ? 'per_m2' : 'none';
+
+  const normalizedAttributes = normalizeAttributes(attributes);
 
   // Normalize imagePath: accept Array, JSON string, or plain URL string.
   // Always persist as a JSON array string so multiple images are supported.
@@ -185,8 +231,8 @@ export async function createProduct({ name, categoryId, price, priceCustomer, pr
 
   await query(
     `INSERT INTO products
-       (id, category_id, name, slug, price_customer, price_broker, short_description, requires_design, image_path, size_type, is_hidden_from_customer)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (id, category_id, name, slug, price_customer, price_broker, short_description, requires_design, image_path, size_type, is_hidden_from_customer, attributes)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       categoryId || null,
@@ -199,6 +245,7 @@ export async function createProduct({ name, categoryId, price, priceCustomer, pr
       normalizedImagePath,
       normalizedSizeType,
       isHiddenFromCustomer ? 1 : 0,
+      normalizedAttributes,
     ]
   );
 
@@ -213,7 +260,7 @@ export async function updateProduct(id, data) {
   const fields = [];
   const params = [];
 
-  const allowed = ['name', 'category_id', 'price_customer', 'price_broker', 'short_description', 'requires_design', 'image_path', 'size_type', 'is_hidden_from_customer'];
+  const allowed = ['name', 'category_id', 'price_customer', 'price_broker', 'short_description', 'requires_design', 'image_path', 'size_type', 'is_hidden_from_customer', 'attributes'];
 
   for (const [key, val] of Object.entries(data)) {
     // Support both camelCase (from frontend) and snake_case
@@ -226,6 +273,7 @@ export async function updateProduct(id, data) {
               : key === 'priceBroker'      ? 'price_broker'
               : key === 'sizeType'         ? 'size_type'
               : key === 'isHiddenFromCustomer' ? 'is_hidden_from_customer'
+              : key === 'attributes'       ? 'attributes'   // dynamic product attributes (JSON)
               : key; // already snake_case (e.g. category_id sent by controller)
     if (allowed.includes(col)) {
       fields.push(`${col} = ?`);
@@ -235,6 +283,10 @@ export async function updateProduct(id, data) {
       } else if (col === 'size_type') {
         // Only accept the two known ENUM values
         params.push(val === 'per_m2' ? 'per_m2' : 'none');
+      } else if (col === 'attributes') {
+        // Dynamic attributes: normalize { name, values[] } list into a JSON string.
+        // Empty/invalid input clears the column (null).
+        params.push(normalizeAttributes(val));
       } else if (col === 'image_path') {
         // Normalize: accept Array, JSON string, or plain string.
         // Always persist as a JSON array string so multiple images are preserved.

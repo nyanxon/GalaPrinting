@@ -90,6 +90,15 @@ function ProductModal({ product, categories, onClose, onSaved }) {
   const [addingCat, setAddingCat] = useState(false);
   const [localCategories, setLocalCategories] = useState(categories);
 
+  // Atribut dinamis produk — nama bebas (Warna, Tipe Laminasi, Tipe Kertas, dll).
+  // values disimpan sebagai string "a, b, c" saat diedit lalu dipecah saat submit.
+  const [attributes, setAttributes] = useState(
+    (Array.isArray(product?.attributes) ? product.attributes : []).map((a) => ({
+      name: a.name || '',
+      values: Array.isArray(a.values) ? a.values.join(', ') : '',
+    }))
+  );
+
   const overlayRef = useRef(null);
 
   // Per-M2 products use panjang × lebar input at order time.
@@ -169,6 +178,21 @@ function ProductModal({ product, categories, onClose, onSaved }) {
     });
   }
 
+  // ── Atribut dinamis ──
+  function handleAddAttribute() {
+    setAttributes((prev) => [...prev, { name: '', values: '' }]);
+  }
+
+  function handleRemoveAttribute(idx) {
+    setAttributes((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  function handleAttributeChange(idx, field, value) {
+    setAttributes((prev) =>
+      prev.map((a, i) => (i === idx ? { ...a, [field]: value } : a))
+    );
+  }
+
   async function handleAddCategory() {
     const trimmed = newCatName.trim();
     if (!trimmed) return;
@@ -211,6 +235,21 @@ function ProductModal({ product, categories, onClose, onSaved }) {
       return;
     }
 
+    // Bersihkan atribut kosong — baris tanpa nama atau tanpa nilai diabaikan.
+    // Nama atribut duplikat juga digabulkan menjadi satu.
+    const cleanedAttributes = [];
+    for (const attr of attributes) {
+      const name = attr.name.trim();
+      const values = attr.values.split(',').map((v) => v.trim()).filter(Boolean);
+      if (!name || values.length === 0) continue;
+      const existing = cleanedAttributes.find((a) => a.name.toLowerCase() === name.toLowerCase());
+      if (existing) {
+        existing.values = [...new Set([...existing.values, ...values])];
+      } else {
+        cleanedAttributes.push({ name, values });
+      }
+    }
+
     const data = {
       name: formData.name.trim(),
       category: formData.category,
@@ -221,6 +260,7 @@ function ProductModal({ product, categories, onClose, onSaved }) {
       image: JSON.stringify(doneImages.map((i) => i.url)),
       sizeType: formData.sizeType === 'per_m2' ? 'per_m2' : 'none',
       isHiddenFromCustomer: formData.isHiddenFromCustomer,
+      attributes: cleanedAttributes,
     };
 
     const { ok, errors } = validateProduct(data);
@@ -341,6 +381,58 @@ function ProductModal({ product, categories, onClose, onSaved }) {
                   ? '💡 Produk dihitung per m² — customer/kasir memasukkan panjang × lebar saat order.'
                   : '💡 Produk tidak memakai panjang × lebar — harga satuan langsung dipakai saat order.'}
               </p>
+            </div>
+
+            {/* ── Atribut Dinamis (Warna / Tipe Laminasi / Tipe Kertas / dll) ── */}
+            <div className="adm-field">
+              <label className="adm-label">
+                Atribut Produk <span className="adm-hint">(opsional — nama bebas, mis. Warna, Tipe Laminasi, Tipe Kertas)</span>
+              </label>
+              <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '0 0 6px 0', marginBottom: '6px' }}>
+                Customer akan memilih salah satu nilai untuk setiap atribut saat memesan.
+              </p>
+              {attributes.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '8px' }}>
+                  {attributes.map((attr, idx) => (
+                    <div
+                      key={idx}
+                      style={{ display: 'grid', gridTemplateColumns: '1fr 2fr auto', gap: '8px', alignItems: 'start' }}
+                    >
+                      <input
+                        className="adm-input"
+                        placeholder="Nama atribut (mis. Warna)"
+                        value={attr.name}
+                        onChange={(e) => handleAttributeChange(idx, 'name', e.target.value)}
+                        aria-label={`Nama atribut ${idx + 1}`}
+                      />
+                      <input
+                        className="adm-input"
+                        placeholder="Pilihan nilai, pisahkan dengan koma (mis. Merah, Biru, Hitam)"
+                        value={attr.values}
+                        onChange={(e) => handleAttributeChange(idx, 'values', e.target.value)}
+                        aria-label={`Nilai atribut ${idx + 1}`}
+                      />
+                      <button
+                        className="adm-btn adm-btn--delete"
+                        type="button"
+                        onClick={() => handleRemoveAttribute(idx)}
+                        aria-label={`Hapus atribut ${idx + 1}`}
+                        style={{ padding: '6px 10px' }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button
+                className="adm-btn"
+                type="button"
+                onClick={handleAddAttribute}
+                disabled={attributes.length >= 30}
+              >
+                + Tambah Atribut
+              </button>
             </div>
 
             {/* ── Image Upload ── */}

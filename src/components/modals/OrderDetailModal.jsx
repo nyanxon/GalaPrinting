@@ -198,6 +198,11 @@ function OrderDetailModal({ isOpen, onClose, order, actorRole, onOrderUpdated })
                           {item.quantity || 1} pcs × {formatCurrency(item.price)}
                         </span>
                       </div>
+                      {Array.isArray(item.attributes) && item.attributes.length > 0 && (
+                        <div className="odm-item-notes">
+                          🏷️ {item.attributes.map((a) => `${a.name}: ${a.value}`).join(' • ')}
+                        </div>
+                      )}
                       {item.notes && <div className="odm-item-notes">📝 {item.notes}</div>}
                       <div className="odm-item-design">
                         <div className="odm-item-design-label">🎨 File Desain</div>

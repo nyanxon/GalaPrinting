@@ -214,6 +214,33 @@ function mapOrder(row) {
 }
 
 /**
+ * Parse selected attribute values from a raw order item.
+ * Accepts a JSON array string or an already-parsed array of
+ * { name, value } objects. Returns [] when empty/invalid.
+ */
+function parseSelectedAttributes(raw) {
+  if (!raw) return [];
+  let list = raw;
+  if (typeof raw === 'string') {
+    try {
+      list = JSON.parse(raw);
+    } catch {
+      return [];
+    }
+  }
+  if (!Array.isArray(list)) return [];
+  return list
+    .map((a) => {
+      if (!a || typeof a !== 'object') return null;
+      const name = String(a.name ?? '').trim();
+      const value = String(a.value ?? '').trim();
+      if (!name || !value) return null;
+      return { name, value };
+    })
+    .filter(Boolean);
+}
+
+/**
  * Map a backend order_item row to the frontend shape.
  * @param {object} item
  * @returns {object}
@@ -228,6 +255,7 @@ function mapOrderItem(item) {
     name:           item.name,
     price:          Number(item.price    ?? 0),
     quantity:       Number(item.quantity ?? 1),
+    attributes:     parseSelectedAttributes(item.attributes),
     notes:          item.notes           ?? null,
     lengthCm:       item.length_cm       ?? item.lengthCm        ?? null,
     widthCm:        item.width_cm        ?? item.widthCm         ?? null,

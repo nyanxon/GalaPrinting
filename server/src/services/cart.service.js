@@ -8,6 +8,35 @@ import { randomUUID } from 'crypto';
 import { query } from '../db/connection.js';
 
 /**
+ * Normalize selected attribute values into a storable JSON string.
+ * Format: [{ name: "Tipe Laminasi", value: "Glossy" }, ...]
+ * Returns null when empty/invalid.
+ */
+function normalizeSelectedAttributes(raw) {
+  if (!raw) return null;
+  let list = raw;
+  if (typeof raw === 'string') {
+    try {
+      list = JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+  if (!Array.isArray(list)) return null;
+  const cleaned = list
+    .map((a) => {
+      if (!a || typeof a !== 'object') return null;
+      const name = String(a.name ?? '').trim();
+      const value = String(a.value ?? '').trim();
+      if (!name || !value) return null;
+      return { name: name.slice(0, 100), value: value.slice(0, 200) };
+    })
+    .filter(Boolean)
+    .slice(0, 30);
+  return cleaned.length > 0 ? JSON.stringify(cleaned) : null;
+}
+
+/**
  * Get all cart items for a user.
  */
 export async function getCart(userId) {
@@ -27,10 +56,11 @@ export async function getCart(userId) {
  */
 export async function addItem(userId, item) {
   const id = randomUUID();
+  const attributes = normalizeSelectedAttributes(item.attributes);
   await query(
     `INSERT INTO cart_items
-       (id, user_id, product_id, name, price, quantity, notes, design_file_path)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+       (id, user_id, product_id, name, price, quantity, attributes, notes, design_file_path)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       userId,
@@ -38,6 +68,7 @@ export async function addItem(userId, item) {
       item.name,
       item.price,
       item.quantity || 1,
+      attributes,
       item.notes || null,
       item.designFilePath || null,
     ]

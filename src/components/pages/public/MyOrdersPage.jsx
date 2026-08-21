@@ -163,7 +163,12 @@ function OrderCard({ order, onPayNow }) {
   const isCustom = order.source === 'custom';
 
   const itemsSummary = (order.items || [])
-    .map((i) => `${i.name} ×${i.quantity}`)
+    .map((i) => {
+      const attrs = Array.isArray(i.attributes) && i.attributes.length > 0
+        ? ` (${i.attributes.map((a) => `${a.name}: ${a.value}`).join(', ')})`
+        : '';
+      return `${i.name} ×${i.quantity}${attrs}`;
+    })
     .join(', ');
 
   return (

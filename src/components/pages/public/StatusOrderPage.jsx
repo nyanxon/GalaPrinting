@@ -433,6 +433,11 @@ function OrderDetail({ order, onReset, user, scrollToReview }) {
                   <div className="so-item-unit-price">
                     {item.quantity > 1 && <span>{formatCurrency(item.price || 0)} {t('orderStatus.unitPrice')}</span>}
                   </div>
+                  {Array.isArray(item.attributes) && item.attributes.length > 0 && (
+                    <div className="so-item-notes">
+                      {item.attributes.map((a) => `${a.name}: ${a.value}`).join(' • ')}
+                    </div>
+                  )}
                   {item.notes && <div className="so-item-notes">📝 {item.notes}</div>}
                 </div>
               ))

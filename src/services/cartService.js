@@ -39,6 +39,33 @@ function saveLocalCart(items) {
   writeJson(CART_KEY, items);
 }
 
+/**
+ * Parse selected attribute values from a raw cart item.
+ * Accepts a JSON array string or an already-parsed array of
+ * { name, value } objects. Returns [] when empty/invalid.
+ */
+function parseSelectedAttributes(raw) {
+  if (!raw) return [];
+  let list = raw;
+  if (typeof raw === 'string') {
+    try {
+      list = JSON.parse(raw);
+    } catch {
+      return [];
+    }
+  }
+  if (!Array.isArray(list)) return [];
+  return list
+    .map((a) => {
+      if (!a || typeof a !== 'object') return null;
+      const name = String(a.name ?? '').trim();
+      const value = String(a.value ?? '').trim();
+      if (!name || !value) return null;
+      return { name, value };
+    })
+    .filter(Boolean);
+}
+
 // ---------------------------------------------------------------------------
 // Auth token presence check
 // We detect "logged in" by checking whether an access token is currently
@@ -92,6 +119,7 @@ export async function getCart(_userId) {
         ...item,
         productId: item.productId ?? item.product_id ?? null,
         image:     resolveCartImage(item.image ?? item.image_path ?? null),
+        attributes: parseSelectedAttributes(item.attributes),
       }));
       return { items };
     } catch {
@@ -126,6 +154,7 @@ export async function addToCart(_userId, item) {
         name:           item.name,
         price:          item.price,
         quantity:       Math.max(1, Number(item.quantity || 1)),
+        attributes:     Array.isArray(item.attributes) && item.attributes.length > 0 ? item.attributes : null,
         notes:          item.notes   || "",
         designFileName: item.designFileName || null,
       });
@@ -146,6 +175,7 @@ export async function addToCart(_userId, item) {
     price:          item.price,
     image:          item.image || null,
     quantity:       Math.max(1, Number(item.quantity || 1)),
+    attributes:     Array.isArray(item.attributes) ? item.attributes : [],
     notes:          item.notes    || "",
     designFileName: item.designFileName || null,
     designDataUrl:  item.designDataUrl  || null,

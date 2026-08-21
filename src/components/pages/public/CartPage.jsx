@@ -20,6 +20,27 @@ import '../../../styles/css/pages/cart.css';
 
 // ── Cart Item Detail Modal ────────────────────────────────────────────────────
 
+/**
+ * Parse selected attribute values from a cart item.
+ * Accepts a JSON array string or an already-parsed array of { name, value }.
+ */
+function parseItemAttributes(raw) {
+  if (!raw) return [];
+  let list = raw;
+  if (typeof raw === 'string') {
+    try { list = JSON.parse(raw); } catch { return []; }
+  }
+  if (!Array.isArray(list)) return [];
+  return list
+    .map((a) => {
+      if (!a || typeof a !== 'object') return null;
+      const name = String(a.name ?? '').trim();
+      const value = String(a.value ?? '').trim();
+      return name && value ? { name, value } : null;
+    })
+    .filter(Boolean);
+}
+
 function CartItemDetailModal({ item, onClose }) {
   const { t } = useTranslation();
 
@@ -66,6 +87,14 @@ function CartItemDetailModal({ item, onClose }) {
               <span className="cdm-spec-label">Nama Item</span>
               <span className="cdm-spec-value">{item.name}</span>
             </div>
+
+            {/* Atribut terpilih */}
+            {parseItemAttributes(item.attributes).map((a) => (
+              <div className="cdm-spec-row" key={a.name}>
+                <span className="cdm-spec-label">{a.name}</span>
+                <span className="cdm-spec-value">{a.value}</span>
+              </div>
+            ))}
 
             {/* Keterangan */}
             <div className="cdm-spec-row">
@@ -232,6 +261,11 @@ function CartPage() {
                     </button>
 
                     {meta && <div className="cart-item-meta">{meta}</div>}
+                    {parseItemAttributes(item.attributes).length > 0 && (
+                      <div className="cart-item-meta">
+                        {parseItemAttributes(item.attributes).map((a) => `${a.name}: ${a.value}`).join(' • ')}
+                      </div>
+                    )}
                     {item.designFileName && (
                       <div className="cart-item-meta">{t('cart.design')}: {item.designFileName}</div>
                     )}

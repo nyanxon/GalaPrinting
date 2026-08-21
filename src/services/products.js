@@ -112,6 +112,35 @@ function listProductsPaginatedFromLocalStorage(opts = {}) {
 // Converts snake_case fields and parses JSON array fields
 // ---------------------------------------------------------------------------
 
+/**
+ * Parse dynamic product attributes from a raw product row.
+ * Accepts a JSON array string or an already-parsed array of
+ * { name, values[] } objects. Returns [] when empty/invalid.
+ */
+function parseAttributes(raw) {
+  if (!raw) return [];
+  let list = raw;
+  if (typeof raw === 'string') {
+    try {
+      list = JSON.parse(raw);
+    } catch {
+      return [];
+    }
+  }
+  if (!Array.isArray(list)) return [];
+  return list
+    .map((attr) => {
+      if (!attr || typeof attr !== 'object') return null;
+      const name = String(attr.name ?? '').trim();
+      if (!name) return null;
+      const values = (Array.isArray(attr.values) ? attr.values : [])
+        .map((v) => String(v ?? '').trim())
+        .filter(Boolean);
+      return { name, values };
+    })
+    .filter(Boolean);
+}
+
 function normalizeProduct(raw) {
   if (!raw) return raw;
   // Parse image_path — may be a JSON array string (new format) or a single URL (legacy)
@@ -157,6 +186,7 @@ function normalizeProduct(raw) {
     requiresDesign:   raw.requiresDesign   ?? raw.requires_design   ?? false,
     sizeType:         raw.sizeType         ?? raw.size_type         ?? 'none',
     isHiddenFromCustomer: Boolean(raw.isHiddenFromCustomer ?? raw.is_hidden_from_customer ?? false),
+    attributes:       parseAttributes(raw.attributes),
     // Harga Customer/Broker — raw.price_customer adalah sumber utama (kolom DB).
     // `price` dipertahankan sebagai alias harga customer agar public site tetap berfungsi.
     priceCustomer:    Number(raw.priceCustomer ?? raw.price_customer ?? raw.price ?? 0),
