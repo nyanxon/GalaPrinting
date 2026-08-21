@@ -243,7 +243,7 @@ export async function getProductById(id, { visible } = {}) {
 /**
  * Search products by name keyword (for cashier autocomplete).
  * Returns a lightweight projection: id, name, both prices, category,
- * size_type and visibility.
+ * size_type, visibility and dynamic attributes (untuk form order offline).
  * @param {string} q - keyword
  * @param {number} [limit=10]
  * @returns {Promise<object[]>}
@@ -255,7 +255,7 @@ export async function searchProducts(q, limit = 10) {
 
   const [rows] = await query(
     `SELECT p.id, p.name, p.price_customer, p.price_broker, c.name AS category,
-            p.size_type, p.is_hidden_from_customer
+            p.size_type, p.is_hidden_from_customer, p.attributes
      FROM products p
      LEFT JOIN categories c ON p.category_id = c.id
      WHERE p.name LIKE ?
@@ -278,7 +278,7 @@ export async function getProductsByIds(ids) {
   const placeholders = clean.map(() => '?').join(', ');
   const [rows] = await query(
     `SELECT p.id, p.name, p.price_customer, p.price_broker, p.category_id,
-            p.size_type, p.is_hidden_from_customer
+            p.size_type, p.is_hidden_from_customer, p.attributes
      FROM products p
      WHERE p.id IN (${placeholders})`,
     clean

@@ -121,7 +121,7 @@ function listProductsPaginatedFromLocalStorage(opts = {}) {
  * Backward compatible — data lama (values string biasa) dinormalisasi menjadi
  * { value, priceModifier: 0 } dengan affectsPrice: false.
  */
-function parseAttributes(raw) {
+export function parseAttributes(raw) {
   if (!raw) return [];
   let list = raw;
   if (typeof raw === 'string') {
@@ -260,14 +260,19 @@ export async function listProductsPaginated(opts = {}) {
 /**
  * Search products by name keyword (cashier autocomplete).
  * @param {string} q keyword
- * @returns {Promise<object[]>} lightweight rows: id, name, price_customer, price_broker, category
+ * @returns {Promise<object[]>} lightweight rows: id, name, price_customer,
+ *   price_broker, category, size_type dan attributes ter-parse (untuk form
+ *   order offline).
  */
 export async function searchProducts(q) {
   const keyword = String(q || '').trim();
   if (!keyword) return [];
   if (USE_BACKEND) {
     const res = await api.get('/api/products/search', { params: { q: keyword, limit: 10 } });
-    return res.data.items ?? [];
+    return (res.data.items ?? []).map((row) => ({
+      ...row,
+      attributes: parseAttributes(row.attributes),
+    }));
   }
   return listProductsFromLocalStorage()
     .filter((p) => p.name.toLowerCase().includes(keyword.toLowerCase()))
@@ -279,6 +284,7 @@ export async function searchProducts(q) {
       price_broker:   Number(p.price_broker   ?? p.price ?? 0),
       category: p.category || null,
       size_type: p.size_type ?? p.sizeType ?? 'none',
+      attributes: parseAttributes(p.attributes),
     }));
 }
 

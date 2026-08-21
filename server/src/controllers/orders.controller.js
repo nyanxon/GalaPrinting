@@ -11,6 +11,34 @@ import { getIO } from '../socket/index.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+/**
+ * Normalisasi defensif pilihan atribut dari client untuk order offline.
+ * Hanya [{ name, value }] string yang diterima — max 30 entri (sama dengan
+ * batas normalizeAttributes). Modifier harga TIDAK dibaca dari client;
+ * dihitung ulang server-side dari definisi atribut produk.
+ */
+function parseSelectedAttrs(raw) {
+  let list = raw;
+  if (typeof list === 'string') {
+    try {
+      list = JSON.parse(list);
+    } catch {
+      return [];
+    }
+  }
+  if (!Array.isArray(list)) return [];
+  return list
+    .map((a) => {
+      if (!a || typeof a !== 'object') return null;
+      const name = String(a.name ?? '').trim();
+      const value = String(a.value ?? '').trim();
+      if (!name || !value) return null;
+      return { name: name.slice(0, 100), value: value.slice(0, 200) };
+    })
+    .filter(Boolean)
+    .slice(0, 30);
+}
+
 function emitOrderNew(order) {
   try {
     getIO().to('staff').emit('order:new', {
@@ -212,24 +240,34 @@ export async function createOfflineOrder(req, res, next) {
           // Luas yang ditagih dalam desimal: (billableL × billableW) / 10000 m².
           // 4 desimal hanya untuk membersihkan error float.
           const totalLuas = Math.round((billableL / 100) * (billableW / 100) * 10000) / 10000;
-          const linePrice = Math.round(totalLuas * base);
+          // Modifier atribut flat per panel/satuan — tidak dikalikan luas.
+          const selectedAttrs = parseSelectedAttrs(item.attributes ?? item.selectedAttributes);
+          const attrModifier = productSvc.sumSelectedAttributeModifiers(prod.attributes, selectedAttrs);
+          const linePrice = Math.round(totalLuas * base) + attrModifier;
           return {
             productId: pid,
             name: item.name || prod.name,
             price: linePrice,
             quantity,
+            attributes: selectedAttrs.length > 0 ? selectedAttrs : undefined,
             notes,
             lengthCm: l,
             widthCm: w,
           };
         }
 
-        const unitPrice = Number(type === 'broker' ? prod.price_broker : prod.price_customer) || 0;
+        // Modifier atribut flat per satuan — dihitung dari definisi atribut
+        // produk di server, bukan dari harga yang dikirim client.
+        const selectedAttrs = parseSelectedAttrs(item.attributes ?? item.selectedAttributes);
+        const attrModifier = productSvc.sumSelectedAttributeModifiers(prod.attributes, selectedAttrs);
+        const unitPrice =
+          (Number(type === 'broker' ? prod.price_broker : prod.price_customer) || 0) + attrModifier;
         return {
           productId: pid,
           name: item.name || prod.name,
           price: unitPrice,
           quantity,
+          attributes: selectedAttrs.length > 0 ? selectedAttrs : undefined,
           notes,
         };
       }

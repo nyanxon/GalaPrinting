@@ -11,7 +11,7 @@ import { api } from '../../../../core/httpClient.js';
 import { formatCurrency } from '../../../../utils/format.js';
 import { showToast } from '../../../../core/toastEmitter.js';
 import { getInvoiceByOrderId, openInvoicePdf, sendInvoiceEmail } from '../../../../services/api/invoiceService.js';
-import { searchProducts } from '../../../../services/products.js';
+import { searchProducts, parseAttributes } from '../../../../services/products.js';
 import { parseNumber, billedAreaM2 } from '../../../../utils/billing.js';
 import ThermalReceiptModal from '../../../modals/ThermalReceiptModal.jsx';
 
@@ -28,6 +28,8 @@ function makeItem() {
     sizeType: 'fixed',
     lengthCm: '',
     widthCm: '',
+    attrDefs: [],
+    selectedAttrs: {},
   };
 }
 
@@ -43,22 +45,44 @@ function priceForType(item, customerType) {
 }
 
 /**
+ * Total modifier harga dari atribut terpilih — mirror dari
+ * sumSelectedAttributeModifiers() di products.service.js (server).
+ * Hanya atribut affectsPrice=true yang menyumbang modifier.
+ */
+function selectedModifierTotal(attrDefs, selectedAttrs) {
+  if (!Array.isArray(attrDefs) || !selectedAttrs) return 0;
+  return attrDefs.reduce((sum, attr) => {
+    if (!attr || !attr.affectsPrice) return sum;
+    const picked = String(selectedAttrs[attr.name] ?? '').trim();
+    if (!picked) return sum;
+    const match = (attr.values || []).find((v) => v.value === picked);
+    return sum + (Number(match?.priceModifier) || 0);
+  }, 0);
+}
+
+/**
  * Harga satuan final item:
- * - Item katalog: harga dasar sesuai customer_type (customer/broker).
+ * - Item katalog: harga dasar sesuai customer_type (customer/broker)
+ *   + total modifier atribut affectsPrice=true yang dipilih
+ *   (sama seperti perhitungan harga di halaman produk customer).
  * - Item manual: harga yang diketik cashier.
  */
 function resolveUnitPrice(item, customerType) {
   if (!item.productId) return Number(item.price) || 0;
-  return priceForType(item, customerType);
+  return priceForType(item, customerType) + selectedModifierTotal(item.attrDefs, item.selectedAttrs);
 }
 
 /* ── Harga produk per m² ──────────────────────────────────────────────────── */
 
-/** Total harga panel = luas (m²) × harga per m² (dibulatkan ke Rupiah). 0 jika dimensi belum lengkap. */
+/** Total harga panel = luas (m²) × harga per m² (dibulatkan ke Rupiah)
+ *  + modifier atribut flat per panel. 0 jika dimensi belum lengkap. */
 function perM2LineTotal(item) {
   const area = billedAreaM2(item.lengthCm, item.widthCm);
   if (area <= 0) return 0;
-  return Math.round(area * (Number(item.price) || 0));
+  return (
+    Math.round(area * (Number(item.price) || 0)) +
+    selectedModifierTotal(item.attrDefs, item.selectedAttrs)
+  );
 }
 
 /**
@@ -134,6 +158,8 @@ function ProductAutocomplete({ item, customerType, error, onSelect, onClear }) {
       sizeType: prod.size_type ?? prod.sizeType ?? 'fixed',
       lengthCm: '',
       widthCm: '',
+      attrDefs: parseAttributes(prod.attributes),
+      selectedAttrs: {},
     });
   }
 
@@ -440,6 +466,8 @@ export default function OfflineOrderSection() {
       sizeType: 'fixed',
       lengthCm: '',
       widthCm: '',
+      attrDefs: [],
+      selectedAttrs: {},
     });
   }
 
@@ -469,6 +497,28 @@ export default function OfflineOrderSection() {
     });
   }
 
+  function handleAttributeChange(id, attrName, value) {
+    setItems((prev) =>
+      prev.map((it) => {
+        if (it.id !== id) return it;
+        const next = { ...it, selectedAttrs: { ...it.selectedAttrs, [attrName]: value } };
+        // Harga satuan item fixed ikut ter-update saat pilihan atribut berubah.
+        if (it.sizeType !== 'per_m2') {
+          next.price = computeLinePrice(next, customerType);
+        }
+        return next;
+      })
+    );
+    const errKey = `item_${id}_attr_${attrName}`;
+    if (fieldErrors[errKey]) {
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        delete next[errKey];
+        return next;
+      });
+    }
+  }
+
   function validate() {
     const errors = {};
     if (!customerName.trim()) errors.customerName = 'Nama customer wajib diisi.';
@@ -482,6 +532,15 @@ export default function OfflineOrderSection() {
         errors[`item_${it.id}_price`] = 'Harga wajib diisi.';
       }
       if (!it.quantity || Number(it.quantity) < 1) errors[`item_${it.id}_quantity`] = 'Qty minimal 1.';
+      // Atribut dinamis: sama seperti alur customer, semua atribut wajib dipilih.
+      if (it.productId && Array.isArray(it.attrDefs)) {
+        it.attrDefs.forEach((attr) => {
+          if (!attr?.name) return;
+          if (!it.selectedAttrs?.[attr.name]) {
+            errors[`item_${it.id}_attr_${attr.name}`] = `${attr.name} wajib dipilih.`;
+          }
+        });
+      }
     });
     return errors;
   }
@@ -505,6 +564,13 @@ export default function OfflineOrderSection() {
         notes:     (it.notes || '').trim() || null,
         lengthCm:  it.sizeType === 'per_m2' ? (parseNumber(it.lengthCm) || null) : null,
         widthCm:   it.sizeType === 'per_m2' ? (parseNumber(it.widthCm)  || null) : null,
+        attributes:
+          it.productId && Array.isArray(it.attrDefs) && it.attrDefs.length > 0
+            ? it.attrDefs
+                .filter((a) => a?.name)
+                .map((a) => ({ name: a.name, value: String(it.selectedAttrs[a.name] ?? '') }))
+                .filter((a) => a.value)
+            : undefined,
       }));
 
       const res = await api.post('/api/orders/offline', {
@@ -779,6 +845,35 @@ export default function OfflineOrderSection() {
                             : '—'}
                         </div>
                       </div>
+                    </div>
+                  )}
+
+                  {item.productId && Array.isArray(item.attrDefs) && item.attrDefs.length > 0 && (
+                    <div className="offline-item-attrs">
+                      {item.attrDefs.map((attr) => {
+                        if (!attr?.name) return null;
+                        const attrErr = fieldErrors[`item_${item.id}_attr_${attr.name}`];
+                        return (
+                          <div key={attr.name} className="offline-item-attr">
+                            <label className="offline-item-attr-label">{attr.name}</label>
+                            <select
+                              className={`adm-input offline-item-attr-input${attrErr ? ' adm-input--error' : ''}`}
+                              value={item.selectedAttrs[attr.name] || ''}
+                              onChange={(e) => handleAttributeChange(item.id, attr.name, e.target.value)}
+                            >
+                              <option value="">Pilih {attr.name}</option>
+                              {(attr.values || []).map((v) => (
+                                <option key={v.value} value={v.value}>
+                                  {attr.affectsPrice && v.priceModifier > 0
+                                    ? `${v.value} (+Rp ${v.priceModifier.toLocaleString('id-ID')})`
+                                    : v.value}
+                                </option>
+                              ))}
+                            </select>
+                            {attrErr && <span className="offline-field-error">{attrErr}</span>}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
 
