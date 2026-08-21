@@ -286,6 +286,9 @@ export async function createOrder({ customer, items, subtotal, source = 'online'
     );
 
     // Insert order items
+    // item.price sudah berupa finalPrice (harga dasar + modifier atribut) yang
+    // dihitung server saat add-to-cart — di-snapshot apa adanya ke order_items
+    // agar tidak berubah walau harga produk berubah di kemudian hari.
     for (const item of (items || [])) {
       await conn.execute(
         `INSERT INTO order_items
@@ -296,7 +299,7 @@ export async function createOrder({ customer, items, subtotal, source = 'online'
           id,
           item.productId ?? item.product_id ?? null,
           item.name,
-          item.price,
+          Number(item.price) || 0,
           item.quantity || 1,
           normalizeSelectedAttributes(item.attributes),
           item.lengthCm ?? item.length_cm ?? null,

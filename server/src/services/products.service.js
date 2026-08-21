@@ -29,9 +29,41 @@ async function uniqueSlug(base) {
 }
 
 /**
+ * Normalize a single attribute value entry into { value, priceModifier }.
+ * Backward compatible: plain strings (data lama) → affectsPrice:false,
+ * priceModifier:0. priceModifier hanya dipertahankan jika affectsPrice true,
+ * harus berupa angka >= 0 (selain itu fallback ke 0).
+ * @param {unknown} v
+ * @param {boolean} affectsPrice
+ * @returns {{ value: string, priceModifier: number }|null}
+ */
+function normalizeAttributeValue(v, affectsPrice) {
+  // Data lama: values berupa string biasa
+  if (typeof v === 'string') {
+    const trimmed = v.trim();
+    return trimmed ? { value: trimmed.slice(0, 200), priceModifier: 0 } : null;
+  }
+  if (!v || typeof v !== 'object') return null;
+  const value = String(v.value ?? '').trim();
+  if (!value) return null;
+  let priceModifier = Number(v.priceModifier ?? 0);
+  if (!Number.isFinite(priceModifier) || priceModifier < 0 || !affectsPrice) {
+    priceModifier = 0;
+  }
+  return { value: value.slice(0, 200), priceModifier };
+}
+
+/**
  * Normalize dynamic product attributes into a storable JSON string.
- * Accepts an array of { name, values[] } objects (or a JSON string of one),
- * trims names/values, drops empty rows, and caps sizes defensively.
+ * Accepts an array of { name, affectsPrice, values[] } objects (or a JSON
+ * string of one), trims names/values, drops empty rows, and caps sizes
+ * defensively. Max 30 attributes per product.
+ *
+ * Struktur baru:
+ *   { name: string, affectsPrice: boolean, values: [{ value: string, priceModifier: number }] }
+ *
+ * Backward compatible — data lama berupa values string biasa otomatis
+ * dinormalisasi menjadi { value, priceModifier: 0 } dengan affectsPrice: false.
  * Returns null when the input is empty/invalid.
  * @param {unknown} raw
  * @returns {string|null}
@@ -53,6 +85,7 @@ export function normalizeAttributes(raw) {
       if (!attr || typeof attr !== 'object') return null;
       const name = String(attr.name ?? attr.title ?? '').trim();
       if (!name) return null;
+      const affectsPrice = Boolean(attr.affectsPrice);
       let values = attr.values ?? attr.options ?? [];
       if (typeof values === 'string') {
         // Allow "Merah, Biru, Hitam" shorthand
@@ -60,16 +93,69 @@ export function normalizeAttributes(raw) {
       }
       if (!Array.isArray(values)) values = [];
       const cleanValues = values
-        .map((v) => String(v ?? '').trim())
+        .map((v) => normalizeAttributeValue(v, affectsPrice))
         .filter(Boolean)
         .slice(0, 100);
-      return { name: name.slice(0, 100), values: cleanValues };
+      return { name: name.slice(0, 100), affectsPrice, values: cleanValues };
     })
     .filter(Boolean)
     .slice(0, 30);
 
   if (cleaned.length === 0) return null;
   return JSON.stringify(cleaned);
+}
+
+/**
+ * Hitung total priceModifier dari atribut yang dipilih user terhadap
+ * definisi atribut produk. Hanya atribut dengan affectsPrice=true yang
+ * menyumbang modifier; value yang tidak ada di definisi dihitung 0.
+ *
+ * @param {unknown} productAttributes  Kolom products.attributes (JSON string atau array hasil parse)
+ * @param {{ name: string, value: string }[]} selectedAttributes  Atribut terpilih user
+ * @returns {number} Total tambahan harga (>= 0)
+ */
+export function sumSelectedAttributeModifiers(productAttributes, selectedAttributes) {
+  if (!productAttributes || !Array.isArray(selectedAttributes) || selectedAttributes.length === 0) {
+    return 0;
+  }
+  let defs = productAttributes;
+  if (typeof defs === 'string') {
+    try {
+      defs = JSON.parse(defs);
+    } catch {
+      return 0;
+    }
+  }
+  if (!Array.isArray(defs)) return 0;
+
+  // Map: namaAtribut → Map(value → priceModifier), hanya untuk affectsPrice=true
+  const modifiersByName = new Map();
+  for (const attr of defs) {
+    if (!attr || typeof attr !== 'object' || !attr.affectsPrice) continue;
+    const name = String(attr.name ?? '').trim();
+    if (!name || !Array.isArray(attr.values)) continue;
+    const valueMap = new Map();
+    for (const v of attr.values) {
+      if (!v || typeof v !== 'object') continue;
+      const val = String(v.value ?? '').trim();
+      if (!val) continue;
+      const pm = Number(v.priceModifier ?? 0);
+      valueMap.set(val, Number.isFinite(pm) && pm > 0 ? pm : 0);
+    }
+    modifiersByName.set(name.toLowerCase(), valueMap);
+  }
+
+  let total = 0;
+  for (const sel of selectedAttributes) {
+    if (!sel || typeof sel !== 'object') continue;
+    const name = String(sel.name ?? '').trim();
+    const value = String(sel.value ?? '').trim();
+    if (!name || !value) continue;
+    const valueMap = modifiersByName.get(name.toLowerCase());
+    if (!valueMap) continue;
+    total += valueMap.get(value) || 0;
+  }
+  return total;
 }
 
 // ── Products ──────────────────────────────────────────────────────────────────

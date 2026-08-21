@@ -92,11 +92,28 @@ function ProductModal({ product, categories, onClose, onSaved }) {
 
   // Atribut dinamis produk — nama bebas (Warna, Tipe Laminasi, Tipe Kertas, dll).
   // values disimpan sebagai string "a, b, c" saat diedit lalu dipecah saat submit.
+  // Jika affectsPrice aktif, tiap nilai punya "Tambahan harga (Rp)" yang disimpan
+  // di modifiers (keyed by value string) lalu dirakit menjadi struktur baru saat submit.
   const [attributes, setAttributes] = useState(
-    (Array.isArray(product?.attributes) ? product.attributes : []).map((a) => ({
-      name: a.name || '',
-      values: Array.isArray(a.values) ? a.values.join(', ') : '',
-    }))
+    (Array.isArray(product?.attributes) ? product.attributes : []).map((a) => {
+      const modifiers = {};
+      const valueStrings = [];
+      for (const v of Array.isArray(a.values) ? a.values : []) {
+        // Data lama: string biasa → tanpa modifier
+        if (typeof v === 'string') { valueStrings.push(v); continue; }
+        if (v && typeof v === 'object' && v.value) {
+          valueStrings.push(v.value);
+          const pm = Number(v.priceModifier ?? 0);
+          if (Number.isFinite(pm) && pm > 0) modifiers[v.value] = String(pm);
+        }
+      }
+      return {
+        name: a.name || '',
+        affectsPrice: Boolean(a.affectsPrice),
+        values: valueStrings.join(', '),
+        modifiers,
+      };
+    })
   );
 
   const overlayRef = useRef(null);
@@ -180,7 +197,7 @@ function ProductModal({ product, categories, onClose, onSaved }) {
 
   // ── Atribut dinamis ──
   function handleAddAttribute() {
-    setAttributes((prev) => [...prev, { name: '', values: '' }]);
+    setAttributes((prev) => [...prev, { name: '', affectsPrice: false, values: '', modifiers: {} }]);
   }
 
   function handleRemoveAttribute(idx) {
@@ -190,6 +207,14 @@ function ProductModal({ product, categories, onClose, onSaved }) {
   function handleAttributeChange(idx, field, value) {
     setAttributes((prev) =>
       prev.map((a, i) => (i === idx ? { ...a, [field]: value } : a))
+    );
+  }
+
+  function handleAttributeModifierChange(idx, valueStr, amount) {
+    setAttributes((prev) =>
+      prev.map((a, i) =>
+        i === idx ? { ...a, modifiers: { ...a.modifiers, [valueStr]: amount } } : a
+      )
     );
   }
 
@@ -237,16 +262,28 @@ function ProductModal({ product, categories, onClose, onSaved }) {
 
     // Bersihkan atribut kosong — baris tanpa nama atau tanpa nilai diabaikan.
     // Nama atribut duplikat juga digabulkan menjadi satu.
+    // Struktur baru: { name, affectsPrice, values: [{ value, priceModifier }] }
     const cleanedAttributes = [];
     for (const attr of attributes) {
       const name = attr.name.trim();
-      const values = attr.values.split(',').map((v) => v.trim()).filter(Boolean);
-      if (!name || values.length === 0) continue;
+      const rawValues = attr.values.split(',').map((v) => v.trim()).filter(Boolean);
+      if (!name || rawValues.length === 0) continue;
+      const valueEntries = rawValues.map((v) => ({
+        value: v,
+        priceModifier: attr.affectsPrice
+          ? Math.max(0, Number(attr.modifiers?.[v] ?? 0) || 0)
+          : 0,
+      }));
       const existing = cleanedAttributes.find((a) => a.name.toLowerCase() === name.toLowerCase());
       if (existing) {
-        existing.values = [...new Set([...existing.values, ...values])];
+        for (const entry of valueEntries) {
+          if (!existing.values.some((m) => m.value.toLowerCase() === entry.value.toLowerCase())) {
+            existing.values.push(entry);
+          }
+        }
+        existing.affectsPrice = existing.affectsPrice || Boolean(attr.affectsPrice);
       } else {
-        cleanedAttributes.push({ name, values });
+        cleanedAttributes.push({ name, affectsPrice: Boolean(attr.affectsPrice), values: valueEntries });
       }
     }
 
@@ -392,37 +429,78 @@ function ProductModal({ product, categories, onClose, onSaved }) {
                 Customer akan memilih salah satu nilai untuk setiap atribut saat memesan.
               </p>
               {attributes.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '8px' }}>
-                  {attributes.map((attr, idx) => (
-                    <div
-                      key={idx}
-                      style={{ display: 'grid', gridTemplateColumns: '1fr 2fr auto', gap: '8px', alignItems: 'start' }}
-                    >
-                      <input
-                        className="adm-input"
-                        placeholder="Nama atribut (mis. Warna)"
-                        value={attr.name}
-                        onChange={(e) => handleAttributeChange(idx, 'name', e.target.value)}
-                        aria-label={`Nama atribut ${idx + 1}`}
-                      />
-                      <input
-                        className="adm-input"
-                        placeholder="Pilihan nilai, pisahkan dengan koma (mis. Merah, Biru, Hitam)"
-                        value={attr.values}
-                        onChange={(e) => handleAttributeChange(idx, 'values', e.target.value)}
-                        aria-label={`Nilai atribut ${idx + 1}`}
-                      />
-                      <button
-                        className="adm-btn adm-btn--delete"
-                        type="button"
-                        onClick={() => handleRemoveAttribute(idx)}
-                        aria-label={`Hapus atribut ${idx + 1}`}
-                        style={{ padding: '6px 10px' }}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '8px' }}>
+                  {attributes.map((attr, idx) => {
+                    const parsedValues = attr.values.split(',').map((v) => v.trim()).filter(Boolean);
+                    return (
+                      <div
+                        key={idx}
+                        style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                       >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr auto', gap: '8px', alignItems: 'start' }}>
+                          <input
+                            className="adm-input"
+                            placeholder="Nama atribut (mis. Warna)"
+                            value={attr.name}
+                            onChange={(e) => handleAttributeChange(idx, 'name', e.target.value)}
+                            aria-label={`Nama atribut ${idx + 1}`}
+                          />
+                          <input
+                            className="adm-input"
+                            placeholder="Pilihan nilai, pisahkan dengan koma (mis. Merah, Biru, Hitam)"
+                            value={attr.values}
+                            onChange={(e) => handleAttributeChange(idx, 'values', e.target.value)}
+                            aria-label={`Nilai atribut ${idx + 1}`}
+                          />
+                          <button
+                            className="adm-btn adm-btn--delete"
+                            type="button"
+                            onClick={() => handleRemoveAttribute(idx)}
+                            aria-label={`Hapus atribut ${idx + 1}`}
+                            style={{ padding: '6px 10px' }}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600, color: '#374151', margin: 0 }}>
+                          <input
+                            type="checkbox"
+                            checked={attr.affectsPrice}
+                            onChange={(e) => handleAttributeChange(idx, 'affectsPrice', e.target.checked)}
+                            aria-label={`Pengaruhi harga ${idx + 1}`}
+                          />
+                          {' '}Pengaruhi harga?
+                        </label>
+                        {attr.affectsPrice && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <span style={{ fontSize: '12px', color: '#6b7280' }}>
+                              Tambahan harga per pilihan — harga final = harga dasar + total tambahan:
+                            </span>
+                            {parsedValues.length === 0 ? (
+                              <span style={{ fontSize: '12px', color: '#9ca3af' }}>
+                                Isi pilihan nilai terlebih dahulu.
+                              </span>
+                            ) : (
+                              parsedValues.map((v) => (
+                                <div key={v} style={{ display: 'grid', gridTemplateColumns: '1fr 180px', gap: '8px', alignItems: 'center' }}>
+                                  <span style={{ fontSize: '13px', color: '#374151' }}>{v}</span>
+                                  <input
+                                    className="adm-input"
+                                    type="number"
+                                    min="0"
+                                    placeholder="0"
+                                    value={attr.modifiers?.[v] ?? ''}
+                                    onChange={(e) => handleAttributeModifierChange(idx, v, e.target.value)}
+                                    aria-label={`Tambahan harga (Rp) untuk ${v}`}
+                                  />
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
               <button

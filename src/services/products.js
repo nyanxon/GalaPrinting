@@ -115,7 +115,11 @@ function listProductsPaginatedFromLocalStorage(opts = {}) {
 /**
  * Parse dynamic product attributes from a raw product row.
  * Accepts a JSON array string or an already-parsed array of
- * { name, values[] } objects. Returns [] when empty/invalid.
+ * { name, affectsPrice, values[] } objects. Returns [] when empty/invalid.
+ *
+ * Struktur baru: values berupa [{ value: string, priceModifier: number }].
+ * Backward compatible — data lama (values string biasa) dinormalisasi menjadi
+ * { value, priceModifier: 0 } dengan affectsPrice: false.
  */
 function parseAttributes(raw) {
   if (!raw) return [];
@@ -133,10 +137,25 @@ function parseAttributes(raw) {
       if (!attr || typeof attr !== 'object') return null;
       const name = String(attr.name ?? '').trim();
       if (!name) return null;
+      const affectsPrice = Boolean(attr.affectsPrice);
       const values = (Array.isArray(attr.values) ? attr.values : [])
-        .map((v) => String(v ?? '').trim())
+        .map((v) => {
+          // Data lama: string biasa
+          if (typeof v === 'string') {
+            const trimmed = v.trim();
+            return trimmed ? { value: trimmed, priceModifier: 0 } : null;
+          }
+          if (!v || typeof v !== 'object') return null;
+          const value = String(v.value ?? '').trim();
+          if (!value) return null;
+          const pm = Number(v.priceModifier ?? 0);
+          return {
+            value,
+            priceModifier: affectsPrice && Number.isFinite(pm) && pm > 0 ? pm : 0,
+          };
+        })
         .filter(Boolean);
-      return { name, values };
+      return { name, affectsPrice, values };
     })
     .filter(Boolean);
 }

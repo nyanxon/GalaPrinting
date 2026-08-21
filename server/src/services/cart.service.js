@@ -6,24 +6,25 @@
 
 import { randomUUID } from 'crypto';
 import { query } from '../db/connection.js';
+import { sumSelectedAttributeModifiers } from './products.service.js';
 
 /**
- * Normalize selected attribute values into a storable JSON string.
+ * Parse selected attribute values dari payload client menjadi array bersih.
  * Format: [{ name: "Tipe Laminasi", value: "Glossy" }, ...]
- * Returns null when empty/invalid.
+ * Menerima array atau JSON string. Returns [] when empty/invalid.
  */
-function normalizeSelectedAttributes(raw) {
-  if (!raw) return null;
+function parseSelectedList(raw) {
+  if (!raw) return [];
   let list = raw;
   if (typeof raw === 'string') {
     try {
       list = JSON.parse(raw);
     } catch {
-      return null;
+      return [];
     }
   }
-  if (!Array.isArray(list)) return null;
-  const cleaned = list
+  if (!Array.isArray(list)) return [];
+  return list
     .map((a) => {
       if (!a || typeof a !== 'object') return null;
       const name = String(a.name ?? '').trim();
@@ -33,7 +34,35 @@ function normalizeSelectedAttributes(raw) {
     })
     .filter(Boolean)
     .slice(0, 30);
-  return cleaned.length > 0 ? JSON.stringify(cleaned) : null;
+}
+
+/**
+ * Hitung finalPrice item cart di server:
+ *   finalPrice = harga dasar produk (price_customer)
+ *              + sum(priceModifier atribut affectsPrice=true sesuai value terpilih)
+ *
+ * Harga TIDAK dipercaya dari client saat product_id valid — ini sekaligus
+ * snapshot harga agar konsisten walau harga produk berubah nanti.
+ * Fallback ke harga dari client hanya jika produk sudah terhapus / item manual.
+ *
+ * @param {object} item  Payload add-to-cart
+ * @param {{ name: string, value: string }[]} selected  Atribut terpilih (hasil parseSelectedList)
+ * @returns {Promise<number>}
+ */
+async function resolveFinalPrice(item, selected) {
+  const fallback = Math.max(0, Number(item.price) || 0);
+  const productId = item.productId ?? item.product_id ?? null;
+  if (!productId) return fallback;
+
+  const [rows] = await query(
+    'SELECT price_customer, attributes FROM products WHERE id = ?',
+    [productId]
+  );
+  if (rows.length === 0) return fallback; // Produk dihapus — pakai harga client
+
+  const base = Number(rows[0].price_customer) || 0;
+  const modifier = sumSelectedAttributeModifiers(rows[0].attributes, selected);
+  return base + modifier;
 }
 
 /**
@@ -56,7 +85,10 @@ export async function getCart(userId) {
  */
 export async function addItem(userId, item) {
   const id = randomUUID();
-  const attributes = normalizeSelectedAttributes(item.attributes);
+  const selected = parseSelectedList(item.attributes);
+  const attributes = selected.length > 0 ? JSON.stringify(selected) : null;
+  // finalPrice dihitung server-side & disimpan sebagai snapshot di kolom price
+  const finalPrice = await resolveFinalPrice(item, selected);
   await query(
     `INSERT INTO cart_items
        (id, user_id, product_id, name, price, quantity, attributes, notes, design_file_path)
@@ -66,7 +98,7 @@ export async function addItem(userId, item) {
       userId,
       item.productId || null,
       item.name,
-      item.price,
+      finalPrice,
       item.quantity || 1,
       attributes,
       item.notes || null,

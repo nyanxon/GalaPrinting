@@ -117,6 +117,19 @@ function CatalogProductPage() {
 
   const productAttributes = Array.isArray(product?.attributes) ? product.attributes : [];
 
+  // Harga tampil real-time: harga dasar + total priceModifier dari SEMUA atribut
+  // yang affectsPrice=true sesuai value yang sedang dipilih user.
+  // Atribut affectsPrice=false tidak menyumbang modifier apa pun.
+  const basePrice = Number(product?.price ?? 0);
+  const attributeModifierTotal = productAttributes.reduce((sum, attr) => {
+    if (!attr.affectsPrice) return sum;
+    const selected = selectedAttributes[attr.name];
+    if (!selected) return sum;
+    const match = (attr.values || []).find((v) => v.value === selected);
+    return sum + (Number(match?.priceModifier) || 0);
+  }, 0);
+  const displayPrice = basePrice + attributeModifierTotal;
+
   function handleAddToCart() {
     if (!user) {
       showToast('Silakan login terlebih dahulu untuk menambahkan produk ke keranjang.', 'error');
@@ -241,8 +254,6 @@ function CatalogProductPage() {
       </main>
     );
   }
-
-  const displayPrice = product.price ?? 0;
 
   return (
     <main className="container product-detail">
@@ -395,6 +406,11 @@ function CatalogProductPage() {
           <p className="product-info-price">
             Rp {displayPrice.toLocaleString('id-ID')}
           </p>
+          {attributeModifierTotal > 0 && (
+            <p className="muted" style={{ marginTop: '-8px', fontSize: '13px' }}>
+              Termasuk tambahan opsi: +Rp {attributeModifierTotal.toLocaleString('id-ID')}
+            </p>
+          )}
 
           {/* Star Rating */}
           <div className="product-rating" aria-label="Rating produk">
@@ -437,7 +453,11 @@ function CatalogProductPage() {
                     >
                       <option value="">Pilih {attr.name}</option>
                       {attr.values.map((v) => (
-                        <option key={v} value={v}>{v}</option>
+                        <option key={v.value} value={v.value}>
+                          {attr.affectsPrice && v.priceModifier > 0
+                            ? `${v.value} (+Rp ${v.priceModifier.toLocaleString('id-ID')})`
+                            : v.value}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -600,7 +620,7 @@ function CatalogProductPage() {
                   {productAttributes.map((attr) => (
                     <div key={attr.name} style={{ display: 'flex', gap: '10px', fontSize: '14px' }}>
                       <span style={{ fontWeight: 600, minWidth: '140px', color: '#374151' }}>{attr.name}</span>
-                      <span className="muted">{(attr.values || []).join(', ') || '—'}</span>
+                      <span className="muted">{(attr.values || []).map((v) => v?.value).filter(Boolean).join(', ') || '—'}</span>
                     </div>
                   ))}
                 </div>
