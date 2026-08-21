@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS products (
 -- === 004_create_orders.sql ===
 -- (+ 016 CHECK status; 019 promo_code/discount_amount; 020 cancellation_reason;
 --    025 customer_address_title; 034 financials; 039 delivery_method;
---    044 customer_email; 046 customer_type — semua digabung)
+--    044 customer_email; 046 customer_type; 052 discounts JSON — semua digabung)
 CREATE TABLE IF NOT EXISTS orders (
   id                     CHAR(36)      NOT NULL PRIMARY KEY,
   order_number           VARCHAR(50)   NOT NULL UNIQUE,
@@ -105,6 +105,8 @@ CREATE TABLE IF NOT EXISTS orders (
   subtotal               DECIMAL(15,2) NOT NULL DEFAULT 0,
   promo_code             VARCHAR(50)   DEFAULT NULL,
   discount_amount        DECIMAL(15,2) NOT NULL DEFAULT 0,
+  discounts              JSON          DEFAULT NULL
+                         COMMENT '[{"type":"percentage"|"nominal","value":n,"label":"..."}] diskon subtotal order',
   admin_note             TEXT,
   cancellation_reason    TEXT          DEFAULT NULL,
   tracking_number        VARCHAR(100),
@@ -141,7 +143,7 @@ CREATE TABLE IF NOT EXISTS orders (
 
 -- === 005_create_order_items.sql ===
 -- (+ 048 length_cm/width_cm; 050 DROP color/size/material;
---    051 + attributes JSON — digabung)
+--    051 + attributes JSON; 052 + discounts JSON — digabung)
 CREATE TABLE IF NOT EXISTS order_items (
   id               CHAR(36)      NOT NULL PRIMARY KEY,
   order_id         CHAR(36)      NOT NULL,
@@ -151,6 +153,8 @@ CREATE TABLE IF NOT EXISTS order_items (
   quantity         INT           NOT NULL DEFAULT 1,
   attributes       JSON          DEFAULT NULL
                    COMMENT '[{"name":"...","value":"..."}] snapshot atribut',
+  discounts        JSON          DEFAULT NULL
+                   COMMENT '[{"type":"percentage"|"nominal","value":n,"label":"..."}] diskon item',
   length_cm        DECIMAL(10,2) DEFAULT NULL,
   width_cm         DECIMAL(10,2) DEFAULT NULL,
   notes            TEXT,

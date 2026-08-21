@@ -105,6 +105,7 @@ export async function getInvoiceById(id) {
        o.customer_name,
        o.customer_phone,
        o.customer_address,
+       o.discounts AS order_discounts,
        u.email AS customer_email,
        creator.name AS creator_name
      FROM invoices i
@@ -134,6 +135,7 @@ export async function getInvoiceByOrderId(orderId) {
        o.customer_name,
        o.customer_phone,
        o.customer_address,
+       o.discounts AS order_discounts,
        u.email AS customer_email,
        creator.name AS creator_name
      FROM invoices i

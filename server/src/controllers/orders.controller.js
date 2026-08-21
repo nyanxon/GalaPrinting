@@ -6,6 +6,7 @@
 
 import * as svc from '../services/orders.service.js';
 import * as productSvc from '../services/products.service.js';
+import { parseDiscountList, discountTotalFor } from '../utils/discounts.js';
 import { StorageService } from '../utils/storage.js';
 import { getIO } from '../socket/index.js';
 
@@ -213,6 +214,9 @@ export async function createOfflineOrder(req, res, next) {
       const pid = item.productId ?? item.product_id ?? null;
       const quantity = Math.max(1, parseInt(item.quantity, 10) || 1);
       const notes = item.notes ?? item.keterangan ?? null;
+      // Diskon per item divalidasi server; angka potongan dihitung ulang
+      // dari harga hasil resolve (client tidak mengirim hasil akhir).
+      const itemDiscounts = parseDiscountList(item.discounts);
 
       if (pid) {
         const prod = productsById.get(pid);
@@ -250,6 +254,7 @@ export async function createOfflineOrder(req, res, next) {
             price: linePrice,
             quantity,
             attributes: selectedAttrs.length > 0 ? selectedAttrs : undefined,
+            discounts: itemDiscounts.length > 0 ? itemDiscounts : undefined,
             notes,
             lengthCm: l,
             widthCm: w,
@@ -268,6 +273,7 @@ export async function createOfflineOrder(req, res, next) {
           price: unitPrice,
           quantity,
           attributes: selectedAttrs.length > 0 ? selectedAttrs : undefined,
+          discounts: itemDiscounts.length > 0 ? itemDiscounts : undefined,
           notes,
         };
       }
@@ -278,15 +284,31 @@ export async function createOfflineOrder(req, res, next) {
         name: item.name,
         price: Number(item.price || 0),
         quantity,
+        discounts: itemDiscounts.length > 0 ? itemDiscounts : undefined,
         notes,
       };
     });
 
     // Subtotal dihitung ulang dari harga hasil resolve — tidak percaya client.
+    // subtotal = GROSS (sebelum diskon apa pun), sesuai konvensi orders.subtotal.
     const resolvedSubtotal = resolvedItems.reduce(
       (sum, i) => sum + Number(i.price || 0) * Number(i.quantity || 1),
       0
     );
+
+    // ── Diskon manual (basis GROSS, additive, clamp per scope) ─────────────
+    // - Per item : potongan = min(Σ potongan baris, gross item)
+    // - Subtotal : potongan = min(Σ potongan baris, Σ gross semua item)
+    // Total gabungan ditulis ke orders.discount_amount agar invoice
+    // (subtotal − discount_amount + tax) dan laporan profit tetap benar.
+    const orderDiscounts = parseDiscountList(req.body.discounts);
+    const totalItemDiscount = resolvedItems.reduce((sum, ri) => {
+      if (!ri.discounts) return sum;
+      const gross = Number(ri.price || 0) * Number(ri.quantity || 1);
+      return sum + discountTotalFor(ri.discounts, gross);
+    }, 0);
+    const subtotalDiscount = discountTotalFor(orderDiscounts, resolvedSubtotal);
+    const totalDiscount = totalItemDiscount + subtotalDiscount;
 
     const customer = {
       id:      null,
@@ -305,6 +327,9 @@ export async function createOfflineOrder(req, res, next) {
       source: 'offline',
       orderType: 'standard',
       initialStatus: 'On Progress',
+      promoCode: null,
+      discountAmount: totalDiscount,
+      discounts: orderDiscounts.length > 0 ? orderDiscounts : undefined,
       adminNote: adminNote || '',
       customerType: type,
     });

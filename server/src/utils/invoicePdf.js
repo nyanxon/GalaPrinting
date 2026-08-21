@@ -7,6 +7,7 @@
 
 import PDFDocument from 'pdfkit';
 import { BRAND_COLOR } from '../config/brand.js';
+import { parseDiscountList, discountTotalFor } from './discounts.js';
 
 const BRAND_COLOR_R = 120;
 const BRAND_COLOR_G = 94;
@@ -184,7 +185,11 @@ export async function generateInvoicePdf(invoice) {
         const rowBg = idx % 2 === 0 ? '#ffffff' : '#faf8f5';
         // Item produk per m² menampilkan dimensi (P × L cm) di baris kedua.
         const hasDim = Boolean(item.length_cm && item.width_cm);
-        const rowH = hasDim ? 34 : 22;
+        // Diskon manual per item: tampilkan rincian potongan di baris tambahan.
+        const itemDiscRows = parseDiscountList(item.discounts);
+        const itemGross = Number(item.price || 0) * Number(item.quantity || 1);
+        const itemDiscAmt = itemDiscRows.length > 0 ? discountTotalFor(itemDiscRows, itemGross) : 0;
+        const rowH = 22 + (hasDim ? 12 : 0) + (itemDiscAmt > 0 ? 12 : 0);
 
         doc.fillColor(rowBg).rect(margin, currentY, contentWidth, rowH).fill();
 
@@ -206,12 +211,24 @@ export async function generateInvoicePdf(invoice) {
           .text(formatIDR(item.price), colX.price, currentY + 7, { width: colX.sub - colX.price - 5 })
           .text(formatIDR(subTotal), colX.sub, currentY + 7, { width: margin + contentWidth - colX.sub - 5 });
 
+        let extraY = currentY + 19;
         if (hasDim) {
           doc
             .fillColor(GRAY_HEX)
             .font('Helvetica')
             .fontSize(7.5)
-            .text(escStr(`${item.length_cm} × ${item.width_cm} cm`), colX.item, currentY + 19, { width: colX.qty - colX.item - 10, ellipsis: true });
+            .text(escStr(`${item.length_cm} × ${item.width_cm} cm`), colX.item, extraY, { width: colX.qty - colX.item - 10, ellipsis: true });
+          extraY += 12;
+        }
+        if (itemDiscAmt > 0) {
+          const discLabel = itemDiscRows
+            .map((d) => (d.label || (d.type === 'percentage' ? `${d.value}%` : 'Nominal')))
+            .join(' + ');
+          doc
+            .fillColor('#15803d')
+            .font('Helvetica')
+            .fontSize(7.5)
+            .text(escStr(`Diskon (${discLabel}): -${formatIDR(itemDiscAmt)}`), colX.item, extraY, { width: colX.qty - colX.item - 10, ellipsis: true });
         }
 
         currentY += rowH;
@@ -229,16 +246,56 @@ export async function generateInvoicePdf(invoice) {
       const totalsValueX = margin + contentWidth - 80;
       currentY += 10;
 
+      // Rincian diskon manual: per item + per baris diskon subtotal
+      // (additive — tiap baris dihitung dari basis gross yang sama).
+      const orderDiscRows = parseDiscountList(invoice.order_discounts);
+      const itemsGrossSum = items.reduce(
+        (s, it) => s + Number(it.price || 0) * Number(it.quantity || 1),
+        0
+      );
+      const itemDiscTotal = items.reduce((s, it) => {
+        const rows = parseDiscountList(it.discounts);
+        if (rows.length === 0) return s;
+        const gross = Number(it.price || 0) * Number(it.quantity || 1);
+        return s + discountTotalFor(rows, gross);
+      }, 0);
+
+      const discountDetailRows = [];
+      if (itemDiscTotal > 0) {
+        discountDetailRows.push({
+          label: 'Diskon item',
+          val: `-${formatIDR(itemDiscTotal)}`,
+          style: 'detail',
+        });
+      }
+      orderDiscRows.forEach((d) => {
+        const amt = discountTotalFor([d], itemsGrossSum);
+        if (amt <= 0) return;
+        const jenis = d.type === 'percentage' ? `${d.value}%` : formatIDR(d.value);
+        const name = d.label ? `${d.label} (${jenis})` : jenis;
+        discountDetailRows.push({
+          label: `Diskon ${name}`,
+          val: `-${formatIDR(amt)}`,
+          style: 'detail',
+        });
+      });
+
+      const discountRows = discountDetailRows.length > 0
+        ? discountDetailRows
+        : Number(invoice.discount_amount || 0) > 0
+          ? [{ label: 'Diskon', val: `-${formatIDR(invoice.discount_amount)}`, style: 'normal', raw: true }]
+          : [];
+
       const totalRows = [
         { label: 'Subtotal',  val: invoice.subtotal, style: 'normal' },
-        { label: 'Diskon',    val: `-${formatIDR(invoice.discount_amount || 0)}`, style: 'normal', raw: true },
+        ...discountRows,
         { label: 'Pajak',     val: invoice.tax_amount, style: 'normal' },
         { label: 'TOTAL',     val: invoice.total, style: 'bold' },
       ];
 
       totalRows.forEach(({ label, val, style, raw }) => {
         const isBold = style === 'bold';
-        const displayVal = raw ? val : formatIDR(val);
+        const displayVal = raw || style === 'detail' ? val : formatIDR(val);
 
         if (isBold) {
           doc.fillColor(BRAND_COLOR).rect(totalsLabelX - 10, currentY - 2, contentWidth - (totalsLabelX - margin - 10) + 10, 22).fill();

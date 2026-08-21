@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Modal from '../ui/Modal.jsx';
 import { formatCurrency } from '../../utils/format.js';
+import { parseDiscountRows, discountTotalFor, describeDiscount } from '../../utils/discounts.js';
 import { api, resolveApiUrl } from '../../core/httpClient.js';
 import DeliveryMethodPanel from '../staff/DeliveryMethodPanel.jsx';
 import { getInvoiceByOrderId, updateInvoicePaymentStatus, openInvoicePdf } from '../../services/api/invoiceService.js';
@@ -95,6 +96,17 @@ function OrderDetailModal({ isOpen, onClose, order, actorRole, onOrderUpdated })
   const items   = o.items || [];
   const subtotal = Number(o.subtotal ?? o.total
     ?? items.reduce((s, i) => s + (Number(i.price) * (i.quantity || 1)), 0));
+
+  // Rincian diskon manual order offline (mirror rumus server).
+  const itemDiscRows = items.map((it) => parseDiscountRows(it.discounts));
+  const itemDiscTotal = items.reduce((s, it, i) => {
+    if (itemDiscRows[i].length === 0) return s;
+    return s + discountTotalFor(itemDiscRows[i], Number(it.price || 0) * Number(it.quantity || 1));
+  }, 0);
+  const orderDiscRows = parseDiscountRows(o.discounts);
+  const subtotalDisc  = discountTotalFor(orderDiscRows, subtotal);
+  const hasManualDiscount = itemDiscTotal > 0 || subtotalDisc > 0;
+
   const cfg = STATUS_CONFIG[o.status] || { label: o.status || '—', color: '#1f1f1f', bg: '#f0f0f0' };
 
   // Fitur 3
@@ -203,6 +215,14 @@ function OrderDetailModal({ isOpen, onClose, order, actorRole, onOrderUpdated })
                           🏷️ {item.attributes.map((a) => `${a.name}: ${a.value}`).join(' • ')}
                         </div>
                       )}
+                      {itemDiscRows[idx].length > 0 && (
+                        <div className="odm-item-notes odm-item-disc">
+                          💸 Diskon: {itemDiscRows[idx].map(describeDiscount).join(' + ')}
+                          {' '}= <strong>-{formatCurrency(itemDiscRows[idx].length > 0
+                            ? discountTotalFor(itemDiscRows[idx], Number(item.price || 0) * Number(item.quantity || 1))
+                            : 0)}</strong>
+                        </div>
+                      )}
                       {item.notes && <div className="odm-item-notes">📝 {item.notes}</div>}
                       <div className="odm-item-design">
                         <div className="odm-item-design-label">🎨 File Desain</div>
@@ -267,11 +287,32 @@ function OrderDetailModal({ isOpen, onClose, order, actorRole, onOrderUpdated })
             </div>
           )}
 
-          {(o.promoCode || o.promo_code) && (
+          {hasManualDiscount && (
+            <>
+              {itemDiscTotal > 0 && (
+                <div className="odm-total-row">
+                  <span className="odm-total-label">Diskon item</span>
+                  <span className="odm-total-value odm-total-value--disc">-{formatCurrency(itemDiscTotal)}</span>
+                </div>
+              )}
+              {subtotalDisc > 0 && (
+                <div className="odm-total-row">
+                  <span className="odm-total-label" title={orderDiscRows.map(describeDiscount).join(' + ')}>
+                    Diskon subtotal
+                  </span>
+                  <span className="odm-total-value odm-total-value--disc">-{formatCurrency(subtotalDisc)}</span>
+                </div>
+              )}
+            </>
+          )}
+
+          {(hasManualDiscount || o.promoCode || o.promo_code) && (
             <div className="odm-total-row odm-total-row--final">
               <span className="odm-total-label">Total Akhir</span>
+              {/* orders.discount_amount sudah = total potongan (promo ATAU
+                  manual, ditulis server) — jangan dikurangi dua kali. */}
               <span className="odm-total-value">
-                {formatCurrency(subtotal - Number(o.discountAmount ?? o.discount_amount ?? 0))}
+                {formatCurrency(Math.max(0, subtotal - Number(o.discountAmount ?? o.discount_amount ?? 0)))}
               </span>
             </div>
           )}

@@ -13,6 +13,7 @@
 
 import { useRef, useEffect, useState, useCallback, useContext } from 'react';
 import { formatCurrency } from '../../utils/format.js';
+import { parseDiscountRows, discountTotalFor } from '../../utils/discounts.js';
 import { AuthContext } from '../context/AuthContext.jsx';
 
 const STORAGE_KEY = 'gala.thermal.paperSize';
@@ -68,6 +69,16 @@ function ThermalReceiptContent({ invoice, paperSize, operatorName }) {
   const discount = Number(invoice.discount_amount || 0);
   const tax      = Number(invoice.tax_amount || 0);
   const total    = Number(invoice.total || subtotal - discount + tax);
+
+  // Diskon manual (order offline) — mirror rumus server.
+  const itemDiscRows = items.map((it) => parseDiscountRows(it.discounts));
+  const itemDiscTotal = items.reduce((s, it, i) => {
+    if (itemDiscRows[i].length === 0) return s;
+    return s + discountTotalFor(itemDiscRows[i], Number(it.price || 0) * Number(it.quantity || 1));
+  }, 0);
+  const orderDiscRows = parseDiscountRows(invoice.order_discounts || invoice.discounts);
+  const subtotalDisc  = discountTotalFor(orderDiscRows, subtotal);
+  const hasManualDiscount = itemDiscTotal > 0 || subtotalDisc > 0;
 
     const logoSize = paperSize === '80mm' ? 60 : 48;
 
@@ -136,6 +147,7 @@ function ThermalReceiptContent({ invoice, paperSize, operatorName }) {
           <div style={css.muted}>—</div>
         ) : items.map((item, i) => {
           const sub = Number(item.price || 0) * Number(item.quantity || 1);
+          const disc = itemDiscRows[i].length > 0 ? discountTotalFor(itemDiscRows[i], sub) : 0;
           return (
             <div key={item.id || i} style={{ marginBottom: '3px' }}>
               <div style={{ wordBreak: 'break-word' }}>{i + 1}. {item.name}</div>
@@ -143,12 +155,37 @@ function ThermalReceiptContent({ invoice, paperSize, operatorName }) {
                 <span>{item.quantity} x {formatCurrency(item.price)}</span>
                 <span style={{ float: 'right' }}>{formatCurrency(sub)}</span>
               </div>
+              {disc > 0 && (
+                <div style={{ ...css.muted, fontSize: `${cfg.smallFontSize}px`, paddingLeft: '12px' }}>
+                  <span>Diskon</span>
+                  <span style={{ float: 'right' }}>-{formatCurrency(disc)}</span>
+                </div>
+              )}
             </div>
           );
         })}
       </div>
 
       <div style={css.sepBold} />
+
+      {/* ── TOTALS ── */}
+      {hasManualDiscount && (
+        <div style={{ marginBottom: '4px', fontSize: `${cfg.smallFontSize}px` }}>
+          <div style={css.row}>
+            <span>SUBTOTAL</span><span>{formatCurrency(subtotal)}</span>
+          </div>
+          {itemDiscTotal > 0 && (
+            <div style={css.row}>
+              <span>DISKON ITEM</span><span>-{formatCurrency(itemDiscTotal)}</span>
+            </div>
+          )}
+          {subtotalDisc > 0 && (
+            <div style={css.row}>
+              <span>DISKON SUBTOTAL</span><span>-{formatCurrency(subtotalDisc)}</span>
+            </div>
+          )}
+        </div>
+      )}
 
       <div style={{ ...css.row, ...css.bold, fontSize: `${cfg.totalFontSize}px`, marginBottom: '4px' }}>
         <span>TOTAL</span><span>{formatCurrency(total)}</span>

@@ -3200,6 +3200,14 @@
   font-size: 18px;
 }
 
+.odm-total-value--disc {
+  color: #b91c1c;
+}
+
+.odm-item-disc {
+  color: #b91c1c;
+}
+
 /* ══════════════════════════════════════════════════════════
    RESPONSIVE: TABLET (max-width: 768px)
    Collapse sidebar and allow natural page scroll on small screens.
@@ -4205,6 +4213,97 @@
 .offline-add-item-btn {
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+/* ── Diskon manual (form order offline) ──────────────────── */
+
+.offline-card-disc {
+  font-size: 12px;
+  font-weight: 600;
+  color: #b91c1c;
+}
+
+.offline-card-net {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.offline-discount-empty {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.offline-discount-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.offline-discount-row {
+  display: grid;
+  grid-template-columns: 18px 1.3fr 1fr 0.9fr 1.2fr auto auto;
+  gap: 8px;
+  align-items: end;
+  background: #fff;
+  border: 1px solid var(--border, rgba(31, 31, 31, 0.12));
+  border-radius: var(--radius-sm, 10px);
+  padding: 10px 12px;
+}
+
+.offline-discount-idx {
+  font-size: 13px;
+  font-weight: 700;
+  color: #6b7280;
+  padding-bottom: 9px;
+}
+
+.offline-discount-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.offline-discount-field--preview {
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+
+.offline-discount-preview {
+  font-size: 14px;
+  font-weight: 700;
+  color: #b91c1c;
+  padding: 9px 0;
+  white-space: nowrap;
+}
+
+.offline-discount-remove {
+  padding: 7px 9px;
+}
+
+.offline-discount-summary {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 2px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.offline-discount-summary-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 14px;
+  font-size: 13px;
+  color: #374151;
+}
+
+.offline-discount-summary-row--final strong {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--brand-brown, #785e40);
 }
 
 .offline-item-qty {

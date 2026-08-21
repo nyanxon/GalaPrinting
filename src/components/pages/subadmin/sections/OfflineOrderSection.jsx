@@ -13,6 +13,7 @@ import { showToast } from '../../../../core/toastEmitter.js';
 import { getInvoiceByOrderId, openInvoicePdf, sendInvoiceEmail } from '../../../../services/api/invoiceService.js';
 import { searchProducts, parseAttributes } from '../../../../services/products.js';
 import { parseNumber, billedAreaM2 } from '../../../../utils/billing.js';
+import { computeOneDiscount, discountTotalFor, parseDiscountRows } from '../../../../utils/discounts.js';
 import ThermalReceiptModal from '../../../modals/ThermalReceiptModal.jsx';
 
 function makeItem() {
@@ -30,6 +31,17 @@ function makeItem() {
     widthCm: '',
     attrDefs: [],
     selectedAttrs: {},
+  };
+}
+
+/** Baris diskon baru — scope default: subtotal order. */
+function makeDiscountRow() {
+  return {
+    id: crypto.randomUUID(),
+    scope: 'order',
+    type: 'percentage',
+    value: '',
+    label: '',
   };
 }
 
@@ -239,6 +251,15 @@ function ProductAutocomplete({ item, customerType, error, onSelect, onClear }) {
 function SuccessCard({ order, onReset }) {
   const items = order.items || [];
   const subtotal = Number(order.subtotal ?? order.total ?? 0);
+  // Rincian diskon manual (mirror rumus server: gross, additive, clamp).
+  const itemDiscRows = items.map((it) => parseDiscountRows(it.discounts));
+  const itemDiscTotal = items.reduce((s, it, i) => {
+    if (itemDiscRows[i].length === 0) return s;
+    return s + discountTotalFor(itemDiscRows[i], Number(it.price || 0) * Number(it.quantity || 1));
+  }, 0);
+  const orderDiscRows = parseDiscountRows(order.discounts);
+  const subtotalDisc = discountTotalFor(orderDiscRows, subtotal);
+  const totalAfterDiscount = Math.max(0, subtotal - itemDiscTotal - subtotalDisc);
   const [invoice, setInvoice] = useState(null);
   const [invoiceLoading, setInvoiceLoading] = useState(false);
   const [invoiceSent, setInvoiceSent] = useState(false);
@@ -328,19 +349,52 @@ function SuccessCard({ order, onReset }) {
         <div className="offline-receipt-mini-divider" />
         {items.map((item, i) => {
           const attrs = [item.notes].filter(Boolean);
+          const discAmt = itemDiscRows[i].length > 0
+            ? discountTotalFor(itemDiscRows[i], Number(item.price || 0) * Number(item.quantity || 1))
+            : 0;
           return (
             <div key={item.id || i} className="offline-receipt-mini-row">
               <span className="offline-receipt-mini-key">
                 {item.name}{attrs.length > 0 ? ` · ${attrs.join(', ')}` : ''} ×{item.quantity}
+                {discAmt > 0 && (
+                  <span style={{ display: 'block', fontSize: '12px', color: '#15803d' }}>
+                    Diskon: -{formatCurrency(discAmt)}
+                  </span>
+                )}
               </span>
               <span className="offline-receipt-mini-val">{formatCurrency(Number(item.price) * Number(item.quantity))}</span>
             </div>
           );
         })}
         <div className="offline-receipt-mini-divider" />
+        {(itemDiscTotal > 0 || subtotalDisc > 0) && (
+          <>
+            <div className="offline-receipt-mini-row">
+              <span className="offline-receipt-mini-key">Subtotal</span>
+              <span className="offline-receipt-mini-val">{formatCurrency(subtotal)}</span>
+            </div>
+            {itemDiscTotal > 0 && (
+              <div className="offline-receipt-mini-row">
+                <span className="offline-receipt-mini-key">Diskon item</span>
+                <span className="offline-receipt-mini-val">-{formatCurrency(itemDiscTotal)}</span>
+              </div>
+            )}
+            {orderDiscRows.map((d, i) => {
+              const amt = discountTotalFor([d], subtotal);
+              if (amt <= 0) return null;
+              const jenis = d.type === 'percentage' ? `${d.value}%` : formatCurrency(d.value);
+              return (
+                <div key={i} className="offline-receipt-mini-row">
+                  <span className="offline-receipt-mini-key">Diskon {d.label ? `${d.label} (` : '('}{jenis})</span>
+                  <span className="offline-receipt-mini-val">-{formatCurrency(amt)}</span>
+                </div>
+              );
+            })}
+          </>
+        )}
         <div className="offline-receipt-mini-row offline-receipt-mini-row--total">
           <span className="offline-receipt-mini-key">TOTAL</span>
-          <strong className="offline-receipt-mini-val">{formatCurrency(subtotal)}</strong>
+          <strong className="offline-receipt-mini-val">{formatCurrency(totalAfterDiscount)}</strong>
         </div>
         <div className="offline-receipt-mini-row" style={{ marginTop: '6px' }}>
           <span className="offline-receipt-mini-key">Status</span>
@@ -401,14 +455,27 @@ export default function OfflineOrderSection() {
   const [adminNote,       setAdminNote]       = useState('');
   const [customerType,    setCustomerType]    = useState('customer');
   const [items,           setItems]           = useState([makeItem()]);
+  const [discounts,       setDiscounts]       = useState([]);
   const [submitting,      setSubmitting]      = useState(false);
   const [fieldErrors,     setFieldErrors]     = useState({});
   const [createdOrder,    setCreatedOrder]    = useState(null);
 
-  const subtotal = items.reduce(
-    (sum, it) => sum + itemLineTotal(it),
-    0
+  // ── Preview hitungan diskon (mirror rumus server: gross, additive, clamp) ──
+  const grossList     = items.map((it) => itemLineTotal(it));
+  const subtotalGross = grossList.reduce((s, g) => s + g, 0);
+  const itemDiscTotals = items.map((it, i) =>
+    discountTotalFor(
+      discounts.filter((d) => d.scope === it.id),
+      grossList[i]
+    )
   );
+  const subtotalDiscount = discountTotalFor(
+    discounts.filter((d) => d.scope === 'order'),
+    subtotalGross
+  );
+  const totalDiscount =
+    itemDiscTotals.reduce((s, d) => s + d, 0) + subtotalDiscount;
+  const finalTotal = Math.max(0, subtotalGross - totalDiscount);
 
   function addItem() {
     setItems((prev) => [...prev, makeItem()]);
@@ -416,6 +483,36 @@ export default function OfflineOrderSection() {
 
   function removeItem(id) {
     setItems((prev) => prev.filter((it) => it.id !== id));
+    // Buang baris diskon yang scope-nya item yang dihapus (cegah orphan).
+    setDiscounts((prev) => prev.filter((d) => d.scope !== id));
+  }
+
+  function addDiscountRow() {
+    setDiscounts((prev) => [...prev, makeDiscountRow()]);
+  }
+
+  function removeDiscountRow(id) {
+    setDiscounts((prev) => prev.filter((d) => d.id !== id));
+    setFieldErrors((prev) => {
+      if (!prev[`disc_${id}_value`]) return prev;
+      const next = { ...prev };
+      delete next[`disc_${id}_value`];
+      return next;
+    });
+  }
+
+  function updateDiscountRow(id, field, value) {
+    setDiscounts((prev) =>
+      prev.map((d) => (d.id === id ? { ...d, [field]: value } : d))
+    );
+    const errKey = `disc_${id}_value`;
+    if (fieldErrors[errKey]) {
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        delete next[errKey];
+        return next;
+      });
+    }
   }
 
   function updateItem(id, field, value) {
@@ -542,6 +639,18 @@ export default function OfflineOrderSection() {
         });
       }
     });
+    // Validasi baris diskon (UX cepat — validasi final tetap di server):
+    // percentage 0-100, nominal >= 0.
+    discounts.forEach((d) => {
+      const v = Number(d.value);
+      if (d.value === '' || !Number.isFinite(v)) {
+        errors[`disc_${d.id}_value`] = 'Nilai diskon wajib diisi.';
+      } else if (d.type === 'percentage' && (v < 0 || v > 100)) {
+        errors[`disc_${d.id}_value`] = 'Persentase harus 0-100.';
+      } else if (d.type === 'nominal' && v < 0) {
+        errors[`disc_${d.id}_value`] = 'Nominal tidak boleh negatif.';
+      }
+    });
     return errors;
   }
 
@@ -556,6 +665,16 @@ export default function OfflineOrderSection() {
     setSubmitting(true);
     setFieldErrors({});
     try {
+      // Baris diskon dipetakan ke scope-nya; client HANYA mengirim
+      // type+value+label — hasil hitungan ditentukan server.
+      const toDiscountPayload = (rows) =>
+        rows.map((d) => ({
+          type: d.type,
+          value: Number(d.value),
+          label: (d.label || '').trim(),
+        }));
+      const orderLevelRows = toDiscountPayload(discounts.filter((d) => d.scope === 'order'));
+
       const validItems = items.map((it) => ({
         productId: it.productId || null,
         name:      it.name.trim(),
@@ -571,6 +690,10 @@ export default function OfflineOrderSection() {
                 .map((a) => ({ name: a.name, value: String(it.selectedAttrs[a.name] ?? '') }))
                 .filter((a) => a.value)
             : undefined,
+        discounts: (() => {
+          const rows = discounts.filter((d) => d.scope === it.id);
+          return rows.length > 0 ? toDiscountPayload(rows) : undefined;
+        })(),
       }));
 
       const res = await api.post('/api/orders/offline', {
@@ -581,6 +704,7 @@ export default function OfflineOrderSection() {
         adminNote:       adminNote.trim(),
         customerType,
         items:           validItems,
+        discounts:       orderLevelRows.length > 0 ? orderLevelRows : undefined,
       });
 
       setCreatedOrder(res.data.data);
@@ -602,6 +726,7 @@ export default function OfflineOrderSection() {
     setAdminNote('');
     setCustomerType('customer');
     setItems([makeItem()]);
+    setDiscounts([]);
     setFieldErrors({});
   }
 
@@ -708,6 +833,7 @@ export default function OfflineOrderSection() {
 
           {items.map((item, index) => {
             const itemSub = itemLineTotal(item);
+            const itemDisc = itemDiscTotals[index] || 0;
             const nameErr  = fieldErrors[`item_${item.id}_name`];
             const priceErr = fieldErrors[`item_${item.id}_price`];
             const lenErr   = fieldErrors[`item_${item.id}_lengthCm`];
@@ -785,6 +911,14 @@ export default function OfflineOrderSection() {
                     <div className="offline-price-cell offline-price-cell--sub">
                       <label className="offline-form-label">Subtotal</label>
                       <span className="offline-card-subtotal">{formatCurrency(itemSub)}</span>
+                      {itemDisc > 0 && (
+                        <>
+                          <span className="offline-card-disc" title="Total diskon item ini">
+                            Diskon: -{formatCurrency(itemDisc)}
+                          </span>
+                          <span className="offline-card-net">Net: {formatCurrency(itemSub - itemDisc)}</span>
+                        </>
+                      )}
                     </div>
                   </div>
 
@@ -896,9 +1030,135 @@ export default function OfflineOrderSection() {
           })}
 
           <div className="offline-order-total-row">
-            <span>Total ({items.length} item{items.length !== 1 ? 's' : ''})</span>
-            <strong>{formatCurrency(subtotal)}</strong>
+            <span>Subtotal ({items.length} item{items.length !== 1 ? 's' : ''})</span>
+            <strong>{formatCurrency(subtotalGross)}</strong>
           </div>
+        </section>
+
+        {/* ── Diskon / Potongan Harga ── */}
+        <section className="offline-form-section">
+          <div className="offline-form-section-header">
+            <div className="offline-form-section-title">🏷️ Diskon / Potongan Harga</div>
+            <button
+              type="button"
+              className="adm-btn"
+              style={{ padding: '5px 14px', fontSize: '13px' }}
+              onClick={addDiscountRow}
+            >
+              + Tambahkan diskon / potongan harga
+            </button>
+          </div>
+
+          {discounts.length === 0 ? (
+            <p className="offline-discount-empty">
+              Belum ada diskon. Klik tombol di atas untuk menambahkan potongan per item atau untuk
+              subtotal order (bisa lebih dari satu baris).
+            </p>
+          ) : (
+            <div className="offline-discount-list">
+              {discounts.map((d, idx) => {
+                const valErr = fieldErrors[`disc_${d.id}_value`];
+                const scopedGross =
+                  d.scope === 'order'
+                    ? subtotalGross
+                    : grossList[items.findIndex((it) => it.id === d.scope)] || 0;
+                const previewAmt = discountTotalFor([d], scopedGross);
+                return (
+                  <div key={d.id} className="offline-discount-row">
+                    <span className="offline-discount-idx">{idx + 1}.</span>
+
+                    <div className="offline-discount-field offline-discount-field--scope">
+                      <label className="offline-form-label">Cakupan</label>
+                      <select
+                        className="adm-input"
+                        value={d.scope}
+                        onChange={(e) => updateDiscountRow(d.id, 'scope', e.target.value)}
+                      >
+                        <option value="order">Subtotal order</option>
+                        {items.map((it, i) => (
+                          <option key={it.id} value={it.id}>
+                            Item {i + 1}{it.name.trim() ? ` — ${it.name.trim()}` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="offline-discount-field offline-discount-field--type">
+                      <label className="offline-form-label">Jenis</label>
+                      <select
+                        className="adm-input"
+                        value={d.type}
+                        onChange={(e) => updateDiscountRow(d.id, 'type', e.target.value)}
+                      >
+                        <option value="percentage">Persentase (%)</option>
+                        <option value="nominal">Nominal (Rp)</option>
+                      </select>
+                    </div>
+
+                    <div className="offline-discount-field offline-discount-field--value">
+                      <label className="offline-form-label">
+                        {d.type === 'percentage' ? 'Persen (0-100)' : 'Nominal (Rp)'}
+                      </label>
+                      <input
+                        className={`adm-input${valErr ? ' adm-input--error' : ''}`}
+                        type="number"
+                        min="0"
+                        max={d.type === 'percentage' ? '100' : undefined}
+                        step={d.type === 'percentage' ? '1' : 'any'}
+                        placeholder={d.type === 'percentage' ? 'mis. 10' : 'mis. 5000'}
+                        value={d.value}
+                        onChange={(e) => updateDiscountRow(d.id, 'value', e.target.value)}
+                      />
+                      {valErr && <span className="offline-field-error">{valErr}</span>}
+                    </div>
+
+                    <div className="offline-discount-field offline-discount-field--label">
+                      <label className="offline-form-label">Label (opsional)</label>
+                      <input
+                        className="adm-input"
+                        type="text"
+                        maxLength={100}
+                        placeholder="mis. Diskon member"
+                        value={d.label}
+                        onChange={(e) => updateDiscountRow(d.id, 'label', e.target.value)}
+                      />
+                    </div>
+
+                    <div className="offline-discount-field offline-discount-field--preview">
+                      <label className="offline-form-label">Potongan</label>
+                      <span className="offline-discount-preview">-{formatCurrency(previewAmt)}</span>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="offline-item-remove offline-discount-remove"
+                      onClick={() => removeDiscountRow(d.id)}
+                      aria-label={`Hapus diskon ${idx + 1}`}
+                    >
+                      🗑
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {totalDiscount > 0 && (
+            <div className="offline-discount-summary">
+              <div className="offline-discount-summary-row">
+                <span>Diskon item</span>
+                <span>-{formatCurrency(itemDiscTotals.reduce((s, d) => s + d, 0))}</span>
+              </div>
+              <div className="offline-discount-summary-row">
+                <span>Diskon subtotal</span>
+                <span>-{formatCurrency(subtotalDiscount)}</span>
+              </div>
+              <div className="offline-discount-summary-row offline-discount-summary-row--final">
+                <span>Total akhir</span>
+                <strong>{formatCurrency(finalTotal)}</strong>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* ── Catatan Admin ── */}

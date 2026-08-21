@@ -8,6 +8,7 @@ import { randomUUID } from 'crypto';
 import { query, pool } from '../db/connection.js';
 import { StorageService } from '../utils/storage.js';
 import { parsePagination } from '../utils/pagination.js';
+import { serializeDiscountList } from '../utils/discounts.js';
 import { incrementUsage, recordUsageLog } from './promo.service.js';
 import {
   sendOrderNotification,
@@ -240,7 +241,7 @@ async function attachItemsToOrders(orders) {
  * All inserts are wrapped in a single DB transaction — if any item insert
  * fails, the entire transaction is rolled back and no partial order is left.
  */
-export async function createOrder({ customer, items, subtotal, source = 'online', orderType = 'standard', initialStatus, promoCode, discountAmount, adminNote, customerType = 'customer' }) {
+export async function createOrder({ customer, items, subtotal, source = 'online', orderType = 'standard', initialStatus, promoCode, discountAmount, discounts, adminNote, customerType = 'customer' }) {
   const id     = randomUUID();
   const status = initialStatus || 'Waiting for Payment';
 
@@ -263,8 +264,8 @@ export async function createOrder({ customer, items, subtotal, source = 'online'
 
     await conn.execute(
       `INSERT INTO orders
-         (id, order_number, order_type, source, customer_id, customer_name, customer_type, customer_phone, customer_address, customer_address_title, customer_email, status, subtotal, promo_code, discount_amount, admin_note)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (id, order_number, order_type, source, customer_id, customer_name, customer_type, customer_phone, customer_address, customer_address_title, customer_email, status, subtotal, promo_code, discount_amount, discounts, admin_note)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         orderNumber,
@@ -281,6 +282,7 @@ export async function createOrder({ customer, items, subtotal, source = 'online'
         subtotal || 0,
         promoCode || null,
         Number(discountAmount) || 0,
+        serializeDiscountList(discounts),
         adminNote || null,
       ]
     );
@@ -292,8 +294,8 @@ export async function createOrder({ customer, items, subtotal, source = 'online'
     for (const item of (items || [])) {
       await conn.execute(
         `INSERT INTO order_items
-           (id, order_id, product_id, name, price, quantity, attributes, length_cm, width_cm, notes, design_file_path)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           (id, order_id, product_id, name, price, quantity, attributes, discounts, length_cm, width_cm, notes, design_file_path)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           randomUUID(),
           id,
@@ -302,6 +304,7 @@ export async function createOrder({ customer, items, subtotal, source = 'online'
           Number(item.price) || 0,
           item.quantity || 1,
           normalizeSelectedAttributes(item.attributes),
+          serializeDiscountList(item.discounts),
           item.lengthCm ?? item.length_cm ?? null,
           item.widthCm  ?? item.width_cm  ?? null,
           item.notes || null,
