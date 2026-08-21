@@ -1,0 +1,200 @@
+[33m8fe0c01[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Change System p3
+[33mada072e[m Change System p2
+[33m946db31[m Change System
+[33m2aa3f46[m Update Thermal Receipt p5
+[33m94e41ca[m Update Thermal Receipt p4
+[33mf4fdc16[m Update Thermal Receipt p3
+[33macf005a[m Update Thermal Receipt p2
+[33mf85e25a[m Update Thermal Receipt
+[33m71e448e[m Fix
+[33ma8f9188[m Fix Perhitungan Produk Per m2
+[33m1635a7c[m refactor(products): remove color/size/material variant attributes end-to-end
+[33m6159071[m feat(server): wire checkFeature on GET /api/promo (Step 6 trial 2)
+[33m767d844[m feat(server): wire checkFeature on GET /api/export/database (Step 6 trial)
+[33me9f7e17[m Restructure Admin Features p3
+[33m5b99cf4[m Restructure Admin Features p2
+[33maf363c0[m Restructure Admin Features p1
+[33mbc74b7a[m fix(server): restore multer .single() on upload middleware after homepage centralization
+[33mfd57841[m Optimize p7
+[33m51d9edb[m Optimize p6
+[33mf217a7f[m Optimize p5
+[33m5c28bb1[m Optimize p4
+[33m58a03d7[m Optimize p3
+[33m47666ee[m Optimize CSS p2
+[33m08a909c[m Optimize css
+[33mddbb18d[m fix new features p4
+[33ma5d582f[m Fix New Features p3
+[33m9fd5f5d[m fix New Features p2
+[33m4355d93[m Fix new features
+[33m3395e55[m Changing Product System
+[33me50e8cd[m Delete Toko Offline
+[33m365f37f[m fix rekpa harian
+[33m27d4d88[m Fix Mobile Responsive (Admin Page Button)
+[33m612cbff[m Fix Mobile Responsive for Landing Page
+[33m3688042[m fix staff profile edit
+[33m19b9560[m Fix Download PDF (Rekap Harian)
+[33m15933cd[m Update React-Router > 8.3.0
+[33m236b11e[m Update react-router, postcss, brace-expansion
+[33m4b80f96[m Update Axios
+[33mc85cb8e[m Fix Owner Homepage Language
+[33mf598c68[m Fix Owner Features (Admin Menu Permission)
+[33mb82632b[m Fix Order Offline UI
+[33m6394c75[m New Features p4
+[33mf4dafc4[m New Features p3
+[33m0f37af9[m New Features p2
+[33mba140d9[m New Features
+[33me987d45[m fix nota p2
+[33m207b952[m Fix Nota
+[33mf4449c2[m fix recap harian p3
+[33mc5585b9[m Fix Download Recap Data
+[33mff2e920[m Fix Download Rekap p2
+[33mfcff712[m Fix Permission p3
+[33m6dab994[m Fix Permission p2
+[33mb8d3239[m Fix Rekap + Permission
+[33m1e10ea1[m Fix Rekap Data Donwload
+[33md3f7efb[m add UI to admin permission modal
+[33mb1dec3e[m Fix UX Pop Up Modal Admin Permission
+[33m6cd6396[m Fix Admin Permission Roles
+[33m77fbf5d[m Admin Role Permission Features
+[33mfd154a2[m Fix Nota + Fix Menu Cashier
+[33m19fe586[m Fix Opt p1
+[33mc6a7b5f[m Full OPT (Danger)
+[33m134f4a7[m Fix Opt p1
+[33m6fb667e[m Optimization p1
+[33m70a0bb3[m Fix Optimization
+[33m96a12a1[m Optimization
+[33mf678a24[m Fix Admin page width
+[33mb934040[m Fix Scroll on Order Offline
+[33mddcaf77[m Add scrolling for Order Offline, Add new input (Email) in Order Offline, Create Invoice for Order Offline, Fix Invoices gone Missing, Delete Custom Order
+[33m3ed1cc0[m Reduce font size for receipt
+[33m90b8e22[m Fix Margin Receipt
+[33m14a9aa9[m Fix Font Receipt
+[33me29403e[m Change receipt from 80mm to 58mm
+[33m6832026[m fix rekap harian
+[33m27fdc4b[m Fix Invoices pt sekian
+[33m2c46d0a[m fix socket.io
+[33m68e06e9[m fix invoice
+[33m610cebe[m fix file handling
+[33med7152b[m fix cdm-modal
+[33mdd2ac70[m fix cart
+[33mfc1310e[m Fix Cart
+[33m18c5d54[m Fix navbar admin
+[33me70d814[m Fix invoice p2
+[33md40e4a9[m fix invoice
+[33m06fd3b4[m Fix RTS
+[33m49d2e6e[m fix invoice, fix verify email
+[33m137c3eb[m Add Rekap Data
+[33md9bcc4c[m Rekap data kasir
+[33ma30fae3[m bug fix
+[33m574b0a4[m Fix mobile responsive
+[33m740ca5e[m Mobile Responsive
+[33mb551a8f[m Fix p6
+[33m156ce00[m fix p5
+[33maaacf54[m fix p4
+[33md8ee30b[m fix p3
+[33m6e5f512[m FIX pt2
+[33m400088e[m Fix Placeholder homepage
+[33mec9cc08[m fix jwt token
+[33me07d1b7[m Fix Login Token
+[33mcb2b652[m fix custom order pt2
+[33m94806f7[m fix custom order
+[33m4254add[m Fix Custom Order
+[33m68ce959[m Flow Custom Order
+[33mb722117[m fix Reg Img
+[33m7df9d1b[m fix regImg
+[33me2f1255[m fix regImg
+[33m4b6b7c6[m Add Register Page Photo
+[33m37fc694[m Fix Order Offline
+[33md215295[m fix invoice
+[33m7039312[m Fix new Features
+[33m0ce6aa7[m Fix warning login/register
+[33mcdde4bd[m fix 503
+[33m9178b6b[m log Gala
+[33mac80475[m bug fix pt2
+[33m068ae2d[m Fix Vulnerabilities
+[33m3c72807[m add invoice, add offline feature on cashier, sound notification
+[33m325f2a6[m add support file pdf zip
+[33me575799[m Delete un-used component
+[33md24f8cb[m Bug Fix pt1
+[33mea568a6[m Email Integration
+[33me0a8504[m Add Produk kami
+[33mdd1f7d9[m Responsive Lang Selector
+[33m74be5a7[m Add Language Selector
+[33mc89b7a1[m Connect Social Media
+[33m48579cd[m fix revenue
+[33mde6bdcb[m Fix Revenue
+[33mf94f697[m New Features for Owner
+[33m50bb5e9[m Trigger rebuild: VITE_USE_BACKEND now set in Hostinger env vars
+[33m9681c2d[m Fix deployment: track dist/assets in git so Hostinger serves the correct JS/CSS bundle
+[33mf073a34[m Fix Deployment
+[33m02f6ad0[m Fix Caching
+[33m6647934[m Fix reset data
+[33mda0d4dc[m Add reset data
+[33mc73181d[m Optimization
+[33m660373f[m Fix Preview Homepage pt2
+[33m441ab94[m Fix Preview Homepage
+[33mf9528ea[m Few Fix and Adding new Features
+[33m6a584dd[m Homepage Preview on admin
+[33m6a45381[m Overhaul Revenue
+[33mc277ef4[m Drag n Drop
+[33m191168a[m Banner mobile responsive
+[33m43e97e0[m Fix Category Banned edits
+[33me705143[m Fix Banner
+[33mf2604cf[m Edit homepage
+[33ma97a941[m Edit Homepage for Admin
+[33md72e9bd[m Update 15 June (Add Bank Account Number)
+[33m4ed281d[m Update 15 June (Profile PopUp)
+[33m654dabe[m Update 15 June (Profile Pictures admin)
+[33m0a17415[m Update 15 June (Profile Picture + Review)
+[33m6ed151a[m Update 15 June (Edit Export Data)
+[33mf34d642[m Update 15 June (Fix Export Data)
+[33m45d6be1[m Update 15 June (Export Data)
+[33m19ef18c[m Update 15 June (Fix Edit Products)
+[33mcbc2e7b[m Update 15 June (Photo Handling)
+[33me391f73[m Update 15 June (Fix Edit Product)
+[33m1502561[m Update 15 June (Edit Products)
+[33m46cace7[m Update 15 June (File Handling)
+[33m114f2c7[m update 15 June (Chat Status)
+[33mf9b65e4[m Update 15 June (Chat bubble notif)
+[33mf322c2d[m Update 15 June (Thumbnails)
+[33m7172fe9[m Update 15 June (Mobile Responsive)
+[33mccd16dd[m update 15 june (user role & delete account)
+[33mc7033f2[m update 15 june pt1
+[33m395eed1[m Update 12 June Last
+[33m3aaeda7[m Update 12 June pt8
+[33m6f825be[m Update 12 June pt7
+[33md069725[m Update 12 June pt6
+[33mc9789aa[m update 12 June pt5
+[33mdd8711e[m Update 12 June pt4
+[33mce8d565[m Update 12 June pt3
+[33m6c6de90[m Update 12 June pt2
+[33m7d6163b[m Update banyak 12 June 2026
+[33maef9519[m Mobile Responsive
+[33m6fb2f82[m Fix cross-device file move using copyFile instead of rename
+[33m9a18e36[m Set trust proxy for Hostinger reverse proxy
+[33m789339b[m Build command installs server deps via root npm run build
+[33m30cea4b[m Make DB failure non-fatal and improve startup error logging
+[33m8868096[m Add index.js entry wrapper for Hostinger ESM compatibility
+[33m9e229d2[m Add build:frontend script for Hostinger deployment
+[33mdf2fde3[m UPDATE
+[33m9e12235[m Add files via upload
+[33m40c85f0[m Add Node.js CI workflow
+[33m852a126[m UPDATE 26/05
+[33ma779750[m UPDATE LAST
+[33me89780d[m update
+[33m3ee7822[m UPDATE
+[33mcc2b588[m update
+[33md4777fa[m update
+[33m1ae83c0[m update
+[33m7c70cc3[m fix update
+[33m5522879[m react \/ 18.xxx
+[33mc0292a2[m update
+[33m5b678e4[m update
+[33m7fc776f[m update
+[33maec3cfe[m Update Hostinger
+[33m11aadd3[m update
+[33m733f181[m update
+[33me12b7c1[m Merge branch 'main' of https://github.com/nyanxon/GalaPrinting
+[33m66447ff[m Initial Commit
+[33m4f9069f[m Add LICENSE file
+[33m5d8e5fb[m Initial commit

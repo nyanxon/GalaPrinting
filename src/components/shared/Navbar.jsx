@@ -451,6 +451,7 @@ function Navbar() {
         {/* Secondary nav */}
         {!showAsStaff && (
           <div className="navbar-secondary">
+            <NavLink to="/">{t('nav.home')}</NavLink>
             <NavLink to="/tentang-kami">{t('nav.about')}</NavLink>
 
             {/* ── Produk Kami — now a direct link to /products ── */}

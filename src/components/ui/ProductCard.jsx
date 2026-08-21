@@ -38,7 +38,7 @@ function ProductCard({ product, eager = false }) {
             src={imageSrc}
             alt={name}
             width="300"
-            height="375"
+            height="300"
             onLoad={() => setImageLoaded(true)}
             onError={(e) => {
               e.currentTarget.src = placeholderImg;
