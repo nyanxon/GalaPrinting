@@ -152,7 +152,7 @@
 }
 
 .product-card-media {
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 4 / 5;
   background: rgba(237, 200, 174, 0.45);
   overflow: hidden;
 }

@@ -23,7 +23,7 @@
 
 .gallery-main {
   width: 100%;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 1 / 1;
   border-radius: var(--radius-md);
   background: rgba(237, 200, 174, 0.5);
   border: 1px solid var(--border);
