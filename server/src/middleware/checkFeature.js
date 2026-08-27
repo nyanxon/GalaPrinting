@@ -34,7 +34,7 @@ export function checkFeature(featureKey) {
 
       // 1) Apakah akun ini promoted admin?
       const [userRows] = await query(
-        'SELECT is_promoted_admin FROM users WHERE id = ? AND deleted_at IS NULL',
+        'SELECT is_promoted_admin FROM users_admin WHERE id = ? AND deleted_at IS NULL',
         [userId]
       );
       const user = userRows[0];

@@ -208,32 +208,46 @@ describe('updateAccountPermissions validation (controller)', () => {
 });
 
 describe('promote / revoke', () => {
+  function mockConn(queryImpl) {
+    const conn = {
+      beginTransaction: vi.fn().mockResolvedValue(undefined),
+      query: vi.fn(),
+      commit: vi.fn().mockResolvedValue(undefined),
+      rollback: vi.fn().mockResolvedValue(undefined),
+      release: vi.fn().mockResolvedValue(undefined),
+    };
+    if (queryImpl) conn.query.mockImplementation(queryImpl);
+    pool.getConnection.mockResolvedValue(conn);
+    return conn;
+  }
+
   it('promote returns the updated user', async () => {
-    query
-      .mockResolvedValueOnce([{ affectedRows: 1 }])
-      .mockResolvedValueOnce([[fakeUser({ is_promoted_admin: 1 })]]);
+    const c = fakeUser({ id: 'u_001' });
+    const conn = mockConn();
+    // conn.query sequence: SELECT customer, INSERT admin, DELETE customer, DELETE refresh_tokens
+    conn.query
+      .mockResolvedValueOnce([[c]])          // SELECT * FROM users_customer
+      .mockResolvedValueOnce(undefined)       // INSERT INTO users_admin
+      .mockResolvedValueOnce(undefined)       // DELETE FROM users_customer
+      .mockResolvedValueOnce(undefined);      // DELETE FROM refresh_tokens
+    // post-commit query: SELECT from users_admin
+    query.mockResolvedValueOnce([[fakeUser({ id: 'u_001', is_promoted_admin: 1 })]]);
 
     const res = makeRes();
     await ctrl.promoteAccount({ params: { userId: 'u_001' } }, res, vi.fn());
     expect(res.body.ok).toBe(true);
     expect(res.body.user.is_promoted_admin).toBe(1);
-    expect(query).toHaveBeenNthCalledWith(
-      1,
-      expect.stringContaining('SET is_promoted_admin = 1'),
-      ['u_001']
-    );
+    expect(conn.commit).toHaveBeenCalledTimes(1);
   });
 
-  it('revoke returns 404 when user is gone', async () => {
-    query.mockResolvedValueOnce([{ affectedRows: 0 }]);
+  it('revoke returns 404 when user not found in users_admin', async () => {
+    const conn = mockConn();
+    conn.query.mockResolvedValueOnce([[]]); // SELECT empty
+
     const res = makeRes();
     await ctrl.revokeAccount({ params: { userId: 'missing' } }, res, vi.fn());
     expect(res.status).toHaveBeenCalledWith(404);
-    expect(query).toHaveBeenNthCalledWith(
-      1,
-      expect.stringContaining('SET is_promoted_admin = 0'),
-      ['missing']
-    );
+    expect(conn.rollback).toHaveBeenCalledTimes(1);
   });
 
   it('listAdminAccounts excludes owner and supports search', async () => {

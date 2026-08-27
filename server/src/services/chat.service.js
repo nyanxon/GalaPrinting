@@ -38,7 +38,7 @@ export async function listConversations() {
         ORDER BY m2.created_at DESC
         LIMIT 1) AS last_message
      FROM conversations c
-     LEFT JOIN users u ON u.id = c.customer_id
+     LEFT JOIN users_customer u ON u.id = c.customer_id
      WHERE c.conversation_type = 'customer_chat'
        AND (c.hidden_by_admin = 0 OR c.hidden_by_admin IS NULL)
      ORDER BY c.last_at DESC`
@@ -187,7 +187,7 @@ export async function deleteConversation(conversationId) {
 
 /**
  * List all DM conversations for a given user, enriched with lastMessage and unreadCount.
- * Joins with the users table to resolve the other participant's name and role.
+ * Joins with the users_admin table to resolve the other participant's name and role.
  * Sorted by last_at DESC (Req 2.9, 2.11).
  *
  * @param {string} userId
@@ -226,7 +226,7 @@ export async function listDMConversations(userId) {
         ORDER BY m2.created_at DESC
         LIMIT 1) AS last_message
      FROM conversations c
-     JOIN users u ON u.id = CASE
+     JOIN users_admin u ON u.id = CASE
        WHEN c.dm_participant_a = ? THEN c.dm_participant_b
        ELSE c.dm_participant_a
      END

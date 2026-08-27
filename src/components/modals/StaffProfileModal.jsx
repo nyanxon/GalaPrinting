@@ -19,6 +19,7 @@
 
 import { useState, useEffect, useContext, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { Link } from 'react-router';
 import { AuthContext } from '../context/AuthContext.jsx';
 import { getProfile, updateProfile } from '../../services/profileService.js';
 import { resendVerificationEmail } from '../../services/auth.js';
@@ -380,6 +381,11 @@ export default function StaffProfileModal({ isOpen, onClose }) {
                   >
                     Batal
                   </button>
+                </div>
+                <div style={{ marginTop: 12, textAlign: 'center' }}>
+                  <Link to="/change-password" className="adm-link" onClick={onClose}>
+                    Ubah Password
+                  </Link>
                 </div>
               </form>
 

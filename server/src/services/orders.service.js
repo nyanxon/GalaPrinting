@@ -102,8 +102,8 @@ async function sendEmailIfEnabled(updatedOrder, newStatus, customerId) {
     const prefs = await getPreferences(customerId);
     if (!prefs[prefKey]) return; // Customer has this notification disabled
 
-    // Fetch the customer's email address from the users table
-    const [userRows] = await query('SELECT email, name FROM users WHERE id = ?', [customerId]);
+    // Fetch the customer's email address from users_customer
+    const [userRows] = await query('SELECT email, name FROM users_customer WHERE id = ?', [customerId]);
     if (userRows.length === 0) return;
 
     const orderWithEmail = {
@@ -394,7 +394,7 @@ export async function createOrder({ customer, items, subtotal, source = 'online'
   if (createdOrder.customer_id) {
     (async () => {
       try {
-        const [userRows] = await query('SELECT email, name FROM users WHERE id = ?', [createdOrder.customer_id]);
+        const [userRows] = await query('SELECT email, name FROM users_customer WHERE id = ?', [createdOrder.customer_id]);
         if (!userRows.length) return;
         const prefs = await getPreferences(createdOrder.customer_id);
         if (!prefs.order_received) return;
@@ -524,7 +524,7 @@ export async function getOrderById(id) {
     query(
       `SELECT oa.*, u.name AS approver_name_live
        FROM order_approvals oa
-       LEFT JOIN users u ON u.id = oa.approved_by
+       LEFT JOIN users_admin u ON u.id = oa.approved_by
        WHERE oa.order_id = ? ORDER BY oa.approved_at ASC`,
       [id]
     ),
@@ -651,8 +651,8 @@ export async function updateOrderStatus(id, newStatus, actorId, actorRole, cance
                         COALESCE(u.email, o.customer_email) AS customer_email, creator.name AS creator_name
                  FROM invoices i
                  LEFT JOIN orders o ON i.order_id = o.id
-                 LEFT JOIN users u ON i.customer_id = u.id
-                 LEFT JOIN users creator ON i.created_by = creator.id
+                 LEFT JOIN users_customer u ON i.customer_id = u.id
+                 LEFT JOIN users_admin creator ON i.created_by = creator.id
                  WHERE i.id = ?`,
                 [invoiceId]
               );

@@ -147,6 +147,12 @@ api.interceptors.response.use(
   async (error) => {
     const originalConfig = error.config;
 
+    // must_change_password enforcement — staff account must change password first
+    if (error.response?.status === 403 && error.response?.data?.mustChangePassword) {
+      window.dispatchEvent(new CustomEvent('gala:must-change-password'));
+      return Promise.reject(error);
+    }
+
     // Only handle 401 errors
     if (error.response?.status !== 401) {
       return Promise.reject(error);

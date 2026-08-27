@@ -108,6 +108,11 @@ function ProfilePage() {
               </button>
             ))}
           </nav>
+
+          <Link to="/change-password" className="pf-sidebar-item pf-sidebar-item--link">
+            <span className="pf-sidebar-item-icon">🔑</span>
+            <span>Ubah Password</span>
+          </Link>
         </aside>
 
         {/* ── Content ── */}

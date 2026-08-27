@@ -84,9 +84,29 @@ router.post(
   ctrl.login
 );
 
+router.post(
+  '/admin-login',
+  authLimiter,
+  [
+    body('email').isEmail().normalizeEmail().withMessage('Email tidak valid.'),
+    body('password').notEmpty().withMessage('Password wajib diisi.'),
+  ],
+  ctrl.adminLogin
+);
+
 router.post('/refresh', authLimiter, ctrl.refresh);
 router.post('/logout',  authLimiter, ctrl.logout);
 router.get('/me',       authenticate, ctrl.me);
+
+router.post(
+  '/change-password',
+  authenticate,
+  [
+    body('currentPassword').notEmpty().withMessage('Password lama wajib diisi.'),
+    body('newPassword').isLength({ min: 6 }).withMessage('Password baru minimal 6 karakter.'),
+  ],
+  ctrl.changePassword
+);
 
 // Email verification
 router.get('/verify-email', ctrl.verifyEmail);

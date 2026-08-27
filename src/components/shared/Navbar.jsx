@@ -428,6 +428,10 @@ function Navbar() {
                               {t('auth.noAccount')}{' '}
                               <Link to="/register" className="login-popup-forgot" onClick={closeAllPopups}>{t('auth.registerHere')}</Link>
                             </p>
+                            <p className="login-popup-register-hint" style={{ marginTop: '4px', fontSize: '12px' }}>
+                              Staff / Admin?{' '}
+                              <Link to="/admin/login" className="login-popup-forgot" onClick={closeAllPopups}>Login Staff</Link>
+                            </p>
                           </form>
                         </div>
                       )}

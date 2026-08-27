@@ -5,6 +5,7 @@
  */
 
 import * as svc from '../services/adminAccounts.service.js';
+import { STAFF_ROLES } from '../config/roles.js';
 
 /**
  * GET /api/admin-accounts
@@ -12,6 +13,63 @@ import * as svc from '../services/adminAccounts.service.js';
 export async function listAdminAccounts(req, res, next) {
   try {
     const items = await svc.listAdminAccounts({ q: req.query.q });
+    return res.json({ ok: true, items });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * POST /api/admin-accounts
+ * Create a new staff account from scratch (Owner-only).
+ */
+export async function createStaffAccount(req, res, next) {
+  try {
+    const { name, email, role, password } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(422).json({ ok: false, message: 'Nama wajib diisi.' });
+    }
+    if (!email || !email.trim()) {
+      return res.status(422).json({ ok: false, message: 'Email wajib diisi.' });
+    }
+    if (!role || !STAFF_ROLES.includes(role)) {
+      return res.status(422).json({ ok: false, message: 'Role tidak valid.' });
+    }
+    if (!password || password.length < 6) {
+      return res.status(422).json({ ok: false, message: 'Password minimal 6 karakter.' });
+    }
+
+    const user = await svc.createStaffAccount({
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      role,
+      password,
+    });
+
+    return res.status(201).json({
+      ok: true,
+      user,
+      message: 'Akun staff berhasil dibuat. Staff harus mengubah password pada login pertama.',
+    });
+  } catch (err) {
+    if (err.status === 409) {
+      return res.status(409).json({ ok: false, message: err.message });
+    }
+    if (err.status === 422) {
+      return res.status(422).json({ ok: false, message: err.message });
+    }
+    next(err);
+  }
+}
+
+/**
+ * GET /api/admin-accounts/customers?q=...
+ * Search customers in users_customer for the promote flow.
+ */
+export async function searchCustomers(req, res, next) {
+  try {
+    const items = await svc.searchCustomers({ q: req.query.q });
     return res.json({ ok: true, items });
   } catch (err) {
     next(err);

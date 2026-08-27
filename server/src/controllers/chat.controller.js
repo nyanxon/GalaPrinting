@@ -48,9 +48,9 @@ export async function getOrCreateConversation(req, res, next) {
     const isStaff = STAFF_ROLES.includes(req.user.role);
 
     if (isStaff && req.body.customerId) {
-      // Validate that the provided customerId belongs to a user with role = 'customer' (Req 3.5, 5.5)
-      const [userRows] = await query('SELECT id, role FROM users WHERE id = ?', [req.body.customerId]);
-      if (userRows.length === 0 || userRows[0].role !== 'customer') {
+      // Validate that the provided customerId exists in users_customer (Req 3.5, 5.5)
+      const [userRows] = await query('SELECT id FROM users_customer WHERE id = ?', [req.body.customerId]);
+      if (userRows.length === 0) {
         return res.status(422).json({ ok: false, message: 'User bukan customer.' });
       }
     }
@@ -192,9 +192,9 @@ export async function getOrCreateDMConversation(req, res, next) {
       return res.status(422).json({ ok: false, message: 'Tidak dapat membuat DM dengan diri sendiri.' });
     }
 
-    // Validate both participants are staff (not customer) (Req 2.4)
-    const [recipientRows] = await query('SELECT id, role FROM users WHERE id = ?', [recipientId]);
-    if (recipientRows.length === 0 || recipientRows[0].role === 'customer') {
+    // Validate recipient is staff (not customer) (Req 2.4)
+    const [recipientRows] = await query('SELECT id FROM users_admin WHERE id = ?', [recipientId]);
+    if (recipientRows.length === 0) {
       return res.status(422).json({ ok: false, message: 'Peserta DM harus memiliki role staff.' });
     }
 

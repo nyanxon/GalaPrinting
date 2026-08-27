@@ -1,7 +1,8 @@
 /**
  * accounts.controller.js — Request handlers for Account management endpoints.
  *
- * All endpoints require owner role.
+ * All endpoints require owner role (except createCustomer which also allows
+ * admin and cs roles — see accounts.routes.js for the guard).
  */
 
 import * as svc from '../services/accounts.service.js';
@@ -77,6 +78,44 @@ export async function updateAccount(req, res, next) {
   } catch (err) {
     if (err.status === 403) {
       return res.status(403).json({ ok: false, message: err.message });
+    }
+    next(err);
+  }
+}
+
+/**
+ * POST /api/admin/accounts/customers
+ * Create a new customer account from the admin dashboard.
+ */
+export async function createCustomerAccount(req, res, next) {
+  try {
+    const { name, email, phone, password } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(422).json({ ok: false, message: 'Nama wajib diisi.' });
+    }
+    if (!email || !email.trim()) {
+      return res.status(422).json({ ok: false, message: 'Email wajib diisi.' });
+    }
+    if (!password || password.length < 6) {
+      return res.status(422).json({ ok: false, message: 'Password minimal 6 karakter.' });
+    }
+
+    const user = await svc.createCustomerAccount({
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      phone: phone ? phone.trim() : null,
+      password,
+    });
+
+    return res.status(201).json({
+      ok: true,
+      user,
+      message: 'Akun customer berhasil dibuat.',
+    });
+  } catch (err) {
+    if (err.status === 409) {
+      return res.status(409).json({ ok: false, message: err.message });
     }
     next(err);
   }

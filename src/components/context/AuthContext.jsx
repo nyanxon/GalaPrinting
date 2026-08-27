@@ -4,12 +4,14 @@
  * Perbaikan race condition refresh:
  * - `loading: true` selama proses re-hydrate (getCurrentUser) berlangsung.
  * - Protected route TIDAK boleh redirect ke login sebelum loading = false.
- * - `gala:session-expired` event → navigasi ke /register.
+ * - `gala:session-expired` event → navigasi ke /register (customer) atau
+ *   /admin/login (staff), tergantung role terakhir.
  */
 
-import { createContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useState, useEffect, useCallback, useContext } from 'react';
 import { useNavigate } from 'react-router';
 import { getCurrentUser } from '../../services/auth.js';
+import { STAFF_ROLES } from '../../config/roles.js';
 
 export const AuthContext = createContext(null);
 
@@ -50,19 +52,30 @@ export function AuthProvider({ children }) {
 
 /**
  * Inner component yang mendengarkan `gala:session-expired` DOM event
- * dan meredirect ke /register via React Router.
- * Harus dirender di dalam BrowserRouter tree.
+ * dan meredirect ke login page via React Router.
+ * Staff → /admin/login, Customer → /register
  */
 function AuthNavigationHandler() {
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
 
   useEffect(() => {
     function handleSessionExpired() {
-      navigate('/register', { replace: true });
+      const loginPath = (user && STAFF_ROLES.includes(user.role))
+        ? '/admin/login'
+        : '/register';
+      navigate(loginPath, { replace: true });
+    }
+    function handleMustChangePassword() {
+      navigate('/change-password', { replace: true });
     }
     window.addEventListener('gala:session-expired', handleSessionExpired);
-    return () => window.removeEventListener('gala:session-expired', handleSessionExpired);
-  }, [navigate]);
+    window.addEventListener('gala:must-change-password', handleMustChangePassword);
+    return () => {
+      window.removeEventListener('gala:session-expired', handleSessionExpired);
+      window.removeEventListener('gala:must-change-password', handleMustChangePassword);
+    };
+  }, [navigate, user]);
 
   return null;
 }

@@ -110,8 +110,8 @@ export async function getInvoiceById(id) {
        creator.name AS creator_name
      FROM invoices i
      LEFT JOIN orders o ON i.order_id = o.id
-     LEFT JOIN users u ON i.customer_id = u.id
-     LEFT JOIN users creator ON i.created_by = creator.id
+     LEFT JOIN users_customer u ON i.customer_id = u.id
+     LEFT JOIN users_admin creator ON i.created_by = creator.id
      WHERE i.id = ?
      LIMIT 1`,
     [id]
@@ -140,8 +140,8 @@ export async function getInvoiceByOrderId(orderId) {
        creator.name AS creator_name
      FROM invoices i
      LEFT JOIN orders o ON i.order_id = o.id
-     LEFT JOIN users u ON i.customer_id = u.id
-     LEFT JOIN users creator ON i.created_by = creator.id
+     LEFT JOIN users_customer u ON i.customer_id = u.id
+     LEFT JOIN users_admin creator ON i.created_by = creator.id
      WHERE i.order_id = ?
      LIMIT 1`,
     [orderId]

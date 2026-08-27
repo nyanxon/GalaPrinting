@@ -3,7 +3,8 @@
  *
  * Backs the Owner "Kelola Admin & Permission" pages. All endpoints are
  * owner-only and map 1:1 to Step 3 of the permission system:
- *   - GET  /api/admin-accounts                 (promotable accounts)
+ *   - GET  /api/admin-accounts                 (list staff accounts)
+ *   - POST /api/admin-accounts                 (create new staff account)
  *   - POST /api/admin-accounts/:id/promote
  *   - POST /api/admin-accounts/:id/revoke
  *   - GET  /api/features                       (feature catalog per category)
@@ -25,6 +26,24 @@ export async function listAdminAccounts({ q } = {}) {
   const qs = params.toString();
   const res = await api.get(`/api/admin-accounts${qs ? '?' + qs : ''}`);
   return res.data.items || [];
+}
+
+/**
+ * Create a brand-new staff account from scratch (Owner-only).
+ *
+ * @param {{ name: string, email: string, role: string, password: string }} data
+ * @returns {Promise<{ ok: boolean, user?: object, message?: string }>}
+ */
+export async function createStaffAccount({ name, email, role, password }) {
+  try {
+    const res = await api.post('/api/admin-accounts', { name, email, role, password });
+    return { ok: true, user: res.data.user, message: res.data.message };
+  } catch (err) {
+    return {
+      ok: false,
+      message: err.response?.data?.message || 'Gagal membuat akun staff. Coba lagi nanti.',
+    };
+  }
 }
 
 /**

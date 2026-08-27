@@ -28,9 +28,11 @@ const ProfilePage          = lazy(() => import('./components/pages/public/Profil
 const VerifyEmailPage      = lazy(() => import('./components/pages/public/VerifyEmailPage.jsx'));
 const ForgotPasswordPage   = lazy(() => import('./components/pages/public/ForgotPasswordPage.jsx'));
 const ResetPasswordPage    = lazy(() => import('./components/pages/public/ResetPasswordPage.jsx'));
+const ChangePasswordPage   = lazy(() => import('./components/pages/public/ChangePasswordPage.jsx'));
 
 // Staff pages — lazy loaded, only fetched when navigating to /admin, /owner, etc.
 const AdminDashboardPage       = lazy(() => import('./components/pages/admin/AdminDashboardPage.jsx'));
+const AdminLoginPage           = lazy(() => import('./components/pages/staff/AdminLoginPage.jsx'));
 const OwnerDashboardPage       = lazy(() => import('./components/pages/owner/OwnerDashboardPage.jsx'));
 const AdminManagementPage      = lazy(() => import('./components/pages/owner/AdminManagementPage.jsx'));
 const CashierDashboardPage     = lazy(() => import('./components/pages/subadmin/CashierDashboardPage.jsx'));
@@ -136,7 +138,11 @@ function App() {
               <Route path="/verify-email"   element={<VerifyEmailPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password"  element={<ResetPasswordPage />} />
+              <Route path="/change-password" element={<ChangePasswordPage />} />
             </Route>
+
+            {/* Staff login — no shell, no guard */}
+            <Route path="/admin/login" element={<AdminLoginPage />} />
 
             {/* Staff routes — no public shell, role-guarded */}
             <Route

@@ -147,7 +147,8 @@ async function collectFiles(baseDir, zipPrefix) {
 
 /** Tables to include in the database export */
 const EXPORT_TABLES = [
-  'users',
+  'users_customer',
+  'users_admin',
   'categories',
   'products',
   'orders',

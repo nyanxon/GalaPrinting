@@ -46,3 +46,21 @@ export async function updateAccount(id, data) {
   const res = await api.put(`/api/admin/accounts/${id}`, data);
   return res.data.data;
 }
+
+/**
+ * Create a new customer account from the admin/owner dashboard.
+ *
+ * @param {{ name: string, email: string, phone: string, password: string }} data
+ * @returns {Promise<{ ok: boolean, user?: object, message?: string }>}
+ */
+export async function createCustomerAccount({ name, email, phone, password }) {
+  try {
+    const res = await api.post('/api/admin/accounts/customers', { name, email, phone, password });
+    return { ok: true, user: res.data.user, message: res.data.message };
+  } catch (err) {
+    return {
+      ok: false,
+      message: err.response?.data?.message || 'Gagal membuat akun customer. Coba lagi nanti.',
+    };
+  }
+}

@@ -32,7 +32,7 @@ export async function getApproval(orderId, stage) {
   const [rows] = await query(
     `SELECT oa.*, u.name AS approver_name_live
      FROM order_approvals oa
-     LEFT JOIN users u ON u.id = oa.approved_by
+     LEFT JOIN users_admin u ON u.id = oa.approved_by
      WHERE oa.order_id = ? AND oa.stage = ?
      LIMIT 1`,
     [orderId, stage]
@@ -49,7 +49,7 @@ export async function getApprovalsByOrderId(orderId) {
   const [rows] = await query(
     `SELECT oa.*, u.name AS approver_name_live
      FROM order_approvals oa
-     LEFT JOIN users u ON u.id = oa.approved_by
+     LEFT JOIN users_admin u ON u.id = oa.approved_by
      WHERE oa.order_id = ?
      ORDER BY oa.approved_at ASC`,
     [orderId]

@@ -35,7 +35,7 @@ export async function listReviews({ productId } = {}) {
      FROM reviews r
      LEFT JOIN products   p ON r.product_id  = p.id
      LEFT JOIN categories c ON p.category_id = c.id
-     LEFT JOIN users      u ON r.customer_id = u.id
+     LEFT JOIN users_customer u ON r.customer_id = u.id
      ${where}
      ORDER BY r.created_at DESC`,
     params

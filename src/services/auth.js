@@ -97,14 +97,14 @@ export async function registerCustomer({ name, email, phone, password, gender, d
 }
 
 // ---------------------------------------------------------------------------
-// login
+// login (customer)
 // ---------------------------------------------------------------------------
 
 /**
- * Log in with email and password.
+ * Log in a customer with email and password.
  *
- * - USE_BACKEND=true : POST /api/auth/login
- *   Response shape: { ok: true, data: { accessToken, user } }
+ * - USE_BACKEND=true : POST /api/auth/login  (queries users_customer)
+ *   Response shape: { ok: true, accessToken, user }
  *   Stores access token in memory, initialises Socket.io connection.
  * - USE_BACKEND=false: original localStorage implementation (unchanged)
  *
@@ -114,11 +114,10 @@ export async function login({ email, password, rememberMe = false }) {
   if (USE_BACKEND) {
     try {
       const res = await api.post("/api/auth/login", { email, password, rememberMe: Boolean(rememberMe) });
-      // Server returns { ok, accessToken, user } directly (no .data wrapper)
-      const { accessToken, user } = res.data;
+      const { accessToken, user, mustChangePassword } = res.data;
       setAccessToken(accessToken);
       await syncCartOnLogin();
-      return { ok: true, message: "Login berhasil.", role: user.role, user };
+      return { ok: true, message: "Login berhasil.", role: user.role, user, mustChangePassword: Boolean(mustChangePassword) };
     } catch (err) {
       const message =
         err.response?.data?.message ||
@@ -128,6 +127,43 @@ export async function login({ email, password, rememberMe = false }) {
   }
 
   // Original localStorage implementation (unchanged)
+  const users = loadUsers();
+  const user  = users.find((u) => u.email.toLowerCase() === String(email).toLowerCase());
+  if (!user || user.password !== password)
+    return { ok: false, message: "Email atau password salah." };
+  writeJson(SESSION_KEY, { userId: user.id, role: user.role });
+  return { ok: true, message: "Login berhasil.", role: user.role };
+}
+
+// ---------------------------------------------------------------------------
+// adminLogin (staff / admin / owner / sub-roles)
+// ---------------------------------------------------------------------------
+
+/**
+ * Log in a staff member with email and password.
+ *
+ * - USE_BACKEND=true : POST /api/auth/admin-login  (queries users_admin)
+ *   Response shape: { ok: true, accessToken, user }
+ *   Stores access token in memory, initialises Socket.io connection.
+ * - USE_BACKEND=false: falls back to the same localStorage login (all roles
+ *   live in the same localStorage users list).
+ */
+export async function adminLogin({ email, password }) {
+  if (USE_BACKEND) {
+    try {
+      const res = await api.post("/api/auth/admin-login", { email, password });
+      const { accessToken, user, mustChangePassword } = res.data;
+      setAccessToken(accessToken);
+      return { ok: true, message: "Login berhasil.", role: user.role, user, mustChangePassword: Boolean(mustChangePassword) };
+    } catch (err) {
+      const message =
+        err.response?.data?.message ||
+        "Login gagal. Periksa koneksi atau coba lagi nanti.";
+      return { ok: false, message };
+    }
+  }
+
+  // localStorage fallback — same as customer login (no table split in offline mode)
   const users = loadUsers();
   const user  = users.find((u) => u.email.toLowerCase() === String(email).toLowerCase());
   if (!user || user.password !== password)
@@ -327,6 +363,36 @@ export async function resetPassword(token, password) {
     return {
       ok: false,
       message: err.response?.data?.message || 'Reset password gagal. Link mungkin sudah kedaluwarsa.',
+    };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Change Password (authenticated)
+// ---------------------------------------------------------------------------
+
+/**
+ * Change password for the currently logged-in user.
+ * POST /api/auth/change-password
+ *
+ * @param {{ currentPassword: string, newPassword: string }} data
+ * @returns {Promise<{ ok: boolean, message: string, accessToken?: string }>}
+ */
+export async function changePassword({ currentPassword, newPassword }) {
+  if (!USE_BACKEND) {
+    return { ok: true, message: 'Password berhasil diubah (mode lokal).' };
+  }
+  try {
+    const res = await api.post('/api/auth/change-password', { currentPassword, newPassword });
+    // Server returns a fresh access token after password change
+    if (res.data.accessToken) {
+      setAccessToken(res.data.accessToken);
+    }
+    return res.data;
+  } catch (err) {
+    return {
+      ok: false,
+      message: err.response?.data?.message || 'Gagal mengubah password. Coba lagi nanti.',
     };
   }
 }

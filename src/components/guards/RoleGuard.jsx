@@ -1,13 +1,15 @@
 import { useContext } from 'react';
 import { Navigate } from 'react-router';
 import { AuthContext } from '../context/AuthContext.jsx';
+import { STAFF_ROLES } from '../../config/roles.js';
 
 /**
  * RoleGuard — protects a route by requiring a specific user role.
  *
  * If the user is null (unauthenticated) or their role does not match
- * `requiredRole`, the user is redirected to /register.
- * Otherwise, the children are rendered as-is.
+ * `requiredRole`, the user is redirected to the appropriate login page:
+ *   - Staff roles → /admin/login
+ *   - Customer / unknown → /register
  *
  * @param {{ requiredRole: string, children: import('react').ReactNode }} props
  */
@@ -17,7 +19,8 @@ export default function RoleGuard({ requiredRole, children }) {
   if (loading) return null;
 
   if (user === null || user.role !== requiredRole) {
-    return <Navigate to="/register" replace />;
+    const loginPath = STAFF_ROLES.includes(requiredRole) ? '/admin/login' : '/register';
+    return <Navigate to={loginPath} replace />;
   }
 
   return children;

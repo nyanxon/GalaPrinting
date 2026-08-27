@@ -13,6 +13,7 @@ import { listCustomers, deleteUser } from '../../../../services/auth.js';
 import { AuthContext } from '../../../context/AuthContext.jsx';
 import { getSocket } from '../../../../core/socket.js';
 import PaginationBar from '../../../ui/PaginationBar.jsx';
+import CreateCustomerAccountModal from './CreateCustomerAccountModal.jsx';
 
 const PAGE_SIZE = 10;
 
@@ -126,11 +127,16 @@ export default function CustomersSection() {
   const [pendingDelete, setPendingDelete] = useState(null); // customer object
   const [deleting, setDeleting]           = useState(false);
 
+  // Create state (owner, admin, cs)
+  const [showCreateCustomer, setShowCreateCustomer] = useState(false);
+
   const [toast, setToast] = useState(null); // { type: 'success'|'error', message }
 
   // Hanya owner yang bisa hapus akun
   const isOwner     = currentUser?.role === 'owner';
   const canDelete     = isOwner;
+  // Owner, admin, dan cs bisa buat akun customer
+  const canCreateCustomer = ['owner', 'admin', 'cs'].includes(currentUser?.role);
 
   const loadCustomers = useCallback(async () => {
     try {
@@ -235,7 +241,17 @@ export default function CustomersSection() {
 
       <div className="adm-toolbar">
         <h2 className="adm-section-title">Daftar Customer ({total})</h2>
-        <div className="adm-toolbar-right">
+        <div className="adm-toolbar-right" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {canCreateCustomer && (
+            <button
+              className="adm-btn adm-btn--primary"
+              type="button"
+              onClick={() => setShowCreateCustomer(true)}
+              aria-label="Buat akun customer baru"
+            >
+              + Buat Customer
+            </button>
+          )}
           <input
             className="adm-input adm-search"
             type="search"
@@ -314,6 +330,20 @@ export default function CustomersSection() {
           onConfirm={handleConfirmDelete}
           onCancel={() => setPendingDelete(null)}
           deleting={deleting}
+        />
+      )}
+
+      {/* Modal buat akun customer (owner, admin, cs) */}
+      {showCreateCustomer && (
+        <CreateCustomerAccountModal
+          onClose={() => setShowCreateCustomer(false)}
+          onCreated={(cust) => {
+            setToast({
+              type: 'success',
+              message: `Akun customer ${cust.name || cust.email} berhasil dibuat.`,
+            });
+            loadCustomers();
+          }}
         />
       )}
     </div>

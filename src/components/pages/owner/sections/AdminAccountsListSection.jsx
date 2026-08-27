@@ -12,6 +12,7 @@ import { listAdminAccounts, promoteAccount, revokeAccount } from '../../../../se
 import { STAFF_ROLE_CONFIG } from '../../../../config/roles.js';
 import { showToast } from '../../../../core/toastEmitter.js';
 import ConfirmDialog from '../../../ui/ConfirmDialog.jsx';
+import CreateStaffAccountModal from './CreateStaffAccountModal.jsx';
 
 export default function AdminAccountsListSection() {
   const navigate = useNavigate();
@@ -22,13 +23,14 @@ export default function AdminAccountsListSection() {
   const [searchInput, setSearchInput] = useState('');
   const [pendingRevoke, setPendingRevoke] = useState(null);
   const [busyUserId, setBusyUserId] = useState(null);
+  const [showCreateStaff, setShowCreateStaff] = useState(false);
 
   const loadAccounts = useCallback(async () => {
     setLoading(true);
     try {
       const items = await listAdminAccounts({ q: searchQuery || undefined });
       setAccounts(Array.isArray(items) ? items : []);
-    } catch (err) {
+    } catch (_err) {
       showToast('Gagal memuat daftar akun.', 'error');
     } finally {
       setLoading(false);
@@ -123,6 +125,14 @@ export default function AdminAccountsListSection() {
               Reset
             </button>
           )}
+          <button
+            className="adm-btn adm-btn--primary"
+            type="button"
+            onClick={() => setShowCreateStaff(true)}
+            aria-label="Buat akun staff baru"
+          >
+            + Buat Staff
+          </button>
         </form>
       </div>
 
@@ -243,6 +253,16 @@ export default function AdminAccountsListSection() {
         confirmLabel="Cabut"
         confirmClass="danger"
       />
+
+      {showCreateStaff && (
+        <CreateStaffAccountModal
+          onClose={() => setShowCreateStaff(false)}
+          onCreated={(staff) => {
+            showToast(`Akun staff ${staff.name || staff.email} berhasil dibuat.`);
+            loadAccounts();
+          }}
+        />
+      )}
     </div>
   );
 }
