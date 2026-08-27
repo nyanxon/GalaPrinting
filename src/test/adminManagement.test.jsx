@@ -66,7 +66,7 @@ function renderRoute(user, initialPath) {
       <MemoryRouter initialEntries={[initialPath]}>
         <Routes>
           <Route
-            path="/owner/admin-management"
+            path="/admin/owner/admin-management"
             element={
               <RoleGuard requiredRole="owner">
                 <AdminManagementPage />
@@ -74,14 +74,13 @@ function renderRoute(user, initialPath) {
             }
           />
           <Route
-            path="/owner/admin-management/:userId"
+            path="/admin/owner/admin-management/:userId"
             element={
               <RoleGuard requiredRole="owner">
                 <AdminManagementPage />
               </RoleGuard>
             }
           />
-          <Route path="/register" element={<div>Register Page</div>} />
         </Routes>
       </MemoryRouter>
     </AuthContext.Provider>
@@ -93,10 +92,10 @@ beforeEach(() => {
 });
 
 describe('Access guard — owner only', () => {
-  it('redirects non-owner users away from /owner/admin-management', async () => {
-    renderRoute(CASHIER, '/owner/admin-management');
+  it('shows 404 (NotFoundPage) to non-owner users on /admin/owner/admin-management', async () => {
+    renderRoute(CASHIER, '/admin/owner/admin-management');
 
-    expect(screen.getByText('Register Page')).toBeTruthy();
+    expect(screen.getByText('Halaman Tidak Ditemukan')).toBeTruthy();
     expect(screen.queryByText('Kelola Admin')).toBeNull();
     expect(listAdminAccounts).not.toHaveBeenCalled();
   });
@@ -106,7 +105,7 @@ describe('Access guard — owner only', () => {
       { id: 'u1', name: 'Budi', email: 'budi@example.com', role: 'cashier', is_promoted_admin: 0 },
     ]);
 
-    renderRoute(OWNER, '/owner/admin-management');
+    renderRoute(OWNER, '/admin/owner/admin-management');
 
     await waitFor(() => {
       expect(screen.getByText('Budi')).toBeTruthy();
@@ -128,7 +127,7 @@ describe('Account list — search & promote', () => {
       { id: 'u1', name: 'Budi', email: 'budi@example.com', role: 'cashier', is_promoted_admin: 0 },
     ]);
 
-    renderRoute(OWNER, '/owner/admin-management');
+    renderRoute(OWNER, '/admin/owner/admin-management');
 
     await waitFor(() => expect(screen.getByText('Budi')).toBeTruthy());
 
@@ -152,7 +151,7 @@ describe('Account list — search & promote', () => {
     listFeatures.mockResolvedValueOnce(FEATURES);
     getAccountPermissions.mockResolvedValueOnce(ACCOUNT_PERMS);
 
-    renderRoute(OWNER, '/owner/admin-management');
+    renderRoute(OWNER, '/admin/owner/admin-management');
 
     await waitFor(() => expect(screen.getByLabelText(/Jadikan admin Budi/)).toBeTruthy());
 
@@ -176,7 +175,7 @@ describe('Account list — search & promote', () => {
     ]);
     revokeAccount.mockResolvedValueOnce({ id: 'u2', is_promoted_admin: 0 });
 
-    renderRoute(OWNER, '/owner/admin-management');
+    renderRoute(OWNER, '/admin/owner/admin-management');
 
     await waitFor(() => expect(screen.getByLabelText(/Cabut admin Siti/)).toBeTruthy());
 
@@ -203,7 +202,7 @@ describe('Permission checklist — save', () => {
     getAccountPermissions.mockResolvedValueOnce(ACCOUNT_PERMS);
     updateAccountPermissions.mockResolvedValueOnce({ ok: true });
 
-    renderRoute(OWNER, '/owner/admin-management/u1');
+    renderRoute(OWNER, '/admin/owner/admin-management/u1');
 
     await waitFor(() => {
       expect(screen.getByLabelText('Lihat Dashboard')).toBeTruthy();
@@ -227,7 +226,7 @@ describe('Permission checklist — save', () => {
     listFeatures.mockResolvedValueOnce(FEATURES);
     getAccountPermissions.mockResolvedValueOnce(ACCOUNT_PERMS);
 
-    renderRoute(OWNER, '/owner/admin-management/u1');
+    renderRoute(OWNER, '/admin/owner/admin-management/u1');
 
     await waitFor(() => {
       expect(screen.getByLabelText('Lihat Dashboard')).toBeTruthy();

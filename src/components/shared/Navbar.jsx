@@ -10,21 +10,20 @@ import { formatCurrency } from '../../utils/format.js';
 import { resolveApiUrl } from '../../core/httpClient.js';
 import logoImg from '../../assets/logo.png';
 import LanguageSwitcher from '../ui/LanguageSwitcher.jsx';
-import placeholderImg from '../../assets/placeholder.svg';
 
 const STAFF_DASHBOARD = {
   admin:       { path: '/admin',       label: '⚙️ Admin' },
-  owner:       { path: '/owner',       label: '👑 Owner' },
-  cashier:     { path: '/cashier',     label: '💰 Kasir' },
-  cs:          { path: '/cs',          label: '💬 CS' },
-  operational: { path: '/operational', label: '🔧 Operasional' },
-  qc:          { path: '/qc',          label: '✅ QC' },
-  offline:     { path: '/offline',     label: '🏪 Offline' },
+  owner:       { path: '/admin/owner', label: '👑 Owner' },
+  cashier:     { path: '/admin/cashier',     label: '💰 Kasir' },
+  cs:          { path: '/admin/cs',     label: '💬 CS' },
+  operational: { path: '/admin/operational', label: '🔧 Operasional' },
+  qc:          { path: '/admin/qc',          label: '✅ QC' },
+  offline:     { path: '/admin/offline',     label: '🏪 Offline' },
 };
 
 const STAFF_REDIRECT = {
-  admin: '/admin', owner: '/owner', cashier: '/cashier',
-  cs: '/cs', operational: '/operational', qc: '/qc', offline: '/offline',
+  admin: '/admin', owner: '/admin/owner', cashier: '/admin/cashier',
+  cs: '/admin/cs', operational: '/admin/operational', qc: '/admin/qc', offline: '/admin/offline',
 };
 
 function NavLink({ to, children }) {
@@ -331,7 +330,7 @@ function Navbar() {
                           {role === 'owner' && (
                             <>
                               <div className="profile-popup-divider" />
-                              <Link className="profile-popup-item profile-popup-admin-link" to="/owner" onClick={closeAllPopups}>
+                              <Link className="profile-popup-item profile-popup-admin-link" to="/admin/owner" onClick={closeAllPopups}>
                                 <span>👑</span> {t('nav.ownerPage')}
                               </Link>
                             </>
@@ -518,7 +517,7 @@ function Navbar() {
                 <Link to="/admin" onClick={() => setMobileOpen(false)}>⚙️ {t('nav.adminPage')}</Link>
               )}
               {role === 'owner' && (
-                <Link to="/owner" onClick={() => setMobileOpen(false)}>👑 {t('nav.ownerPage')}</Link>
+                <Link to="/admin/owner" onClick={() => setMobileOpen(false)}>👑 {t('nav.ownerPage')}</Link>
               )}
               {isStaff && role !== 'admin' && role !== 'owner' && STAFF_DASHBOARD[role] && (
                 <Link to={STAFF_DASHBOARD[role].path} onClick={() => setMobileOpen(false)}>

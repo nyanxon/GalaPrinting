@@ -24,10 +24,10 @@ export const STAFF_ROLE_CONFIG = {
 /** Path dashboard untuk tiap role admin/staff — dipakai tombol "Dashboard Admin". */
 export const STAFF_ROLE_DASHBOARD_PATH = {
   admin:       '/admin',
-  owner:       '/owner',
-  cashier:     '/cashier',
-  cs:          '/cs',
-  operational: '/operational',
-  qc:          '/qc',
-  offline:     '/offline',
+  owner:       '/admin/owner',
+  cashier:     '/admin/cashier',
+  cs:          '/admin/cs',
+  operational: '/admin/operational',
+  qc:          '/admin/qc',
+  offline:     '/admin/offline',
 };

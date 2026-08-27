@@ -15,29 +15,22 @@
  *   4. Stubs scrollWidth and offsetWidth to verify the containment property.
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 // ---------------------------------------------------------------------------
-// CSS injection helper
+// Real source CSS (jsdom's CSSOM drops clamp() declarations, so we verify the
+// actual production stylesheet directly)
 // ---------------------------------------------------------------------------
 
-function injectHeroStyles() {
-  const styleId = 'hero-clamp-test-styles';
-  if (document.getElementById(styleId)) return;
-
-  const style = document.createElement('style');
-  style.id = styleId;
-  style.textContent = `
-    .home-hero-label {
-      font-size: clamp(28px, 5vw, 48px);
-      font-weight: 900;
-      letter-spacing: -0.02em;
-      margin: 0;
-    }
-  `;
-  document.head.appendChild(style);
-}
+// process is available in vitest's node/jsdom runtime but not in the browser env
+const HOME_CSS = readFileSync(
+  // eslint-disable-next-line no-undef
+  join(process.cwd(), 'src', 'styles', 'css', 'pages', 'home.css'),
+  'utf8'
+);
 
 // ---------------------------------------------------------------------------
 // Mathematical helper
@@ -63,10 +56,6 @@ function computeClampValue(viewportWidth) {
 // ---------------------------------------------------------------------------
 
 describe('Property 2: Hero heading font-size clamp', () => {
-  beforeAll(() => {
-    injectHeroStyles();
-  });
-
   /**
    * Part 1 (CSS rule verification): The .home-hero-label SHALL have a
    * font-size using clamp(28px, 5vw, 48px).
@@ -74,32 +63,14 @@ describe('Property 2: Hero heading font-size clamp', () => {
    * Validates: Requirements 4.10
    */
   it('home-hero-label CSS uses clamp(28px, 5vw, 48px) font-size formula', () => {
-    const styleSheets = Array.from(document.styleSheets);
-    const allRules = styleSheets.flatMap((sheet) => {
-      try { return Array.from(sheet.cssRules || []); } catch { return []; }
-    });
+    const ruleMatch = HOME_CSS.match(/\.home-hero-label\s*\{([^}]*)\}/);
+    expect(ruleMatch, '.home-hero-label rule not found in home.css').toBeTruthy();
 
-    // Search both by exact selector and by cssText content to handle jsdom CSSOM quirks
-    const heroRule = allRules.find(
-      (rule) =>
-        rule.style &&
-        rule.style.fontSize &&
-        (
-          rule.selectorText === '.home-hero-label' ||
-          (rule.cssText && rule.cssText.includes('home-hero-label'))
-        )
-    );
-
-    expect(
-      heroRule,
-      'Could not find .home-hero-label CSS rule with font-size property'
-    ).toBeDefined();
-
-    const fontSize = heroRule.style.fontSize;
-    expect(fontSize).toMatch(/clamp\(/i);
-    expect(fontSize).toMatch(/28px/);
-    expect(fontSize).toMatch(/5vw/);
-    expect(fontSize).toMatch(/48px/);
+    const declarations = ruleMatch[1];
+    expect(declarations).toMatch(/clamp\s*\(/i);
+    expect(declarations).toMatch(/28px/);
+    expect(declarations).toMatch(/5vw/);
+    expect(declarations).toMatch(/48px/);
   });
 
   /**

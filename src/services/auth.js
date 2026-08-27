@@ -148,10 +148,10 @@ export async function login({ email, password, rememberMe = false }) {
  * - USE_BACKEND=false: falls back to the same localStorage login (all roles
  *   live in the same localStorage users list).
  */
-export async function adminLogin({ email, password }) {
+export async function adminLogin({ email, password, rememberMe = false }) {
   if (USE_BACKEND) {
     try {
-      const res = await api.post("/api/auth/admin-login", { email, password });
+      const res = await api.post("/api/auth/admin-login", { email, password, rememberMe: Boolean(rememberMe) });
       const { accessToken, user, mustChangePassword } = res.data;
       setAccessToken(accessToken);
       return { ok: true, message: "Login berhasil.", role: user.role, user, mustChangePassword: Boolean(mustChangePassword) };

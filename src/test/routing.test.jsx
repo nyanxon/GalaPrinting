@@ -6,6 +6,7 @@ import * as fc from 'fast-check';
 import { MemoryRouter, Routes, Route } from 'react-router';
 import { AuthContext } from '../components/context/AuthContext.jsx';
 import { CartContext } from '../components/context/CartContext.jsx';
+import { SocketProvider } from '../components/context/SocketContext.jsx';
 import RoleGuard from '../components/guards/RoleGuard.jsx';
 import PublicLayout from '../components/layout/PublicLayout.jsx';
 import NotFoundPage from '../components/pages/NotFoundPage.jsx';
@@ -71,7 +72,7 @@ vi.mock('../services/cartService.js', () => ({
   saveCart: vi.fn(),
 }));
 
-/** All 18 defined route paths */
+/** All 19 defined route paths */
 const DEFINED_PATHS = [
   '/',
   '/products',
@@ -84,24 +85,25 @@ const DEFINED_PATHS = [
   '/cara-order',
   '/portfolio',
   '/tentang-kami',
+  '/admin/login',
   '/admin',
-  '/owner',
-  '/cashier',
-  '/cs',
-  '/operational',
-  '/qc',
-  '/offline',
+  '/admin/owner',
+  '/admin/cashier',
+  '/admin/cs',
+  '/admin/operational',
+  '/admin/qc',
+  '/admin/offline',
 ];
 
 /** Staff route definitions: path → { requiredRole, component } */
 const STAFF_ROUTES = [
   { path: '/admin',       requiredRole: 'admin',       Component: AdminDashboardPage },
-  { path: '/owner',       requiredRole: 'owner',       Component: OwnerDashboardPage },
-  { path: '/cashier',     requiredRole: 'cashier',     Component: CashierDashboardPage },
-  { path: '/cs',          requiredRole: 'cs',          Component: CSDashboardPage },
-  { path: '/operational', requiredRole: 'operational', Component: OperationalDashboardPage },
-  { path: '/qc',          requiredRole: 'qc',          Component: QCDashboardPage },
-  { path: '/offline',     requiredRole: 'offline',     Component: OfflineDashboardPage },
+  { path: '/admin/owner', requiredRole: 'owner',       Component: OwnerDashboardPage },
+  { path: '/admin/cashier', requiredRole: 'cashier',   Component: CashierDashboardPage },
+  { path: '/admin/cs',    requiredRole: 'cs',          Component: CSDashboardPage },
+  { path: '/admin/operational', requiredRole: 'operational', Component: OperationalDashboardPage },
+  { path: '/admin/qc',    requiredRole: 'qc',          Component: QCDashboardPage },
+  { path: '/admin/offline', requiredRole: 'offline',   Component: OfflineDashboardPage },
 ];
 
 /**
@@ -141,6 +143,9 @@ function renderAppRouter(initialPath, user = null) {
               <Route path="/tentang-kami"   element={<div data-testid="page-tentang-kami">Tentang Kami</div>} />
             </Route>
 
+            {/* Staff login — no shell, no guard (always reachable) */}
+            <Route path="/admin/login" element={<div data-testid="page-admin-login">Admin Login</div>} />
+
             {/* Staff routes */}
             {STAFF_ROUTES.map(({ path, requiredRole, Component }) => (
               <Route
@@ -173,21 +178,23 @@ function renderStaffRouteDirect(path, Component, role) {
 
   return render(
     <AuthContext.Provider value={authValue}>
-      <CartContext.Provider value={defaultCartValue}>
-        <MemoryRouter initialEntries={[path]}>
-          <Routes>
-            <Route
-              path={path}
-              element={
-                <RoleGuard requiredRole={role}>
-                  <Component />
-                </RoleGuard>
-              }
-            />
-            <Route path="/register" element={<div>Register</div>} />
-          </Routes>
-        </MemoryRouter>
-      </CartContext.Provider>
+      <SocketProvider>
+        <CartContext.Provider value={defaultCartValue}>
+          <MemoryRouter initialEntries={[path]}>
+            <Routes>
+              <Route
+                path={path}
+                element={
+                  <RoleGuard requiredRole={role}>
+                    <Component />
+                  </RoleGuard>
+                }
+              />
+              <Route path="/register" element={<div>Register</div>} />
+            </Routes>
+          </MemoryRouter>
+        </CartContext.Provider>
+      </SocketProvider>
     </AuthContext.Provider>
   );
 }
@@ -333,5 +340,51 @@ describe('Property 10: Staff routes exclude public shell', () => {
       ),
       { numRuns: 100 }
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Property 11: /admin/* hidden from unauthenticated / wrong-role users
+// Validates: Requirements 3.2, 3.3
+//
+// Every /admin/* section renders NotFoundPage (404) for visitors who are not
+// logged in or who lack the required role. The only exception is /admin/login,
+// which MUST stay reachable so staff can sign in.
+// ---------------------------------------------------------------------------
+
+describe('Property 11: Admin pages hidden from unauthenticated users', () => {
+  it('shows NotFoundPage for guests on every staff route', () => {
+    for (const { path } of STAFF_ROUTES) {
+      const { unmount, container } = renderAppRouter(path, null);
+
+      const heading = container.querySelector('h1');
+      expect(heading, `h1 missing on ${path}`).not.toBeNull();
+      expect(heading.textContent).toContain('Halaman Tidak Ditemukan');
+
+      unmount();
+    }
+  });
+
+  it('shows NotFoundPage for a wrong-role user on a staff route', () => {
+    const customer = { id: 'c1', name: 'Customer', role: 'customer' };
+    const { unmount, container } = renderAppRouter('/admin/owner', customer);
+
+    const heading = container.querySelector('h1');
+    expect(heading, 'h1 missing').not.toBeNull();
+    expect(heading.textContent).toContain('Halaman Tidak Ditemukan');
+
+    unmount();
+  });
+
+  it('keeps /admin/login reachable for guests (the only non-guarded admin page)', () => {
+    const { unmount, container } = renderAppRouter('/admin/login', null);
+
+    expect(container.querySelector('[data-testid="page-admin-login"]')).not.toBeNull();
+    const heading = container.querySelector('h1');
+    expect(
+      heading ? heading.textContent.includes('Halaman Tidak Ditemukan') : false
+    ).toBe(false);
+
+    unmount();
   });
 });

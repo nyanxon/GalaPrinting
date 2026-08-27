@@ -17,7 +17,8 @@ const STAFF_ROLES = ['admin', 'owner', 'cashier', 'cs', 'operational', 'qc', 'of
 
 /**
  * Helper: render a RoleGuard for a given requiredRole and user inside a
- * MemoryRouter that also has a /register route so Navigate can resolve.
+ * MemoryRouter. Unauthorized renders show the NotFoundPage in place, so no
+ * extra routes are needed (NotFoundPage only requires a Router + a "/" link).
  */
 function renderRoleGuard(requiredRole, user) {
   return render(
@@ -32,7 +33,6 @@ function renderRoleGuard(requiredRole, user) {
               </RoleGuard>
             }
           />
-          <Route path="/register" element={<div>Register Page</div>} />
         </Routes>
       </MemoryRouter>
     </AuthContext.Provider>
@@ -45,9 +45,10 @@ describe('RoleGuard', () => {
    * Validates: Requirements 3.2, 3.3
    *
    * For any staff role and any user that is either null or has a different role,
-   * RoleGuard SHALL redirect to /register.
+   * RoleGuard SHALL render the NotFoundPage (route appears as a 404) — the
+   * protected page must NOT be revealed.
    */
-  it('Property 1: Role guard blocks non-permitted users', () => {
+  it('Property 1: Role guard shows 404 for non-permitted users', () => {
     fc.assert(
       fc.property(
         // Pick a required role for the route
@@ -73,7 +74,9 @@ describe('RoleGuard', () => {
 
           const { unmount } = renderRoleGuard(requiredRole, user);
 
-          expect(screen.getByText('Register Page')).toBeTruthy();
+          // NotFoundPage heading must be shown…
+          expect(screen.getByText('Halaman Tidak Ditemukan')).toBeTruthy();
+          // …and the protected content must NOT be revealed
           expect(screen.queryByText('Protected Content')).toBeNull();
 
           unmount();
@@ -100,7 +103,7 @@ describe('RoleGuard', () => {
           const { unmount } = renderRoleGuard(role, user);
 
           expect(screen.getByText('Protected Content')).toBeTruthy();
-          expect(screen.queryByText('Register Page')).toBeNull();
+          expect(screen.queryByText('Halaman Tidak Ditemukan')).toBeNull();
 
           unmount();
         }

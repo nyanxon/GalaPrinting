@@ -1,8 +1,8 @@
 /**
  * AdminManagementPage.jsx — Owner-only page for the dynamic permission system
  * (Step 5). Two views:
- *   - /owner/admin-management            → list of promotable accounts
- *   - /owner/admin-management/:userId    → feature permission editor
+ *   - /admin/owner/admin-management            → list of promotable accounts
+ *   - /admin/owner/admin-management/:userId    → feature permission editor
  *
  * Route-guarded by RoleGuard(owner) in App.jsx; the backend endpoints are
  * owner-only too. Nothing in this page touches other role dashboards.
@@ -33,7 +33,7 @@ export default function AdminManagementPage() {
 
   function handleNavClick(navId) {
     setSidebarOpen(false);
-    if (navId === 'dashboard') navigate('/owner');
+    if (navId === 'dashboard') navigate('/admin/owner');
     // 'admin' stays on the current admin-management view.
   }
 

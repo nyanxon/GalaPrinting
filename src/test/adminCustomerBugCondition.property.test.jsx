@@ -33,7 +33,25 @@ vi.mock('../services/auth.js', () => ({
 }));
 
 import { listCustomers } from '../services/auth.js';
+import { AuthContext } from '../components/context/AuthContext.jsx';
 import CustomersSection from '../components/pages/admin/sections/CustomersSection.jsx';
+
+/**
+ * Render CustomersSection inside an AuthContext provider. The section reads
+ * `currentUser` from context, so it must be wrapped when rendered standalone.
+ */
+function renderSection() {
+  const authValue = {
+    user: { id: 'admin-1', name: 'Admin', email: 'admin@example.com', role: 'admin' },
+    updateUser: vi.fn(),
+    loading: false,
+  };
+  return render(
+    <AuthContext.Provider value={authValue}>
+      <CustomersSection />
+    </AuthContext.Provider>
+  );
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper: verify that a date string is a valid formatted date (not "Invalid Date")
@@ -68,11 +86,10 @@ const customerArbitrary = fc.record({
   name: fc.string({ minLength: 1, maxLength: 50 }).map((s) => s.trim()).filter((s) => s.length > 0),
   email: fc.emailAddress(),
   phone: fc.option(fc.stringMatching(/^[0-9]{8,15}$/), { nil: null }),
-  // API returns snake_case — this is the field that exists in the real response
-  created_at: fc.date({
-    min: new Date('2020-01-01T00:00:00.000Z'),
-    max: new Date('2025-12-31T23:59:59.999Z'),
-  }).map((d) => d.toISOString()),
+  // API returns snake_case — this is the field that exists in the real response.
+  // Use a constant timestamp (not fc.date): fast-check can shrink dates outside
+  // the ISO toISOString-safe range, which throws RangeError inside the mapper.
+  created_at: fc.constant('2024-06-01T12:30:00.000Z'),
   // NOTE: `createdAt` (camelCase) is intentionally ABSENT — matching real API shape
 });
 
@@ -106,7 +123,7 @@ describe('Bug 1 — Tanggal Bergabung Customer: Bug Condition Exploration', () =
 
     listCustomers.mockResolvedValueOnce([CONCRETE_CUSTOMER]);
 
-    const { unmount } = render(<CustomersSection />);
+    const { unmount } = renderSection();
 
     await waitFor(() => {
       // Wait for the table to render (loading state resolves)
@@ -148,7 +165,7 @@ describe('Bug 1 — Tanggal Bergabung Customer: Bug Condition Exploration', () =
 
       listCustomers.mockResolvedValueOnce([customer]);
 
-      const { unmount } = render(<CustomersSection />);
+      const { unmount } = renderSection();
 
       await waitFor(() => {
         // Wait for loading to complete

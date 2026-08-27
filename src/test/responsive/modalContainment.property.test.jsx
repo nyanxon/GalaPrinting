@@ -15,47 +15,22 @@
  *   4. Stubs offsetWidth to simulate real browser values.
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 // ---------------------------------------------------------------------------
-// CSS injection helper
+// Real source CSS (jsdom's CSSOM drops min() declarations, so we verify the
+// actual production stylesheet directly)
 // ---------------------------------------------------------------------------
 
-function injectModalStyles() {
-  const styleId = 'modal-containment-test-styles';
-  if (document.getElementById(styleId)) return;
-
-  const style = document.createElement('style');
-  style.id = styleId;
-  style.textContent = `
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      display: grid;
-      place-items: center;
-      background: rgba(0,0,0,0.48);
-      padding: 18px;
-      z-index: 50;
-    }
-    .modal {
-      width: min(90vw, 520px);
-      padding: 16px;
-      background: #fff;
-      border: 1px solid #e5e5e5;
-      border-radius: 16px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-      overflow: hidden;
-    }
-    @media (max-width: 767px) {
-      .modal {
-        max-height: 90vh;
-        overflow-y: auto;
-      }
-    }
-  `;
-  document.head.appendChild(style);
-}
+// process is available in vitest's node/jsdom runtime but not in the browser env
+const MODAL_CSS = readFileSync(
+  // eslint-disable-next-line no-undef
+  join(process.cwd(), 'src', 'styles', 'css', 'components', 'modal.css'),
+  'utf8'
+);
 
 // ---------------------------------------------------------------------------
 // Mathematical helper
@@ -77,33 +52,19 @@ function expectedMaxModalWidth(viewportWidth) {
 // ---------------------------------------------------------------------------
 
 describe('Property 7: Modal viewport containment', () => {
-  beforeAll(() => {
-    injectModalStyles();
-  });
-
   /**
    * Part 1 (CSS rule verification): The .modal SHALL have width: min(90vw, 520px).
    *
    * Validates: Requirements 11.1
    */
   it('modal CSS uses width: min(90vw, 520px)', () => {
-    const styleSheets = Array.from(document.styleSheets);
-    const modalRule = styleSheets
-      .flatMap((sheet) => {
-        try { return Array.from(sheet.cssRules || []); } catch { return []; }
-      })
-      .find(
-        (rule) =>
-          rule.selectorText === '.modal' &&
-          rule.style &&
-          rule.style.width
-      );
+    const ruleMatch = MODAL_CSS.match(/\.modal\s*\{([^}]*)\}/);
+    expect(ruleMatch, '.modal rule not found in modal.css').toBeTruthy();
 
-    expect(modalRule).toBeDefined();
-    const widthValue = modalRule.style.width;
-    expect(widthValue).toMatch(/min\(/i);
-    expect(widthValue).toMatch(/90vw/);
-    expect(widthValue).toMatch(/520px/);
+    const declarations = ruleMatch[1];
+    expect(declarations).toMatch(/min\s*\(/i);
+    expect(declarations).toMatch(/90vw/);
+    expect(declarations).toMatch(/520px/);
   });
 
   /**

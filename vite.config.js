@@ -65,6 +65,16 @@ export default defineConfig(({ mode }) => {
       environment: 'jsdom',
       setupFiles: ['./src/test/setup.js'],
       globals: true,
+      // The server has its own vitest.config.js (node env, DB mocks). The root
+      // config is the client (jsdom) suite, so never sweep server tests in here.
+      exclude: [
+        '**/node_modules/**',
+        '**/dist/**',
+        '**/cypress/**',
+        '**/.{idea,git,cache,output,temp}/**',
+        '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build}.config.*',
+        '**/server/**',
+      ],
     },
   };
 });

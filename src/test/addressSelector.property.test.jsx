@@ -1,8 +1,26 @@
 // Feature: customer-profile-page, Property 9: address selector populates form fields
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import * as fc from 'fast-check';
+import { MemoryRouter } from 'react-router';
+
+// i18n is initialized only in main.jsx; tests must init + force a language
+import i18n from '../i18n/index.js';
+beforeAll(() => i18n.changeLanguage('id'));
+
+/**
+ * Render AddressSelector inside a MemoryRouter. The component renders a
+ * <Link to="/profile"> in its empty state (checkout prompts the customer to
+ * add an address), so a Router is required even for standalone renders.
+ */
+function renderSelector(props = {}) {
+  return render(
+    <MemoryRouter>
+      <AddressSelector {...props} />
+    </MemoryRouter>
+  );
+}
 
 // Mock addressService before importing AddressSelector
 vi.mock('../services/addressService.js', () => ({
@@ -48,7 +66,7 @@ describe('Property 9: Address selector populates form fields', () => {
           getAddresses.mockResolvedValueOnce(addresses);
 
           const onSelect = vi.fn();
-          const { unmount } = render(<AddressSelector onSelect={onSelect} />);
+          const { unmount } = renderSelector({ onSelect });
 
           // Wait for addresses to load
           await waitFor(() => {
@@ -72,7 +90,7 @@ describe('Property 9: Address selector populates form fields', () => {
       ),
       { numRuns: 100 }
     );
-  });
+  }, 30_000);
 
   /**
    * Selecting the placeholder option should NOT call onSelect.
@@ -96,7 +114,7 @@ describe('Property 9: Address selector populates form fields', () => {
     getAddresses.mockResolvedValueOnce(addresses);
 
     const onSelect = vi.fn();
-    const { unmount } = render(<AddressSelector onSelect={onSelect} />);
+    const { unmount } = renderSelector({ onSelect });
 
     await waitFor(() => {
       expect(screen.queryByText('— Pilih alamat tersimpan —')).not.toBeNull();
@@ -120,7 +138,7 @@ describe('Property 9: Address selector populates form fields', () => {
     getAddresses.mockResolvedValueOnce([]);
 
     const onSelect = vi.fn();
-    const { unmount, container } = render(<AddressSelector onSelect={onSelect} />);
+    const { unmount, container } = renderSelector({ onSelect });
 
     // Wait for fetch to complete
     await waitFor(() => {

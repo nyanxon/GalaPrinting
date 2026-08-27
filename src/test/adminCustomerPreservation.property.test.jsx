@@ -26,7 +26,25 @@ vi.mock('../services/auth.js', () => ({
 }));
 
 import { listCustomers } from '../services/auth.js';
+import { AuthContext } from '../components/context/AuthContext.jsx';
 import CustomersSection from '../components/pages/admin/sections/CustomersSection.jsx';
+
+/**
+ * Render CustomersSection inside an AuthContext provider. The section reads
+ * `currentUser` from context, so it must be wrapped when rendered standalone.
+ */
+function renderSection() {
+  const authValue = {
+    user: { id: 'admin-1', name: 'Admin', email: 'admin@example.com', role: 'admin' },
+    updateUser: vi.fn(),
+    loading: false,
+  };
+  return render(
+    <AuthContext.Provider value={authValue}>
+      <CustomersSection />
+    </AuthContext.Provider>
+  );
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Arbitrary: generates customer objects in the API response shape (snake_case).
@@ -88,7 +106,7 @@ describe('Preservation 3.1 — Customer list displays Name, Email, Phone columns
 
     listCustomers.mockResolvedValueOnce([customer]);
 
-    const { unmount } = render(<CustomersSection />);
+    const { unmount } = renderSection();
 
     await waitFor(() => {
       expect(screen.queryByText('Belum ada customer.')).toBeNull();
@@ -113,7 +131,7 @@ describe('Preservation 3.1 — Customer list displays Name, Email, Phone columns
     for (const customer of testCases) {
       listCustomers.mockResolvedValueOnce([customer]);
 
-      const { unmount } = render(<CustomersSection />);
+      const { unmount } = renderSection();
 
       await waitFor(() => {
         expect(screen.queryByText('Belum ada customer.')).toBeNull();
@@ -145,7 +163,7 @@ describe('Preservation 3.1 — Customer list displays Name, Email, Phone columns
 
     listCustomers.mockResolvedValueOnce(customers);
 
-    const { unmount } = render(<CustomersSection />);
+    const { unmount } = renderSection();
 
     await waitFor(() => {
       expect(screen.queryByText('Belum ada customer.')).toBeNull();
@@ -176,7 +194,7 @@ describe('Preservation 3.1 — Customer list displays Name, Email, Phone columns
 
     listCustomers.mockResolvedValueOnce([customer]);
 
-    const { unmount } = render(<CustomersSection />);
+    const { unmount } = renderSection();
 
     await waitFor(() => {
       expect(screen.queryByText('Belum ada customer.')).toBeNull();
@@ -199,7 +217,7 @@ describe('Preservation 3.1 — Customer list displays Name, Email, Phone columns
   it('shows empty state when no customers exist', async () => {
     listCustomers.mockResolvedValueOnce([]);
 
-    const { unmount } = render(<CustomersSection />);
+    const { unmount } = renderSection();
 
     await waitFor(() => {
       expect(screen.getByText('Belum ada customer.')).toBeTruthy();
@@ -227,7 +245,7 @@ describe('Preservation 3.2 — Search filters customers by name, email, or phone
 
     listCustomers.mockResolvedValueOnce(customers);
 
-    const { unmount } = render(<CustomersSection />);
+    const { unmount } = renderSection();
 
     await waitFor(() => {
       expect(screen.queryByText('Belum ada customer.')).toBeNull();
@@ -258,7 +276,7 @@ describe('Preservation 3.2 — Search filters customers by name, email, or phone
 
     listCustomers.mockResolvedValueOnce(customers);
 
-    const { unmount } = render(<CustomersSection />);
+    const { unmount } = renderSection();
 
     await waitFor(() => {
       expect(screen.queryByText('Belum ada customer.')).toBeNull();
@@ -286,7 +304,7 @@ describe('Preservation 3.2 — Search filters customers by name, email, or phone
 
     listCustomers.mockResolvedValueOnce(customers);
 
-    const { unmount } = render(<CustomersSection />);
+    const { unmount } = renderSection();
 
     await waitFor(() => {
       expect(screen.queryByText('Belum ada customer.')).toBeNull();
@@ -334,7 +352,7 @@ describe('Preservation 3.2 — Search filters customers by name, email, or phone
     for (const { customers, query, shouldFind, shouldNotFind } of testCases) {
       listCustomers.mockResolvedValueOnce(customers);
 
-      const { unmount } = render(<CustomersSection />);
+      const { unmount } = renderSection();
 
       await waitFor(() => {
         expect(screen.queryByText('Belum ada customer.')).toBeNull();
@@ -365,7 +383,7 @@ describe('Preservation 3.2 — Search filters customers by name, email, or phone
 
     listCustomers.mockResolvedValueOnce(customers);
 
-    const { unmount } = render(<CustomersSection />);
+    const { unmount } = renderSection();
 
     await waitFor(() => {
       expect(screen.queryByText('Belum ada customer.')).toBeNull();
@@ -398,7 +416,7 @@ describe('Preservation 3.2 — Search filters customers by name, email, or phone
 
     listCustomers.mockResolvedValueOnce(customers);
 
-    const { unmount } = render(<CustomersSection />);
+    const { unmount } = renderSection();
 
     await waitFor(() => {
       expect(screen.queryByText('Belum ada customer.')).toBeNull();
@@ -427,7 +445,7 @@ describe('Preservation 3.3 — Pagination displays correct pages', () => {
 
     listCustomers.mockResolvedValueOnce(customers);
 
-    const { unmount } = render(<CustomersSection />);
+    const { unmount } = renderSection();
 
     await waitFor(() => {
       expect(screen.queryByText('Belum ada customer.')).toBeNull();
@@ -455,7 +473,7 @@ describe('Preservation 3.3 — Pagination displays correct pages', () => {
 
     listCustomers.mockResolvedValueOnce(customers);
 
-    const { unmount } = render(<CustomersSection />);
+    const { unmount } = renderSection();
 
     await waitFor(() => {
       expect(screen.queryByText('Belum ada customer.')).toBeNull();
@@ -485,7 +503,7 @@ describe('Preservation 3.3 — Pagination displays correct pages', () => {
 
     listCustomers.mockResolvedValueOnce(customers);
 
-    const { unmount } = render(<CustomersSection />);
+    const { unmount } = renderSection();
 
     await waitFor(() => {
       expect(screen.queryByText('Belum ada customer.')).toBeNull();
@@ -523,7 +541,7 @@ describe('Preservation 3.3 — Pagination displays correct pages', () => {
 
       listCustomers.mockResolvedValueOnce(customers);
 
-      const { unmount } = render(<CustomersSection />);
+      const { unmount } = renderSection();
 
       await waitFor(() => {
         expect(screen.queryByText('Belum ada customer.')).toBeNull();
@@ -557,7 +575,7 @@ describe('Preservation 3.3 — Pagination displays correct pages', () => {
 
     listCustomers.mockResolvedValueOnce(customers);
 
-    const { unmount } = render(<CustomersSection />);
+    const { unmount } = renderSection();
 
     await waitFor(() => {
       expect(screen.queryByText('Belum ada customer.')).toBeNull();
@@ -604,7 +622,7 @@ describe('Preservation 3.3 — Pagination displays correct pages', () => {
 
     listCustomers.mockResolvedValueOnce(customers);
 
-    const { unmount } = render(<CustomersSection />);
+    const { unmount } = renderSection();
 
     await waitFor(() => {
       expect(screen.queryByText('Belum ada customer.')).toBeNull();

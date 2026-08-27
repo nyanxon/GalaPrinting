@@ -1,7 +1,11 @@
 // Feature: customer-profile-page, Property 6: address list renders all saved addresses
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+
+// i18n is initialized only in main.jsx; tests must init + force a language
+import i18n from '../i18n/index.js';
+beforeAll(() => i18n.changeLanguage('id'));
 
 // Mock addressService before importing AddressList
 vi.mock('../services/addressService.js', () => ({

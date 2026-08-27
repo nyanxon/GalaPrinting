@@ -61,7 +61,7 @@ export default function AdminAccountsListSection() {
       await promoteAccount(account.id);
       showToast(`${account.name || account.email} sekarang adalah Admin Dinamis.`);
       // Langsung arahkan Owner ke halaman permission akun tersebut.
-      navigate(`/owner/admin-management/${account.id}`);
+      navigate(`/admin/owner/admin-management/${account.id}`);
     } catch (err) {
       const msg = err.response?.data?.message || 'Gagal menjadikan admin.';
       showToast(msg, 'error');
@@ -208,7 +208,7 @@ export default function AdminAccountsListSection() {
                             <button
                               className="adm-btn adm-btn-sm adm-btn--edit"
                               type="button"
-                              onClick={() => navigate(`/owner/admin-management/${u.id}`)}
+                              onClick={() => navigate(`/admin/owner/admin-management/${u.id}`)}
                               aria-label={`Atur fitur ${u.name || u.email}`}
                             >
                               Atur Fitur

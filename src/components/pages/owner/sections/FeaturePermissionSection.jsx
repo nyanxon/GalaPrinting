@@ -48,7 +48,7 @@ export default function FeaturePermissionSection({ userId }) {
       setAccount(permData.user ?? null);
       setGranted(new Set(permData.permissions.filter((p) => p.granted).map((p) => p.feature_key)));
       setExpanded(new Set(catData.map((c) => c.category)));
-    } catch (err) {
+    } catch (_err) {
       setLoadError(true);
       showToast('Gagal memuat data permission.', 'error');
     } finally {
@@ -129,7 +129,7 @@ export default function FeaturePermissionSection({ userId }) {
       <div className="adm-card">
         <p className="adm-empty">Akun tidak ditemukan atau gagal dimuat.</p>
         <div style={{ textAlign: 'center', marginTop: '12px' }}>
-          <button className="adm-btn" type="button" onClick={() => navigate('/owner/admin-management')}>
+          <button className="adm-btn" type="button" onClick={() => navigate('/admin/owner/admin-management')}>
             Kembali
           </button>
         </div>
@@ -144,7 +144,7 @@ export default function FeaturePermissionSection({ userId }) {
     <div className="adm-card">
       <div className="adm-toolbar">
         <h2 className="adm-section-title">Atur Permission — {account.name || account.email}</h2>
-        <button className="adm-btn" type="button" onClick={() => navigate('/owner/admin-management')}>
+        <button className="adm-btn" type="button" onClick={() => navigate('/admin/owner/admin-management')}>
           ‹ Kembali
         </button>
       </div>
@@ -279,7 +279,7 @@ export default function FeaturePermissionSection({ userId }) {
         <button
           className="adm-btn"
           type="button"
-          onClick={() => navigate('/owner/admin-management')}
+          onClick={() => navigate('/admin/owner/admin-management')}
           disabled={saving}
         >
           Batal

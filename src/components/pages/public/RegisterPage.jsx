@@ -15,12 +15,12 @@ import '../../../styles/css/pages/register.css';
 
 const ROLE_PATHS = {
   admin: '/admin',
-  owner: '/owner',
-  cashier: '/cashier',
-  cs: '/cs',
-  operational: '/operational',
-  qc: '/qc',
-  offline: '/offline',
+  owner: '/admin/owner',
+  cashier: '/admin/cashier',
+  cs: '/admin/cs',
+  operational: '/admin/operational',
+  qc: '/admin/qc',
+  offline: '/admin/offline',
 };
 
 function RegisterPage() {

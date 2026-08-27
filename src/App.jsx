@@ -154,7 +154,7 @@ function App() {
               }
             />
             <Route
-              path="/owner"
+              path="/admin/owner"
               element={
                 <RoleGuard requiredRole="owner">
                   <OwnerDashboardPage />
@@ -162,7 +162,7 @@ function App() {
               }
             />
             <Route
-              path="/owner/admin-management"
+              path="/admin/owner/admin-management"
               element={
                 <RoleGuard requiredRole="owner">
                   <AdminManagementPage />
@@ -170,7 +170,7 @@ function App() {
               }
             />
             <Route
-              path="/owner/admin-management/:userId"
+              path="/admin/owner/admin-management/:userId"
               element={
                 <RoleGuard requiredRole="owner">
                   <AdminManagementPage />
@@ -178,7 +178,7 @@ function App() {
               }
             />
             <Route
-              path="/cashier"
+              path="/admin/cashier"
               element={
                 <RoleGuard requiredRole="cashier">
                   <CashierDashboardPage />
@@ -186,7 +186,7 @@ function App() {
               }
             />
             <Route
-              path="/cs"
+              path="/admin/cs"
               element={
                 <RoleGuard requiredRole="cs">
                   <CSDashboardPage />
@@ -194,7 +194,7 @@ function App() {
               }
             />
             <Route
-              path="/operational"
+              path="/admin/operational"
               element={
                 <RoleGuard requiredRole="operational">
                   <OperationalDashboardPage />
@@ -202,7 +202,7 @@ function App() {
               }
             />
             <Route
-              path="/qc"
+              path="/admin/qc"
               element={
                 <RoleGuard requiredRole="qc">
                   <QCDashboardPage />
@@ -210,7 +210,7 @@ function App() {
               }
             />
             <Route
-              path="/offline"
+              path="/admin/offline"
               element={
                 <RoleGuard requiredRole="offline">
                   <OfflineDashboardPage />
