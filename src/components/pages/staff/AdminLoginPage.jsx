@@ -8,7 +8,7 @@
  */
 
 import { useState, useContext } from 'react';
-import { useNavigate, Link } from 'react-router';
+import { useNavigate, Link, Navigate } from 'react-router';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import { adminLogin, getCurrentUser } from '../../../services/auth.js';
 import { STAFF_ROLE_DASHBOARD_PATH } from '../../../config/roles.js';
@@ -25,11 +25,11 @@ function AdminLoginPage() {
   const [loginFieldErrors, setLoginFieldErrors] = useState({});
   const [loginSubmitting, setLoginSubmitting] = useState(false);
 
-  // If already logged in, redirect to appropriate dashboard
+  // If already logged in, redirect to the appropriate dashboard (declaratively —
+  // calling navigate() during render leaves the tree blank/white).
   if (user) {
     const path = STAFF_ROLE_DASHBOARD_PATH[user.role] || '/register';
-    navigate(path, { replace: true });
-    return null;
+    return <Navigate to={path} replace />;
   }
 
   function handleChange(e) {
@@ -79,7 +79,7 @@ function AdminLoginPage() {
   }
 
   return (
-    <main className="adm-login-page">
+    <main className="admin-login-page">
       <div className="adm-login-card">
         <img
           src={logoImg}
