@@ -172,11 +172,11 @@ function ThermalSpkContent({ invoice, paperSize, operatorName }) {
       </div>
 
       {/* ── TTD CASHIER ── */}
-      <div style={{ ...css.center, fontSize: `${cfg.smallFontSize}px`, marginTop: '10px', marginBottom: '2px' }}>
+      <div style={{ ...css.center, fontSize: `${cfg.smallFontSize}px`, marginTop: '16px', marginBottom: '2px' }}>
         TTD cashier
       </div>
       <div style={css.center}>
-        <div style={{ borderTop: '1px solid #000', width: '60%', margin: '0 auto 2px' }} />
+        <div style={{ borderTop: '1px solid #000', width: '50%', margin: '0 auto 2px' }} />
       </div>
       <div style={{ ...css.center, ...css.small, marginBottom: '10px' }}>{operatorName || '—'}</div>
 
