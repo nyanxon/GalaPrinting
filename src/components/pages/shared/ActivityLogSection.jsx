@@ -81,10 +81,28 @@ function emitReadRefresh() {
   } catch { /* ignore */ }
 }
 
+/*
+ * The API returns `created_at` as a timezone-less WIB (UTC+7) string
+ * (the server does `created_at + INTERVAL 7 HOUR`). `new Date` on such a
+ * string assumes the browser's OWN timezone, so the epoch drifts whenever
+ * the viewer is not on UTC+7 (e.g. admin at UTC), turning hours-old events
+ * into near-zero/negative deltas ("baru saja"). Treat naive datetimes as
+ * UTC+7 so every client resolves the same absolute moment.
+ */
+const NAIVE_DT_RE = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?(\.\d+)?$/;
+
+function parseLogTime(dateStr) {
+  if (!dateStr) return null;
+  const d = NAIVE_DT_RE.test(dateStr)
+    ? new Date(`${dateStr.replace(' ', 'T')}+07:00`)
+    : new Date(dateStr);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 function fmtDateTime(dateStr) {
   if (!dateStr) return '—';
-  const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return dateStr;
+  const d = parseLogTime(dateStr);
+  if (!d) return dateStr;
   return d.toLocaleString('id-ID', {
     day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
   });
@@ -92,8 +110,8 @@ function fmtDateTime(dateStr) {
 
 function fmtRelative(dateStr) {
   if (!dateStr) return '—';
-  const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return dateStr;
+  const d = parseLogTime(dateStr);
+  if (!d) return dateStr;
   const sec = Math.round((Date.now() - d.getTime()) / 1000);
   if (sec < 45) return 'baru saja';
   if (sec < 3600) return `${Math.floor(sec / 60)} menit lalu`;
@@ -566,7 +584,13 @@ export default function ActivityLogSection() {
                     {r.actorRole && (
                       <span className="log-role">{actorRoleLabel(r.actorRole)}</span>
                     )}
-                    <span className="log-time" title={fullTime}>{fmtRelative(r.createdAt)}</span>
+                    {!r.actorRole && r.actorType === 'customer' && (
+                      <span className="log-role">Customer</span>
+                    )}
+                    <span className="log-time" title={fullTime}>
+                      <span className="log-time-rel">{fmtRelative(r.createdAt)}</span>
+                      <span className="log-time-full">{fullTime}</span>
+                    </span>
                   </div>
                   <div className="log-body">
                     <span className="log-action">{r.actionLabel}</span>

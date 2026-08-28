@@ -111,8 +111,6 @@ function ThermalSpkContent({ invoice, paperSize, operatorName }) {
     center:  { textAlign: 'center' },
     bold:    { fontWeight: 700 },
     small:   { fontSize: `${cfg.smallFontSize}px`, color: '#000', WebkitTextStroke: '0px' },
-    sep:     { borderTop: '1px dashed #999', margin: '4px 0' },
-    sepBold: { borderTop: '2px solid #000', margin: '4px 0' },
     muted:   { color: '#000' },
   };
 
@@ -125,24 +123,23 @@ function ThermalSpkContent({ invoice, paperSize, operatorName }) {
 
   return (
     <div className="thermal-spk" style={css.root}>
-      {/* ── HEADER ── */}
-      <div style={{ ...css.center, marginBottom: '4px' }}>
+      {/* ── HEADER: dua kolom sejajar — logo kiri, judul SPK kanan ── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
         <img
           src="/gala-logo2.svg"
           alt="Gala Logo"
-          style={{ width: `${logoSize}px`, height: `${logoSize}px`, margin: '0 auto 2px', display: 'block', filter: 'grayscale(1) contrast(1.2)' }}
+          style={{ width: `${logoSize}px`, height: `${logoSize}px`, flexShrink: 0, display: 'block', filter: 'grayscale(1) contrast(1.2)' }}
         />
-        <div style={{ ...css.bold, fontSize: `${cfg.headerFontSize}px`, letterSpacing: '0.05em' }}>
-          GALA PRINTING
+        <div style={{ minWidth: 0, lineHeight: 1.15 }}>
+          <div style={{ ...css.bold, fontSize: `${cfg.headerFontSize}px`, letterSpacing: '0.02em' }}>
+            SPK
+          </div>
+          <div style={{ ...css.small, lineHeight: 1.15 }}>(Surat Perintah Kerja)</div>
         </div>
-        <div style={css.small}>SPK (Surat Perintah Kerja)</div>
-        <div style={css.small}>galaprintofficialbali.co.id</div>
       </div>
 
-      <div style={css.sepBold} />
-
       {/* ── META ── */}
-      <div style={{ marginBottom: '4px' }}>
+      <div style={{ marginBottom: '6px' }}>
         <div><span style={css.bold}>No. Inv</span>    : {invoice.invoice_number || '—'}</div>
         <div><span style={css.bold}>No. Ord</span>    : {invoice.order_number || '—'}</div>
         <div><span style={css.bold}>Tanggal</span>    : {formatSpkDate(invoice.created_at)}</div>
@@ -150,10 +147,8 @@ function ThermalSpkContent({ invoice, paperSize, operatorName }) {
         <div><span style={css.bold}>Customer</span>   : {invoice.customer_name || '—'}</div>
       </div>
 
-      <div style={css.sepBold} />
-
       {/* ── ITEMS ── */}
-      <div style={{ marginBottom: '4px' }}>
+      <div style={{ marginBottom: '6px' }}>
         {items.length === 0 ? (
           <div style={css.muted}>—</div>
         ) : items.map((item, i) => {
@@ -174,18 +169,14 @@ function ThermalSpkContent({ invoice, paperSize, operatorName }) {
         })}
       </div>
 
-      <div style={css.sepBold} />
-
       {/* ── TTD CASHIER ── */}
-      <div style={{ ...css.center, fontSize: `${cfg.smallFontSize}px`, marginTop: '10px', marginBottom: '2px' }}>
+      <div style={{ ...css.center, fontSize: `${cfg.smallFontSize}px`, marginTop: '6px', marginBottom: '2px' }}>
         TTD cashier
       </div>
       <div style={css.center}>
         <div style={{ borderTop: '1px solid #000', width: '60%', margin: '0 auto 2px' }} />
       </div>
-      <div style={{ ...css.center, ...css.small, marginBottom: '4px' }}>{operatorName || '—'}</div>
-
-      <div style={css.sepBold} />
+      <div style={{ ...css.center, ...css.small, marginBottom: '8px' }}>{operatorName || '—'}</div>
 
       {/* ── FOOTER ── */}
       <div style={{ fontSize: `${cfg.smallFontSize}px`, color: '#000' }}>
@@ -247,7 +238,7 @@ export default function ThermalSpkModal({ invoice, onClose, autoPrint }) {
       background: #fff;
       color: #000;
     }
-    img { display: block; margin: 0 auto 2px; filter: grayscale(1) contrast(1.2); }
+    img { display: block; filter: grayscale(1) contrast(1.2); }
     @media print {
       @page {
         size: ${cfg.paperWidthMm}mm auto;

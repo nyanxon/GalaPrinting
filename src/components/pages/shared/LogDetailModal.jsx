@@ -13,10 +13,25 @@ function actorRoleLabel(role) {
   return STAFF_ROLE_CONFIG[role]?.label ?? role;
 }
 
+/*
+ * The API returns `created_at` as a timezone-less WIB (UTC+7) string
+ * (server does `created_at + INTERVAL 7 HOUR`). Parse as UTC+7 so the
+ * displayed clock time matches the log's real WIB time on any client TZ.
+ */
+const NAIVE_DT_RE = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?(\.\d+)?$/;
+
+function parseLogTime(dateStr) {
+  if (!dateStr) return null;
+  const d = NAIVE_DT_RE.test(dateStr)
+    ? new Date(`${dateStr.replace(' ', 'T')}+07:00`)
+    : new Date(dateStr);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 function fmtDateTime(dateStr) {
   if (!dateStr) return '—';
-  const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return dateStr;
+  const d = parseLogTime(dateStr);
+  if (!d) return dateStr;
   return d.toLocaleString('id-ID', {
     day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit',
   });

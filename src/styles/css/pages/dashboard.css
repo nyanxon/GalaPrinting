@@ -4858,24 +4858,24 @@
 
 .log-row {
   display: grid;
-  grid-template-columns: 10px 26px minmax(0, 1fr) auto;
-  gap: 10px 12px;
+  grid-template-columns: 10px 24px minmax(0, 1fr) auto;
+  gap: 6px 10px;
   align-items: center;
-  padding: 10px 12px;
+  padding: 7px 10px;
   border-radius: 10px;
   transition: background 0.12s;
 }
 
-.log-row + .log-row { margin-top: 6px; }
+.log-row + .log-row { margin-top: 4px; }
 
 .log-row:hover { background: rgba(31, 31, 31, 0.03); }
 
-.log-row--unread { background: rgba(245, 158, 11, 0.08); }
-.log-row--unread:hover { background: rgba(245, 158, 11, 0.12); }
+.log-row--unread { background: rgba(245, 158, 11, 0.06); }
+.log-row--unread:hover { background: rgba(245, 158, 11, 0.10); }
 
 .log-dot {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: transparent;
   justify-self: center;
@@ -4888,9 +4888,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
   flex-shrink: 0;
   font-size: 12px;
 }
@@ -4907,8 +4907,8 @@
 
 .log-head {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
+  align-items: center;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
@@ -4927,8 +4927,22 @@
 
 .log-time {
   margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.log-time-rel {
   font-size: 11px;
   color: var(--muted);
+  white-space: nowrap;
+}
+
+.log-time-full {
+  font-size: 10px;
+  color: var(--muted);
+  opacity: 0.8;
   white-space: nowrap;
 }
 
@@ -4936,14 +4950,18 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px 10px;
-  margin-top: 3px;
+  gap: 6px 8px;
+  margin-top: 2px;
 }
 
 .log-action {
   font-size: 13px;
+  font-weight: 500;
   color: var(--text);
 }
+
+.log-row--unread .log-actor { font-weight: 800; }
+.log-row--unread .log-action { font-weight: 600; }
 
 .log-target {
   font-size: 12px;
@@ -4959,7 +4977,7 @@
 }
 
 .log-meta {
-  margin-top: 3px;
+  margin-top: 2px;
   font-size: 11px;
   color: var(--muted);
   overflow: hidden;
@@ -4979,7 +4997,7 @@
 }
 
 /* ── Skeleton & empty ────────────────────────────────────── */
-.log-row--skeleton { grid-template-columns: 26px minmax(0, 1fr) auto; }
+.log-row--skeleton { grid-template-columns: 24px minmax(0, 1fr) auto; }
 
 .log-empty {
   display: flex;
@@ -5005,8 +5023,8 @@
 }
 
 @media (max-width: 640px) {
-  .log-row { grid-template-columns: 10px 26px minmax(0, 1fr); }
-  .log-row--skeleton { grid-template-columns: 26px minmax(0, 1fr); }
+  .log-row { grid-template-columns: 10px 24px minmax(0, 1fr); }
+  .log-row--skeleton { grid-template-columns: 24px minmax(0, 1fr); }
   .log-actions { grid-column: 2 / -1; justify-self: end; }
   .log-field--search { flex-basis: 100%; }
   .log-time { flex-basis: 100%; margin-left: 0; }
