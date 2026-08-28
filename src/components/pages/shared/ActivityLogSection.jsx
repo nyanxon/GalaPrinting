@@ -10,6 +10,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import {
+  LogIn, Plus, Pencil, Trash2, Printer, CircleDot,
+} from 'lucide-react';
+import {
   listActivityLogs,
   listActivityLogsForPdf,
   deleteLogsOlderThan,
@@ -39,6 +42,39 @@ const AUTO_RETENTION_OPTIONS = [
   { value: 12, label: '12 bulan' },
 ];
 
+/*
+ * The backend stores only a free-text actionLabel (captured from button
+ * clicks). There is no structured actionType, so we bucket it heuristically
+ * for badge coloring/icons only — the raw label is always shown alongside.
+ */
+function classifyAction(label = '') {
+  const s = String(label || '').toLowerCase();
+  if (/(login|sign\s*in|masuk akun|logout|sign\s*out|keluar)/.test(s)) return 'login';
+  if (/(hapus|delete|remove|batal)/.test(s)) return 'delete';
+  if (/(ubah|edit|update|perbarui|ganti)/.test(s)) return 'update';
+  if (/(tambah|buat|create|daftar|register)/.test(s)) return 'create';
+  if (/(cetak|print|export|unduh|download|pdf)/.test(s)) return 'print';
+  return 'other';
+}
+
+const ACTION_BADGE_ICON = {
+  login: LogIn,
+  create: Plus,
+  update: Pencil,
+  delete: Trash2,
+  print: Printer,
+  other: CircleDot,
+};
+
+const ACTION_BADGE_LABEL = {
+  login: 'Login / logout',
+  create: 'Membuat',
+  update: 'Mengubah',
+  delete: 'Menghapus / membatalkan',
+  print: 'Cetak / export',
+  other: 'Aktivitas lain',
+};
+
 function emitReadRefresh() {
   try {
     window.dispatchEvent(new Event(REFRESH_EVENT));
@@ -51,6 +87,29 @@ function fmtDateTime(dateStr) {
   if (Number.isNaN(d.getTime())) return dateStr;
   return d.toLocaleString('id-ID', {
     day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
+  });
+}
+
+function fmtRelative(dateStr) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return dateStr;
+  const sec = Math.round((Date.now() - d.getTime()) / 1000);
+  if (sec < 45) return 'baru saja';
+  if (sec < 3600) return `${Math.floor(sec / 60)} menit lalu`;
+  if (sec < 86400) return `${Math.floor(sec / 3600)} jam lalu`;
+  if (sec < 604800) return `${Math.floor(sec / 86400)} hari lalu`;
+  return d.toLocaleDateString('id-ID', {
+    day: '2-digit', month: 'short', year: 'numeric',
+  });
+}
+
+function fmtFilterDate(v) {
+  if (!v) return '';
+  const d = new Date(`${v}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return v;
+  return d.toLocaleDateString('id-ID', {
+    day: '2-digit', month: 'short', year: 'numeric',
   });
 }
 
@@ -72,6 +131,40 @@ function summarizeTarget(type, id, metadata) {
   const tail = extra.length ? extra[0] : '';
   if (!tail) return parts.join(' · ') || '—';
   return `${parts.join(' · ') ? parts.join(' · ') + ' · ' : ''}${tail}`;
+}
+
+function LogSkeletonRows() {
+  return (
+    <div className="log-list" aria-hidden="true">
+      {Array.from({ length: 6 }, (_, i) => (
+        <div key={i} className="log-row log-row--skeleton">
+          <span className="log-badge rev-skeleton" />
+          <div className="log-main">
+            <div className="rev-skeleton" style={{ width: '38%', height: 13, borderRadius: 6 }} />
+            <div className="rev-skeleton" style={{ width: '72%', height: 13, borderRadius: 6, marginTop: 8 }} />
+            <div className="rev-skeleton" style={{ width: '46%', height: 11, borderRadius: 6, marginTop: 8 }} />
+          </div>
+          <div className="log-actions">
+            <div className="rev-skeleton" style={{ width: 56, height: 28, borderRadius: 6 }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function LogEmpty({ hasFilters, onReset }) {
+  return (
+    <div className="log-empty">
+      <CircleDot className="log-empty-icon" size={30} aria-hidden="true" />
+      <p className="log-empty-text">Belum ada aktivitas.</p>
+      {hasFilters && (
+        <button className="adm-btn adm-btn--secondary adm-btn-sm" type="button" onClick={onReset}>
+          Reset filter
+        </button>
+      )}
+    </div>
+  );
 }
 
 export default function ActivityLogSection() {
@@ -149,6 +242,22 @@ export default function ActivityLogSection() {
     setSearch('');
     setPage(1);
     load({ actorType: '', from: '', to: '', search: '' }, 1);
+  }
+
+  function handleRemoveFilter(key, e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const f = { ...currentFilters };
+    if (key === 'actorType') f.actorType = '';
+    else if (key === 'from') f.from = '';
+    else if (key === 'to') f.to = '';
+    else if (key === 'from-to') { f.from = ''; f.to = ''; }
+    else if (key === 'search') f.search = '';
+    setActorType(f.actorType);
+    setFrom(f.from);
+    setTo(f.to);
+    setSearch(f.search);
+    load(f, 1);
   }
 
   async function handleExportPdf() {
@@ -282,153 +391,207 @@ export default function ActivityLogSection() {
     }
   }
 
+  // Active filters → removable chips (one per dimension).
+  const chips = [];
+  if (actorType === 'admin') chips.push({ key: 'actorType', label: 'Admin & Staff' });
+  if (actorType === 'customer') chips.push({ key: 'actorType', label: 'Customer' });
+  if (from && to) chips.push({ key: 'from-to', label: `${fmtFilterDate(from)} s.d. ${fmtFilterDate(to)}` });
+  else if (from) chips.push({ key: 'from', label: `Mulai ${fmtFilterDate(from)}` });
+  else if (to) chips.push({ key: 'to', label: `Sampai ${fmtFilterDate(to)}` });
+  if (search) chips.push({ key: 'search', label: `"${search}"` });
+  const hasActiveFilters = chips.length > 0;
+
   return (
     <div className="adm-card">
       <div className="adm-toolbar">
         <h2 className="adm-section-title">Log Aktivitas ({total})</h2>
         <div className="adm-toolbar-right">
-          <button className="adm-btn" type="button" onClick={handleMarkAllRead} disabled={loading || total === 0}>
+          <button
+            className="adm-btn"
+            type="button"
+            onClick={handleMarkAllRead}
+            disabled={loading || total === 0}
+          >
             Tandai Semua Dibaca
           </button>
-          <button className="adm-btn adm-btn--primary" type="button" onClick={handleExportPdf} disabled={exporting || loading}>
+          <button
+            className="adm-btn adm-btn--primary"
+            type="button"
+            onClick={handleExportPdf}
+            disabled={exporting || loading}
+          >
             {exporting ? 'Mengexport…' : 'Export PDF'}
           </button>
         </div>
       </div>
 
       {/* ── Filters ── */}
-      <form className="adm-form" onSubmit={handleApplyFilters} noValidate style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginBottom: 12 }}>
-        <select
-          className="adm-input"
-          value={actorType}
-          onChange={(e) => setActorType(e.target.value)}
-          aria-label="Tipe aktor"
-          style={{ width: 140 }}
-        >
-          <option value="">Semua Aktor</option>
-          <option value="admin">Admin / Staff</option>
-          <option value="customer">Customer</option>
-        </select>
-        <input
-          className="adm-input"
-          type="date"
-          value={from}
-          onChange={(e) => setFrom(e.target.value)}
-          aria-label="Dari tanggal"
-          style={{ width: 150 }}
-        />
-        <span>s.d.</span>
-        <input
-          className="adm-input"
-          type="date"
-          value={to}
-          onChange={(e) => setTo(e.target.value)}
-          aria-label="Sampai tanggal"
-          style={{ width: 150 }}
-        />
-        <input
-          className="adm-input adm-search"
-          type="search"
-          placeholder="Cari aktor / aksi…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          aria-label="Cari"
-          style={{ flex: '1 1 180px' }}
-        />
-        <button className="adm-btn adm-btn--primary" type="submit" disabled={loading}>Filter</button>
-        <button className="adm-btn" type="button" onClick={handleReset} disabled={loading}>Reset</button>
+      <form className="log-filter-bar" onSubmit={handleApplyFilters} noValidate>
+        <div className="log-field log-field--type">
+          <label className="log-field-label" htmlFor="log-type">Tipe Log</label>
+          <select
+            className="adm-input"
+            id="log-type"
+            value={actorType}
+            onChange={(e) => setActorType(e.target.value)}
+          >
+            <option value="">Semua</option>
+            <option value="admin">Admin / Staff</option>
+            <option value="customer">Customer</option>
+          </select>
+        </div>
+        <div className="log-field log-field--date">
+          <label className="log-field-label" htmlFor="log-from">Dari</label>
+          <input
+            className="adm-input"
+            id="log-from"
+            type="date"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+          />
+        </div>
+        <div className="log-field log-field--date">
+          <label className="log-field-label" htmlFor="log-to">Sampai</label>
+          <input
+            className="adm-input"
+            id="log-to"
+            type="date"
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+          />
+        </div>
+        <div className="log-field log-field--search">
+          <label className="log-field-label" htmlFor="log-search">Cari</label>
+          <input
+            className="adm-input adm-search"
+            id="log-search"
+            type="search"
+            placeholder="Aktor / aksi / target…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <div className="log-field log-field--actions">
+          <button className="adm-btn adm-btn--primary" type="submit" disabled={loading}>Filter</button>
+          <button className="adm-btn" type="button" onClick={handleReset} disabled={loading}>Reset</button>
+        </div>
       </form>
 
-      {/* ── Retention ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 12, color: '#6b7280' }}>Hapus log lebih lama dari:</span>
-        {RETENTION_OPTIONS.map((o) => (
-          <button
-            key={o.value}
-            className="adm-btn adm-btn--delete"
-            type="button"
-            disabled={deleting}
-            onClick={() => handleDeleteOlder(o.value)}
-            style={{ padding: '4px 12px', fontSize: 12 }}
-          >
-            {o.label}
-          </button>
-        ))}
-      </div>
-
-      {/* ── Auto-retention (scheduled) ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 12, color: '#6b7280' }}>Auto-hapus terjadwal:</span>
-        <select
-          className="adm-input"
-          value={retentionMonths}
-          onChange={(e) => setRetentionMonths(Number(e.target.value))}
-          aria-label="Auto-hapus log"
-          style={{ width: 150 }}
-        >
-          {AUTO_RETENTION_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
+      {/* ── Active filter chips ── */}
+      {hasActiveFilters && (
+        <div className="log-chips">
+          {chips.map((c) => (
+            <span key={c.key} className="log-chip">
+              {c.label}
+              <button
+                type="button"
+                aria-label={`Hapus filter: ${c.label}`}
+                onClick={(e) => handleRemoveFilter(c.key, e)}
+              >
+                ✕
+              </button>
+            </span>
           ))}
-        </select>
-        <button
-          className="adm-btn adm-btn--secondary"
-          type="button"
-          disabled={retentionSaving}
-          onClick={handleSaveRetention}
-          style={{ padding: '4px 12px', fontSize: 12 }}
-        >
-          {retentionSaving ? 'Menyimpan…' : 'Simpan'}
-        </button>
+          <button className="log-chip-reset" type="button" onClick={handleReset}>Hapus semua</button>
+        </div>
+      )}
+
+      {/* ── Retention & scheduled cleanup ── */}
+      <div className="log-settings">
+        <div className="log-settings-group">
+          <span className="log-settings-label">Hapus log lebih lama dari:</span>
+          {RETENTION_OPTIONS.map((o) => (
+            <button
+              key={o.value}
+              className="adm-btn adm-btn--delete adm-btn-sm"
+              type="button"
+              disabled={deleting}
+              onClick={() => handleDeleteOlder(o.value)}
+            >
+              <Trash2 size={12} aria-hidden="true" />
+              {o.label}
+            </button>
+          ))}
+        </div>
+        <span className="log-settings-divider" aria-hidden="true" />
+        <div className="log-settings-group">
+          <span className="log-settings-label">Auto-hapus terjadwal:</span>
+          <select
+            className="adm-input"
+            value={retentionMonths}
+            onChange={(e) => setRetentionMonths(Number(e.target.value))}
+            aria-label="Auto-hapus log"
+          >
+            {AUTO_RETENTION_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+          <button
+            className="adm-btn adm-btn--secondary adm-btn-sm"
+            type="button"
+            disabled={retentionSaving}
+            onClick={handleSaveRetention}
+          >
+            {retentionSaving ? 'Menyimpan…' : 'Simpan'}
+          </button>
+        </div>
       </div>
 
-      {/* ── Table ── */}
+      {/* ── Log list ── */}
       {loading ? (
-        <p className="adm-empty">Memuat log…</p>
+        <LogSkeletonRows />
       ) : rows.length === 0 ? (
-        <p className="adm-empty">Tidak ada log yang cocok.</p>
+        <LogEmpty hasFilters={hasActiveFilters} onReset={handleReset} />
       ) : (
-        <div className="adm-table-wrap">
-          <table className="adm-table">
-            <thead>
-              <tr>
-                <th>Waktu</th>
-                <th>Aktor</th>
-                <th>Aksi</th>
-                <th>Target</th>
-                <th>Halaman</th>
-                <th>IP</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr
-                  key={r.id}
-                  style={r.read === false ? { background: '#fdf6ec', fontWeight: 700 } : undefined}
+        <div className="log-list">
+          {rows.map((r) => {
+            const cat = classifyAction(r.actionLabel);
+            const BadgeIcon = ACTION_BADGE_ICON[cat] || CircleDot;
+            const targetText = summarizeTarget(r.targetType, r.targetId, r.metadata);
+            const fullTime = fmtDateTime(r.createdAt);
+            return (
+              <div key={r.id} className={`log-row${r.read === false ? ' log-row--unread' : ''}`}>
+                <span className="log-dot" aria-hidden="true" />
+                <span
+                  className={`log-badge log-badge--${cat}`}
+                  title={ACTION_BADGE_LABEL[cat] || 'Aktivitas lain'}
                 >
-                  <td style={{ whiteSpace: 'nowrap' }}>{fmtDateTime(r.createdAt)}</td>
-                  <td>
-                    {r.actorName || <em style={{ color: '#9ca3af' }}>anonim</em>}
-                    {r.actorRole && <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 400 }}>{actorRoleLabel(r.actorRole)}</div>}
-                  </td>
-                  <td>{r.actionLabel}</td>
-                  <td><code style={{ fontSize: 12 }}>{summarizeTarget(r.targetType, r.targetId, r.metadata)}</code></td>
-                  <td style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.pagePath || '—'}</td>
-                  <td style={{ whiteSpace: 'nowrap' }}>{r.ipAddress || '—'}</td>
-                  <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>
-                    <button
-                      className="adm-btn adm-btn--secondary"
-                      type="button"
-                      style={{ padding: '4px 10px', fontSize: 12 }}
-                      onClick={() => handleViewLog(r)}
-                    >
-                      Lihat
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  <BadgeIcon size={14} aria-hidden="true" />
+                </span>
+                <div className="log-main">
+                  <div className="log-head">
+                    <span className="log-actor">
+                      {r.actorName || <em className="log-anon">anonim</em>}
+                    </span>
+                    {r.actorRole && (
+                      <span className="log-role">{actorRoleLabel(r.actorRole)}</span>
+                    )}
+                    <span className="log-time" title={fullTime}>{fmtRelative(r.createdAt)}</span>
+                  </div>
+                  <div className="log-body">
+                    <span className="log-action">{r.actionLabel}</span>
+                    {targetText !== '—' && (
+                      <span className="log-target" title={targetText}>{targetText}</span>
+                    )}
+                  </div>
+                  {r.pagePath && (
+                    <div className="log-meta">
+                      <span className="log-path" title={r.pagePath}>{r.pagePath}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="log-actions">
+                  <button
+                    className="adm-btn adm-btn--secondary adm-btn-sm"
+                    type="button"
+                    onClick={() => handleViewLog(r)}
+                  >
+                    Lihat
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 

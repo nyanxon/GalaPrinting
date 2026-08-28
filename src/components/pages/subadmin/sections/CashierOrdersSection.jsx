@@ -20,6 +20,7 @@ import { getInvoiceByOrderId, openInvoicePdf } from '../../../../services/api/in
 import { showToast } from '../../../../core/toastEmitter.js';
 import OrderDetailModal from '../../../modals/OrderDetailModal.jsx';
 import ThermalReceiptModal from '../../../modals/ThermalReceiptModal.jsx';
+import ThermalSpkModal from '../../../modals/ThermalSpkModal.jsx';
 import useOrderList from '../../../../hooks/useOrderList.js';
 
 const CASHIER_STAGES = ['Waiting for Payment', 'Payment Accepted'];
@@ -107,6 +108,9 @@ export default function CashierOrdersSection() {
     enableStateFilter: true,
     roleStages: ROLE_STAGES,
   });
+
+  // SPK (Surat Perintah Kerja) — dokumen produksi internal per order.
+  const [spkInvoice, setSpkInvoice] = useState(null);
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -393,6 +397,15 @@ export default function CashierOrdersSection() {
                                 >
                                   🖨️ Print Resi
                                 </button>
+                                <button
+                                  type="button"
+                                  className="adm-btn adm-btn--thermal"
+                                  style={{ fontSize: '11px', padding: '4px 8px' }}
+                                  onClick={() => setSpkInvoice(invoiceMap[order.id])}
+                                  title="Cetak SPK produksi (58mm)"
+                                >
+                                  📋 Cetak SPK
+                                </button>
                               </div>
                             ) : (
                               <span className="adm-date" style={{ fontSize: '11px' }}>Invoice sedang diproses…</span>
@@ -428,6 +441,10 @@ export default function CashierOrdersSection() {
           onClose={() => { setThermalInvoice(null); setThermalAutoPrint(false); }}
           autoPrint={thermalAutoPrint}
         />
+      )}
+
+      {spkInvoice && (
+        <ThermalSpkModal invoice={spkInvoice} onClose={() => setSpkInvoice(null)} />
       )}
 
       {cancelDialogOpen && (

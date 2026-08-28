@@ -23,7 +23,7 @@ function fmtDateTime(dateStr) {
 }
 
 function renderMetadata(metadata) {
-  if (metadata === null || metadata === undefined) return <em style={{ color: '#9ca3af' }}>—</em>;
+  if (metadata === null || metadata === undefined) return <em style={{ color: 'var(--muted)' }}>—</em>;
   if (typeof metadata === 'string') return metadata;
   try {
     return JSON.stringify(metadata, null, 2);
@@ -35,7 +35,7 @@ function renderMetadata(metadata) {
 function Row({ label, children }) {
   return (
     <div style={{ marginBottom: 10 }}>
-      <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.4, color: '#6b7280', marginBottom: 2 }}>
+      <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.4, color: 'var(--muted)', marginBottom: 2 }}>
         {label}
       </div>
       <div>{children}</div>
@@ -64,12 +64,12 @@ export default function LogDetailModal({ log, isOpen, onClose }) {
             {log?.actorName ? (
               <>
                 {log.actorName}
-                {log.actorRole && <span style={{ color: '#6b7280' }}> ({actorRoleLabel(log.actorRole)})</span>}
+                {log.actorRole && <span style={{ color: 'var(--muted)' }}> ({actorRoleLabel(log.actorRole)})</span>}
               </>
             ) : (
-              <em style={{ color: '#9ca3af' }}>anonim</em>
+              <em style={{ color: 'var(--muted)' }}>anonim</em>
             )}
-            <div style={{ fontSize: 12, color: '#6b7280' }}>
+            <div style={{ fontSize: 12, color: 'var(--muted)' }}>
               Tipe: {log?.actorType || '—'}{log?.actorId ? `  ·  ID: ${log.actorId}` : ''}
             </div>
           </Row>
@@ -77,14 +77,14 @@ export default function LogDetailModal({ log, isOpen, onClose }) {
             {log?.targetType ? (
               <code>{log.targetType}{log.targetId ? ` · ${log.targetId}` : ''}</code>
             ) : (
-              <em style={{ color: '#9ca3af' }}>—</em>
+              <em style={{ color: 'var(--muted)' }}>—</em>
             )}
           </Row>
           <Row label="Halaman (page path)">
             <code>{log?.pagePath || '—'}</code>
           </Row>
           <Row label="IP Address">
-            {log?.ipAddress || <em style={{ color: '#9ca3af' }}>—</em>}
+            {log?.ipAddress || <em style={{ color: 'var(--muted)' }}>—</em>}
           </Row>
           <Row label="ID Log">
             <code>{log?.id ?? '—'}</code>
@@ -92,7 +92,7 @@ export default function LogDetailModal({ log, isOpen, onClose }) {
           <Row label="Metadata">
             <pre
               style={{
-                background: '#faf7f2',
+                background: 'rgba(120, 94, 64, 0.05)',
                 border: '1px solid var(--border)',
                 borderRadius: 8,
                 padding: 10,

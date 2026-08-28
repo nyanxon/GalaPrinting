@@ -481,16 +481,7 @@ function RegisterPage() {
                   Daftar di sini
                 </a>
               </p>
-              <p className="register-login-hint" style={{ marginTop: '8px', fontSize: '13px' }}>
-                Staff / Admin?{' '}
-                <a
-                  href="/admin/login"
-                  className="register-link"
-                  onClick={(e) => { e.preventDefault(); navigate('/admin/login'); }}
-                >
-                  Login Staff
-                </a>
-              </p>
+
             </form>
           </div>
         )}

@@ -16,6 +16,7 @@ import { parseNumber, billedAreaM2 } from '../../../../utils/billing.js';
 import { computeOneDiscount, discountTotalFor, parseDiscountRows } from '../../../../utils/discounts.js';
 import { track } from '../../../../utils/activityTracker.js';
 import ThermalReceiptModal from '../../../modals/ThermalReceiptModal.jsx';
+import ThermalSpkModal from '../../../modals/ThermalSpkModal.jsx';
 
 function makeItem() {
   return {
@@ -266,6 +267,7 @@ function SuccessCard({ order, onReset }) {
   const [invoiceSent, setInvoiceSent] = useState(false);
   const [emailSending, setEmailSending] = useState(false);
   const [thermalOpen, setThermalOpen] = useState(false);
+  const [spkOpen, setSpkOpen] = useState(false);
 
   async function loadInvoice() {
     if (invoice || invoiceLoading) return;
@@ -307,6 +309,15 @@ function SuccessCard({ order, onReset }) {
       return;
     }
     setThermalOpen(true);
+  }
+
+  async function handlePrintSpk() {
+    await loadInvoice();
+    if (!invoice) {
+      showToast('Invoice belum tersedia.', 'error');
+      return;
+    }
+    setSpkOpen(true);
   }
 
   async function handleSendEmail() {
@@ -420,6 +431,15 @@ function SuccessCard({ order, onReset }) {
         >
           🖨️ Print Resi
         </button>
+        <button
+          type="button"
+          className="adm-btn adm-btn--thermal"
+          onClick={handlePrintSpk}
+          disabled={invoiceLoading}
+          title="Cetak SPK produksi (58mm)"
+        >
+          📋 Cetak SPK
+        </button>
         {order.customer_email && !invoiceSent && (
           <button
             type="button"
@@ -443,6 +463,10 @@ function SuccessCard({ order, onReset }) {
 
       {thermalOpen && invoice && (
         <ThermalReceiptModal invoice={invoice} onClose={() => setThermalOpen(false)} />
+      )}
+
+      {spkOpen && invoice && (
+        <ThermalSpkModal invoice={invoice} onClose={() => setSpkOpen(false)} />
       )}
     </div>
   );
