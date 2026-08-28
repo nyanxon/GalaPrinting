@@ -155,13 +155,15 @@ function ThermalSpkContent({ invoice, paperSize, operatorName }) {
           const dim = dims(item);
           const catatan = item.notes || designFileName(item);
           return (
-            <div key={item.id || i} style={{ marginBottom: '4px' }}>
-              <div style={{ wordBreak: 'break-word' }}>{i + 1}. {item.name}</div>
-              <div style={{ paddingLeft: '12px' }}>
+            <div key={item.id || i} style={{ marginBottom: '6px' }}>
+              <div style={{ wordBreak: 'break-word', paddingLeft: '12px', textIndent: '-12px' }}>
+                {i + 1}. {item.name}
+              </div>
+              <div style={{ paddingLeft: '12px', marginTop: '2px' }}>
                 <span>{Number(item.quantity) || 1}x</span>
                 {dim ? <span> ({dim})</span> : null}
               </div>
-              <div style={{ ...css.muted, fontSize: `${cfg.smallFontSize}px`, paddingLeft: '12px' }}>
+              <div style={{ ...css.muted, fontSize: `${cfg.smallFontSize}px`, paddingLeft: '12px', marginTop: '2px' }}>
                 catatan: {catatan || '—'}
               </div>
             </div>
@@ -170,13 +172,13 @@ function ThermalSpkContent({ invoice, paperSize, operatorName }) {
       </div>
 
       {/* ── TTD CASHIER ── */}
-      <div style={{ ...css.center, fontSize: `${cfg.smallFontSize}px`, marginTop: '6px', marginBottom: '2px' }}>
+      <div style={{ ...css.center, fontSize: `${cfg.smallFontSize}px`, marginTop: '10px', marginBottom: '2px' }}>
         TTD cashier
       </div>
       <div style={css.center}>
         <div style={{ borderTop: '1px solid #000', width: '60%', margin: '0 auto 2px' }} />
       </div>
-      <div style={{ ...css.center, ...css.small, marginBottom: '8px' }}>{operatorName || '—'}</div>
+      <div style={{ ...css.center, ...css.small, marginBottom: '10px' }}>{operatorName || '—'}</div>
 
       {/* ── FOOTER ── */}
       <div style={{ fontSize: `${cfg.smallFontSize}px`, color: '#000' }}>
