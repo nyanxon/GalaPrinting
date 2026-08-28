@@ -13,7 +13,8 @@
 }
 
 /* ── Thermal receipt (sizing fallback; styling is inline) ── */
-.thermal-receipt {
+.thermal-receipt,
+.thermal-spk {
   max-width: 100%;
 }
 

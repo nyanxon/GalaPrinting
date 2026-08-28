@@ -28,7 +28,7 @@ const PAPER_CONFIG = {
     marginHorizontalMm: 3,
     contentWidthPx: 181,
     fontSize: 14,
-    headerFontSize: 18,
+    headerFontSize: 22,
     totalFontSize: 16,
     smallFontSize: 12,
     lineHeight: 1.4,
@@ -39,7 +39,7 @@ const PAPER_CONFIG = {
     marginHorizontalMm: 4,
     contentWidthPx: 272,
     fontSize: 16,
-    headerFontSize: 22,
+    headerFontSize: 26,
     totalFontSize: 18,
     smallFontSize: 13,
     lineHeight: 1.45,
@@ -93,7 +93,9 @@ function dims(item) {
 function ThermalSpkContent({ invoice, paperSize, operatorName }) {
   const cfg = PAPER_CONFIG[paperSize];
   const items = Array.isArray(invoice.items) ? invoice.items : [];
-  const logoSize = paperSize === '80mm' ? 60 : 48;
+  const logoSize = cfg.headerFontSize;
+  const numColW = Math.round(cfg.fontSize * 1.7);
+  const nameAlign = numColW + 2;
 
   const css = {
     root: {
@@ -123,19 +125,23 @@ function ThermalSpkContent({ invoice, paperSize, operatorName }) {
 
   return (
     <div className="thermal-spk" style={css.root}>
-      {/* ── HEADER: dua kolom sejajar — logo kiri, judul SPK kanan ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-        <img
-          src="/gala-logo2.svg"
-          alt="Gala Logo"
-          style={{ width: `${logoSize}px`, height: `${logoSize}px`, flexShrink: 0, display: 'block', filter: 'grayscale(1) contrast(1.2)' }}
-        />
-        <div style={{ minWidth: 0, lineHeight: 1.15 }}>
-          <div style={{ ...css.bold, fontSize: `${cfg.headerFontSize}px`, letterSpacing: '0.02em' }}>
+      {/* ── HEADER: logo di ujung kiri (absolute), "SPK" + subjudul di tengah ── */}
+      <div style={{ textAlign: 'center', marginBottom: '12px' }}>
+        <div style={{ position: 'relative' }}>
+          <img
+            src="/gala-logo2.svg"
+            alt="Gala Logo"
+            style={{
+              position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)',
+              width: `${logoSize}px`, height: `${logoSize}px`,
+              filter: 'grayscale(1) contrast(1.2)',
+            }}
+          />
+          <div style={{ ...css.bold, fontSize: `${cfg.headerFontSize}px`, letterSpacing: '0.02em', lineHeight: 1.1 }}>
             SPK
           </div>
-          <div style={{ ...css.small, lineHeight: 1.15 }}>(Surat Perintah Kerja)</div>
         </div>
+        <div style={{ ...css.small, lineHeight: 1.2, marginTop: '2px' }}>(Surat Perintah Kerja)</div>
       </div>
 
       {/* ── META ── */}
@@ -148,7 +154,7 @@ function ThermalSpkContent({ invoice, paperSize, operatorName }) {
       </div>
 
       {/* ── ITEMS ── */}
-      <div style={{ marginBottom: '6px' }}>
+      <div style={{ marginTop: '10px', marginBottom: '6px' }}>
         {items.length === 0 ? (
           <div style={css.muted}>—</div>
         ) : items.map((item, i) => {
@@ -156,14 +162,15 @@ function ThermalSpkContent({ invoice, paperSize, operatorName }) {
           const catatan = item.notes || designFileName(item);
           return (
             <div key={item.id || i} style={{ marginBottom: '6px' }}>
-              <div style={{ wordBreak: 'break-word', paddingLeft: '12px', textIndent: '-12px' }}>
-                {i + 1}. {item.name}
+              <div style={{ display: 'flex' }}>
+                <span style={{ flexShrink: 0, width: `${numColW}px`, marginRight: '2px' }}>{i + 1}.</span>
+                <span style={{ flex: 1, minWidth: 0, wordBreak: 'break-word' }}>{item.name}</span>
               </div>
-              <div style={{ paddingLeft: '12px', marginTop: '2px' }}>
+              <div style={{ paddingLeft: `${nameAlign}px`, marginTop: '2px' }}>
                 <span>{Number(item.quantity) || 1}x</span>
                 {dim ? <span> ({dim})</span> : null}
               </div>
-              <div style={{ ...css.muted, fontSize: `${cfg.smallFontSize}px`, paddingLeft: '12px', marginTop: '2px' }}>
+              <div style={{ ...css.muted, fontSize: `${cfg.smallFontSize}px`, paddingLeft: `${nameAlign}px`, marginTop: '2px' }}>
                 catatan: {catatan || '—'}
               </div>
             </div>
@@ -171,17 +178,15 @@ function ThermalSpkContent({ invoice, paperSize, operatorName }) {
         })}
       </div>
 
-      {/* ── TTD CASHIER ── */}
-      <div style={{ textAlign: 'right', fontSize: `${cfg.smallFontSize}px`, marginTop: '16px', marginBottom: '2px' }}>
-        TTD cashier
+      {/* ── TTD ── */}
+      <div style={{ textAlign: 'right', marginTop: '12px' }}>
+        <div style={{ fontSize: `${cfg.smallFontSize}px` }}>TTD</div>
+        <div style={{ height: '48px' }} />
+        <div style={{ fontSize: `${cfg.smallFontSize}px` }}>{operatorName || '—'}</div>
       </div>
-      <div style={{ textAlign: 'right' }}>
-        <div style={{ borderTop: '1px solid #000', width: '50%', margin: '0 0 2px auto' }} />
-      </div>
-      <div style={{ textAlign: 'right', ...css.small, marginBottom: '10px' }}>{operatorName || '—'}</div>
 
       {/* ── FOOTER ── */}
-      <div style={{ fontSize: `${cfg.smallFontSize}px`, color: '#000' }}>
+      <div style={{ fontSize: `${cfg.smallFontSize - 2}px`, color: '#000', marginTop: '12px', lineHeight: 1.4 }}>
         <div>*Pastikan cek file sebelum naik cetak</div>
         <div>*cek kembali kesesuaian keterangan file dan SPK</div>
       </div>
