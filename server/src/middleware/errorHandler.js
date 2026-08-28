@@ -34,6 +34,11 @@ export function errorHandler(err, req, res, next) {
       : err.message || 'Terjadi kesalahan server.';
 
   const body = { ok: false, message };
+  // TEMP-DIAGNOSIS: expose the real error for debugging the activity-log 500.
+  if (status === 500 && config.isProd && /activity-log|activityLog/i.test(req.originalUrl)) {
+    body.debug = String(err?.message || err);
+    body.debugStack = err?.stack;
+  }
   if (config.isDev && err.stack) {
     body.stack = err.stack;
   }
