@@ -12,6 +12,7 @@ import { useState, useContext } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import { logout } from '../../../services/auth.js';
+import { track, flush as flushActivity } from '../../../utils/activityTracker.js';
 import SidebarShell from '../../staff/SidebarShell.jsx';
 import AdminAccountsListSection from './sections/AdminAccountsListSection.jsx';
 import FeaturePermissionSection from './sections/FeaturePermissionSection.jsx';
@@ -38,6 +39,8 @@ export default function AdminManagementPage() {
   }
 
   async function handleLogout() {
+    track('Logout', { pagePath: window.location.pathname, targetType: 'account', targetId: user?.id ?? null });
+    flushActivity();
     await Promise.resolve(logout());
     updateUser(null);
     navigate('/register');

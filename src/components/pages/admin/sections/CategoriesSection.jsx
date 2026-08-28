@@ -10,6 +10,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { showToast } from '../../../../core/toastEmitter.js';
+import { track } from '../../../../utils/activityTracker.js';
 import {
   listCategories,
   createCategory,
@@ -72,6 +73,10 @@ function EditableRow({ cat, onSaved, onDelete }) {
     const res = await updateCategory(cat.id, trimmed);
     setSaving(false);
     if (res.ok) {
+      track('Rename Kategori', {
+        targetType: 'category', targetId: cat.id,
+        metadata: { from: cat.name, to: trimmed },
+      });
       showToast(`Kategori diubah menjadi "${trimmed}".`, 'success');
       setEditing(false);
       onSaved();
@@ -92,6 +97,10 @@ function EditableRow({ cat, onSaved, onDelete }) {
     if (!window.confirm(warning)) return;
     const res = await deleteCategory(cat.id);
     if (res.ok) {
+      track('Hapus Kategori', {
+        targetType: 'category', targetId: cat.id,
+        metadata: { name: cat.name },
+      });
       showToast(`Kategori "${cat.name}" dihapus.`, 'success');
       onDelete();
     } else {
@@ -257,6 +266,10 @@ export default function CategoriesSection() {
     setAddError('');
     try {
       await createCategory(trimmed);
+      track('Tambah Kategori', {
+        targetType: 'category',
+        metadata: { name: trimmed },
+      });
       showToast(`Kategori "${trimmed}" ditambahkan.`, 'success');
       setNewName('');
       await load();

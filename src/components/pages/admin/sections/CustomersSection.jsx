@@ -11,6 +11,7 @@
 import { useState, useEffect, useContext, useCallback } from 'react';
 import { listCustomers, deleteUser } from '../../../../services/auth.js';
 import { AuthContext } from '../../../context/AuthContext.jsx';
+import { track } from '../../../../utils/activityTracker.js';
 import { getSocket } from '../../../../core/socket.js';
 import PaginationBar from '../../../ui/PaginationBar.jsx';
 import CreateCustomerAccountModal from './CreateCustomerAccountModal.jsx';
@@ -206,6 +207,10 @@ export default function CustomersSection() {
     try {
       const result = await deleteUser(pendingDelete.id);
       if (result.ok) {
+        track('Hapus Customer', {
+          targetType: 'customer', targetId: pendingDelete.id,
+          metadata: { name: pendingDelete.name ?? null, email: pendingDelete.email ?? null },
+        });
         setAllCustomers((prev) => prev.filter((u) => u.id !== pendingDelete.id));
         setToast({
           type: 'success',

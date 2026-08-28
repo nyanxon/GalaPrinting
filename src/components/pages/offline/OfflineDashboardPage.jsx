@@ -24,6 +24,7 @@ import { createOfflineOrder, listAllOrders, STATUS_CONFIG } from '../../../servi
 import { STAFF_ROLE_CONFIG } from '../../../config/roles.js';
 import { filterNavByPermissions } from '../../../config/permissions.js';
 import { formatCurrency } from '../../../utils/format.js';
+import { track, flush as flushActivity } from '../../../utils/activityTracker.js';
 import { showToast } from '../../../core/toastEmitter.js';
 import ChatsSection from '../admin/sections/ChatsSection.jsx';
 import DMSection from '../admin/sections/DMSection.jsx';
@@ -565,6 +566,8 @@ export default function OfflineDashboardPage() {
   const effectiveActive = filteredNav.some((n) => n.id === activeNav) ? activeNav : (filteredNav[0]?.id ?? 'new-order');
 
   async function handleLogout() {
+    track('Logout', { pagePath: window.location.pathname, targetType: 'account', targetId: user?.id ?? null });
+    flushActivity();
     await Promise.resolve(logout());
     updateUser(null);
     navigate('/register');

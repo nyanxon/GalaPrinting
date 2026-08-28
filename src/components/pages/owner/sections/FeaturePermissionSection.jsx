@@ -19,6 +19,7 @@ import {
 } from '../../../../services/adminManagement.js';
 import { STAFF_ROLE_CONFIG } from '../../../../config/roles.js';
 import { showToast } from '../../../../core/toastEmitter.js';
+import { track } from '../../../../utils/activityTracker.js';
 
 export default function FeaturePermissionSection({ userId }) {
   const navigate = useNavigate();
@@ -104,6 +105,10 @@ export default function FeaturePermissionSection({ userId }) {
         granted: granted.has(f.key),
       }));
       const result = await updateAccountPermissions(userId, payload);
+      track('Ubah Permission Akun', {
+        targetType: 'account', targetId: userId,
+        metadata: { granted: payload.filter((p) => p.granted).length, total: payload.length },
+      });
       if (result?.permissions) {
         setGranted(new Set(result.permissions.filter((p) => p.granted).map((p) => p.feature_key)));
       }

@@ -36,6 +36,7 @@ import uploadRoutes    from './routes/upload.routes.js';
 import accountsRoutes  from './routes/accounts.routes.js';
 import adminAccountsRoutes from './routes/adminAccounts.routes.js';
 import featuresRoutes  from './routes/features.routes.js';
+import activityLogRoutes from './routes/activityLog.routes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Try multiple possible dist paths for different deployment structures
@@ -159,6 +160,7 @@ export function createApp() {
   app.use('/api/admin/accounts', accountsRoutes);
   app.use('/api/admin-accounts', adminAccountsRoutes);
   app.use('/api/features',      featuresRoutes);
+  app.use('/api/activity-log',  activityLogRoutes);
 
   // ── Serve React frontend build ───────────────────────────────────────────────
   // In production on Hostinger, backend serves both API and frontend.

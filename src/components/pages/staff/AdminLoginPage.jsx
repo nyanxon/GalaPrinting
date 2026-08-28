@@ -12,6 +12,7 @@ import { useNavigate, Link, Navigate } from 'react-router';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import { adminLogin, getCurrentUser } from '../../../services/auth.js';
 import { STAFF_ROLE_DASHBOARD_PATH } from '../../../config/roles.js';
+import { track, flush as flushActivity } from '../../../utils/activityTracker.js';
 import logoImg from '../../../assets/logo.png';
 import '../../../styles/css/pages/admin-login.css';
 
@@ -61,11 +62,15 @@ function AdminLoginPage() {
         adminLogin({ email: loginData.email, password: loginData.password, rememberMe })
       );
       if (!res.ok) {
+        track('Login Admin Gagal', { pagePath: window.location.pathname, targetType: 'account', metadata: { email: loginData.email, role: res.role ?? null, reason: res.message } });
+        flushActivity();
         setLoginError(res.message);
         return;
       }
       const currentUser = await Promise.resolve(getCurrentUser());
       updateUser(currentUser);
+      track('Login Admin', { pagePath: window.location.pathname, targetType: 'account', targetId: currentUser?.id ?? null, metadata: { role: res.role, email: loginData.email, mustChangePassword: Boolean(res.mustChangePassword) } });
+      flushActivity();
       // If the account has must_change_password, force the user to change it first
       if (res.mustChangePassword) {
         navigate('/change-password', { replace: true });

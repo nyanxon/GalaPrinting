@@ -16,6 +16,7 @@ import SubAdminOrdersSection from './SubAdminOrdersSection.jsx';
 import { setTrackingNumber, updateOrderStatus } from '../../../../services/orders.js';
 import { setOrderDeliveryMethod, setOrderPickupInfo } from '../../../../services/api/invoiceService.js';
 import { showToast } from '../../../../core/toastEmitter.js';
+import { track } from '../../../../utils/activityTracker.js';
 
 const COURIERS = ['JNE', 'J&T Express', 'SiCepat', 'AnterAja', 'Pos Indonesia', 'Ninja Xpress'];
 
@@ -50,6 +51,10 @@ function QCDeliveryCell({ order, onRefresh }) {
           await setOrderDeliveryMethod(order.id, 'delivery');
           const res = await setTrackingNumber(order.id, trackingNumber.trim(), courierName, 'qc');
           if (res.ok) {
+            track('Ubah Status Order', {
+              targetType: 'order', targetId: order.id,
+              metadata: { from: order.status ?? null, to: 'In Delivery', role: 'qc', via: 'courier' },
+            });
             showToast(`Dikirim via ${courierName}. Resi: ${trackingNumber.trim()}`, 'success');
             onRefresh();
           } else {
@@ -72,6 +77,10 @@ function QCDeliveryCell({ order, onRefresh }) {
           // Advance ke In Delivery via updateOrderStatus
           const res = await updateOrderStatus(order.id, 'In Delivery', 'qc');
           if (res.ok) {
+            track('Ubah Status Order', {
+              targetType: 'order', targetId: order.id,
+              metadata: { from: order.status ?? null, to: 'In Delivery', role: 'qc' },
+            });
             showToast('Jadwal pickup disimpan. Status → In Delivery.', 'success');
             onRefresh();
           } else {
@@ -170,6 +179,10 @@ function QCDeliveryCell({ order, onRefresh }) {
     async function handleFinished() {
       const res = await updateOrderStatus(order.id, 'Finished', 'qc');
       if (res.ok) {
+        track('Ubah Status Order', {
+          targetType: 'order', targetId: order.id,
+          metadata: { from: order.status ?? null, to: 'Finished', role: 'qc' },
+        });
         showToast('Pesanan selesai.', 'success');
         onRefresh();
       } else {

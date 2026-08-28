@@ -27,6 +27,7 @@ export const PERMISSIONS = [
   { key: 'dm',                 label: 'DM',                 roles: ['admin', 'cashier', 'cs', 'operational', 'qc', 'offline'] },
   { key: 'promo',              label: 'Promo',              roles: ['owner', 'admin'] },
   { key: 'homepage',           label: 'Homepage',           roles: ['owner', 'admin'] },
+  { key: 'log',                label: 'Log Aktivitas',      roles: ['owner', 'admin'] },
 
   // ── Owner-only ─────────────────────────────────────────────────────
   { key: 'accounts',           label: 'Account Management', roles: ['owner'] },

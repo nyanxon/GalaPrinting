@@ -10,6 +10,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../../../../core/httpClient.js';
+import { track } from '../../../../utils/activityTracker.js';
 import { formatCurrency } from '../../../../utils/format.js';
 import { showToast } from '../../../../core/toastEmitter.js';
 
@@ -122,9 +123,17 @@ function PromoModal({ promo, onClose, onSaved }) {
     try {
       if (promo) {
         await updatePromo(promo.id, payload);
+        track('Update Promo', {
+          targetType: 'promo', targetId: promo.id,
+          metadata: { code: payload.code },
+        });
         showToast('Promo berhasil diperbarui.', 'success');
       } else {
         await createPromo(payload);
+        track('Tambah Promo', {
+          targetType: 'promo',
+          metadata: { code: payload.code, type: payload.type },
+        });
         showToast('Promo berhasil dibuat.', 'success');
       }
       onSaved();
@@ -452,6 +461,10 @@ export default function PromoSection() {
     if (!window.confirm(`Hapus promo "${promo.code}"? Semua log penggunaan juga akan dihapus.`)) return;
     try {
       await deletePromo(promo.id);
+      track('Hapus Promo', {
+        targetType: 'promo', targetId: promo.id,
+        metadata: { code: promo.code },
+      });
       showToast('Promo dihapus.', 'success');
       loadPromos();
     } catch (err) {
@@ -462,6 +475,10 @@ export default function PromoSection() {
   async function handleToggleActive(promo) {
     try {
       await updatePromo(promo.id, { isActive: !promo.isActive });
+      track('Ubah Status Promo', {
+        targetType: 'promo', targetId: promo.id,
+        metadata: { isActive: !promo.isActive, code: promo.code },
+      });
       showToast(promo.isActive ? 'Promo dinonaktifkan.' : 'Promo diaktifkan.', 'success');
       loadPromos();
     } catch (err) {

@@ -26,6 +26,7 @@ import {
 } from '../services/orders.js';
 import { openInvoicePdf } from '../services/api/invoiceService.js';
 import { showToast } from '../core/toastEmitter.js';
+import { track } from '../utils/activityTracker.js';
 
 const STATUS_ORDER = [
   'Waiting for Payment', 'Payment Accepted', 'Waiting for Design Approval',
@@ -169,8 +170,18 @@ export default function useOrderList({
       setInvoiceMap((prev) => { const n = { ...prev }; delete n[orderId]; return n; });
       pendingAutoPrintRef.current.add(orderId);
     }
+    // Best-effort: read the current status so the log captures from → to.
+    let fromStatus = null;
+    try {
+      const order = await getOrderById(orderId);
+      fromStatus = order?.status ?? null;
+    } catch { /* keep null */ }
     const res = await updateOrderStatus(orderId, nextStatus, actorRole);
     if (res.ok) {
+      track('Ubah Status Order', {
+        targetType: 'order', targetId: orderId,
+        metadata: { from: fromStatus, to: nextStatus, role: actorRole },
+      });
       showToast(`Status → "${nextStatus}".`, 'success');
     } else {
       showToast(res.message || 'Gagal mengubah status.', 'error');
@@ -189,8 +200,17 @@ export default function useOrderList({
 
   const handleCancelConfirm = useCallback(async () => {
     if (!cancelReason.trim()) { setCancelReasonErr('Alasan pembatalan wajib diisi.'); return; }
+    let fromStatus = null;
+    try {
+      const order = await getOrderById(cancelTargetOrderId);
+      fromStatus = order?.status ?? null;
+    } catch { /* keep null */ }
     const res = await updateOrderStatus(cancelTargetOrderId, 'Cancelled', actorRole, cancelReason.trim());
     if (res.ok) {
+      track('Batalkan Order', {
+        targetType: 'order', targetId: cancelTargetOrderId,
+        metadata: { from: fromStatus, to: 'Cancelled', role: actorRole, reason: cancelReason.trim() },
+      });
       showToast('Pesanan dibatalkan.', 'success');
       setCancelDialogOpen(false);
       setCancelTargetOrderId(null);

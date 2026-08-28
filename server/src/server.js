@@ -14,6 +14,7 @@ import { testConnection } from './db/connection.js';
 import { initSocket } from './socket/index.js';
 import { ensureUploadDirs } from './utils/storage.js';
 import { ensureHomepageTables } from './db/ensureHomepageTables.js';
+import { startActivityLogPurgeJob } from './jobs/activityLogPurge.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -44,6 +45,14 @@ async function start() {
   // Ensure homepage tables exist (auto-creates on first deploy)
   diagLog('[server] Ensuring homepage tables...');
   await ensureHomepageTables();
+
+  // Start the Activity Log auto-retention job (best-effort; never fatal).
+  try {
+    startActivityLogPurgeJob();
+    diagLog('[server] Activity Log auto-retention job started.');
+  } catch (err) {
+    diagLog(`[server] WARN: watchActivityLogPurgeJob failed to start: ${err.message}`);
+  }
 
   diagLog('[server] Creating Express app...');
   const app    = createApp();

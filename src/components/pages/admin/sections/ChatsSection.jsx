@@ -16,6 +16,7 @@ import {
   searchCustomers,
   createOrGetConversation,
 } from '../../../../services/chatService.js';
+import { track } from '../../../../utils/activityTracker.js';
 import EmojiPickerButton from '../../../ui/EmojiPickerButton.jsx';
 import ChatAvatar from '../../../ui/ChatAvatar.jsx';
 import DropZone from '../../../ui/DropZone.jsx';
@@ -272,6 +273,10 @@ export default function ChatsSection() {
         setSendError(res.message || 'Gagal mengirim file.');
         return;
       }
+      track('Kirim File Chat', {
+        targetType: 'conversation', targetId: conv.customerId ?? null,
+        metadata: { customerName: conv.customerName ?? null, fileName: pendingFile.name },
+      });
       setPendingFile(null);
       loadMessages();
       loadConversations();
@@ -295,6 +300,10 @@ export default function ChatsSection() {
       return;
     }
 
+    track('Kirim Chat', {
+      targetType: 'conversation', targetId: conv.customerId ?? null,
+      metadata: { customerName: conv.customerName ?? null, type: 'text' },
+    });
     setInputText('');
     loadMessages();
     loadConversations();

@@ -11,6 +11,7 @@ import { listAllOrders } from '../../../services/orders.js';
 import { listConversations } from '../../../services/chatService.js';
 import { useSocket } from '../../context/SocketContext.jsx';
 import { useAdminSound } from '../../../hooks/useAdminSound.js';
+import { track, flush as flushActivity } from '../../../utils/activityTracker.js';
 import { filterNavByPermissions } from '../../../config/permissions.js';
 import OrdersSection from './sections/OrdersSection.jsx';
 import CustomersSection from './sections/CustomersSection.jsx';
@@ -21,6 +22,8 @@ import DMSection from './sections/DMSection.jsx';
 import PromoSection from './sections/PromoSection.jsx';
 import HomepageSection from './sections/HomepageSection.jsx';
 import CategoriesSection from './sections/CategoriesSection.jsx';
+import ActivityLogSection from '../shared/ActivityLogSection.jsx';
+import useLogUnreadBadge from '../../../hooks/useLogUnreadBadge.js';
 import InvoiceSection from './sections/InvoiceSection.jsx';
 import ExportDataCards from '../../ui/ExportDataCards.jsx';
 import SidebarShell from '../../staff/SidebarShell.jsx';
@@ -38,6 +41,7 @@ const ADMIN_NAV = [
   { id: 'dm',          label: 'DM' },
   { id: 'promo',       label: 'PROMO' },
   { id: 'homepage',    label: 'HOMEPAGE' },
+  { id: 'log',         label: 'LOG' },
 ];
 
 function ActivitySidebar({ onGoToOrders, onGoToChats }) {
@@ -178,6 +182,10 @@ export default function AdminDashboardPage() {
   const { muted, toggleMute, unlockAudio } = useAdminSound(socket);
 
   const filteredNav = filterNavByPermissions(ADMIN_NAV, user?.permissions);
+  const { unreadCount: unreadLogCount, refresh: refreshLogBadge } = useLogUnreadBadge(true);
+  const filteredNavWithBadge = filteredNav.map((n) =>
+    n.id === 'log' ? { ...n, badgeCount: unreadLogCount } : n
+  );
   const effectiveActive = filteredNav.some((n) => n.id === activeNav) ? activeNav : (filteredNav[0]?.id ?? 'dashboard');
   const isDashboard = effectiveActive === 'dashboard';
 
@@ -188,12 +196,19 @@ export default function AdminDashboardPage() {
     return () => clearTimeout(timer);
   }, [unlockAudio]);
 
+  // Refresh the LOG unread badge whenever the log section is opened.
+  useEffect(() => {
+    if (effectiveActive === 'log') refreshLogBadge();
+  }, [effectiveActive, refreshLogBadge]);
+
   function handleNavClick(navId) {
     setActiveNav(navId);
     setSidebarOpen(false); // close drawer on mobile after selection
   }
 
   async function handleLogout() {
+    track('Logout', { pagePath: window.location.pathname, targetType: 'account', targetId: user?.id ?? null });
+    flushActivity();
     await Promise.resolve(logout());
     updateUser(null);
     navigate('/register');
@@ -214,6 +229,7 @@ export default function AdminDashboardPage() {
       case 'dm':          return <DMSection />;
       case 'promo':       return <PromoSection />;
       case 'homepage':    return <HomepageSection />;
+      case 'log':         return <ActivityLogSection />;
       default:            return null;
     }
   }
@@ -222,7 +238,7 @@ export default function AdminDashboardPage() {
 
   return (
     <SidebarShell
-      navItems={filteredNav}
+      navItems={filteredNavWithBadge}
       activeNav={effectiveActive}
       onNavClick={handleNavClick}
       currentLabel={currentNavLabel}

@@ -86,7 +86,7 @@ const DEFINED_PATHS = [
   '/portfolio',
   '/tentang-kami',
   '/admin/login',
-  '/admin',
+  '/admin/superadmin',
   '/admin/owner',
   '/admin/cashier',
   '/admin/cs',
@@ -97,7 +97,7 @@ const DEFINED_PATHS = [
 
 /** Staff route definitions: path → { requiredRole, component } */
 const STAFF_ROUTES = [
-  { path: '/admin',       requiredRole: 'admin',       Component: AdminDashboardPage },
+  { path: '/admin/superadmin', requiredRole: 'admin',       Component: AdminDashboardPage },
   { path: '/admin/owner', requiredRole: 'owner',       Component: OwnerDashboardPage },
   { path: '/admin/cashier', requiredRole: 'cashier',   Component: CashierDashboardPage },
   { path: '/admin/cs',    requiredRole: 'cs',          Component: CSDashboardPage },
@@ -264,6 +264,8 @@ describe('Property 3: Unknown routes render NotFoundPage', () => {
       '/not-a-real-page',
       '/admin-fake',
       '/products-extra',
+      // Fase 6: the old /admin dashboard path is gone (no redirect) → 404
+      '/admin',
     ];
 
     for (const path of paths) {

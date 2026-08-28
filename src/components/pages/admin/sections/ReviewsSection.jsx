@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { listReviews, deleteReview } from '../../../../services/reviews.js';
 import { showToast } from '../../../../core/toastEmitter.js';
+import { track } from '../../../../utils/activityTracker.js';
 import { resolveApiUrl } from '../../../../core/httpClient.js';
 import { getSocket } from '../../../../core/socket.js';
 import PaginationBar from '../../../ui/PaginationBar.jsx';
@@ -76,6 +77,7 @@ export default function ReviewsSection() {
   async function handleDelete(reviewId) {
     if (!window.confirm('Hapus ulasan ini?')) return;
     await deleteReview(reviewId);
+    track('Hapus Ulasan', { targetType: 'review', targetId: reviewId });
     showToast('Ulasan dihapus.', 'success');
     loadReviews();
   }

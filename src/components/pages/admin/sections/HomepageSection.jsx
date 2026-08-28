@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { showToast } from '../../../../core/toastEmitter.js';
+import { track } from '../../../../utils/activityTracker.js';
 import { resolveApiUrl } from '../../../../core/httpClient.js';
 import DropZone from '../../../ui/DropZone.jsx';
 import ProductCard from '../../../ui/ProductCard.jsx';
@@ -270,6 +271,7 @@ function HeroTab() {
     if (!window.confirm('Hapus banner ini?')) return;
     try {
       await deleteHeroBanner(id);
+      track('Hapus Banner Homepage', { targetType: 'banner', targetId: id });
       showToast('Banner dihapus.', 'success');
       load();
     } catch { showToast('Gagal menghapus.', 'error'); }
@@ -501,6 +503,7 @@ function DesignShowcaseTab() {
     if (!window.confirm('Hapus item design ini?')) return;
     try {
       await deleteDesignItem(id);
+      track('Hapus Item Design', { targetType: 'design_item', targetId: id });
       showToast('Item design dihapus.', 'success');
       load();
     } catch { showToast('Gagal menghapus.', 'error'); }
@@ -763,6 +766,7 @@ function CatBannersTab() {
     if (!window.confirm('Hapus banner kategori ini?')) return;
     try {
       await deleteCatBanner(id);
+      track('Hapus Banner Kategori', { targetType: 'category_banner', targetId: id });
       showToast('Banner dihapus.', 'success');
       load();
     } catch { showToast('Gagal menghapus.', 'error'); }

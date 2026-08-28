@@ -15,6 +15,7 @@ import { useRef, useEffect, useState, useCallback, useContext } from 'react';
 import { formatCurrency } from '../../utils/format.js';
 import { parseDiscountRows, discountTotalFor } from '../../utils/discounts.js';
 import { AuthContext } from '../context/AuthContext.jsx';
+import { track } from '../../utils/activityTracker.js';
 
 const STORAGE_KEY = 'gala.thermal.paperSize';
 
@@ -230,6 +231,10 @@ export default function ThermalReceiptModal({ invoice, onClose, autoPrint }) {
   }, []);
 
   function handlePrint() {
+    track('Cetak Resi', {
+      targetType: 'invoice', targetId: invoice?.id ?? null,
+      metadata: { invoice_number: invoice?.invoice_number ?? null, paperSize, by: user?.name ?? null },
+    });
     const printContents = printRef.current?.innerHTML || '';
     const printWindow = window.open('', '_blank', 'width=400,height=600');
     if (!printWindow) {

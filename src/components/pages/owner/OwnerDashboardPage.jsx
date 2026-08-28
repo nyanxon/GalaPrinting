@@ -12,6 +12,7 @@ import { logout } from '../../../services/auth.js';
 import { listAllOrders } from '../../../services/orders.js';
 import { listConversations } from '../../../services/chatService.js';
 import { filterNavByPermissions } from '../../../config/permissions.js';
+import { track, flush as flushActivity } from '../../../utils/activityTracker.js';
 import OrdersSection from '../admin/sections/OrdersSection.jsx';
 import AccountsSection from './sections/AccountsSection.jsx';
 import ProductsSection from '../admin/sections/ProductsSection.jsx';
@@ -23,6 +24,8 @@ import HomepageSection from '../admin/sections/HomepageSection.jsx';
 import RevenueSection from './sections/RevenueSection.jsx';
 import ReportsSection from './sections/ReportsSection.jsx';
 import AnalyticsSection from './sections/AnalyticsSection.jsx';
+import ActivityLogSection from '../shared/ActivityLogSection.jsx';
+import useLogUnreadBadge from '../../../hooks/useLogUnreadBadge.js';
 import ExportDataCards from '../../ui/ExportDataCards.jsx';
 import SidebarShell from '../../staff/SidebarShell.jsx';
 import '../../../styles/css/pages/dashboard.css';
@@ -41,6 +44,7 @@ const OWNER_NAV = [
   { id: 'revenue',     label: 'REVENUE' },
   { id: 'reports',     label: 'REPORTS' },
   { id: 'analytics',   label: 'ANALYTICS' },
+  { id: 'log',         label: 'LOG' },
 ];
 
 function ActivitySidebar({ onGoToOrders, onGoToChats }) {
@@ -162,8 +166,17 @@ export default function OwnerDashboardPage() {
   const userName    = user?.name || 'Owner';
 
   const filteredNav = filterNavByPermissions(OWNER_NAV, user?.permissions);
+  const { unreadCount: unreadLogCount, refresh: refreshLogBadge } = useLogUnreadBadge(true);
+  const filteredNavWithBadge = filteredNav.map((n) =>
+    n.id === 'log' ? { ...n, badgeCount: unreadLogCount } : n
+  );
   const effectiveActive = filteredNav.some((n) => n.id === activeNav) ? activeNav : (filteredNav[0]?.id ?? 'dashboard');
   const isDashboard = effectiveActive === 'dashboard';
+
+  // Refresh the LOG unread badge whenever the log section is opened.
+  useEffect(() => {
+    if (effectiveActive === 'log') refreshLogBadge();
+  }, [effectiveActive, refreshLogBadge]);
 
   function handleNavClick(navId) {
     setActiveNav(navId);
@@ -171,6 +184,8 @@ export default function OwnerDashboardPage() {
   }
 
   async function handleLogout() {
+    track('Logout', { pagePath: window.location.pathname, targetType: 'account', targetId: user?.id ?? null });
+    flushActivity();
     await Promise.resolve(logout());
     updateUser(null);
     navigate('/register');
@@ -192,6 +207,7 @@ export default function OwnerDashboardPage() {
       case 'revenue':     return <RevenueSection />;
       case 'reports':     return <ReportsSection />;
       case 'analytics':   return <AnalyticsSection />;
+      case 'log':         return <ActivityLogSection />;
       default:            return null;
     }
   }
@@ -200,7 +216,7 @@ export default function OwnerDashboardPage() {
 
   return (
     <SidebarShell
-      navItems={filteredNav}
+      navItems={filteredNavWithBadge}
       activeNav={effectiveActive}
       onNavClick={handleNavClick}
       currentLabel={currentNavLabel}

@@ -85,8 +85,14 @@ export default function SidebarShell({
                 className={`staff-nav-item${activeNav === item.id ? ' active' : ''}`}
                 type="button"
                 onClick={() => onNavClick(item.id)}
+                style={item.badgeCount > 0 ? { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 } : undefined}
               >
-                {item.label}
+                <span>{item.label}</span>
+                {item.badgeCount > 0 && (
+                  <span className="staff-nav-badge" aria-label={`${item.badgeCount} belum dibaca`}>
+                    {item.badgeCount > 99 ? '99+' : item.badgeCount}
+                  </span>
+                )}
               </button>
             ))}
           </nav>

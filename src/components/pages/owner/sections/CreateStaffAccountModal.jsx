@@ -8,6 +8,7 @@
 import { useState } from 'react';
 import { createStaffAccount } from '../../../../services/adminManagement.js';
 import { STAFF_ROLE_CONFIG } from '../../../../config/roles.js';
+import { track } from '../../../../utils/activityTracker.js';
 
 const STAFF_ROLES_ORDER = ['admin', 'cashier', 'cs', 'operational', 'qc', 'offline'];
 
@@ -50,6 +51,10 @@ export default function CreateStaffAccountModal({ onClose, onCreated }) {
         password: form.password,
       });
       if (res.ok) {
+        track('Buat Akun Staff', {
+          targetType: 'account', targetId: res.user?.id ?? null,
+          metadata: { name: form.name?.trim(), email: form.email?.trim().toLowerCase(), role: form.role },
+        });
         onCreated(res.user);
         onClose();
       } else {

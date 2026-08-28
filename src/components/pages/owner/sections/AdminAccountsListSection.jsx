@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router';
 import { listAdminAccounts, promoteAccount, revokeAccount } from '../../../../services/adminManagement.js';
 import { STAFF_ROLE_CONFIG } from '../../../../config/roles.js';
 import { showToast } from '../../../../core/toastEmitter.js';
+import { track } from '../../../../utils/activityTracker.js';
 import ConfirmDialog from '../../../ui/ConfirmDialog.jsx';
 import CreateStaffAccountModal from './CreateStaffAccountModal.jsx';
 
@@ -59,6 +60,10 @@ export default function AdminAccountsListSection() {
     setBusyUserId(account.id);
     try {
       await promoteAccount(account.id);
+      track('Promote Admin', {
+        targetType: 'account', targetId: account.id,
+        metadata: { name: account.name ?? null, email: account.email ?? null },
+      });
       showToast(`${account.name || account.email} sekarang adalah Admin Dinamis.`);
       // Langsung arahkan Owner ke halaman permission akun tersebut.
       navigate(`/admin/owner/admin-management/${account.id}`);
@@ -76,6 +81,10 @@ export default function AdminAccountsListSection() {
     setBusyUserId(account.id);
     try {
       await revokeAccount(account.id);
+      track('Revoke Admin', {
+        targetType: 'account', targetId: account.id,
+        metadata: { name: account.name ?? null, email: account.email ?? null },
+      });
       showToast(`${account.name || account.email} dicabut dari Admin Dinamis.`);
       await loadAccounts();
     } catch (err) {

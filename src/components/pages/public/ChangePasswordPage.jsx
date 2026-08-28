@@ -15,6 +15,7 @@ import { AuthContext } from '../../context/AuthContext.jsx';
 import { changePassword } from '../../../services/auth.js';
 import { STAFF_ROLES } from '../../../config/roles.js';
 import { STAFF_ROLE_DASHBOARD_PATH } from '../../../config/roles.js';
+import { track } from '../../../utils/activityTracker.js';
 import '../../../styles/css/pages/register.css';
 
 function ChangePasswordPage() {
@@ -59,6 +60,10 @@ function ChangePasswordPage() {
         newPassword: form.newPassword,
       });
       if (res.ok) {
+        track('Ubah Password', {
+          targetType: 'account', targetId: user?.id ?? null,
+          metadata: { forced: Boolean(user?.must_change_password) },
+        });
         setSuccess(true);
         // Refresh user data to clear must_change_password
         const { getCurrentUser } = await import('../../../services/auth.js');
@@ -80,7 +85,7 @@ function ChangePasswordPage() {
       return;
     }
     if (STAFF_ROLES.includes(user.role)) {
-      navigate(STAFF_ROLE_DASHBOARD_PATH[user.role] || '/admin', { replace: true });
+      navigate(STAFF_ROLE_DASHBOARD_PATH[user.role] || '/admin/superadmin', { replace: true });
     } else {
       navigate('/profile', { replace: true });
     }

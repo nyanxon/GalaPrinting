@@ -8,11 +8,12 @@ import { logout, login, getCurrentUser } from '../../services/auth.js';
 import { listCategories } from '../../services/categories.js';
 import { formatCurrency } from '../../utils/format.js';
 import { resolveApiUrl } from '../../core/httpClient.js';
+import { track, flush as flushActivity } from '../../utils/activityTracker.js';
 import logoImg from '../../assets/logo.png';
 import LanguageSwitcher from '../ui/LanguageSwitcher.jsx';
 
 const STAFF_DASHBOARD = {
-  admin:       { path: '/admin',       label: '⚙️ Admin' },
+  admin:       { path: '/admin/superadmin', label: '⚙️ Admin' },
   owner:       { path: '/admin/owner', label: '👑 Owner' },
   cashier:     { path: '/admin/cashier',     label: '💰 Kasir' },
   cs:          { path: '/admin/cs',     label: '💬 CS' },
@@ -22,7 +23,7 @@ const STAFF_DASHBOARD = {
 };
 
 const STAFF_REDIRECT = {
-  admin: '/admin', owner: '/admin/owner', cashier: '/admin/cashier',
+  admin: '/admin/superadmin', owner: '/admin/owner', cashier: '/admin/cashier',
   cs: '/admin/cs', operational: '/admin/operational', qc: '/admin/qc', offline: '/admin/offline',
 };
 
@@ -114,6 +115,8 @@ function Navbar() {
   }, []);
 
   async function handleLogout() {
+    track('Logout', { pagePath: window.location.pathname, targetType: 'account', targetId: role ?? null });
+    flushActivity();
     await Promise.resolve(logout());
     updateUser(null);
     closeAllPopups();
@@ -145,7 +148,13 @@ function Navbar() {
     setLoginSubmitting(true);
     try {
       const res = await Promise.resolve(login({ email: loginEmail, password: loginPassword }));
-      if (!res.ok) { setLoginError(res.message); return; }
+      if (!res.ok) {
+        track('Login Gagal', { pagePath: window.location.pathname, targetType: 'account', metadata: { email: loginEmail, reason: res.message } });
+        flushActivity();
+        setLoginError(res.message); return;
+      }
+      track('Login', { pagePath: window.location.pathname, targetType: 'account', targetId: res.user?.id ?? null, metadata: { role: res.role, email: loginEmail } });
+      flushActivity();
       updateUser(await Promise.resolve(getCurrentUser()));
       closeAllPopups();
       if (STAFF_REDIRECT[res.role]) navigate(STAFF_REDIRECT[res.role]);
@@ -322,7 +331,7 @@ function Navbar() {
                           {role === 'admin' && (
                             <>
                               <div className="profile-popup-divider" />
-                              <Link className="profile-popup-item profile-popup-admin-link" to="/admin" onClick={closeAllPopups}>
+                              <Link className="profile-popup-item profile-popup-admin-link" to="/admin/superadmin" onClick={closeAllPopups}>
                                 <span>⚙️</span> {t('nav.adminPage')}
                               </Link>
                             </>
@@ -514,7 +523,7 @@ function Navbar() {
               {user && <Link to="/profile" onClick={() => setMobileOpen(false)}>{t('nav.myProfile')}</Link>}
               {user && <Link to="/cart" onClick={() => setMobileOpen(false)}>{t('nav.cart')} ({cartCount})</Link>}
               {role === 'admin' && (
-                <Link to="/admin" onClick={() => setMobileOpen(false)}>⚙️ {t('nav.adminPage')}</Link>
+                <Link to="/admin/superadmin" onClick={() => setMobileOpen(false)}>⚙️ {t('nav.adminPage')}</Link>
               )}
               {role === 'owner' && (
                 <Link to="/admin/owner" onClick={() => setMobileOpen(false)}>👑 {t('nav.ownerPage')}</Link>

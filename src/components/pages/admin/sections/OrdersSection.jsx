@@ -13,6 +13,7 @@ import {
   ORDER_STATUSES,
 } from '../../../../services/orders.js';
 import { formatCurrency } from '../../../../utils/format.js';
+import { track } from '../../../../utils/activityTracker.js';
 import { getInvoiceByOrderId, openInvoicePdf } from '../../../../services/api/invoiceService.js';
 import { showToast } from '../../../../core/toastEmitter.js';
 import OrderDetailModal from '../../../modals/OrderDetailModal.jsx';
@@ -120,8 +121,13 @@ export default function OrdersSection() {
       pendingAutoPrintRef.current.add(orderId);
     }
 
+    const current = result.items?.find((o) => o.id === orderId);
     const res = await updateOrderStatus(orderId, newStatus, actorRole);
     if (res.ok) {
+      track('Ubah Status Order', {
+        targetType: 'order', targetId: orderId,
+        metadata: { from: current?.status ?? null, to: newStatus, role: actorRole },
+      });
       showToast(`Status → "${newStatus}".`, 'success');
     } else {
       showToast(res.message || 'Gagal mengubah status.', 'error');

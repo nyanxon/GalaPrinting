@@ -3,6 +3,7 @@ import { AuthProvider, AuthNavigationHandler } from './components/context/AuthCo
 import { SocketProvider } from './components/context/SocketContext.jsx';
 import { CartProvider } from './components/context/CartContext.jsx';
 import { CartContext } from './components/context/CartContext.jsx';
+import ActivityTrackerProvider from './components/context/ActivityTrackerProvider.jsx';
 import { useContext, useEffect, Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
 import PublicLayout from './components/layout/PublicLayout.jsx';
@@ -30,7 +31,8 @@ const ForgotPasswordPage   = lazy(() => import('./components/pages/public/Forgot
 const ResetPasswordPage    = lazy(() => import('./components/pages/public/ResetPasswordPage.jsx'));
 const ChangePasswordPage   = lazy(() => import('./components/pages/public/ChangePasswordPage.jsx'));
 
-// Staff pages — lazy loaded, only fetched when navigating to /admin, /owner, etc.
+// Staff pages — lazy loaded, only fetched when navigating to /admin/superadmin,
+// /admin/owner, etc.
 const AdminDashboardPage       = lazy(() => import('./components/pages/admin/AdminDashboardPage.jsx'));
 const AdminLoginPage           = lazy(() => import('./components/pages/staff/AdminLoginPage.jsx'));
 const OwnerDashboardPage       = lazy(() => import('./components/pages/owner/OwnerDashboardPage.jsx'));
@@ -118,6 +120,7 @@ function App() {
         <Toast />
         <BrowserRouter>
           <AuthNavigationHandler />
+          <ActivityTrackerProvider />
           <Suspense fallback={<LoadingSpinner />}>
           <Routes>
             {/* Public layout — Navbar + Footer + ChatWidget */}
@@ -146,7 +149,7 @@ function App() {
 
             {/* Staff routes — no public shell, role-guarded */}
             <Route
-              path="/admin"
+              path="/admin/superadmin"
               element={
                 <RoleGuard requiredRole="admin">
                   <AdminDashboardPage />

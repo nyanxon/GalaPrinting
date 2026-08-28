@@ -14,6 +14,7 @@ import { getInvoiceByOrderId, openInvoicePdf, sendInvoiceEmail } from '../../../
 import { searchProducts, parseAttributes } from '../../../../services/products.js';
 import { parseNumber, billedAreaM2 } from '../../../../utils/billing.js';
 import { computeOneDiscount, discountTotalFor, parseDiscountRows } from '../../../../utils/discounts.js';
+import { track } from '../../../../utils/activityTracker.js';
 import ThermalReceiptModal from '../../../modals/ThermalReceiptModal.jsx';
 
 function makeItem() {
@@ -708,6 +709,13 @@ export default function OfflineOrderSection() {
       });
 
       setCreatedOrder(res.data.data);
+      track('Buat Order Offline', {
+        targetType: 'offline_order', targetId: res.data.data?.id ?? null,
+        metadata: {
+          order_number: res.data.data?.order_number ?? null,
+          has_discount: orderLevelRows.length > 0 || validItems.some((it) => it.discounts?.length),
+        },
+      });
       showToast(`Order offline ${res.data.data.order_number} berhasil dibuat.`, 'success');
     } catch (err) {
       const msg = err.response?.data?.message || 'Gagal membuat order offline.';

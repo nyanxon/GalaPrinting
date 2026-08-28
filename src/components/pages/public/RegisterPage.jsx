@@ -10,11 +10,12 @@ import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import { login, registerCustomer, getCurrentUser } from '../../../services/auth.js';
+import { track, flush as flushActivity } from '../../../utils/activityTracker.js';
 import regImg from '../../../assets/register-page.png'
 import '../../../styles/css/pages/register.css';
 
 const ROLE_PATHS = {
-  admin: '/admin',
+  admin: '/admin/superadmin',
   owner: '/admin/owner',
   cashier: '/admin/cashier',
   cs: '/admin/cs',
@@ -103,6 +104,10 @@ function RegisterPage() {
         setRegisterAlert({ message: res.message, type: 'error' });
         return;
       }
+      track('Registrasi Customer', {
+        targetType: 'account', targetId: res?.data?.id ?? null,
+        metadata: { name: name?.trim(), email: email?.trim() },
+      });
       // Show email-sent notice before redirecting
       setRegisterAlert({
         message: `Registrasi berhasil! Email verifikasi telah dikirim ke ${email.trim()}. Cek inbox Anda.`,
@@ -144,11 +149,15 @@ function RegisterPage() {
     try {
       const res = await Promise.resolve(login({ email: loginData.email, password: loginData.password, rememberMe: loginRememberMe }));
       if (!res.ok) {
+        track('Login Gagal', { pagePath: window.location.pathname, targetType: 'account', metadata: { email: loginData.email, role: res.role ?? null, reason: res.message } });
+        flushActivity();
         setLoginAlert({ message: res.message, type: 'error' });
         return;
       }
       const currentUser = await Promise.resolve(getCurrentUser());
       updateUser(currentUser);
+      track('Login', { pagePath: window.location.pathname, targetType: 'account', targetId: currentUser?.id ?? null, metadata: { role: res.role, email: loginData.email } });
+      flushActivity();
       const path = ROLE_PATHS[res.role] || '/';
       navigate(path, { replace: true });
     } finally {

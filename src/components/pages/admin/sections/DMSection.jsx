@@ -19,6 +19,7 @@ import {
   validateFile,
 } from '../../../../services/chatService.js';
 import { api } from '../../../../core/httpClient.js';
+import { track } from '../../../../utils/activityTracker.js';
 import EmojiPickerButton from '../../../ui/EmojiPickerButton.jsx';
 import ChatAvatar from '../../../ui/ChatAvatar.jsx';
 import DropZone from '../../../ui/DropZone.jsx';
@@ -287,6 +288,10 @@ export default function DMSection() {
         await api.post(`/api/conversations/${activeConvId}/messages/file`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
+        track('Kirim File DM', {
+          targetType: 'dm_conversation', targetId: activeConvId,
+          metadata: { type: 'file', fileName: pendingFile.name ?? null },
+        });
         setPendingFile(null);
         loadMessages();
         loadDMConversations();
@@ -306,6 +311,10 @@ export default function DMSection() {
 
     try {
       await api.post(`/api/conversations/${activeConvId}/messages`, { content: trimmed });
+      track('Kirim DM', {
+        targetType: 'dm_conversation', targetId: activeConvId,
+        metadata: { type: 'text' },
+      });
       setInputText('');
       loadMessages();
       loadDMConversations();

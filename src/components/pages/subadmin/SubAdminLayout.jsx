@@ -15,6 +15,7 @@ import { STAFF_ROLE_CONFIG } from '../../../config/roles.js';
 import { filterNavByPermissions } from '../../../config/permissions.js';
 import { getSocket } from '../../../core/socket.js';
 import { useAdminSound } from '../../../hooks/useAdminSound.js';
+import { track, flush as flushActivity } from '../../../utils/activityTracker.js';
 import SidebarShell from '../../staff/SidebarShell.jsx';
 import '../../../styles/css/pages/dashboard.css';
 
@@ -56,6 +57,8 @@ export default function SubAdminLayout({ navItems, sections, title }) {
   }
 
   async function handleLogout() {
+    track('Logout', { pagePath: window.location.pathname, targetType: 'account', targetId: user?.id ?? null });
+    flushActivity();
     await Promise.resolve(logout());
     updateUser(null);
     navigate('/register');

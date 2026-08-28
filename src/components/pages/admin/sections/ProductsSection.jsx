@@ -19,6 +19,7 @@ import {
 import { createCategory } from '../../../../services/categories.js';
 import { validateProduct } from '../../../../utils/validate.js';
 import { formatCurrency } from '../../../../utils/format.js';
+import { track } from '../../../../utils/activityTracker.js';
 import { showToast } from '../../../../core/toastEmitter.js';
 
 const PAGE_SIZE = 10;
@@ -314,9 +315,17 @@ function ProductModal({ product, categories, onClose, onSaved }) {
           setFormError(res.message || 'Gagal memperbarui produk.');
           return;
         }
+        track('Update Produk', {
+          targetType: 'product', targetId: product.id,
+          metadata: { name: data.name },
+        });
         showToast('Produk diperbarui.', 'success');
       } else {
-        await addProduct(data);
+        const res = await addProduct(data);
+        track('Tambah Produk', {
+          targetType: 'product', targetId: res?.data?.id ?? res?.id ?? null,
+          metadata: { name: data.name, category: data.category },
+        });
         showToast('Produk ditambahkan.', 'success');
       }
       onSaved();
@@ -709,6 +718,7 @@ export default function ProductsSection() {
         showToast(res.message || 'Gagal menghapus produk.', 'error');
         return;
       }
+      track('Hapus Produk', { targetType: 'product', targetId: productId });
       showToast('Produk dihapus.', 'success');
       loadData();
     } catch (err) {
