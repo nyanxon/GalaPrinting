@@ -9,22 +9,25 @@ import {
 // Nav ids as used by CashierDashboardPage (source of the reported bug).
 const CASHIER_NAV = [
   { id: 'orders',   label: '📋 Pesanan' },
-  { id: 'offline',  label: '🏪 Order Offline' },
+  { id: 'invoices', label: '🧾 Invoices' },
   { id: 'recap',    label: '📊 Rekap Harian' },
   { id: 'chat',     label: '💬 Chat Customer' },
   { id: 'dm',       label: '📨 Pesan Staff' },
 ];
 
 describe('permissions — menu flow owner → cashier', () => {
-  it('exposes chats + dm permission keys for cashier role', () => {
+  it('exposes chats + dm + invoices permission keys for cashier role', () => {
     const keys = getPermissionsForRole('cashier').map((p) => p.key);
     expect(keys).toContain('chats');
     expect(keys).toContain('dm');
+    expect(keys).toContain('invoices');
+    // Order Offline sudah dipindah dari Cashier ke CS.
+    expect(keys).not.toContain('order_offline');
   });
 
   it('null permissions (never edited) shows every menu', () => {
     expect(filterNavByPermissions(CASHIER_NAV, null).map((i) => i.id)).toEqual([
-      'orders', 'offline', 'recap', 'chat', 'dm',
+      'orders', 'invoices', 'recap', 'chat', 'dm',
     ]);
   });
 
@@ -37,7 +40,7 @@ describe('permissions — menu flow owner → cashier', () => {
     const visible = filterNavByPermissions(CASHIER_NAV, allCashierPerms).map((i) => i.id);
     expect(visible).toContain('chat');
     expect(visible).toContain('dm');
-    expect(visible).toEqual(['orders', 'offline', 'recap', 'chat', 'dm']);
+    expect(visible).toEqual(['orders', 'invoices', 'recap', 'chat', 'dm']);
   });
 
   it('unchecking Chats hides Chat Customer but keeps Pesan Staff', () => {
@@ -57,7 +60,7 @@ describe('permissions — menu flow owner → cashier', () => {
   it('each permission key alone reveals exactly its mapped menu', () => {
     const cases = [
       { perms: ['orders'],        visible: ['orders'] },
-      { perms: ['order_offline'], visible: ['offline'] },
+      { perms: ['invoices'],      visible: ['invoices'] },
       { perms: ['daily_recap'],   visible: ['recap'] },
       { perms: ['chats'],         visible: ['chat'] },
       { perms: ['dm'],            visible: ['dm'] },

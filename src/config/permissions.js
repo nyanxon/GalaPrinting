@@ -36,14 +36,14 @@ export const PERMISSIONS = [
   { key: 'analytics',          label: 'Analytics',          roles: ['owner'] },
 
   // ── Admin-only ─────────────────────────────────────────────────────
-  { key: 'invoices',           label: 'Invoices',           roles: ['admin'] },
+  { key: 'invoices',           label: 'Invoices',           roles: ['admin', 'cashier'] },
   { key: 'customers',          label: 'Customers',          roles: ['admin'] },
 
   // ── CS-only ────────────────────────────────────────────────────────
   { key: 'custom_order',       label: 'Custom Order',       roles: ['cs'] },
+  { key: 'order_offline',      label: 'Order Offline',      roles: ['cs'] },
 
   // ── Cashier-only ──────────────────────────────────────────────────
-  { key: 'order_offline',      label: 'Order Offline',      roles: ['cashier'] },
   { key: 'daily_recap',        label: 'Rekap Harian',       roles: ['cashier'] },
 
   // ── Offline-only ──────────────────────────────────────────────────

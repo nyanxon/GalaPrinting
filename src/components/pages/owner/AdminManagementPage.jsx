@@ -10,7 +10,7 @@
 
 import { useState, useContext } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { AuthContext } from '../../context/AuthContext.jsx';
+import { AuthContext, getUserAuthPath } from '../../context/AuthContext.jsx';
 import { logout } from '../../../services/auth.js';
 import { track, flush as flushActivity } from '../../../utils/activityTracker.js';
 import SidebarShell from '../../staff/SidebarShell.jsx';
@@ -43,7 +43,7 @@ export default function AdminManagementPage() {
     flushActivity();
     await Promise.resolve(logout());
     updateUser(null);
-    navigate('/register');
+    navigate(getUserAuthPath(user));
   }
 
   return (

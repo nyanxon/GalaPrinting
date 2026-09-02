@@ -205,10 +205,13 @@ export async function listInvoices({ page = 1, limit = 20, payment_status } = {}
 /**
  * Update status pembayaran invoice. Jika paid, lock invoice & set paid_at.
  * @param {string} id
- * @param {string} newStatus  'unpaid'|'paid'|'partial'
+ * @param {string} newStatus  'unpaid'|'paid'|'dp'
  * @param {string} paymentMethod
+ * @param {number} [dpAmount] nominal DP, WAJIB diisi jika newStatus = 'dp'
+ *                            (harus > 0 dan < total). Nilai DP dipertahankan
+ *                            sebagai histori walau status berubah ke status lain.
  */
-export async function updateInvoicePaymentStatus(id, newStatus, paymentMethod) {
+export async function updateInvoicePaymentStatus(id, newStatus, paymentMethod, dpAmount) {
   const invoice = await getInvoiceById(id);
   if (!invoice) {
     const err = new Error('Invoice tidak ditemukan.');
@@ -223,14 +226,45 @@ export async function updateInvoicePaymentStatus(id, newStatus, paymentMethod) {
     throw err;
   }
 
+  // Validasi status
+  if (!['unpaid', 'paid', 'dp'].includes(newStatus)) {
+    const err = new Error('payment_status tidak valid. Gunakan: unpaid, paid, atau dp.');
+    err.status = 422;
+    throw err;
+  }
+
+  const total = Number(invoice.total || 0);
+
+  // Nominal DP wajib & masuk akal saat status = DP
+  let dpAmountValue = null;
+  if (newStatus === 'dp') {
+    const dp = Number(dpAmount);
+    if (!dpAmount || Number.isNaN(dp) || !Number.isFinite(dp)) {
+      const err = new Error('Nominal DP wajib diisi.'); err.status = 422; throw err;
+    }
+    if (dp <= 0) {
+      const err = new Error('Nominal DP harus lebih dari 0.'); err.status = 422; throw err;
+    }
+    if (dp >= total) {
+      const err = new Error('Nominal DP harus lebih kecil dari total tagihan (jika lunas, gunakan status Lunas).');
+      err.status = 422; throw err;
+    }
+    dpAmountValue = dp;
+  } else {
+    // Pertahankan dp_amount sebagai histori (tidak direset).
+    dpAmountValue = invoice.dp_amount != null
+      ? Number(invoice.dp_amount)
+      : null;
+  }
+
   const locked = newStatus === 'paid' ? 1 : 0;
   const paidAt = newStatus === 'paid' ? new Date() : null;
 
   await query(
     `UPDATE invoices
-     SET payment_status = ?, payment_method = ?, locked = ?, paid_at = ?
+     SET payment_status = ?, payment_method = ?, dp_amount = ?, locked = ?, paid_at = ?
      WHERE id = ?`,
-    [newStatus, paymentMethod || invoice.payment_method, locked, paidAt, id]
+    [newStatus, paymentMethod || invoice.payment_method, dpAmountValue, locked, paidAt, id]
   );
 
   return getInvoiceById(id);

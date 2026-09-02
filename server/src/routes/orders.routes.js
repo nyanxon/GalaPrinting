@@ -25,7 +25,7 @@ router.post('/custom-customer', authenticate, requireRole(...ALL_ROLES), ctrl.cr
 
 // Staff-created orders
 router.post('/custom',   authenticate, requireRole('cs', 'admin'), ctrl.createCustomOrder);
-router.post('/offline',  authenticate, requireRole('offline', 'admin', 'cashier'), ctrl.createOfflineOrder);
+router.post('/offline',  authenticate, requireRole('offline', 'admin', 'cs'), ctrl.createOfflineOrder);
 
 // Staff list
 router.get('/',          authenticate, requireRole(...STAFF_ROLES), ctrl.listOrders);

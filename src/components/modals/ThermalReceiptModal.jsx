@@ -63,6 +63,23 @@ function formatDate(date) {
 
 /* ── Receipt Content ──────────────────────────────────────────────────────── */
 
+/** Dimensi item: "200 x 172 cm" dari length_cm/width_cm, fallback item.size. */
+function getItemDims(item) {
+  if (!item) return '';
+  const len = item.length_cm;
+  const wid = item.width_cm;
+  const hasDims = len != null && len !== '' && wid != null && wid !== '';
+  if (hasDims) {
+    const f = (v) => {
+      const n = Number(v);
+      return String(Number.isInteger(n) ? n : n);
+    };
+    return `${f(len)} x ${f(wid)} cm`;
+  }
+  if (item.size) return String(item.size);
+  return '';
+}
+
 function ThermalReceiptContent({ invoice, paperSize, operatorName }) {
   const cfg = PAPER_CONFIG[paperSize];
   const items = Array.isArray(invoice.items) ? invoice.items : [];
@@ -109,7 +126,7 @@ function ThermalReceiptContent({ invoice, paperSize, operatorName }) {
   const paymentStatusLabel = {
     paid: 'Lunas',
     unpaid: 'Belum Bayar',
-    partial: 'Bayar Sebagian',
+    dp: 'DP',
   };
 
   return (
@@ -152,6 +169,11 @@ function ThermalReceiptContent({ invoice, paperSize, operatorName }) {
           return (
             <div key={item.id || i} style={{ marginBottom: '3px' }}>
               <div style={{ wordBreak: 'break-word' }}>{i + 1}. {item.name}</div>
+              {getItemDims(item) && (
+                <div style={{ ...css.muted, fontSize: `${cfg.smallFontSize}px`, paddingLeft: '12px' }}>
+                  {getItemDims(item)}
+                </div>
+              )}
               <div style={{ ...css.muted, fontSize: `${cfg.smallFontSize}px`, paddingLeft: '12px' }}>
                 <span>{item.quantity} x {formatCurrency(item.price)}</span>
                 <span style={{ float: 'right' }}>{formatCurrency(sub)}</span>

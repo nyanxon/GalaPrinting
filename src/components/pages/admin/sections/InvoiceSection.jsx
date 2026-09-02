@@ -4,7 +4,6 @@
  * Fitur 2: list invoice, update payment status.
  * Fitur 3: tampilkan delivery method di detail order.
  * Fitur 4: tombol Print Resi (termal) & Download/Kirim PDF A4.
- * Fitur offline: tombol "➕ Order Offline" untuk input pesanan toko.
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -12,11 +11,9 @@ import {
   listInvoices,
   getInvoiceById,
   updateInvoicePaymentStatus,
-  updateInvoice,
   sendInvoiceEmail,
   openInvoicePdf,
 } from '../../../../services/api/invoiceService.js';
-import { api } from '../../../../core/httpClient.js';
 import { showToast } from '../../../../core/toastEmitter.js';
 import { formatCurrency } from '../../../../utils/format.js';
 import PaginationBar from '../../../ui/PaginationBar.jsx';
@@ -28,143 +25,8 @@ const PAGE_SIZE = 20;
 const PAYMENT_STATUS_LABELS = {
   unpaid:  { label: 'Belum Bayar', color: '#b91c1c', bg: '#fee2e2' },
   paid:    { label: 'Lunas',       color: '#166534', bg: '#dcfce7' },
-  partial: { label: 'Partial',     color: '#92400e', bg: '#fef3c7' },
+  dp:      { label: 'DP',          color: '#92400e', bg: '#fef3c7' },
 };
-
-// ── Create Offline Order Modal ────────────────────────────────────────────────
-
-function CreateOfflineOrderModal({ onClose, onCreated }) {
-  const [customerName, setCustomerName]   = useState('');
-  const [customerPhone, setCustomerPhone] = useState('');
-  const [customerAddress, setCustomerAddress] = useState('');
-  const [adminNote, setAdminNote]         = useState('');
-  const [items, setItems]                 = useState([{ name: '', price: '', quantity: 1 }]);
-  const [loading, setLoading]             = useState(false);
-  const [error, setError]                 = useState('');
-
-  function addItem() {
-    setItems((prev) => [...prev, { name: '', price: '', quantity: 1 }]);
-  }
-
-  function removeItem(idx) {
-    setItems((prev) => prev.filter((_, i) => i !== idx));
-  }
-
-  function updateItem(idx, field, value) {
-    setItems((prev) => prev.map((item, i) => i === idx ? { ...item, [field]: value } : item));
-  }
-
-  const subtotal = items.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 1), 0);
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (!customerName.trim()) { setError('Nama customer wajib diisi.'); return; }
-    if (items.some((it) => !it.name.trim() || !it.price)) { setError('Semua item harus memiliki nama dan harga.'); return; }
-
-    setLoading(true);
-    setError('');
-    try {
-      const validItems = items.map((it) => ({
-        name: it.name.trim(),
-        price: Number(it.price),
-        quantity: Number(it.quantity) || 1,
-      }));
-
-      const res = await api.post('/api/orders/offline', {
-        customerName: customerName.trim(),
-        customerPhone: customerPhone.trim(),
-        customerAddress: customerAddress.trim(),
-        adminNote: adminNote.trim(),
-        items: validItems,
-        subtotal,
-      });
-
-      showToast(`Order offline berhasil dibuat: ${res.data.data.order_number}`, 'success');
-      onCreated(res.data.data);
-      onClose();
-    } catch (err) {
-      setError(err.response?.data?.message || 'Gagal membuat order offline.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <div className="inv-modal-overlay" onClick={onClose}>
-      <div className="inv-modal inv-modal--wide" onClick={(e) => e.stopPropagation()}>
-        <div className="inv-modal-header">
-          <h3>🏪 Input Order Offline / Toko</h3>
-          <button type="button" className="inv-modal-close" onClick={onClose}>✕</button>
-        </div>
-        <form onSubmit={handleSubmit} className="inv-form">
-          {/* Data Customer */}
-          <div style={{ background: '#faf8f5', borderRadius: '8px', padding: '14px', marginBottom: '4px' }}>
-            <div className="inv-section-title" style={{ marginBottom: '10px' }}>Data Customer</div>
-            <div className="inv-form-row">
-              <label className="inv-label">
-                Nama Customer <span style={{ color: '#b91c1c' }}>*</span>
-                <input className="adm-input" type="text" placeholder="Nama customer…" value={customerName} onChange={(e) => setCustomerName(e.target.value)} required />
-              </label>
-              <label className="inv-label">
-                No. Telepon
-                <input className="adm-input" type="tel" placeholder="0812xxxx…" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
-              </label>
-            </div>
-            <label className="inv-label" style={{ marginTop: '10px' }}>
-              Alamat
-              <input className="adm-input" type="text" placeholder="Alamat customer (opsional)…" value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} />
-            </label>
-          </div>
-
-          {/* Item Pesanan */}
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <div className="inv-section-title" style={{ marginBottom: 0 }}>Item Pesanan</div>
-              <button type="button" className="adm-btn" style={{ padding: '4px 12px', fontSize: '12px' }} onClick={addItem}>+ Tambah Item</button>
-            </div>
-            {items.map((item, idx) => (
-              <div key={idx} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: '8px', marginBottom: '8px', alignItems: 'flex-end' }}>
-                <label className="inv-label">
-                  {idx === 0 && <>Nama Produk <span style={{ color: '#b91c1c' }}>*</span></>}
-                  <input className="adm-input" type="text" placeholder="Nama produk/jasa…" value={item.name} onChange={(e) => updateItem(idx, 'name', e.target.value)} required />
-                </label>
-                <label className="inv-label">
-                  {idx === 0 && <>Harga Satuan <span style={{ color: '#b91c1c' }}>*</span></>}
-                  <input className="adm-input" type="number" min="0" placeholder="0" value={item.price} onChange={(e) => updateItem(idx, 'price', e.target.value)} required />
-                </label>
-                <label className="inv-label">
-                  {idx === 0 && 'Qty'}
-                  <input className="adm-input" type="number" min="1" value={item.quantity} onChange={(e) => updateItem(idx, 'quantity', e.target.value)} />
-                </label>
-                <div style={{ paddingBottom: '2px' }}>
-                  {items.length > 1 && (
-                    <button type="button" className="adm-btn" style={{ padding: '6px 10px', color: '#b91c1c', border: '1px solid #fca5a5' }} onClick={() => removeItem(idx)}>✕</button>
-                  )}
-                </div>
-              </div>
-            ))}
-            <div style={{ textAlign: 'right', fontSize: '14px', fontWeight: 700, color: '#111827', marginTop: '4px' }}>
-              Subtotal: {formatCurrency(subtotal)}
-            </div>
-          </div>
-
-          <label className="inv-label">
-            Catatan Admin
-            <textarea className="adm-input" rows={2} value={adminNote} onChange={(e) => setAdminNote(e.target.value)} placeholder="Catatan internal (opsional)…" style={{ resize: 'vertical' }} />
-          </label>
-
-          {error && <p className="inv-error">{error}</p>}
-          <div className="inv-form-actions">
-            <button type="button" className="adm-btn" onClick={onClose}>Batal</button>
-            <button type="submit" className="adm-btn adm-btn--primary" disabled={loading}>
-              {loading ? 'Menyimpan…' : '💾 Simpan Order Offline'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
 
 // ── Invoice Detail Modal ──────────────────────────────────────────────────────
 
@@ -175,6 +37,7 @@ function InvoiceDetailModal({ invoiceId, onClose, onUpdated }) {
   const [emailSending, setEmailSending]     = useState(false);
   const [newStatus, setNewStatus] = useState('');
   const [newMethod, setNewMethod] = useState('');
+  const [newDpAmount, setNewDpAmount] = useState('');
   const [thermalOpen, setThermalOpen] = useState(false);
 
   useEffect(() => {
@@ -183,6 +46,7 @@ function InvoiceDetailModal({ invoiceId, onClose, onUpdated }) {
         setInvoice(inv);
         setNewStatus(inv.payment_status);
         setNewMethod(inv.payment_method || '');
+        setNewDpAmount(inv.dp_amount != null ? String(inv.dp_amount) : '');
       })
       .catch(() => showToast('Gagal memuat invoice.', 'error'))
       .finally(() => setLoading(false));
@@ -192,7 +56,7 @@ function InvoiceDetailModal({ invoiceId, onClose, onUpdated }) {
     if (!newStatus || invoice.locked) return;
     setStatusUpdating(true);
     try {
-      const updated = await updateInvoicePaymentStatus(invoice.id, newStatus, newMethod);
+      const updated = await updateInvoicePaymentStatus(invoice.id, newStatus, newMethod, newDpAmount);
       setInvoice(updated);
       onUpdated(updated);
       showToast(`Status pembayaran diperbarui: ${updated.payment_status}`, 'success');
@@ -317,7 +181,7 @@ function InvoiceDetailModal({ invoiceId, onClose, onUpdated }) {
                     Status
                     <select className="adm-input" value={newStatus} onChange={(e) => setNewStatus(e.target.value)}>
                       <option value="unpaid">Belum Bayar</option>
-                      <option value="partial">Partial</option>
+                      <option value="dp">DP</option>
                       <option value="paid">Lunas</option>
                     </select>
                   </label>
@@ -328,7 +192,6 @@ function InvoiceDetailModal({ invoiceId, onClose, onUpdated }) {
                       <option value="Transfer Bank">Transfer Bank</option>
                       <option value="QRIS">QRIS</option>
                       <option value="Tunai">Tunai</option>
-                      <option value="COD">COD</option>
                     </select>
                   </label>
                   <button
@@ -341,6 +204,33 @@ function InvoiceDetailModal({ invoiceId, onClose, onUpdated }) {
                     {statusUpdating ? 'Menyimpan…' : 'Simpan'}
                   </button>
                 </div>
+
+                {newStatus === 'dp' && (
+                  <div className="inv-form-row" style={{ alignItems: 'flex-end', marginTop: '12px' }}>
+                    <label className="inv-label">
+                      Nominal DP
+                      <input
+                        className="adm-input"
+                        type="number"
+                        min="0"
+                        step="any"
+                        placeholder="0"
+                        value={newDpAmount}
+                        onChange={(e) => setNewDpAmount(e.target.value)}
+                      />
+                    </label>
+                    <div className="inv-label" style={{ paddingBottom: '6px' }}>
+                      <div className="inv-detail-label">DP</div>
+                      <div className="inv-detail-value">{newDpAmount ? formatCurrency(Number(newDpAmount) || 0) : '—'}</div>
+                    </div>
+                    <div className="inv-label" style={{ paddingBottom: '6px' }}>
+                      <div className="inv-detail-label">Sisa Pembayaran</div>
+                      <div className="inv-detail-value" style={{ color: '#b91c1c' }}>
+                        {formatCurrency(Math.max(Number(invoice.total || 0) - (Number(newDpAmount) || 0), 0))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -402,7 +292,6 @@ export default function InvoiceSection() {
   const [result, setResult]           = useState({ items: [], total: 0, page: 1, limit: PAGE_SIZE, totalPages: 1 });
   const [page, setPage]               = useState(1);
   const [filterStatus, setFilterStatus] = useState('');
-  const [offlineOpen, setOfflineOpen] = useState(false);
   const [detailId, setDetailId]       = useState(null);
 
   const fetchInvoices = useCallback(async () => {
@@ -437,10 +326,6 @@ export default function InvoiceSection() {
     };
   }, [fetchInvoices]);
 
-  function handleCreated() {
-    fetchInvoices();
-  }
-
   function handleUpdated(updatedInv) {
     setResult((prev) => ({
       ...prev,
@@ -461,16 +346,9 @@ export default function InvoiceSection() {
           >
             <option value="">Semua Status</option>
             <option value="unpaid">Belum Bayar</option>
-            <option value="partial">Partial</option>
+            <option value="dp">DP</option>
             <option value="paid">Lunas</option>
           </select>
-          <button
-            type="button"
-            className="adm-btn adm-btn--primary"
-            onClick={() => setOfflineOpen(true)}
-          >
-            🏪 Order Offline
-          </button>
         </div>
       </div>
 
@@ -536,13 +414,6 @@ export default function InvoiceSection() {
         limit={result.limit}
         onPageChange={setPage}
       />
-
-      {offlineOpen && (
-        <CreateOfflineOrderModal
-          onClose={() => setOfflineOpen(false)}
-          onCreated={() => { handleCreated(); }}
-        />
-      )}
 
       {detailId && (
         <InvoiceDetailModal

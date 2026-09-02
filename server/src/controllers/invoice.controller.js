@@ -87,15 +87,15 @@ export async function updateInvoice(req, res, next) {
 /** PATCH /api/invoices/:id/payment-status */
 export async function updatePaymentStatus(req, res, next) {
   try {
-    const { payment_status, payment_method } = req.body;
+    const { payment_status, payment_method, dp_amount } = req.body;
     if (!payment_status) {
       return res.status(422).json({ ok: false, message: 'payment_status wajib diisi.' });
     }
-    if (!['unpaid', 'paid', 'partial'].includes(payment_status)) {
-      return res.status(422).json({ ok: false, message: 'payment_status tidak valid. Gunakan: unpaid, paid, atau partial.' });
+    if (!['unpaid', 'paid', 'dp'].includes(payment_status)) {
+      return res.status(422).json({ ok: false, message: 'payment_status tidak valid. Gunakan: unpaid, paid, atau dp.' });
     }
 
-    const invoice = await svc.updateInvoicePaymentStatus(req.params.id, payment_status, payment_method);
+    const invoice = await svc.updateInvoicePaymentStatus(req.params.id, payment_status, payment_method, dp_amount);
 
     // Kirim email PDF otomatis jika status berubah jadi paid (fire-and-forget)
     if (payment_status === 'paid' && invoice.customer_email) {

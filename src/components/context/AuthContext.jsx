@@ -15,6 +15,15 @@ import { STAFF_ROLES } from '../../config/roles.js';
 
 export const AuthContext = createContext(null);
 
+/**
+ * Path login/logout untuk tiap tipe user — satu sumber kebenaran.
+ * Dipakai oleh session-expired redirect DAN logout manual di semua role.
+ * Staff/admin → /admin/login, customer → /register.
+ */
+export function getUserAuthPath(user) {
+  return (user && STAFF_ROLES.includes(user.role)) ? '/admin/login' : '/register';
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser]       = useState(null);
   // loading=true sampai proses silent-refresh selesai.
@@ -61,10 +70,7 @@ function AuthNavigationHandler() {
 
   useEffect(() => {
     function handleSessionExpired() {
-      const loginPath = (user && STAFF_ROLES.includes(user.role))
-        ? '/admin/login'
-        : '/register';
-      navigate(loginPath, { replace: true });
+      navigate(getUserAuthPath(user), { replace: true });
     }
     function handleMustChangePassword() {
       navigate('/change-password', { replace: true });

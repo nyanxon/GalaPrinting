@@ -18,7 +18,7 @@
 
 import { useState, useContext, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
-import { AuthContext } from '../../context/AuthContext.jsx';
+import { AuthContext, getUserAuthPath } from '../../context/AuthContext.jsx';
 import { logout } from '../../../services/auth.js';
 import { createOfflineOrder, listAllOrders, STATUS_CONFIG } from '../../../services/orders.js';
 import { STAFF_ROLE_CONFIG } from '../../../config/roles.js';
@@ -570,7 +570,7 @@ export default function OfflineDashboardPage() {
     flushActivity();
     await Promise.resolve(logout());
     updateUser(null);
-    navigate('/register');
+    navigate(getUserAuthPath(user));
   }
 
   function handleNavClick(navId) {

@@ -82,7 +82,7 @@ function dims(item) {
       const n = Number(v);
       return String(Number.isInteger(n) ? n : n);
     };
-    return `${f(len)} x ${f(wid)}`;
+    return `${f(len)} x ${f(wid)} cm`;
   }
   if (item.size) return String(item.size);
   return '';
@@ -141,7 +141,7 @@ function ThermalSpkContent({ invoice, paperSize, operatorName }) {
 
   const statusLabel = {
     paid: 'LUNAS',
-    partial: 'DP',
+    dp: 'DP',
     unpaid: 'BELUM BAYAR',
   };
   const statusText = statusLabel[invoice.payment_status] || invoice.payment_status || '—';

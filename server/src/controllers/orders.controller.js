@@ -258,6 +258,7 @@ export async function createOfflineOrder(req, res, next) {
             notes,
             lengthCm: l,
             widthCm: w,
+            designFilePath: item.designFilePath ?? item.design_file_path ?? null,
           };
         }
 
@@ -275,6 +276,7 @@ export async function createOfflineOrder(req, res, next) {
           attributes: selectedAttrs.length > 0 ? selectedAttrs : undefined,
           discounts: itemDiscounts.length > 0 ? itemDiscounts : undefined,
           notes,
+          designFilePath: item.designFilePath ?? item.design_file_path ?? null,
         };
       }
 
@@ -286,6 +288,7 @@ export async function createOfflineOrder(req, res, next) {
         quantity,
         discounts: itemDiscounts.length > 0 ? itemDiscounts : undefined,
         notes,
+        designFilePath: item.designFilePath ?? item.design_file_path ?? null,
       };
     });
 

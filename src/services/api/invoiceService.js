@@ -17,8 +17,9 @@ import { api } from '../../core/httpClient.js';
  * @property {number} discount_amount
  * @property {number} tax_amount
  * @property {number} total
- * @property {'unpaid'|'paid'|'partial'} payment_status
+ * @property {'unpaid'|'paid'|'dp'} payment_status
  * @property {string|null} payment_method
+ * @property {number|null} dp_amount
  * @property {string|null} notes
  * @property {string} created_by
  * @property {string} creator_name
@@ -89,14 +90,16 @@ export async function updateInvoice(id, fields) {
 /**
  * Update payment status invoice.
  * @param {string} id
- * @param {'unpaid'|'paid'|'partial'} paymentStatus
+ * @param {'unpaid'|'paid'|'dp'} paymentStatus
  * @param {string} [paymentMethod]
+ * @param {number|string} [dpAmount] nominal DP, wajib jika paymentStatus = 'dp'
  * @returns {Promise<Invoice>}
  */
-export async function updateInvoicePaymentStatus(id, paymentStatus, paymentMethod) {
+export async function updateInvoicePaymentStatus(id, paymentStatus, paymentMethod, dpAmount) {
   const res = await api.patch(`/api/invoices/${id}/payment-status`, {
     payment_status: paymentStatus,
     payment_method: paymentMethod,
+    dp_amount: dpAmount,
   });
   return res.data.data;
 }

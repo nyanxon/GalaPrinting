@@ -5,7 +5,7 @@
 
 import { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { AuthContext } from '../../context/AuthContext.jsx';
+import { AuthContext, getUserAuthPath } from '../../context/AuthContext.jsx';
 import { logout } from '../../../services/auth.js';
 import { listAllOrders } from '../../../services/orders.js';
 import { listConversations } from '../../../services/chatService.js';
@@ -211,7 +211,7 @@ export default function AdminDashboardPage() {
     flushActivity();
     await Promise.resolve(logout());
     updateUser(null);
-    navigate('/register');
+    navigate(getUserAuthPath(user));
   }
 
   function goToOrders() { setActiveNav('orders'); }

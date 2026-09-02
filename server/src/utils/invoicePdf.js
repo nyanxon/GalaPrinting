@@ -92,9 +92,9 @@ export async function generateInvoicePdf(invoice) {
       const statusColors = {
         paid:    '#15803d',
         unpaid:  '#b91c1c',
-        partial: '#c2800d',
+        dp:      '#c2800d',
       };
-      const statusLabels = { paid: 'LUNAS', unpaid: 'BELUM BAYAR', partial: 'PARTIAL' };
+      const statusLabels = { paid: 'LUNAS', unpaid: 'BELUM BAYAR', dp: 'DP' };
 
       doc
         .fillColor(BLACK_HEX)
@@ -317,6 +317,33 @@ export async function generateInvoicePdf(invoice) {
           currentY += 18;
         }
       });
+
+      // Baris DP & Sisa Pembayaran — hanya saat status = DP
+      if (invoice.payment_status === 'dp') {
+        const dpPaid = Number(invoice.dp_amount || 0);
+        const remaining = Math.max(Number(invoice.total || 0) - dpPaid, 0);
+
+        currentY += 8;
+
+        doc
+          .fillColor(GRAY_HEX)
+          .font('Helvetica')
+          .fontSize(9)
+          .text('DP', totalsLabelX, currentY + 3)
+          .fillColor(BLACK_HEX)
+          .text(formatIDR(dpPaid), totalsValueX, currentY + 3, { align: 'right', width: 80 });
+        currentY += 18;
+
+        doc
+          .fillColor(GRAY_HEX)
+          .font('Helvetica')
+          .fontSize(9)
+          .text('Sisa Pembayaran', totalsLabelX, currentY + 3)
+          .fillColor('#b91c1c')
+          .font('Helvetica-Bold')
+          .text(formatIDR(remaining), totalsValueX, currentY + 3, { align: 'right', width: 80 });
+        currentY += 18;
+      }
 
       // Notes
       if (invoice.notes) {

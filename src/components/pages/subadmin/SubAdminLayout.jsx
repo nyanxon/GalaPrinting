@@ -9,7 +9,7 @@
 
 import { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { AuthContext } from '../../context/AuthContext.jsx';
+import { AuthContext, getUserAuthPath } from '../../context/AuthContext.jsx';
 import { logout } from '../../../services/auth.js';
 import { STAFF_ROLE_CONFIG } from '../../../config/roles.js';
 import { filterNavByPermissions } from '../../../config/permissions.js';
@@ -61,7 +61,7 @@ export default function SubAdminLayout({ navItems, sections, title }) {
     flushActivity();
     await Promise.resolve(logout());
     updateUser(null);
-    navigate('/register');
+    navigate(getUserAuthPath(user));
   }
 
   // If the currently active nav is no longer visible after filtering, fall back to first visible item

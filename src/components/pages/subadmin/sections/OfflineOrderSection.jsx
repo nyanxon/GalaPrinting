@@ -1,5 +1,5 @@
 /**
- * OfflineOrderSection.jsx — Form input order offline untuk cashier.
+ * OfflineOrderSection.jsx — Form input order offline untuk CS.
  *
  * Tidak menggunakan modal — form langsung ditampilkan di halaman.
  * Setelah submit berhasil, menampilkan ringkasan order, tombol reset,
@@ -17,6 +17,8 @@ import { computeOneDiscount, discountTotalFor, parseDiscountRows } from '../../.
 import { track } from '../../../../utils/activityTracker.js';
 import ThermalReceiptModal from '../../../modals/ThermalReceiptModal.jsx';
 import ThermalSpkModal from '../../../modals/ThermalSpkModal.jsx';
+import DropZone from '../../../ui/DropZone.jsx';
+import { DESIGN_ACCEPT, DESIGN_MAX_SIZE, DESIGN_HINT } from '../../../../utils/designUpload.js';
 
 function makeItem() {
   return {
@@ -33,6 +35,9 @@ function makeItem() {
     widthCm: '',
     attrDefs: [],
     selectedAttrs: {},
+    designFile: null,
+    designPreviewUrl: null,
+    designUploadError: '',
   };
 }
 
@@ -482,6 +487,7 @@ export default function OfflineOrderSection() {
   const [items,           setItems]           = useState([makeItem()]);
   const [discounts,       setDiscounts]       = useState([]);
   const [submitting,      setSubmitting]      = useState(false);
+  const [uploadingFiles,  setUploadingFiles]  = useState(false);
   const [fieldErrors,     setFieldErrors]     = useState({});
   const [createdOrder,    setCreatedOrder]    = useState(null);
 
@@ -507,7 +513,12 @@ export default function OfflineOrderSection() {
   }
 
   function removeItem(id) {
-    setItems((prev) => prev.filter((it) => it.id !== id));
+    setItems((prev) => {
+      prev.forEach((it) => {
+        if (it.id === id) revokeDesignPreview(it);
+      });
+      return prev.filter((it) => it.id !== id);
+    });
     // Buang baris diskon yang scope-nya item yang dihapus (cegah orphan).
     setDiscounts((prev) => prev.filter((d) => d.scope !== id));
   }
@@ -591,6 +602,37 @@ export default function OfflineOrderSection() {
       attrDefs: [],
       selectedAttrs: {},
     });
+  }
+
+  function revokeDesignPreview(item) {
+    if (item.designPreviewUrl) URL.revokeObjectURL(item.designPreviewUrl);
+  }
+
+  function handleSelectDesignFile(id, files) {
+    const file = Array.isArray(files) ? files[0] : null;
+    if (!file) return;
+    setItems((prev) =>
+      prev.map((it) => {
+        if (it.id !== id) return it;
+        revokeDesignPreview(it);
+        return {
+          ...it,
+          designFile: file,
+          designPreviewUrl: file.type?.startsWith('image/') ? URL.createObjectURL(file) : null,
+          designUploadError: '',
+        };
+      })
+    );
+  }
+
+  function handleRemoveDesignFile(id) {
+    setItems((prev) =>
+      prev.map((it) => {
+        if (it.id !== id) return it;
+        revokeDesignPreview(it);
+        return { ...it, designFile: null, designPreviewUrl: null, designUploadError: '' };
+      })
+    );
   }
 
   function handleCustomerTypeChange(value) {
@@ -690,6 +732,45 @@ export default function OfflineOrderSection() {
     setSubmitting(true);
     setFieldErrors({});
     try {
+      // ── Upload file desain (opsional) — pola dua-tahap ────────────────────
+      // File diupload DULU, lalu path-nya dikirim bersama order. Endpoint
+      // reuse /api/upload/design (sama seperti alur Custom Order).
+      const designItems = items.filter((it) => it.designFile);
+      const designPathByItem = new Map();
+      const uploadErrors = [];
+      setUploadingFiles(true);
+      try {
+        for (const it of designItems) {
+          const formData = new FormData();
+          formData.append('file', it.designFile);
+          try {
+            const res = await api.post('/api/upload/design', formData, {
+              headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            designPathByItem.set(it.id, res.data.path);
+          } catch (err) {
+            uploadErrors.push({
+              id: it.id,
+              name: it.designFile.name,
+              message: err.response?.data?.message || `Gagal mengupload file "${it.designFile.name}".`,
+            });
+          }
+        }
+        if (uploadErrors.length > 0) {
+          setItems((prev) =>
+            prev.map((it) => {
+              const e = uploadErrors.find((u) => u.id === it.id);
+              if (!e) return it;
+              return { ...it, designUploadError: e.message };
+            })
+          );
+          showToast(`${uploadErrors.length} file desain gagal diupload.`, 'error');
+          return;
+        }
+      } finally {
+        setUploadingFiles(false);
+      }
+
       // Baris diskon dipetakan ke scope-nya; client HANYA mengirim
       // type+value+label — hasil hitungan ditentukan server.
       const toDiscountPayload = (rows) =>
@@ -706,6 +787,7 @@ export default function OfflineOrderSection() {
         price:     Number(it.price),
         quantity:  Number(it.quantity) || 1,
         notes:     (it.notes || '').trim() || null,
+        designFilePath: designPathByItem.get(it.id) || null,
         lengthCm:  it.sizeType === 'per_m2' ? (parseNumber(it.lengthCm) || null) : null,
         widthCm:   it.sizeType === 'per_m2' ? (parseNumber(it.widthCm)  || null) : null,
         attributes:
@@ -750,6 +832,10 @@ export default function OfflineOrderSection() {
   }
 
   function handleReset() {
+    setItems((prev) => {
+      prev.forEach((it) => revokeDesignPreview(it));
+      return prev;
+    });
     setCreatedOrder(null);
     setCustomerName('');
     setCustomerPhone('');
@@ -1056,6 +1142,53 @@ export default function OfflineOrderSection() {
                     />
                   </div>
 
+                  <div className="offline-item-field">
+                    <label className="offline-form-label">
+                      File Desain <span className="offline-optional">(opsional)</span>
+                    </label>
+                    {item.designFile ? (
+                      <div className="offline-design-selected">
+                        {item.designPreviewUrl ? (
+                          <img
+                            className="offline-design-thumb"
+                            src={item.designPreviewUrl}
+                            alt={item.designFile.name}
+                          />
+                        ) : (
+                          <span className="offline-design-icon" aria-hidden="true">📄</span>
+                        )}
+                        <div className="offline-design-meta">
+                          <strong className="offline-design-name">{item.designFile.name}</strong>
+                          <span className="offline-design-size">
+                            {(item.designFile.size / (1024 * 1024)).toFixed(1)} MB
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          className="adm-btn offline-design-change"
+                          onClick={() => handleRemoveDesignFile(item.id)}
+                          disabled={submitting}
+                          title="Hapus file ini lalu pilih file lain"
+                        >
+                          🔄 Ganti / Hapus
+                        </button>
+                      </div>
+                    ) : (
+                      <DropZone
+                        accept={DESIGN_ACCEPT}
+                        maxSize={DESIGN_MAX_SIZE}
+                        onFiles={(files) => handleSelectDesignFile(item.id, files)}
+                        label="Klik atau drag file desain ke sini"
+                        hint={DESIGN_HINT}
+                        compact
+                        disabled={submitting}
+                      />
+                    )}
+                    {item.designUploadError && (
+                      <span className="offline-field-error">{item.designUploadError}</span>
+                    )}
+                  </div>
+
                 </div>
               </div>
             );
@@ -1211,16 +1344,16 @@ export default function OfflineOrderSection() {
             type="button"
             className="adm-btn"
             onClick={handleReset}
-            disabled={submitting}
+            disabled={submitting || uploadingFiles}
           >
             Reset
           </button>
           <button
             type="submit"
             className="adm-btn adm-btn--primary"
-            disabled={submitting}
+            disabled={submitting || uploadingFiles}
           >
-            {submitting ? 'Menyimpan…' : '💾 Simpan Order Offline'}
+            {uploadingFiles ? 'Mengupload file…' : submitting ? 'Menyimpan…' : '💾 Simpan Order Offline'}
           </button>
         </div>
       </form>

@@ -55,6 +55,7 @@ function OrderDetailModal({ isOpen, onClose, order, actorRole, onOrderUpdated })
   const [invoiceStatusUpdating, setInvoiceStatusUpdating] = useState(false);
   const [invoiceNewStatus, setInvoiceNewStatus] = useState('');
   const [invoiceNewMethod, setInvoiceNewMethod] = useState('');
+  const [invoiceNewDpAmount, setInvoiceNewDpAmount] = useState('');
 
   // Sync when parent passes a different order object
   useEffect(() => {
@@ -69,6 +70,7 @@ function OrderDetailModal({ isOpen, onClose, order, actorRole, onOrderUpdated })
           if (inv) {
             setInvoiceNewStatus(inv.payment_status);
             setInvoiceNewMethod(inv.payment_method || '');
+            setInvoiceNewDpAmount(inv.dp_amount != null ? String(inv.dp_amount) : '');
           }
         })
         .catch(() => setInvoice(null))
@@ -80,7 +82,7 @@ function OrderDetailModal({ isOpen, onClose, order, actorRole, onOrderUpdated })
     if (!invoice || invoice.locked) return;
     setInvoiceStatusUpdating(true);
     try {
-      const updated = await updateInvoicePaymentStatus(invoice.id, invoiceNewStatus, invoiceNewMethod);
+      const updated = await updateInvoicePaymentStatus(invoice.id, invoiceNewStatus, invoiceNewMethod, invoiceNewDpAmount);
       setInvoice(updated);
       showToast(`Status pembayaran invoice diperbarui: ${updated.payment_status}`, 'success');
     } catch (err) {
@@ -468,7 +470,7 @@ function OrderDetailModal({ isOpen, onClose, order, actorRole, onOrderUpdated })
                   <span className="odm-invoice-label">Status Bayar</span>
                   <span className="odm-invoice-value">
                     {(() => {
-                      const sc = { paid: { label: 'Lunas', color: '#166534', bg: '#dcfce7' }, unpaid: { label: 'Belum Bayar', color: '#b91c1c', bg: '#fee2e2' }, partial: { label: 'Partial', color: '#92400e', bg: '#fef3c7' } };
+                      const sc = { paid: { label: 'Lunas', color: '#166534', bg: '#dcfce7' }, unpaid: { label: 'Belum Bayar', color: '#b91c1c', bg: '#fee2e2' }, dp: { label: 'DP', color: '#92400e', bg: '#fef3c7' } };
                       const s = sc[invoice.payment_status] || { label: invoice.payment_status, color: '#333', bg: '#eee' };
                       return <span style={{ background: s.bg, color: s.color, padding: '2px 10px', borderRadius: '99px', fontSize: '12px', fontWeight: 700 }}>{s.label}</span>;
                     })()}
@@ -487,7 +489,7 @@ function OrderDetailModal({ isOpen, onClose, order, actorRole, onOrderUpdated })
                         Status
                         <select className="adm-input" style={{ fontSize: '13px', padding: '6px 10px' }} value={invoiceNewStatus} onChange={(e) => setInvoiceNewStatus(e.target.value)}>
                           <option value="unpaid">Belum Bayar</option>
-                          <option value="partial">Partial</option>
+                          <option value="dp">DP</option>
                           <option value="paid">Lunas</option>
                         </select>
                       </label>
@@ -498,13 +500,32 @@ function OrderDetailModal({ isOpen, onClose, order, actorRole, onOrderUpdated })
                           <option value="Transfer Bank">Transfer Bank</option>
                           <option value="QRIS">QRIS</option>
                           <option value="Tunai">Tunai</option>
-                          <option value="COD">COD</option>
                         </select>
                       </label>
                       <button type="button" className="adm-btn adm-btn--primary" style={{ padding: '6px 14px', fontSize: '13px', alignSelf: 'flex-end' }} onClick={handleInvoiceStatusUpdate} disabled={invoiceStatusUpdating}>
                         {invoiceStatusUpdating ? 'Menyimpan…' : 'Simpan'}
                       </button>
                     </div>
+                    {invoiceNewStatus === 'dp' && (
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end', marginTop: '8px' }}>
+                        <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', fontWeight: 600 }}>
+                          Nominal DP
+                          <input
+                            className="adm-input"
+                            type="number"
+                            min="0"
+                            step="any"
+                            placeholder="0"
+                            style={{ fontSize: '13px', padding: '6px 10px', width: '130px' }}
+                            value={invoiceNewDpAmount}
+                            onChange={(e) => setInvoiceNewDpAmount(e.target.value)}
+                          />
+                        </label>
+                        <div style={{ fontSize: '12px', fontWeight: 600, paddingBottom: '8px' }}>
+                          Sisa: <span style={{ color: '#b91c1c' }}>{formatCurrency(Math.max(Number(invoice.total || 0) - (Number(invoiceNewDpAmount) || 0), 0))}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
                 {invoice.locked && <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '6px' }}>🔒 Invoice sudah lunas dan terkunci.</div>}

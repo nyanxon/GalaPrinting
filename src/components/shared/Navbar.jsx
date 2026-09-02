@@ -1,7 +1,7 @@
 import { useContext, useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { AuthContext } from '../context/AuthContext.jsx';
+import { AuthContext, getUserAuthPath } from '../context/AuthContext.jsx';
 import { CartContext } from '../context/CartContext.jsx';
 import { STAFF_ROLES } from '../../config/roles.js';
 import { logout, login, getCurrentUser } from '../../services/auth.js';
@@ -120,7 +120,7 @@ function Navbar() {
     await Promise.resolve(logout());
     updateUser(null);
     closeAllPopups();
-    navigate('/');
+    navigate(isStaff ? getUserAuthPath(user) : '/');
   }
 
   function handleSearchKeyDown(e) {
