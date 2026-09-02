@@ -242,7 +242,7 @@ async function attachItemsToOrders(orders) {
  * All inserts are wrapped in a single DB transaction — if any item insert
  * fails, the entire transaction is rolled back and no partial order is left.
  */
-export async function createOrder({ customer, items, subtotal, source = 'online', orderType = 'standard', initialStatus, promoCode, discountAmount, discounts, adminNote, customerType = 'customer' }) {
+export async function createOrder({ customer, items, subtotal, source = 'online', orderType = 'standard', initialStatus, promoCode, discountAmount, discounts, adminNote, customerType = 'customer', createdByAdminId = null }) {
   const id     = randomUUID();
   const status = initialStatus || 'Waiting for Payment';
 
@@ -265,8 +265,8 @@ export async function createOrder({ customer, items, subtotal, source = 'online'
 
     await conn.execute(
       `INSERT INTO orders
-         (id, order_number, order_type, source, customer_id, customer_name, customer_type, customer_phone, customer_address, customer_address_title, customer_email, status, subtotal, promo_code, discount_amount, discounts, admin_note)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (id, order_number, order_type, source, customer_id, customer_name, customer_type, customer_phone, customer_address, customer_address_title, customer_email, status, subtotal, promo_code, discount_amount, discounts, admin_note, created_by_admin_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         orderNumber,
@@ -285,6 +285,7 @@ export async function createOrder({ customer, items, subtotal, source = 'online'
         Number(discountAmount) || 0,
         serializeDiscountList(discounts),
         adminNote || null,
+        createdByAdminId || null,
       ]
     );
 
@@ -446,7 +447,10 @@ export async function listOrders({ page = 1, limit = 20, status } = {}) {
   const total = countRows[0].total;
 
   const [items] = await query(
-    `SELECT o.* FROM orders o ${where} ORDER BY o.created_at DESC LIMIT ? OFFSET ?`,
+    `SELECT o.*, u.name AS created_by_name
+     FROM orders o
+     LEFT JOIN users_admin u ON u.id = o.created_by_admin_id
+     ${where} ORDER BY o.created_at DESC LIMIT ? OFFSET ?`,
     [...params, limitNum, offset]
   );
 
@@ -522,7 +526,13 @@ export async function findOrder({ orderNumber, phone }) {
  * Get a single order with its items, history, and approvals.
  */
 export async function getOrderById(id) {
-  const [orders] = await query('SELECT * FROM orders WHERE id = ?', [id]);
+  const [orders] = await query(
+    `SELECT o.*, u.name AS created_by_name
+     FROM orders o
+     LEFT JOIN users_admin u ON u.id = o.created_by_admin_id
+     WHERE o.id = ?`,
+    [id]
+  );
   if (orders.length === 0) return null;
 
   const order = orders[0];
@@ -586,6 +596,13 @@ export async function updateOrderStatus(id, newStatus, actorId, actorRole, cance
   // Fitur 1: cek apakah tahap ini sudah di-lock (sudah di-approve sebelumnya)
   if (newStatus !== 'Cancelled') {
     await assertNotLocked(id, newStatus);
+  }
+
+  // Order offline wajib punya bukti bayar sebelum statusnya bisa dimajukan.
+  if (order.source === 'offline' && !order.payment_proof_path && newStatus !== 'Cancelled') {
+    const err = new Error('Order offline belum bisa dimajukan sebelum bukti bayar diunggah.');
+    err.status = 422;
+    throw err;
   }
 
   const prevStatus = order.status;

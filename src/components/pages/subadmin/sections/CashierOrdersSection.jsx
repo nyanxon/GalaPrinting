@@ -13,7 +13,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { listAllOrders, getAllowedNextStatuses, STATUS_CONFIG } from '../../../../services/orders.js';
+import { listAllOrders, getAllowedNextStatuses, STATUS_CONFIG, attachPaymentProof } from '../../../../services/orders.js';
 import { formatCurrency } from '../../../../utils/format.js';
 import { resolveApiUrl } from '../../../../core/httpClient.js';
 import { getInvoiceByOrderId, openInvoicePdf } from '../../../../services/api/invoiceService.js';
@@ -21,6 +21,7 @@ import { showToast } from '../../../../core/toastEmitter.js';
 import OrderDetailModal from '../../../modals/OrderDetailModal.jsx';
 import ThermalReceiptModal from '../../../modals/ThermalReceiptModal.jsx';
 import ThermalSpkModal from '../../../modals/ThermalSpkModal.jsx';
+import DropZone from '../../../ui/DropZone.jsx';
 import useOrderList from '../../../../hooks/useOrderList.js';
 
 const CASHIER_STAGES = ['Waiting for Payment', 'Payment Accepted'];
@@ -37,36 +38,51 @@ function getProofUrl(proof) {
   return null;
 }
 
-function CashierProofCell({ order, onCancel }) {
+function CashierProofCell({ order, onCancel, onUpload, uploading }) {
   const proof    = order.paymentProof;
   const proofUrl = getProofUrl(proof);
+  const isOffline = order.source === 'offline';
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-      {proof ? (
-        proofUrl ? (
-          <a className="adm-btn" href={proofUrl} target="_blank" rel="noopener noreferrer">
-            🔍 Lihat
-          </a>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '180px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+        {proof ? (
+          proofUrl ? (
+            <a className="adm-btn" href={proofUrl} target="_blank" rel="noopener noreferrer">
+              🔍 Lihat
+            </a>
+          ) : (
+            <span className="adm-date">Ada bukti</span>
+          )
         ) : (
-          <span className="adm-date">Ada bukti</span>
-        )
-      ) : (
-        <span className="adm-date">Belum ada bukti</span>
-      )}
+          <span className="adm-date">Belum ada bukti</span>
+        )}
 
-      {order.status !== 'Cancelled' && order.status !== 'Finished' && order.status !== 'Payment Accepted' && (
-        <button
-          type="button"
-          className="adm-btn"
-          style={{
-            background: '#b91c1c', color: '#fff', border: 'none',
-            fontSize: '12px', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer',
-          }}
-          onClick={() => onCancel(order.id)}
-        >
-          ❌ Batalkan
-        </button>
+        {order.status !== 'Cancelled' && order.status !== 'Finished' && order.status !== 'Payment Accepted' && (
+          <button
+            type="button"
+            className="adm-btn"
+            style={{
+              background: '#b91c1c', color: '#fff', border: 'none',
+              fontSize: '12px', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer',
+            }}
+            onClick={() => onCancel(order.id)}
+          >
+            ❌ Batalkan
+          </button>
+        )}
+      </div>
+
+      {isOffline && (
+        <DropZone
+          accept="image/*,.pdf"
+          compact
+          disabled={uploading}
+          className={proof ? 'dz-proof--has' : 'dz-proof--missing'}
+          label={uploading ? 'Mengunggah…' : proof ? 'Ganti bukti bayar' : 'Upload bukti bayar'}
+          hint={proof ? undefined : 'Order offline wajib bukti bayar'}
+          onFiles={(files) => onUpload(order.id, files)}
+        />
       )}
     </div>
   );
@@ -111,6 +127,28 @@ export default function CashierOrdersSection() {
 
   // SPK (Surat Perintah Kerja) — dokumen produksi internal per order.
   const [spkInvoice, setSpkInvoice] = useState(null);
+
+  // Id order yang sedang mengunggah bukti bayar di kolom tabel.
+  const [proofUploading, setProofUploading] = useState(null);
+
+  const handleProofUpload = useCallback(async (orderId, files) => {
+    const file = files?.[0];
+    if (!file) return;
+    setProofUploading(orderId);
+    try {
+      const res = await attachPaymentProof(orderId, file);
+      if (res.ok) {
+        showToast('Bukti bayar berhasil diunggah.', 'success');
+        fetchOrdersRef.current?.();
+      } else {
+        showToast(res.message || 'Gagal mengunggah bukti bayar.', 'error');
+      }
+    } catch {
+      showToast('Gagal mengunggah bukti bayar.', 'error');
+    } finally {
+      setProofUploading(null);
+    }
+  }, []);
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -239,12 +277,13 @@ export default function CashierOrdersSection() {
               <th>Catatan</th>
               <th>Aksi</th>
               <th>Bukti Bayar</th>
+              <th>Dibuat oleh</th>
             </tr>
           </thead>
           <tbody>
             {displayOrders.length === 0 ? (
               <tr>
-                <td colSpan={8} className="adm-empty">
+                <td colSpan={9} className="adm-empty">
                   {stateFilter === 'action'
                     ? 'Tidak ada pesanan yang butuh aksi sekarang.'
                     : 'Tidak ada pesanan.'}
@@ -332,13 +371,26 @@ export default function CashierOrdersSection() {
                     <td>
                       <div className="adm-actions">
                         {advanceTargets.length > 0 && (
-                          <button
-                            className="adm-btn adm-btn--primary"
-                            type="button"
-                            onClick={() => handleAdvance(order.id, advanceTargets[0])}
-                          >
-                            {cfg.icon} → {advanceTargets[0]}
-                          </button>
+                          <>
+                            <button
+                              className="adm-btn adm-btn--primary"
+                              type="button"
+                              disabled={order.source === 'offline' && !order.paymentProof && advanceTargets[0] !== 'Cancelled'}
+                              title={
+                                order.source === 'offline' && !order.paymentProof && advanceTargets[0] !== 'Cancelled'
+                                  ? 'Unggah bukti bayar dahulu untuk memajukan status'
+                                  : undefined
+                              }
+                              onClick={() => handleAdvance(order.id, advanceTargets[0])}
+                            >
+                              {cfg.icon} → {advanceTargets[0]}
+                            </button>
+                            {order.source === 'offline' && !order.paymentProof && advanceTargets[0] !== 'Cancelled' && (
+                              <span className="adm-date" style={{ color: '#b91c1c', fontSize: '11px', marginTop: '2px' }}>
+                                ⚠️ Unggah bukti bayar dahulu
+                              </span>
+                            )}
+                          </>
                         )}
                         <button
                           className="adm-btn adm-btn--detail"
@@ -393,9 +445,9 @@ export default function CashierOrdersSection() {
                                   className="adm-btn adm-btn--thermal"
                                   style={{ fontSize: '11px', padding: '4px 8px' }}
                                   onClick={() => setThermalInvoice(invoiceMap[order.id])}
-                                  title="Print resi termal (58mm)"
+                                  title="Print nota termal (58mm)"
                                 >
-                                  🖨️ Print Resi
+                                  🖨️ Print Nota
                                 </button>
                                 <button
                                   type="button"
@@ -419,7 +471,15 @@ export default function CashierOrdersSection() {
                     </td>
 
                     <td>
-                      <CashierProofCell order={order} onCancel={handleOpenCancel} />
+                      <CashierProofCell
+                        order={order}
+                        onCancel={handleOpenCancel}
+                        onUpload={handleProofUpload}
+                        uploading={proofUploading === order.id}
+                      />
+                    </td>
+                    <td>
+                      <span className="adm-date">{order.createdByName || '—'}</span>
                     </td>
                   </tr>
                 );

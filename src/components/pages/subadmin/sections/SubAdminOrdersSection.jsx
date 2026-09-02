@@ -153,13 +153,14 @@ export default function SubAdminOrdersSection({ extraColumn = null }) {
               <th>Status Saya</th>
               <th>Catatan</th>
               <th>Aksi</th>
+              <th>Dibuat oleh</th>
               {extraColumn && <th>{extraColumn.header}</th>}
             </tr>
           </thead>
           <tbody>
             {displayOrders.length === 0 ? (
               <tr>
-                <td colSpan={extraColumn ? 8 : 7} className="adm-empty">
+                <td colSpan={extraColumn ? 9 : 8} className="adm-empty">
                   {stateFilter === 'action'
                     ? 'Tidak ada pesanan yang butuh aksi sekarang.'
                     : 'Tidak ada pesanan.'}
@@ -286,6 +287,9 @@ export default function SubAdminOrdersSection({ extraColumn = null }) {
                     {extraColumn && (
                       <td>{extraColumn.renderCell(order, fetchOrders)}</td>
                     )}
+                    <td>
+                      <span className="adm-date">{order.createdByName || '—'}</span>
+                    </td>
                   </tr>
                 );
               })

@@ -176,7 +176,7 @@ function InvoiceDetailModal({ invoiceId, onClose, onUpdated }) {
             {!invoice.locked && (
               <div className="inv-update-section">
                 <div className="inv-section-title">Update Status Pembayaran</div>
-                <div className="inv-form-row" style={{ alignItems: 'flex-end' }}>
+                <div className="inv-form-row">
                   <label className="inv-label">
                     Status
                     <select className="adm-input" value={newStatus} onChange={(e) => setNewStatus(e.target.value)}>
@@ -194,19 +194,10 @@ function InvoiceDetailModal({ invoiceId, onClose, onUpdated }) {
                       <option value="Tunai">Tunai</option>
                     </select>
                   </label>
-                  <button
-                    type="button"
-                    className="adm-btn adm-btn--primary"
-                    onClick={handleStatusUpdate}
-                    disabled={statusUpdating}
-                    style={{ alignSelf: 'flex-end' }}
-                  >
-                    {statusUpdating ? 'Menyimpan…' : 'Simpan'}
-                  </button>
                 </div>
 
                 {newStatus === 'dp' && (
-                  <div className="inv-form-row" style={{ alignItems: 'flex-end', marginTop: '12px' }}>
+                  <div className="inv-form-row inv-form-row--3">
                     <label className="inv-label">
                       Nominal DP
                       <input
@@ -219,11 +210,11 @@ function InvoiceDetailModal({ invoiceId, onClose, onUpdated }) {
                         onChange={(e) => setNewDpAmount(e.target.value)}
                       />
                     </label>
-                    <div className="inv-label" style={{ paddingBottom: '6px' }}>
+                    <div className="inv-label">
                       <div className="inv-detail-label">DP</div>
                       <div className="inv-detail-value">{newDpAmount ? formatCurrency(Number(newDpAmount) || 0) : '—'}</div>
                     </div>
-                    <div className="inv-label" style={{ paddingBottom: '6px' }}>
+                    <div className="inv-label">
                       <div className="inv-detail-label">Sisa Pembayaran</div>
                       <div className="inv-detail-value" style={{ color: '#b91c1c' }}>
                         {formatCurrency(Math.max(Number(invoice.total || 0) - (Number(newDpAmount) || 0), 0))}
@@ -231,6 +222,17 @@ function InvoiceDetailModal({ invoiceId, onClose, onUpdated }) {
                     </div>
                   </div>
                 )}
+
+                <div className="inv-form-actions">
+                  <button
+                    type="button"
+                    className="adm-btn adm-btn--primary"
+                    onClick={handleStatusUpdate}
+                    disabled={statusUpdating}
+                  >
+                    {statusUpdating ? 'Menyimpan…' : '💾 Simpan'}
+                  </button>
+                </div>
               </div>
             )}
           </div>

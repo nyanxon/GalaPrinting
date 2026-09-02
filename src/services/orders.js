@@ -210,6 +210,7 @@ function mapOrder(row) {
     pickupReadyAt:  row.pickup_ready_at  ?? row.pickupReadyAt  ?? null,
     createdAt: row.created_at ?? row.createdAt,
     updatedAt: row.updated_at ?? row.updatedAt,
+    createdByName: row.created_by_name ?? row.createdByName ?? null,
   };
 }
 

@@ -335,6 +335,7 @@ export async function createOfflineOrder(req, res, next) {
       discounts: orderDiscounts.length > 0 ? orderDiscounts : undefined,
       adminNote: adminNote || '',
       customerType: type,
+      createdByAdminId: req.user.id,
     });
     emitOrderNew(order);
     return res.status(201).json({ ok: true, data: order });

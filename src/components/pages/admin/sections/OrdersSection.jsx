@@ -185,12 +185,13 @@ export default function OrdersSection() {
               <th>Status</th>
               <th>Catatan</th>
               <th>Aksi</th>
+              <th>Dibuat oleh</th>
             </tr>
           </thead>
           <tbody>
             {result.items.length === 0 ? (
               <tr>
-                <td colSpan={6} className="adm-empty">Belum ada pesanan.</td>
+                <td colSpan={7} className="adm-empty">Belum ada pesanan.</td>
               </tr>
             ) : (
               result.items.map((order) => {
@@ -329,6 +330,9 @@ export default function OrdersSection() {
                       <div className="adm-date" style={{ marginTop: '4px' }}>
                         {new Date(order.createdAt).toLocaleDateString('id-ID')}
                       </div>
+                    </td>
+                    <td>
+                      <span className="adm-date">{order.createdByName || '—'}</span>
                     </td>
                   </tr>
                 );

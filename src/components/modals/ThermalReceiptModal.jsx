@@ -253,7 +253,7 @@ export default function ThermalReceiptModal({ invoice, onClose, autoPrint }) {
   }, []);
 
   function handlePrint() {
-    track('Cetak Resi', {
+    track('Cetak Nota', {
       targetType: 'invoice', targetId: invoice?.id ?? null,
       metadata: { invoice_number: invoice?.invoice_number ?? null, paperSize, by: user?.name ?? null },
     });
