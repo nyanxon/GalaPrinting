@@ -12,11 +12,13 @@ import { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { CartContext } from '../../context/CartContext.jsx';
 import { AuthContext } from '../../context/AuthContext.jsx';
-import { getProductById } from '../../../services/products.js';
+import { getProductById, getProductStockAvailable } from '../../../services/products.js';
 import { listReviews } from '../../../services/reviews.js';
 import DropZone from '../../ui/DropZone.jsx';
 import placeholderImg from '../../../assets/placeholder.svg';
 import { showToast } from '../../../core/toastEmitter.js';
+import { USE_BACKEND } from '../../../core/httpClient.js';
+import { buildWhatsAppUrl } from '../../../core/config.js';
 import '../../../styles/css/pages/catalogProduct.css';
 
 function CatalogProductPage() {
@@ -130,6 +132,39 @@ function CatalogProductPage() {
   }, 0);
   const displayPrice = basePrice + attributeModifierTotal;
 
+  // ── Cek stok real-time (mode backend) ──
+  // Kombinasi lengkap dulu (semua atribut terpilih) sebelum cek stok — kombinasi
+  // parsial tidak dihitung sebagai "stok 0".
+  const requiredAttrs = productAttributes.filter((a) => a.values?.length > 0);
+  const comboComplete = requiredAttrs.every((a) => selectedAttributes[a.name]);
+  const selectedCombo = comboComplete
+    ? requiredAttrs.map((a) => ({ name: a.name, value: selectedAttributes[a.name] }))
+    : null;
+  const comboKey = JSON.stringify(selectedCombo);
+  const [stockInfo, setStockInfo] = useState(null); // { stock, available } | null = tidak diketahui
+
+  useEffect(() => {
+    let cancelled = false;
+    setStockInfo(null);
+    if (!USE_BACKEND || !product || !selectedCombo) return undefined;
+    const timer = setTimeout(async () => {
+      try {
+        const info = await getProductStockAvailable(product.id, selectedCombo);
+        if (!cancelled && info) setStockInfo(info);
+      } catch (_err) {
+        // Gagal cek stok — biarkan add-to-cart berjalan (validasi server tetap ada).
+      }
+    }, 400);
+    return () => { cancelled = true; clearTimeout(timer); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product?.id, comboKey, quantity]);
+
+  const stockOut = USE_BACKEND && Boolean(stockInfo) && stockInfo.available === false;
+  const overStock = USE_BACKEND && Boolean(stockInfo) && stockInfo.stock > 0 && quantity > stockInfo.stock;
+  const waMessage = `Halo Gala Printing! Apakah produk ${product?.name || ''}${
+    (selectedCombo || []).length > 0 ? ` (${selectedCombo.map((a) => `${a.name}: ${a.value}`).join(', ')})` : ''
+  } sebanyak ${quantity} pcs masih tersedia?`;
+
   function handleAddToCart() {
     if (!user) {
       showToast('Silakan login terlebih dahulu untuk menambahkan produk ke keranjang.', 'error');
@@ -144,6 +179,18 @@ function CatalogProductPage() {
     if (missing.length > 0) {
       showToast(`Silakan pilih ${missing.join(', ')} terlebih dahulu.`, 'error');
       return;
+    }
+
+    // Cek stok real-time (mode backend) — stok kosong & jumlah melebihi stok diblokir.
+    if (USE_BACKEND && stockInfo) {
+      if (stockInfo.available === false) {
+        showToast('Stok produk ini sedang kosong. Silakan hubungi kami via WhatsApp.', 'error');
+        return;
+      }
+      if (stockInfo.stock > 0 && quantity > stockInfo.stock) {
+        showToast(`Stok tersedia hanya ${stockInfo.stock} pcs.`, 'error');
+        return;
+      }
     }
 
     if (product.requiresDesign !== false && !designFile) {
@@ -555,15 +602,52 @@ function CatalogProductPage() {
                   +
                 </button>
               </div>
-              <button
-                className="btn-add-to-cart"
-                type="button"
-                data-add-to-cart
-                onClick={handleAddToCart}
-              >
-                Tambah ke Keranjang
-              </button>
+              {stockOut ? (
+                <a
+                  className="btn-add-to-cart"
+                  href={buildWhatsAppUrl(waMessage)}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Pesan via WhatsApp
+                </a>
+              ) : (
+                <button
+                  className="btn-add-to-cart"
+                  type="button"
+                  data-add-to-cart
+                  onClick={handleAddToCart}
+                  disabled={overStock}
+                  style={overStock ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+                >
+                  Tambah ke Keranjang
+                </button>
+              )}
             </div>
+            {overStock && (
+              <p className="muted" style={{ color: '#b91c1c', fontSize: '13px', marginTop: '6px' }}>
+                Stok tersedia hanya {stockInfo.stock} pcs — kurangi jumlah atau pesan via{' '}
+                <a
+                  href={buildWhatsAppUrl(waMessage)}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ color: '#15803d', textDecoration: 'underline' }}
+                >
+                  WhatsApp
+                </a>
+                .
+              </p>
+            )}
+            {stockOut && (
+              <p className="muted" style={{ color: '#b91c1c', fontSize: '13px', marginTop: '6px' }}>
+                Maaf, stok kombinasi ini sedang kosong. Hubungi kami via WhatsApp untuk menanyakan ketersediaan.
+              </p>
+            )}
+            {USE_BACKEND && !stockOut && stockInfo && stockInfo.stock > 0 && !overStock && (
+              <p className="muted" style={{ color: '#15803d', fontSize: '13px', marginTop: '6px' }}>
+                Stok tersedia: {stockInfo.stock} pcs
+              </p>
+            )}
           </div>
 
         </section>

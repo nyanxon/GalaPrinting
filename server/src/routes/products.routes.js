@@ -42,6 +42,10 @@ router.post('/upload-image', authenticate, requireRole('admin', 'owner'), upload
 // ── Products ──────────────────────────────────────────────────────────────────
 router.get('/',    ctrl.listProducts);
 router.get('/search', ctrl.searchProducts); // WAJIB sebelum /:id
+router.post('/stock/batch-available', ctrl.batchCheckStockAvailable); // publik
+router.get('/:id/stock/available', ctrl.checkProductStockAvailable); // publik
+router.get('/:id/stock', authenticate, requireRole('admin', 'owner'), ctrl.listProductStock);
+router.put('/:id/stock', authenticate, requireRole('admin', 'owner'), ctrl.updateProductStock);
 router.get('/:id', ctrl.getProduct);
 
 router.post(

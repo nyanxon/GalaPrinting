@@ -88,6 +88,29 @@ function dims(item) {
   return '';
 }
 
+/** Parse attributes item (array atau JSON string) → [{name,value}]. */
+function parseItemAttributes(raw) {
+  if (!raw) return [];
+  let list = raw;
+  if (typeof raw === 'string') {
+    try {
+      list = JSON.parse(raw);
+    } catch {
+      return [];
+    }
+  }
+  if (!Array.isArray(list)) return [];
+  return list
+    .map((a) => {
+      if (!a || typeof a !== 'object') return null;
+      const name = String(a.name ?? '').trim();
+      const value = String(a.value ?? '').trim();
+      if (!name || !value) return null;
+      return { name, value };
+    })
+    .filter(Boolean);
+}
+
 /* ── SPK Content ──────────────────────────────────────────────────────────── */
 
 function ThermalSpkContent({ invoice, paperSize, operatorName }) {
@@ -159,6 +182,7 @@ function ThermalSpkContent({ invoice, paperSize, operatorName }) {
           <div style={css.muted}>—</div>
         ) : items.map((item, i) => {
           const dim = dims(item);
+          const attrs = parseItemAttributes(item.attributes);
           const catatan = item.notes || designFileName(item);
           return (
             <div key={item.id || i} style={{ marginBottom: '6px' }}>
@@ -170,6 +194,14 @@ function ThermalSpkContent({ invoice, paperSize, operatorName }) {
                 <span>{Number(item.quantity) || 1}x</span>
                 {dim ? <span> ({dim})</span> : null}
               </div>
+              {attrs.length > 0 && attrs.map((a, ai) => (
+                <div
+                  key={ai}
+                  style={{ ...css.muted, fontSize: `${cfg.smallFontSize}px`, paddingLeft: `${nameAlign}px`, marginTop: '2px', wordBreak: 'break-word' }}
+                >
+                  {a.name}: {a.value}
+                </div>
+              ))}
               <div style={{ ...css.muted, fontSize: `${cfg.smallFontSize}px`, paddingLeft: `${nameAlign}px`, marginTop: '2px' }}>
                 catatan: {catatan || '—'}
               </div>

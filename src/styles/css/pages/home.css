@@ -555,7 +555,7 @@
 }
 
 .home-section-grid .product-card-media {
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 1 / 1;
   background: rgba(237, 200, 174, 0.35);
   overflow: hidden;
   flex-shrink: 0;

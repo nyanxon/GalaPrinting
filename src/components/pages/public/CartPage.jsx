@@ -7,13 +7,15 @@
  * Requirements: 7.4, 13.4
  */
 
-import { useContext, useState } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { CartContext } from '../../context/CartContext.jsx';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import { formatCurrency } from '../../../utils/format.js';
 import { resolveApiUrl, USE_BACKEND } from '../../../core/httpClient.js';
+import { buildWhatsAppUrl } from '../../../core/config.js';
+import { batchCheckStock } from '../../../services/products.js';
 import placeholderImg from '../../../assets/placeholder.svg';
 import ConfirmDialog from '../../ui/ConfirmDialog.jsx';
 import '../../../styles/css/pages/cart.css';
@@ -42,8 +44,6 @@ function parseItemAttributes(raw) {
 }
 
 function CartItemDetailModal({ item, onClose }) {
-  const { t } = useTranslation();
-
   if (!item) return null;
 
   // ── Design file ──
@@ -176,7 +176,56 @@ function CartPage() {
   // Detail modal
   const [detailItem, setDetailItem] = useState(null);
 
+  // ── Validasi stok batch (mode backend) ──
+  const [stockByItem, setStockByItem] = useState({});
+  const [stockChecking, setStockChecking] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!USE_BACKEND) {
+      setStockByItem({});
+      setStockChecking(false);
+      return undefined;
+    }
+    const entries = items
+      .filter((i) => i.productId)
+      .map((i) => ({ key: i.id, productId: i.productId, combination: parseItemAttributes(i.attributes) }));
+    if (entries.length === 0) {
+      setStockByItem({});
+      setStockChecking(false);
+      return undefined;
+    }
+    setStockChecking(true);
+    batchCheckStock(entries)
+      .then((list) => {
+        if (cancelled) return;
+        const map = {};
+        for (const e of list ?? []) {
+          if (e && e.key !== null && e.key !== undefined) map[e.key] = Number(e.stock) || 0;
+        }
+        setStockByItem(map);
+        setStockChecking(false);
+      })
+      .catch(() => {
+        if (!cancelled) setStockChecking(false);
+      });
+    return () => { cancelled = true; };
+  }, [items]);
+
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  function waItemMessage(item) {
+    const attrs = parseItemAttributes(item.attributes).map((a) => `${a.name}: ${a.value}`).join(' · ');
+    return `Halo Gala Printing! Saya ingin memesan ${item.name}${
+      attrs ? ` (${attrs})` : ''
+    } sebanyak ${item.quantity} pcs. Apakah masih tersedia?`;
+  }
+
+  const stockInsufficient = (item) =>
+    Boolean(item.productId) && stockByItem[item.id] !== undefined && stockByItem[item.id] < item.quantity;
+
+  const hasStockIssue = items.some(stockInsufficient);
+  const checkoutBlocked = USE_BACKEND && (stockChecking || hasStockIssue);
 
   function getDisplayQty(item) {
     return qtyInputs[item.id] !== undefined ? qtyInputs[item.id] : String(item.quantity);
@@ -272,6 +321,23 @@ function CartPage() {
                     {item.notes && (
                       <div className="cart-item-meta">{t('cart.notes')}: {item.notes}</div>
                     )}
+                    {USE_BACKEND && stockByItem[item.id] !== undefined && (stockInsufficient(item) ? (
+                      <div className="cart-item-meta" style={{ color: '#b91c1c', fontWeight: 600 }}>
+                        Stok tersisa {stockByItem[item.id]} pcs — tidak cukup untuk pesanan.
+                        {' '}<a
+                          href={buildWhatsAppUrl(waItemMessage(item))}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{ color: '#15803d', textDecoration: 'underline' }}
+                        >
+                          Pesan via WhatsApp
+                        </a>
+                      </div>
+                    ) : (
+                      <div className="cart-item-meta" style={{ color: '#15803d' }}>
+                        Stok tersedia: {stockByItem[item.id]} pcs
+                      </div>
+                    ))}
                     <div className="cart-item-actions">
                       <div className="nav-pill" style={{ gap: '12px' }}>
                         <button
@@ -363,10 +429,20 @@ function CartPage() {
                   className="btn primary"
                   to="/checkout"
                   data-checkout-link
-                  style={{ pointerEvents: items.length === 0 ? 'none' : 'auto', opacity: items.length === 0 ? 0.5 : 1 }}
+                  style={{ pointerEvents: checkoutBlocked || items.length === 0 ? 'none' : 'auto', opacity: checkoutBlocked || items.length === 0 ? 0.5 : 1 }}
                 >
                   Checkout
                 </Link>
+              )}
+              {USE_BACKEND && stockChecking && (
+                <p style={{ marginTop: '8px', fontSize: '13px', color: '#6b7280' }}>
+                  Menghitung stok…
+                </p>
+              )}
+              {USE_BACKEND && hasStockIssue && (
+                <p style={{ marginTop: '8px', fontSize: '13px', color: '#b91c1c' }}>
+                  Sebagian item stoknya tidak cukup — sesuaikan jumlah atau hubungi kami via WhatsApp.
+                </p>
               )}
               <button
                 className="btn"

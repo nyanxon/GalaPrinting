@@ -7,6 +7,7 @@
 import { randomUUID } from 'crypto';
 import { query } from '../db/connection.js';
 import { parsePagination } from '../utils/pagination.js';
+import { ensureProductStockRows } from './stock.service.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -201,9 +202,14 @@ export async function listProducts({ page = 1, limit = 10, category, search, vis
   const total = countRows[0].total;
 
   const [items] = await query(
-    `SELECT p.*, c.name AS category
+    `SELECT p.*, c.name AS category, COALESCE(ps.total_stock, 0) AS total_stock
      FROM products p
      LEFT JOIN categories c ON p.category_id = c.id
+     LEFT JOIN (
+       SELECT product_id, SUM(stock_quantity) AS total_stock
+       FROM product_stock
+       GROUP BY product_id
+     ) ps ON ps.product_id = p.id
      ${where}
      ORDER BY p.created_at DESC
      LIMIT ? OFFSET ?`,
@@ -335,6 +341,9 @@ export async function createProduct({ name, categoryId, price, priceCustomer, pr
     ]
   );
 
+  // Pastikan baris stok stok=0 tersedia untuk semua kombinasi produk baru.
+  await ensureProductStockRows(id, normalizedAttributes);
+
   return getProductById(id);
 }
 
@@ -400,7 +409,13 @@ export async function updateProduct(id, data) {
 
   params.push(id);
   await query(`UPDATE products SET ${fields.join(', ')} WHERE id = ?`, params);
-  return getProductById(id);
+  const updated = await getProductById(id);
+
+  // Sinkronkan baris stok: kombinasi baru (yang belum ada) dibuat dengan stok 0.
+  if (updated) {
+    await ensureProductStockRows(id, updated.attributes);
+  }
+  return updated;
 }
 
 /**
