@@ -231,9 +231,9 @@ export default function OrdersSection() {
                         <div style={{ marginTop: '4px' }}>
                           <span style={{
                             display: 'inline-flex', alignItems: 'center', gap: '4px',
-                            background: '#f0fdf4', border: '1px solid #bbf7d0',
+                            background: 'var(--color-success-bg)', border: '1px solid #bbf7d0',
                             borderRadius: '4px', padding: '2px 8px',
-                            fontSize: '11px', fontWeight: 700, color: '#15803d',
+                            fontSize: '11px', fontWeight: 700, color: 'var(--color-success-mid)',
                           }}>
                             🏷️ {order.promoCode} -{formatCurrency(order.discountAmount || 0)}
                           </span>
@@ -320,9 +320,9 @@ export default function OrdersSection() {
                               className="adm-btn adm-btn--thermal"
                               style={{ fontSize: '11px', padding: '4px 8px' }}
                               onClick={() => { setThermalInvoice(invoiceMap[order.id]); setThermalAutoPrint(false); }}
-                              title="Print resi termal"
+                              title="Print nota termal"
                             >
-                              🖨️ Print Resi
+                              🖨️ Print Nota
                             </button>
                           </div>
                         )}
@@ -400,7 +400,7 @@ export default function OrdersSection() {
               aria-label="Alasan pembatalan"
             />
             {cancelReasonErr && (
-              <p style={{ color: '#b91c1c', fontSize: '13px', margin: '0 0 12px' }}>
+              <p style={{ color: 'var(--color-danger-dark)', fontSize: '13px', margin: '0 0 12px' }}>
                 {cancelReasonErr}
               </p>
             )}
@@ -415,7 +415,7 @@ export default function OrdersSection() {
               <button
                 type="button"
                 className="adm-btn adm-btn--danger"
-                style={{ background: '#b91c1c', color: '#fff', border: 'none' }}
+                style={{ background: 'var(--color-danger-dark)', color: '#fff', border: 'none' }}
                 onClick={handleCancelConfirm}
               >
                 Konfirmasi

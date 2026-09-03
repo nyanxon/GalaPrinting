@@ -31,11 +31,13 @@
  *   color        — line/stroke color
  */
 
-const DEFAULT_COLOR = '#785e40';
+import { BRAND_COLOR } from '../../config/brand.js';
+
+const DEFAULT_COLOR = BRAND_COLOR;
 const defaultFormat = (n) => String(n);
 
 const DONUT_PALETTE = [
-  '#785e40', '#2563eb', '#16a34a', '#dc2626', '#d97706',
+  BRAND_COLOR, 'var(--color-info)', 'var(--color-success)', 'var(--color-danger)', '#d97706',
   '#7c3aed', '#0891b2', '#be185d', '#059669', '#ea580c',
 ];
 
@@ -44,7 +46,7 @@ const DONUT_PALETTE = [
 /* ─────────────────────────────────────────────────────────── */
 function Sparkline({ data = [] }) {
   if (!data || data.length < 2) {
-    return <span style={{ color: '#9b9b9b', fontSize: 11 }}>—</span>;
+    return <span style={{ color: 'var(--gray-light)', fontSize: 11 }}>—</span>;
   }
 
   const W = 56;
@@ -61,7 +63,7 @@ function Sparkline({ data = [] }) {
 
   // Trend direction: compare last vs first
   const trendUp = values[values.length - 1] >= values[0];
-  const trendColor = trendUp ? '#16a34a' : '#dc2626';
+  const trendColor = trendUp ? 'var(--color-success)' : 'var(--color-danger)';
 
   return (
     <svg
@@ -355,10 +357,10 @@ function BarChart({ data, color = DEFAULT_COLOR, title, formatValue = defaultFor
     return (
       <g key={i}>
         <rect x={x} y={y} width={barW} height={barH} fill={color} rx="3" />
-        <text x={x + barW / 2} y={y - 6} textAnchor="middle" fontSize="10" fill="#1f1f1f">
+        <text x={x + barW / 2} y={y - 6} textAnchor="middle" fontSize="10" style={{ fill: 'var(--text)' }}>
           {formatValue(d.value)}
         </text>
-        <text x={x + barW / 2} y={H - 4} textAnchor="middle" fontSize="10" fill="#9b9b9b">
+        <text x={x + barW / 2} y={H - 4} textAnchor="middle" fontSize="10" style={{ fill: 'var(--gray-light)' }}>
           {d.label}
         </text>
       </g>
@@ -503,10 +505,10 @@ function DonutChart({ data = [], title, formatValue = defaultFormat }) {
           <svg viewBox={`0 0 ${W} ${H}`} className="donut-svg" aria-label={title || 'Donut chart'}>
             {slices}
             {/* Centre label */}
-            <text x={cx} y={cy - 4} textAnchor="middle" fontSize="11" fill="#6b6b6b" fontFamily="inherit">
+            <text x={cx} y={cy - 4} textAnchor="middle" fontSize="11" style={{ fill: 'var(--gray-mid)' }} fontFamily="inherit">
               Total
             </text>
-            <text x={cx} y={cy + 12} textAnchor="middle" fontSize="12" fontWeight="700" fill="#1f1f1f" fontFamily="inherit">
+            <text x={cx} y={cy + 12} textAnchor="middle" fontSize="12" fontWeight="700" style={{ fill: 'var(--text)' }} fontFamily="inherit">
               {formatValue(total)}
             </text>
           </svg>

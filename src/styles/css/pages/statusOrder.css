@@ -22,13 +22,13 @@
 .so-not-found-title {
   font-size: 14px;
   font-weight: 700;
-  color: #92400e;
+  color: var(--color-warning);
   margin-bottom: 3px;
 }
 
 .so-not-found-msg {
   font-size: 13px;
-  color: #b45309;
+  color: var(--color-warning-dark);
   line-height: 1.5;
 }
 
@@ -37,7 +37,7 @@
 /* ── updatedAt ───────────────────────────────────────────── */
 .so-order-updated {
   font-size: 12px;
-  color: #9b9b9b;
+  color: var(--gray-light);
   margin-top: 3px;
   font-style: italic;
 }
@@ -47,8 +47,8 @@
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
+  background: var(--color-success-bg);
+  border: 1px solid var(--color-success-border);
   border-radius: 10px;
   padding: 14px 16px;
   margin-bottom: 24px;
@@ -59,7 +59,7 @@
 .so-admin-note-label {
   font-size: 12px;
   font-weight: 700;
-  color: #166534;
+  color: var(--color-success-dark);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 4px;
@@ -67,7 +67,7 @@
 
 .so-admin-note-text {
   font-size: 14px;
-  color: #15803d;
+  color: var(--color-success-mid);
   line-height: 1.5;
 }
 
@@ -87,7 +87,7 @@
 
 .so-desc {
   font-size: 15px;
-  color: #6b6b6b;
+  color: var(--gray-mid);
   line-height: 1.7;
   margin: 0 0 32px;
 }
@@ -152,7 +152,7 @@
   flex-wrap: wrap;
   gap: 12px;
   padding-bottom: 20px;
-  border-bottom: 2px solid #f0f0f0;
+  border-bottom: 2px solid var(--gray-bg);
   margin-bottom: 28px;
 }
 
@@ -165,7 +165,7 @@
 
 .so-order-date {
   font-size: 13px;
-  color: #6b6b6b;
+  color: var(--gray-mid);
   margin-top: 4px;
 }
 
@@ -181,20 +181,20 @@
 }
 
 /* Status badge — new 8-step flow */
-.so-status-badge.status--waiting-payment     { background: #fef3c7; color: #92400e; }
-.so-status-badge.status--payment-accepted    { background: #dcfce7; color: #166534; }
+.so-status-badge.status--waiting-payment     { background: var(--color-warning-bg); color: var(--color-warning); }
+.so-status-badge.status--payment-accepted    { background: var(--color-success-border-light); color: var(--color-success-dark); }
 .so-status-badge.status--waiting-design      { background: #ede9fe; color: #5b21b6; }
-.so-status-badge.status--design-accepted     { background: #dbeafe; color: #1e40af; }
+.so-status-badge.status--design-accepted     { background: var(--color-info-bg); color: var(--color-info-dark); }
 .so-status-badge.status--on-progress         { background: #ffedd5; color: #9a3412; }
 .so-status-badge.status--qc                  { background: #e0f2fe; color: #0369a1; }
-.so-status-badge.status--in-delivery         { background: #f0fdf4; color: #15803d; }
-.so-status-badge.status--finished            { background: #dcfce7; color: #166534; }
-.so-status-badge.status--cancelled           { background: #fee2e2; color: #991b1b; }
+.so-status-badge.status--in-delivery         { background: var(--color-success-bg); color: var(--color-success-mid); }
+.so-status-badge.status--finished            { background: var(--color-success-border-light); color: var(--color-success-dark); }
+.so-status-badge.status--cancelled           { background: var(--color-danger-bg); color: var(--color-danger-deep); }
 
 /* ── Courier tracking box (In Delivery status) ───────────── */
 .so-courier-box {
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
+  background: var(--color-success-bg);
+  border: 1px solid var(--color-success-border);
   border-radius: 12px;
   padding: 16px 18px;
   margin-bottom: 20px;
@@ -203,20 +203,20 @@
 .so-courier-title {
   font-size: 15px;
   font-weight: 700;
-  color: #166534;
+  color: var(--color-success-dark);
   margin-bottom: 6px;
 }
 
 .so-courier-desc {
   font-size: 13px;
-  color: #15803d;
+  color: var(--color-success-mid);
   margin: 0 0 8px;
   line-height: 1.5;
 }
 
 .so-courier-num {
   font-size: 13px;
-  color: #166534;
+  color: var(--color-success-dark);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -256,7 +256,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #6b6b6b;
+  color: var(--gray-mid);
   margin: 0 0 14px;
 }
 
@@ -283,13 +283,13 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border: 2px solid #e5e5e5;
-  background: #f9f9f9;
+  border: 2px solid var(--gray-border);
+  background: var(--gray-bg-4);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
-  color: #9b9b9b;
+  color: var(--gray-light);
   font-weight: 700;
   flex-shrink: 0;
   z-index: 1;
@@ -298,7 +298,7 @@
 .so-step-line {
   width: 2px;
   flex: 1;
-  background: #e5e5e5;
+  background: var(--gray-border);
   min-height: 24px;
   margin: 2px 0;
 }
@@ -313,12 +313,12 @@
 .so-step-label {
   font-size: 15px;
   font-weight: 600;
-  color: #9b9b9b;
+  color: var(--gray-light);
 }
 
 .so-step-time {
   font-size: 12px;
-  color: #9b9b9b;
+  color: var(--gray-light);
   margin-top: 2px;
 }
 
@@ -333,7 +333,7 @@
 
 .so-step--done .so-step-line { background: var(--brand-brown); }
 .so-step--done .so-step-label { color: #1f1f1f; }
-.so-step--done .so-step-time  { color: #6b6b6b; }
+.so-step--done .so-step-time  { color: var(--gray-mid); }
 
 /* Current (in-progress) state */
 .so-step--current .so-step-icon {
@@ -355,7 +355,7 @@
 }
 
 .so-customer-key {
-  color: #6b6b6b;
+  color: var(--gray-mid);
   font-weight: 600;
 }
 
@@ -405,7 +405,7 @@
 }
 
 .so-item-name { color: #1f1f1f; flex: 1; }
-.so-item-qty  { color: #6b6b6b; font-size: 13px; margin-left: 4px; }
+.so-item-qty  { color: var(--gray-mid); font-size: 13px; margin-left: 4px; }
 .so-item-price { font-weight: 700; white-space: nowrap; }
 
 .so-total-row {
@@ -413,19 +413,19 @@
   justify-content: space-between;
   align-items: center;
   padding-top: 14px;
-  border-top: 2px solid #f0f0f0;
+  border-top: 2px solid var(--gray-bg);
   font-size: 16px;
   font-weight: 700;
   color: #1f1f1f;
 }
 
-.so-empty { color: #6b6b6b; font-size: 14px; }
+.so-empty { color: var(--gray-mid); font-size: 14px; }
 
 /* ── Footer ──────────────────────────────────────────────── */
 .so-result-footer {
   margin-top: 32px;
   padding-top: 20px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--gray-bg);
 }
 
 .so-back-btn {
@@ -440,34 +440,34 @@
   transition: background 0.15s;
 }
 
-.so-back-btn:hover { background: #f5f5f5; }
+.so-back-btn:hover { background: var(--gray-bg-2); }
 
 /* ── Alasan Pembatalan ─────────────────────────────────────── */
 .so-cancellation-reason {
   margin-top: 16px;
   padding: 14px 16px;
-  background: #fee2e2;
-  border: 1px solid #fca5a5;
+  background: var(--color-danger-bg);
+  border: 1px solid var(--color-danger-soft-border);
   border-radius: 8px;
 }
 
 .so-cancellation-title {
   font-weight: 600;
   font-size: 14px;
-  color: #991b1b;
+  color: var(--color-danger-deep);
   margin-bottom: 6px;
 }
 
 .so-cancellation-text {
   font-size: 14px;
-  color: #7f1d1d;
+  color: var(--color-danger-deepest);
   line-height: 1.5;
 }
 
 /* ── Item card (detailed view) ─────────────────────────────── */
 .so-item-card {
   padding: 12px 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--gray-bg);
 }
 
 .so-item-card:last-child {
@@ -489,8 +489,8 @@
 
 .so-item-tag {
   display: inline-block;
-  background: #f3f4f6;
-  border: 1px solid #e5e7eb;
+  background: var(--gray-100);
+  border: 1px solid var(--gray-200);
   border-radius: 4px;
   padding: 2px 8px;
   font-size: 12px;
@@ -500,7 +500,7 @@
 .so-item-notes {
   margin-top: 6px;
   font-size: 12px;
-  color: #6b7280;
+  color: var(--gray-500);
   font-style: italic;
 }
 
@@ -510,7 +510,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 0;
-  border-top: 1px dashed #e5e7eb;
+  border-top: 1px dashed var(--gray-200);
   gap: 8px;
 }
 
@@ -523,7 +523,7 @@
 
 .so-promo-code {
   font-weight: 700;
-  color: #15803d;
+  color: var(--color-success-mid);
   font-family: monospace;
   font-size: 13px;
   letter-spacing: 0.05em;
@@ -531,14 +531,14 @@
 
 .so-promo-label {
   font-size: 11px;
-  color: #9b9b9b;
+  color: var(--gray-light);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .so-promo-discount {
   font-weight: 700;
-  color: #15803d;
+  color: var(--color-success-mid);
   font-size: 15px;
   white-space: nowrap;
 }
@@ -557,7 +557,7 @@
 
 .so-review-intro {
   font-size: 13px;
-  color: #6b6b6b;
+  color: var(--gray-mid);
   margin: 0 0 16px;
   line-height: 1.5;
 }
@@ -576,8 +576,8 @@
 }
 
 .so-review-card--done {
-  background: #f0fdf4;
-  border-color: #bbf7d0;
+  background: var(--color-success-bg);
+  border-color: var(--color-success-border);
 }
 
 .so-review-card-item {
@@ -598,7 +598,7 @@
 
 .so-review-item-qty {
   font-size: 13px;
-  color: #9b9b9b;
+  color: var(--gray-light);
 }
 
 /* Star rating */
@@ -614,14 +614,14 @@
   border: none;
   font-size: 24px;
   cursor: pointer;
-  color: #d1d5db;
+  color: var(--gray-300);
   padding: 0;
   line-height: 1;
   transition: color 0.1s, transform 0.1s;
 }
 
 .so-star-btn--active {
-  color: #f59e0b;
+  color: var(--color-warning-alt);
 }
 
 .so-star-btn:hover {
@@ -631,7 +631,7 @@
 .so-star-label {
   font-size: 13px;
   font-weight: 700;
-  color: #6b6b6b;
+  color: var(--gray-mid);
   margin-left: 4px;
 }
 
@@ -639,7 +639,7 @@
 .so-review-textarea {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--gray-300);
   border-radius: 8px;
   font-size: 14px;
   resize: vertical;
@@ -655,7 +655,7 @@
 }
 
 .so-review-error {
-  color: #dc2626;
+  color: var(--color-danger);
   font-size: 12px;
   font-weight: 600;
   margin: 6px 0 0;
@@ -686,7 +686,7 @@
 .so-review-success {
   font-size: 14px;
   font-weight: 700;
-  color: #15803d;
+  color: var(--color-success-mid);
   padding: 4px 0;
 }
 
@@ -713,8 +713,8 @@
   align-items: center;
   gap: 6px;
   padding: 7px 14px;
-  background: #f3f4f6;
-  border: 1px dashed #d1d5db;
+  background: var(--gray-100);
+  border: 1px dashed var(--gray-300);
   border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
@@ -737,12 +737,12 @@
 
 .so-review-photo-remove {
   background: none;
-  border: 1px solid #fca5a5;
+  border: 1px solid var(--color-danger-soft-border);
   border-radius: 6px;
   padding: 4px 10px;
   font-size: 12px;
   font-weight: 600;
-  color: #dc2626;
+  color: var(--color-danger);
   cursor: pointer;
   transition: background 0.15s;
   white-space: nowrap;
@@ -751,5 +751,5 @@
 }
 
 .so-review-photo-remove:hover:not(:disabled) {
-  background: #fee2e2;
+  background: var(--color-danger-bg);
 }

@@ -27,7 +27,7 @@
 
 .co-auth-desc {
   font-size: 15px;
-  color: #6b6b6b;
+  color: var(--gray-mid);
   margin: 0;
   line-height: 1.6;
 }
@@ -72,7 +72,7 @@
 /* ── Product card category label ─────────────────────────── */
 .product-card-category {
   font-size: 11px;
-  color: #9b9b9b;
+  color: var(--gray-light);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -87,12 +87,12 @@
   /* constrained to match page content width, not full-width */
   max-width: 1200px;
   margin: 8px auto 0;
-  background: #fffbeb;
-  border: 1px solid #fde68a;
+  background: var(--color-warning-bg-2);
+  border: 1px solid var(--color-warning-border);
   border-radius: 8px;
   padding: 10px 20px;
   font-size: 13px;
-  color: #92400e;
+  color: var(--color-warning);
   position: relative;
   flex-wrap: wrap;
   box-sizing: border-box;
@@ -110,7 +110,7 @@
 }
 
 .email-verify-banner__err {
-  color: #b91c1c;
+  color: var(--color-danger-dark);
   font-weight: 600;
 }
 
@@ -132,7 +132,7 @@
 }
 
 .email-verify-banner__btn:disabled {
-  color: #9ca3af;
+  color: var(--gray-400);
   cursor: default;
   text-decoration: none;
 }
@@ -143,7 +143,7 @@
   cursor: pointer;
   font-size: 18px;
   line-height: 1;
-  color: #92400e;
+  color: var(--color-warning);
   opacity: 0.6;
   padding: 0 2px;
   flex-shrink: 0;

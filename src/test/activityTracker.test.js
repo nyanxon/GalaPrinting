@@ -86,13 +86,13 @@ describe('activityTracker — global click listener & label resolution', () => {
   });
 
   it('captures button clicks and uses visible text as the label', () => {
-    document.body.innerHTML = `<button id="b">Cetak Resi</button>`;
+    document.body.innerHTML = `<button id="b">Cetak Nota</button>`;
     document.getElementById('b').click();
     api.post.mockResolvedValue({ data: { ok: true } });
     tracker.flush();
     expect(api.post).toHaveBeenCalledTimes(1);
     const ev = api.post.mock.calls[0][1].events[0];
-    expect(ev.actionLabel).toBe('Cetak Resi');
+    expect(ev.actionLabel).toBe('Cetak Nota');
     expect(ev.pagePath).toBe('/current');
   });
 

@@ -1,5 +1,5 @@
-﻿/**
- * HomepageSection.jsx — Admin panel section for managing Homepage content.
+/**
+ * HomepageSection.jsx � Admin panel section for managing Homepage content.
  *
  * Tabs:
  *   A. Landing Page Banner (hero)
@@ -47,7 +47,7 @@ async function fetchCategoriesWithIds() {
   }
 }
 
-// ── Small shared helpers ──────────────────────────────────────────────────────
+// -- Small shared helpers ------------------------------------------------------
 
 function resolveImg(url) {
   if (!url) return null;
@@ -64,7 +64,7 @@ async function doUpload(file) {
   }
 }
 
-// ── ImagePickerField ──────────────────────────────────────────────────────────
+// -- ImagePickerField ----------------------------------------------------------
 /**
  * Reusable image-picker: shows current image preview + DropZone.
  * Calls onUrlChange(url) after upload completes.
@@ -105,14 +105,14 @@ function ImagePickerField({ label, currentUrl, onUrlChange, uploading, setUpload
         onFiles={handleFiles}
         disabled={uploading}
         compact
-        label={uploading ? 'Mengunggah…' : (preview ? 'Ganti gambar' : undefined)}
-        hint="JPG, PNG, WEBP · Maks. 10 MB"
+        label={uploading ? 'Mengunggah�' : (preview ? 'Ganti gambar' : undefined)}
+        hint="JPG, PNG, WEBP � Maks. 10 MB"
       />
     </div>
   );
 }
 
-// ── A. Hero Banners Tab (carousel — up to 8 slides) ──────────────────────────
+// -- A. Hero Banners Tab (carousel � up to 8 slides) --------------------------
 
 function HeroBannerModal({ banner, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -168,7 +168,7 @@ function HeroBannerModal({ banner, onClose, onSaved }) {
           <h2 className="adm-modal-title" id="hb-modal-title">
             {banner ? 'Edit Banner' : 'Tambah Banner'}
           </h2>
-          <button className="adm-modal-close" type="button" aria-label="Tutup" onClick={onClose}>✕</button>
+          <button className="adm-modal-close" type="button" aria-label="Tutup" onClick={onClose}>?</button>
         </div>
         <div className="adm-modal-body">
           <form className="adm-form" onSubmit={handleSubmit} noValidate>
@@ -220,7 +220,7 @@ function HeroBannerModal({ banner, onClose, onSaved }) {
                 <div style={{ position: 'relative', textAlign: 'center', padding: '8px 16px' }}>
                   {form.title && (
                     <p style={{ fontWeight: 900, fontSize: 18, margin: 0,
-                      color: form.imagePath ? '#fff' : '#1f1f1f',
+                      color: form.imagePath ? '#fff' : 'var(--text)',
                       textShadow: form.imagePath ? '0 2px 8px rgba(0,0,0,0.5)' : 'none' }}>
                       {form.title}
                     </p>
@@ -241,7 +241,7 @@ function HeroBannerModal({ banner, onClose, onSaved }) {
             {error && <div className="adm-form-alert" role="alert">{error}</div>}
             <div className="adm-form-actions">
               <button className="adm-btn adm-btn--primary" type="submit" disabled={saving || uploading}>
-                {saving ? 'Menyimpan…' : (banner ? 'Simpan Perubahan' : 'Tambah Banner')}
+                {saving ? 'Menyimpan�' : (banner ? 'Simpan Perubahan' : 'Tambah Banner')}
               </button>
               <button className="adm-btn" type="button" onClick={onClose} disabled={saving}>Batal</button>
             </div>
@@ -295,8 +295,8 @@ function HeroTab() {
         <div className="adm-toolbar">
           <h2 className="adm-section-title">
             Banner Halaman Utama
-            <span style={{ fontSize: 13, fontWeight: 400, color: '#6b7280', marginLeft: 8 }}>
-              (carousel · maks. 8 slide)
+            <span style={{ fontSize: 13, fontWeight: 400, color: 'var(--gray-500)', marginLeft: 8 }}>
+              (carousel � maks. 8 slide)
             </span>
           </h2>
           <div className="adm-toolbar-right">
@@ -309,9 +309,9 @@ function HeroTab() {
         </div>
 
         {loading ? (
-          <p style={{ padding: 16, color: '#6b7280' }}>Memuat…</p>
+          <p style={{ padding: 16, color: 'var(--gray-500)' }}>Memuat�</p>
         ) : banners.length === 0 ? (
-          <p style={{ padding: 16, color: '#6b7280' }}>
+          <p style={{ padding: 16, color: 'var(--gray-500)' }}>
             Belum ada banner. Tambahkan slide pertama untuk carousel Homepage.
           </p>
         ) : (
@@ -324,7 +324,7 @@ function HeroTab() {
                 {/* Slide number badge */}
                 <span style={{
                   position: 'absolute', top: 6, left: 6,
-                  background: b.is_active ? 'var(--brand-brown)' : '#9ca3af',
+                  background: b.is_active ? 'var(--brand-brown)' : 'var(--gray-400)',
                   color: '#fff', fontSize: 10, padding: '2px 6px', borderRadius: 4, zIndex: 1,
                 }}>
                   Slide {idx + 1}{!b.is_active && ' (nonaktif)'}
@@ -347,19 +347,19 @@ function HeroTab() {
                     {b.title || <span style={{ color: '#aaa' }}>Tanpa judul</span>}
                   </p>
                   {b.subtitle && (
-                    <p style={{ margin: 0, fontSize: 11, color: '#6b7280', marginBottom: 2 }}>{b.subtitle}</p>
+                    <p style={{ margin: 0, fontSize: 11, color: 'var(--gray-500)', marginBottom: 2 }}>{b.subtitle}</p>
                   )}
                   {b.cta_url && (
-                    <p style={{ margin: 0, fontSize: 11, color: '#6b7280',
+                    <p style={{ margin: 0, fontSize: 11, color: 'var(--gray-500)',
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {b.cta_url}
                     </p>
                   )}
                   <div className="adm-actions" style={{ marginTop: 8 }}>
                     <button className="adm-btn" type="button" style={{ padding: '3px 8px', fontSize: 12 }}
-                      onClick={() => handleMove(idx, 'up')} disabled={idx === 0} aria-label="Pindah ke atas">↑</button>
+                      onClick={() => handleMove(idx, 'up')} disabled={idx === 0} aria-label="Pindah ke atas">?</button>
                     <button className="adm-btn" type="button" style={{ padding: '3px 8px', fontSize: 12 }}
-                      onClick={() => handleMove(idx, 'down')} disabled={idx >= banners.length - 1} aria-label="Pindah ke bawah">↓</button>
+                      onClick={() => handleMove(idx, 'down')} disabled={idx >= banners.length - 1} aria-label="Pindah ke bawah">?</button>
                     <button className="adm-btn adm-btn--edit" type="button"
                       onClick={() => { setEditing(b); setModalOpen(true); }}>Edit</button>
                     <button className="adm-btn adm-btn--delete" type="button"
@@ -383,7 +383,7 @@ function HeroTab() {
   );
 }
 
-// ── B. Design Showcase Tab ────────────────────────────────────────────────────
+// -- B. Design Showcase Tab ----------------------------------------------------
 
 function DesignItemModal({ item, onClose, onSaved }) {
   const [form, setForm]           = useState({
@@ -438,7 +438,7 @@ function DesignItemModal({ item, onClose, onSaved }) {
           <h2 className="adm-modal-title" id="di-modal-title">
             {item ? 'Edit Item Design' : 'Tambah Item Design'}
           </h2>
-          <button className="adm-modal-close" type="button" aria-label="Tutup" onClick={onClose}>✕</button>
+          <button className="adm-modal-close" type="button" aria-label="Tutup" onClick={onClose}>?</button>
         </div>
         <div className="adm-modal-body">
           <form className="adm-form" onSubmit={handleSubmit} noValidate>
@@ -473,7 +473,7 @@ function DesignItemModal({ item, onClose, onSaved }) {
             {error && <div className="adm-form-alert" role="alert">{error}</div>}
             <div className="adm-form-actions">
               <button className="adm-btn adm-btn--primary" type="submit" disabled={saving || uploading}>
-                {saving ? 'Menyimpan…' : (item ? 'Simpan Perubahan' : 'Tambah')}
+                {saving ? 'Menyimpan�' : (item ? 'Simpan Perubahan' : 'Tambah')}
               </button>
               <button className="adm-btn" type="button" onClick={onClose} disabled={saving}>Batal</button>
             </div>
@@ -536,7 +536,7 @@ function DesignShowcaseTab() {
       <div className="adm-card">
         <div className="adm-toolbar">
           <h2 className="adm-section-title">Showcase Design
-            <span style={{ fontSize: 13, fontWeight: 400, color: '#6b7280', marginLeft: 8 }}>
+            <span style={{ fontSize: 13, fontWeight: 400, color: 'var(--gray-500)', marginLeft: 8 }}>
               (maks. 4 tampil di Homepage)
             </span>
           </h2>
@@ -550,9 +550,9 @@ function DesignShowcaseTab() {
         </div>
 
         {loading ? (
-          <p style={{ padding: 16, color: '#6b7280' }}>Memuat…</p>
+          <p style={{ padding: 16, color: 'var(--gray-500)' }}>Memuat�</p>
         ) : items.length === 0 ? (
-          <p style={{ padding: 16, color: '#6b7280' }}>Belum ada item design.</p>
+          <p style={{ padding: 16, color: 'var(--gray-500)' }}>Belum ada item design.</p>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px,1fr))', gap: 14, padding: '4px 0' }}>
             {items.map((item, idx) => (
@@ -581,16 +581,16 @@ function DesignShowcaseTab() {
                     {item.title || <span style={{ color: '#aaa' }}>Tanpa judul</span>}
                   </p>
                   {item.link_url && (
-                    <p style={{ margin: 0, fontSize: 11, color: '#6b7280',
+                    <p style={{ margin: 0, fontSize: 11, color: 'var(--gray-500)',
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {item.link_url}
                     </p>
                   )}
                   <div className="adm-actions" style={{ marginTop: 8 }}>
                     <button className="adm-btn" type="button" style={{ padding: '3px 8px', fontSize: 12 }}
-                      onClick={() => handleMoveUp(idx)} disabled={idx === 0} aria-label="Pindah ke atas">↑</button>
+                      onClick={() => handleMoveUp(idx)} disabled={idx === 0} aria-label="Pindah ke atas">?</button>
                     <button className="adm-btn" type="button" style={{ padding: '3px 8px', fontSize: 12 }}
-                      onClick={() => handleMoveDown(idx)} disabled={idx >= items.length - 1} aria-label="Pindah ke bawah">↓</button>
+                      onClick={() => handleMoveDown(idx)} disabled={idx >= items.length - 1} aria-label="Pindah ke bawah">?</button>
                     <button className="adm-btn adm-btn--edit" type="button"
                       onClick={() => { setEditing(item); setModalOpen(true); }}>Edit</button>
                     <button className="adm-btn adm-btn--delete" type="button"
@@ -614,7 +614,7 @@ function DesignShowcaseTab() {
   );
 }
 
-// ── C. Category Banners Tab ───────────────────────────────────────────────────
+// -- C. Category Banners Tab ---------------------------------------------------
 
 function CatBannerModal({ banner, categories, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -622,7 +622,7 @@ function CatBannerModal({ banner, categories, onClose, onSaved }) {
     title:      banner?.title        || '',
     imagePath:  banner?.image_path   || '',
     linkUrl:    banner?.link_url     || '',
-    ctaText:    banner?.cta_text     || 'Lihat Semua →',
+    ctaText:    banner?.cta_text     || 'Lihat Semua ?',
   });
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving]       = useState(false);
@@ -643,7 +643,7 @@ function CatBannerModal({ banner, categories, onClose, onSaved }) {
         title:      form.title      || null,
         imagePath:  form.imagePath  || null,
         linkUrl:    form.linkUrl    || null,
-        ctaText:    form.ctaText    || 'Lihat Semua →',
+        ctaText:    form.ctaText    || 'Lihat Semua ?',
       });
       showToast('Banner kategori disimpan.', 'success');
       onSaved();
@@ -662,7 +662,7 @@ function CatBannerModal({ banner, categories, onClose, onSaved }) {
           <h2 className="adm-modal-title" id="cb-modal-title">
             {banner ? 'Edit Banner Kategori' : 'Tambah Banner Kategori'}
           </h2>
-          <button className="adm-modal-close" type="button" aria-label="Tutup" onClick={onClose}>✕</button>
+          <button className="adm-modal-close" type="button" aria-label="Tutup" onClick={onClose}>?</button>
         </div>
         <div className="adm-modal-body">
           <form className="adm-form" onSubmit={handleSubmit} noValidate>
@@ -670,7 +670,7 @@ function CatBannerModal({ banner, categories, onClose, onSaved }) {
               <label className="adm-label" htmlFor="cb-cat">Kategori</label>
               <select className="adm-input" id="cb-cat" name="categoryId"
                 value={form.categoryId} onChange={handleChange}>
-                <option value="">— Produk (tanpa kategori) —</option>
+                <option value="">� Produk (tanpa kategori) �</option>
                 {categories.map((c) => (
                   <option key={c.id || c} value={c.id || c}>{c.name || c}</option>
                 ))}
@@ -696,7 +696,7 @@ function CatBannerModal({ banner, categories, onClose, onSaved }) {
             <div className="adm-field">
               <label className="adm-label" htmlFor="cb-cta">Teks Tombol CTA</label>
               <input className="adm-input" id="cb-cta" name="ctaText"
-                value={form.ctaText} onChange={handleChange} placeholder="Lihat Semua →" />
+                value={form.ctaText} onChange={handleChange} placeholder="Lihat Semua ?" />
             </div>
             {/* Preview */}
             <div style={{ marginBottom: 12 }}>
@@ -715,7 +715,7 @@ function CatBannerModal({ banner, categories, onClose, onSaved }) {
                 }}>
                   <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#fff',
                     textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>
-                    {form.title || '—'}
+                    {form.title || '�'}
                   </p>
                   <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>
                     {form.ctaText}
@@ -726,7 +726,7 @@ function CatBannerModal({ banner, categories, onClose, onSaved }) {
             {error && <div className="adm-form-alert" role="alert">{error}</div>}
             <div className="adm-form-actions">
               <button className="adm-btn adm-btn--primary" type="submit" disabled={saving || uploading}>
-                {saving ? 'Menyimpan…' : 'Simpan'}
+                {saving ? 'Menyimpan�' : 'Simpan'}
               </button>
               <button className="adm-btn" type="button" onClick={onClose} disabled={saving}>Batal</button>
             </div>
@@ -786,9 +786,9 @@ function CatBannersTab() {
         </div>
 
         {loading ? (
-          <p style={{ padding: 16, color: '#6b7280' }}>Memuat…</p>
+          <p style={{ padding: 16, color: 'var(--gray-500)' }}>Memuat�</p>
         ) : banners.length === 0 ? (
-          <p style={{ padding: 16, color: '#6b7280' }}>
+          <p style={{ padding: 16, color: 'var(--gray-500)' }}>
             Belum ada banner kategori. Tambahkan banner untuk setiap section kategori di Homepage.
           </p>
         ) : (
@@ -812,12 +812,12 @@ function CatBannersTab() {
                         <img src={b.imageUrl} alt="" style={{ width: 60, height: 40,
                           objectFit: 'cover', borderRadius: 4, border: '1px solid var(--border)' }}
                           onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                      ) : <span style={{ color: '#ccc', fontSize: 12 }}>—</span>}
+                      ) : <span style={{ color: '#ccc', fontSize: 12 }}>�</span>}
                     </td>
                     <td>{b.category_name || b.categoryName || '(Produk)'}</td>
-                    <td>{b.title || '—'}</td>
+                    <td>{b.title || '�'}</td>
                     <td style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12 }}>
-                      {b.linkUrl || '—'}
+                      {b.linkUrl || '�'}
                     </td>
                     <td style={{ fontSize: 12 }}>{b.ctaText}</td>
                     <td>
@@ -848,9 +848,9 @@ function CatBannersTab() {
   );
 }
 
-// ── Root HomepageSection with tab switching ───────────────────────────────────
+// -- Root HomepageSection with tab switching -----------------------------------
 
-// ── E. Full Homepage Preview ──────────────────────────────────────────────────
+// -- E. Full Homepage Preview --------------------------------------------------
 // Uses the exact same CSS classes as home.css + real ProductCard component
 // so the preview looks pixel-identical to what the customer sees.
 
@@ -955,7 +955,7 @@ function PreviewDesignShowcase({ items }) {
 
 function PreviewProductSection({ products, category, reverse, bannerData }) {
   const name    = bannerData?.title || category?.name || 'Produk';
-  const ctaText = bannerData?.cta_text || 'Lihat Semua →';
+  const ctaText = bannerData?.cta_text || 'Lihat Semua ?';
   const bgImage = bannerData?.image_path ? `url(${resolveImg(bannerData.image_path)})` : undefined;
 
   const bannerEl = (
@@ -1034,13 +1034,13 @@ function HomepageFullPreview() {
 
   if (loading) {
     return (
-      <div className="adm-card" style={{ padding: 32, textAlign: 'center', color: '#6b7280' }}>
-        <p>Memuat preview homepage…</p>
+      <div className="adm-card" style={{ padding: 32, textAlign: 'center', color: 'var(--gray-500)' }}>
+        <p>Memuat preview homepage�</p>
       </div>
     );
   }
 
-  // Group products by category — same logic as real HomePage
+  // Group products by category � same logic as real HomePage
   const grouped = categories
     .map((cat) => ({
       category: cat,
@@ -1059,13 +1059,13 @@ function HomepageFullPreview() {
         padding: '9px 16px', background: 'var(--brand-brown, #785e40)', color: '#fff',
         fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8,
       }}>
-        <span>🏠  PREVIEW HOMEPAGE — tampilan customer</span>
+        <span>??  PREVIEW HOMEPAGE � tampilan customer</span>
         <span style={{ marginLeft: 'auto', fontWeight: 400, fontSize: 12, opacity: 0.75 }}>
           scroll untuk melihat seluruh halaman
         </span>
       </div>
 
-      {/* ── Exact same structure as public HomePage ── */}
+      {/* -- Exact same structure as public HomePage -- */}
       <main style={{ background: '#fff' }}>
         {/* Hero carousel */}
         <div className="container">
@@ -1157,7 +1157,7 @@ const TABS = [
   { id: 'hero',        label: 'Banner Halaman Utama' },
   { id: 'design',      label: 'Showcase Design' },
   { id: 'banners',     label: 'Banner Kategori' },
-  { id: 'fullpreview', label: '🏠  Pratinjau Homepage' },
+  { id: 'fullpreview', label: '??  Pratinjau Homepage' },
 ];
 
 export default function HomepageSection() {

@@ -142,7 +142,7 @@ export default function FeaturePermissionSection({ userId }) {
     );
   }
 
-  const roleColor = STAFF_ROLE_CONFIG[account.role]?.color ?? '#6b7280';
+  const roleColor = STAFF_ROLE_CONFIG[account.role]?.color ?? 'var(--gray-500)';
   const grantedCount = allFeatures.filter((f) => granted.has(f.key)).length;
 
   return (
@@ -161,7 +161,7 @@ export default function FeaturePermissionSection({ userId }) {
           flexWrap: 'wrap',
           gap: '8px 24px',
           alignItems: 'center',
-          background: '#fafafa',
+          background: 'var(--gray-bg-3)',
           border: '1px solid #e5e5e5',
           borderRadius: '8px',
           padding: '10px 14px',
@@ -191,12 +191,12 @@ export default function FeaturePermissionSection({ userId }) {
         <span>
           <span style={{ color: '#666' }}>Status:</span>{' '}
           {account.is_promoted_admin ? (
-            <span style={{ color: '#16a34a', fontWeight: 600 }}>Admin Dinamis</span>
+            <span style={{ color: 'var(--color-success)', fontWeight: 600 }}>Admin Dinamis</span>
           ) : (
-            <span style={{ color: '#6b7280', fontWeight: 600 }}>Reguler</span>
+            <span style={{ color: 'var(--gray-500)', fontWeight: 600 }}>Reguler</span>
           )}
         </span>
-        <span style={{ marginLeft: 'auto', color: '#6b7280' }}>
+        <span style={{ marginLeft: 'auto', color: 'var(--gray-500)' }}>
           {grantedCount}/{allFeatures.length} fitur aktif
         </span>
       </div>
@@ -205,13 +205,13 @@ export default function FeaturePermissionSection({ userId }) {
         <div
           role="status"
           style={{
-            background: '#fffbeb',
+            background: 'var(--color-warning-bg-2)',
             border: '1px solid #fcd34d',
             borderRadius: '8px',
             padding: '10px 14px',
             marginBottom: '16px',
             fontSize: '13px',
-            color: '#92400e',
+            color: 'var(--color-warning)',
           }}
         >
           Akun ini belum dijadikan Admin Dinamis. Konfigurasi yang disimpan tetap disimpan,

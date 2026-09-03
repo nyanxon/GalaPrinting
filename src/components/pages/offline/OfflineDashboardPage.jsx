@@ -494,7 +494,7 @@ function OrderListPanel() {
         </div>
       </div>
 
-      {error && <p style={{ color: '#dc2626', fontSize: 13 }}>{error}</p>}
+      {error && <p style={{ color: 'var(--color-danger)', fontSize: 13 }}>{error}</p>}
 
       <div className="adm-table-wrap">
         <table className="adm-table">

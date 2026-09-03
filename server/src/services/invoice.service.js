@@ -233,10 +233,21 @@ export async function updateInvoicePaymentStatus(id, newStatus, paymentMethod, d
     throw err;
   }
 
+  // Aturan transisi status pembayaran:
+  //   - Belum Bayar (unpaid) → boleh ke DP atau Lunas (bebas).
+  //   - DP → HANYA bisa ke Lunas (pelunasan). Tidak boleh balik ke Belum Bayar
+  //     atau DP ulang. Pelunasan penuh dipaksa melalui status paid.
+  //   - Paid/Lunas → locked, tidak bisa diubah (dicek di atas).
+  if (invoice.payment_status === 'dp' && newStatus !== 'paid') {
+    const err = new Error('Invoice berstatus DP hanya bisa dipindahkan ke Lunas.');
+    err.status = 422;
+    throw err;
+  }
+
   const total = Number(invoice.total || 0);
 
   // Nominal DP wajib & masuk akal saat status = DP
-  let dpAmountValue = null;
+  let dpAmountValue;
   if (newStatus === 'dp') {
     const dp = Number(dpAmount);
     if (!dpAmount || Number.isNaN(dp) || !Number.isFinite(dp)) {
@@ -259,12 +270,15 @@ export async function updateInvoicePaymentStatus(id, newStatus, paymentMethod, d
 
   const locked = newStatus === 'paid' ? 1 : 0;
   const paidAt = newStatus === 'paid' ? new Date() : null;
+  // Tanggal DP diterima: diisi saat status berubah jadi DP, dipertahankan
+  // sebagai histori saat status berubah (mis. DP -> LUNAS).
+  const dpPaidAt = newStatus === 'dp' ? new Date() : (invoice.dp_paid_at || null);
 
   await query(
     `UPDATE invoices
-     SET payment_status = ?, payment_method = ?, dp_amount = ?, locked = ?, paid_at = ?
+     SET payment_status = ?, payment_method = ?, dp_amount = ?, locked = ?, paid_at = ?, dp_paid_at = ?
      WHERE id = ?`,
-    [newStatus, paymentMethod || invoice.payment_method, dpAmountValue, locked, paidAt, id]
+    [newStatus, paymentMethod || invoice.payment_method, dpAmountValue, locked, paidAt, dpPaidAt, id]
   );
 
   return getInvoiceById(id);

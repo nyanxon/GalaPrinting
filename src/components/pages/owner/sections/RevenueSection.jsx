@@ -27,6 +27,7 @@ import { listCategories } from '../../../../services/categories.js';
 import { formatCurrency } from '../../../../utils/format.js';
 import OrderDetailModal from '../../../modals/OrderDetailModal.jsx';
 import PaginationBar from '../../../ui/PaginationBar.jsx';
+import { BRAND_COLOR, COLORS } from '../../../../config/brand.js';
 
 /* ── helpers ───────────────────────────────────────────────── */
 function pctChange(current, previous) {
@@ -93,7 +94,7 @@ function KpiCard({ icon: Icon, label, value, prev, sparkData, color, tooltip, on
         </span>
         <span className="rev-kpi-vs">vs periode sebelumnya</span>
         {sparkData && sparkData.length > 1 && (
-          <Sparkline data={sparkData} color={up ? '#16a34a' : '#dc2626'} />
+          <Sparkline data={sparkData} color={up ? COLORS.success : COLORS.danger} />
         )}
       </div>
     </button>
@@ -202,8 +203,8 @@ function ResetRevenueModal({ onClose, onConfirmed }) {
       <div className="adm-modal" style={{ maxWidth: 520 }}>
 
         {/* Header */}
-        <div className="adm-modal-header" style={{ background: '#fef2f2', borderBottom: '1px solid #fecaca' }}>
-          <h2 className="adm-modal-title" id="reset-modal-title" style={{ color: '#b91c1c', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="adm-modal-header" style={{ background: 'var(--color-danger-bg-2)', borderBottom: '1px solid #fecaca' }}>
+          <h2 className="adm-modal-title" id="reset-modal-title" style={{ color: 'var(--color-danger-dark)', display: 'flex', alignItems: 'center', gap: 8 }}>
             <Trash2 size={18} aria-hidden="true" />
             Hapus Semua Data Revenue
           </h2>
@@ -215,13 +216,13 @@ function ResetRevenueModal({ onClose, onConfirmed }) {
         <div className="adm-modal-body">
           {/* Warning block */}
           <div style={{
-            background: '#fef2f2',
+            background: 'var(--color-danger-bg-2)',
             border: '1px solid #fecaca',
             borderRadius: 8,
             padding: '12px 16px',
             marginBottom: 20,
           }}>
-            <p style={{ fontWeight: 700, color: '#b91c1c', margin: '0 0 8px' }}>
+            <p style={{ fontWeight: 700, color: 'var(--color-danger-dark)', margin: '0 0 8px' }}>
               ⚠️ Tindakan ini tidak dapat dibatalkan.
             </p>
             <p style={{ margin: '0 0 8px', fontSize: 13, color: '#374151' }}>
@@ -233,7 +234,7 @@ function ResetRevenueModal({ onClose, onConfirmed }) {
               <li>Semua data <strong>tampilan produk</strong> (analytics_product_views)</li>
               <li>Nomor urut pesanan akan <strong>direset ke awal</strong></li>
             </ul>
-            <p style={{ margin: 0, fontSize: 13, color: '#6b7280' }}>
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--gray-500)' }}>
               Data yang <strong>tidak</strong> dihapus: produk, kategori, pelanggan, ulasan, promo, percakapan.
             </p>
           </div>
@@ -241,7 +242,7 @@ function ResetRevenueModal({ onClose, onConfirmed }) {
           {/* Optional reason */}
           <div className="adm-field" style={{ marginBottom: 16 }}>
             <label className="adm-label" htmlFor="reset-note">
-              Alasan reset <span style={{ color: '#9ca3af', fontWeight: 400 }}>(opsional, maks. 500 karakter)</span>
+              Alasan reset <span style={{ color: 'var(--gray-400)', fontWeight: 400 }}>(opsional, maks. 500 karakter)</span>
             </label>
             <textarea
               id="reset-note"
@@ -259,7 +260,7 @@ function ResetRevenueModal({ onClose, onConfirmed }) {
           {/* Confirmation word */}
           <div className="adm-field" style={{ marginBottom: 20 }}>
             <label className="adm-label" htmlFor="reset-confirm-word">
-              Ketik <strong style={{ color: '#b91c1c', letterSpacing: 1 }}>RESET</strong> untuk mengkonfirmasi:
+              Ketik <strong style={{ color: 'var(--color-danger-dark)', letterSpacing: 1 }}>RESET</strong> untuk mengkonfirmasi:
             </label>
             <input
               id="reset-confirm-word"
@@ -296,8 +297,8 @@ function ResetRevenueModal({ onClose, onConfirmed }) {
               onClick={handleReset}
               disabled={!confirmed || resetting}
               style={{
-                background: confirmed ? '#b91c1c' : '#e5e7eb',
-                color: confirmed ? '#fff' : '#9ca3af',
+                background: confirmed ? 'var(--color-danger-dark)' : 'var(--gray-200)',
+                color: confirmed ? '#fff' : 'var(--gray-400)',
                 border: 'none',
                 borderRadius: 6,
                 padding: '8px 20px',
@@ -429,9 +430,9 @@ export default function RevenueSection() {
   }));
 
   const trendSeries = [
-    { key: 'revenue', label: 'Revenue',    color: '#785e40' },
-    { key: 'profit',  label: 'Profit',     color: '#16a34a' },
-    { key: 'orders',  label: 'Pesanan',    color: '#2563eb' },
+    { key: 'revenue', label: 'Revenue',    color: BRAND_COLOR },
+    { key: 'profit',  label: 'Profit',     color: COLORS.success },
+    { key: 'orders',  label: 'Pesanan',    color: COLORS.info },
   ];
 
   const categoryDonutData = (metrics?.byCategory || []).map((c) => ({
@@ -516,7 +517,7 @@ export default function RevenueSection() {
               gap: 6,
               background: 'none',
               border: '1px solid #fca5a5',
-              color: '#b91c1c',
+              color: 'var(--color-danger-dark)',
               borderRadius: 6,
               padding: '5px 12px',
               fontSize: 12,
@@ -560,19 +561,19 @@ export default function RevenueSection() {
         ) : (
           <>
             <KpiCard
-              icon={DollarSign} label="Revenue" color="#785e40"
+              icon={DollarSign} label="Revenue" color={BRAND_COLOR}
               value={formatCurrency(m.totalRevenue)}
               prev={prev?.totalRevenue} sparkData={sparkRevenue}
               tooltip="Total pendapatan kotor dari pesanan selesai"
             />
             <KpiCard
-              icon={TrendingUp} label="Profit" color="#16a34a"
+              icon={TrendingUp} label="Profit" color="var(--color-success)"
               value={formatCurrency(m.totalProfit)}
               prev={prev?.totalProfit} sparkData={sparkProfit}
               tooltip="Revenue dikurangi diskon, refund, dan ongkir"
             />
             <KpiCard
-              icon={ShoppingCart} label="Pesanan" color="#2563eb"
+              icon={ShoppingCart} label="Pesanan" color="var(--color-info)"
               value={m.orderCount.toLocaleString('id-ID')}
               prev={prev?.orderCount} sparkData={sparkOrders}
               tooltip="Jumlah pesanan aktif / selesai"
@@ -590,7 +591,7 @@ export default function RevenueSection() {
               tooltip="Average Order Value — rata-rata nilai per pesanan"
             />
             <KpiCard
-              icon={TrendingDown} label="Refund" color="#dc2626"
+              icon={TrendingDown} label="Refund" color="var(--color-danger)"
               value={formatCurrency(m.totalRefunds)}
               prev={prev?.totalRefunds}
               tooltip="Total nilai yang direfund dalam periode ini"
@@ -634,7 +635,7 @@ export default function RevenueSection() {
               type="hbar"
               data={bestSellersBarData}
               title="Top Products (Qty Terjual)"
-              color="#785e40"
+              color={BRAND_COLOR}
               formatValue={(n) => `${n} pcs`}
             />
           )}
@@ -678,7 +679,7 @@ export default function RevenueSection() {
               type="bar"
               data={monthlyBarData}
               title="Revenue Bulanan (12 Bulan)"
-              color="#2563eb"
+              color={COLORS.info}
               formatValue={(n) => formatCurrency(n)}
             />
           )}
@@ -740,11 +741,11 @@ export default function RevenueSection() {
                           {cfg.icon} {order.status}
                         </span>
                       </td>
-                      <td style={{ fontSize: 13 }}>{order.paymentMethod || <span style={{ color: '#9b9b9b' }}>—</span>}</td>
+                      <td style={{ fontSize: 13 }}>{order.paymentMethod || <span style={{ color: 'var(--gray-light)' }}>—</span>}</td>
                       <td style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
                         {formatCurrency(order.subtotal)}
                         {order.discountAmount > 0 && (
-                          <div className="adm-date" style={{ color: '#16a34a' }}>−{formatCurrency(order.discountAmount)}</div>
+                          <div className="adm-date" style={{ color: 'var(--color-success)' }}>−{formatCurrency(order.discountAmount)}</div>
                         )}
                       </td>
                       <td className="adm-date">{new Date(order.createdAt).toLocaleDateString('id-ID')}</td>
@@ -819,7 +820,7 @@ export default function RevenueSection() {
             bottom: 24,
             left: '50%',
             transform: 'translateX(-50%)',
-            background: '#166534',
+            background: 'var(--color-success-dark)',
             color: '#fff',
             borderRadius: 8,
             padding: '12px 24px',

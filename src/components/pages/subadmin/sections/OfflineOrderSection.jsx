@@ -3,7 +3,7 @@
  *
  * Tidak menggunakan modal — form langsung ditampilkan di halaman.
  * Setelah submit berhasil, menampilkan ringkasan order, tombol reset,
- * tombol PDF invoice, tombol print resi, dan opsional kirim email.
+ * tombol PDF invoice, tombol print nota, dan opsional kirim email.
  */
 
 import { useState, useEffect, useRef } from 'react';
@@ -374,7 +374,7 @@ function SuccessCard({ order, onReset }) {
               <span className="offline-receipt-mini-key">
                 {item.name}{attrs.length > 0 ? ` · ${attrs.join(', ')}` : ''} ×{item.quantity}
                 {discAmt > 0 && (
-                  <span style={{ display: 'block', fontSize: '12px', color: '#15803d' }}>
+                  <span style={{ display: 'block', fontSize: '12px', color: 'var(--color-success-mid)' }}>
                     Diskon: -{formatCurrency(discAmt)}
                   </span>
                 )}
@@ -434,7 +434,7 @@ function SuccessCard({ order, onReset }) {
           onClick={handlePrintReceipt}
           disabled={invoiceLoading}
         >
-          🖨️ Print Resi
+          🖨️ Print Nota
         </button>
         <button
           type="button"

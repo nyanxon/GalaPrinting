@@ -68,7 +68,7 @@ function OrderDetailModal({ isOpen, onClose, order, actorRole, onOrderUpdated })
         .then((inv) => {
           setInvoice(inv);
           if (inv) {
-            setInvoiceNewStatus(inv.payment_status);
+            setInvoiceNewStatus(inv.payment_status === 'dp' ? 'paid' : inv.payment_status);
             setInvoiceNewMethod(inv.payment_method || '');
             setInvoiceNewDpAmount(inv.dp_amount != null ? String(inv.dp_amount) : '');
           }
@@ -109,7 +109,7 @@ function OrderDetailModal({ isOpen, onClose, order, actorRole, onOrderUpdated })
   const subtotalDisc  = discountTotalFor(orderDiscRows, subtotal);
   const hasManualDiscount = itemDiscTotal > 0 || subtotalDisc > 0;
 
-  const cfg = STATUS_CONFIG[o.status] || { label: o.status || '—', color: '#1f1f1f', bg: '#f0f0f0' };
+  const cfg = STATUS_CONFIG[o.status] || { label: o.status || '—', color: 'var(--text)', bg: 'var(--gray-bg)' };
 
   // Fitur 3
   const showDeliveryPanel =
@@ -406,7 +406,7 @@ function OrderDetailModal({ isOpen, onClose, order, actorRole, onOrderUpdated })
               <div className="odm-history-list">
                 {o.approvals.map((ap, idx) => (
                   <div key={ap.id || idx} className="odm-history-item">
-                    <div className="odm-history-dot" style={{ background: '#166534' }} />
+                    <div className="odm-history-dot" style={{ background: 'var(--color-success-dark)' }} />
                     <div className="odm-history-content">
                       <span className="odm-history-status">
                         <strong>{ap.stage}</strong>
@@ -455,7 +455,7 @@ function OrderDetailModal({ isOpen, onClose, order, actorRole, onOrderUpdated })
           <div className="odm-section">
             <div className="odm-section-title">🧾 Invoice</div>
             {invoiceLoading ? (
-              <div style={{ color: '#6b7280', fontSize: '13px' }}>Memuat invoice…</div>
+              <div style={{ color: 'var(--gray-500)', fontSize: '13px' }}>Memuat invoice…</div>
             ) : invoice ? (
               <div className="odm-invoice-box">
                 <div className="odm-invoice-row">
@@ -470,7 +470,7 @@ function OrderDetailModal({ isOpen, onClose, order, actorRole, onOrderUpdated })
                   <span className="odm-invoice-label">Status Bayar</span>
                   <span className="odm-invoice-value">
                     {(() => {
-                      const sc = { paid: { label: 'Lunas', color: '#166534', bg: '#dcfce7' }, unpaid: { label: 'Belum Bayar', color: '#b91c1c', bg: '#fee2e2' }, dp: { label: 'DP', color: '#92400e', bg: '#fef3c7' } };
+                      const sc = { paid: { label: 'Lunas', color: 'var(--color-success-dark)', bg: 'var(--color-success-border-light)' }, unpaid: { label: 'Belum Bayar', color: 'var(--color-danger-dark)', bg: 'var(--color-danger-bg)' }, dp: { label: 'DP', color: 'var(--color-warning)', bg: 'var(--color-warning-bg)' } };
                       const s = sc[invoice.payment_status] || { label: invoice.payment_status, color: '#333', bg: '#eee' };
                       return <span style={{ background: s.bg, color: s.color, padding: '2px 10px', borderRadius: '99px', fontSize: '12px', fontWeight: 700 }}>{s.label}</span>;
                     })()}
@@ -482,15 +482,52 @@ function OrderDetailModal({ isOpen, onClose, order, actorRole, onOrderUpdated })
                     <span className="odm-invoice-value">{invoice.payment_method}</span>
                   </div>
                 )}
+                {(() => {
+                  const isDp = invoice.payment_status === 'dp';
+                  const hasDp = isDp || (invoice.payment_status === 'paid' && invoice.dp_amount != null);
+                  if (!hasDp) return null;
+                  const dp = Number(invoice.dp_amount || 0);
+                  const sisa = Math.max(Number(invoice.total || 0) - dp, 0);
+                  const fmtDate = (v) => v
+                    ? new Date(v).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
+                    : '';
+                  const dpDate = fmtDate(invoice.dp_paid_at);
+                  const paidDate = fmtDate(invoice.paid_at);
+                  return (
+                    <>
+                      <div className="odm-invoice-row">
+                        <span className="odm-invoice-label">{dpDate ? `DP diterima (${dpDate})` : 'DP'}</span>
+                        <span className="odm-invoice-value">{formatCurrency(dp)}</span>
+                      </div>
+                      {isDp ? (
+                        <div className="odm-invoice-row">
+                          <span className="odm-invoice-label">Sisa Pembayaran</span>
+                          <span className="odm-invoice-value" style={{ color: 'var(--color-danger-dark)', fontWeight: 700 }}>{formatCurrency(sisa)}</span>
+                        </div>
+                      ) : (
+                        <div className="odm-invoice-row">
+                          <span className="odm-invoice-label">{paidDate ? `Pelunasan diterima (${paidDate})` : 'Pelunasan'}</span>
+                          <span className="odm-invoice-value">{formatCurrency(sisa)}</span>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
                 {!invoice.locked && (actorRole === 'admin' || actorRole === 'cashier' || actorRole === 'owner') && (
                   <div className="odm-invoice-update">
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
                       <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', fontWeight: 600 }}>
                         Status
                         <select className="adm-input" style={{ fontSize: '13px', padding: '6px 10px' }} value={invoiceNewStatus} onChange={(e) => setInvoiceNewStatus(e.target.value)}>
-                          <option value="unpaid">Belum Bayar</option>
-                          <option value="dp">DP</option>
-                          <option value="paid">Lunas</option>
+                          {invoice.payment_status === 'dp' ? (
+                            <option value="paid">Lunas</option>
+                          ) : (
+                            <>
+                              <option value="unpaid">Belum Bayar</option>
+                              <option value="dp">DP</option>
+                              <option value="paid">Lunas</option>
+                            </>
+                          )}
                         </select>
                       </label>
                       <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', fontWeight: 600 }}>
@@ -522,13 +559,13 @@ function OrderDetailModal({ isOpen, onClose, order, actorRole, onOrderUpdated })
                           />
                         </label>
                         <div style={{ fontSize: '12px', fontWeight: 600, paddingBottom: '8px' }}>
-                          Sisa: <span style={{ color: '#b91c1c' }}>{formatCurrency(Math.max(Number(invoice.total || 0) - (Number(invoiceNewDpAmount) || 0), 0))}</span>
+                          Sisa: <span style={{ color: 'var(--color-danger-dark)' }}>{formatCurrency(Math.max(Number(invoice.total || 0) - (Number(invoiceNewDpAmount) || 0), 0))}</span>
                         </div>
                       </div>
                     )}
                   </div>
                 )}
-                {invoice.locked && <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '6px' }}>🔒 Invoice sudah lunas dan terkunci.</div>}
+                {invoice.locked && <div style={{ fontSize: '11px', color: 'var(--gray-500)', marginTop: '6px' }}>🔒 Invoice sudah lunas dan terkunci.</div>}
                 <div style={{ marginTop: '10px' }}>
                   <button type="button" className="adm-btn adm-btn--secondary" style={{ fontSize: '13px', padding: '6px 14px' }}
                     onClick={async () => {
@@ -540,7 +577,7 @@ function OrderDetailModal({ isOpen, onClose, order, actorRole, onOrderUpdated })
                 </div>
               </div>
             ) : (
-              <div style={{ color: '#9ca3af', fontSize: '13px' }}>Invoice belum tersedia untuk pesanan ini.</div>
+              <div style={{ color: 'var(--gray-400)', fontSize: '13px' }}>Invoice belum tersedia untuk pesanan ini.</div>
             )}
           </div>
 

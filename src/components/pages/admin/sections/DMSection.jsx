@@ -39,17 +39,17 @@ function formatFileSize(bytes) {
 
 /* ── Role badge colors (Req 8.2, 2.11) ──────────────────── */
 const ROLE_BADGE_COLORS = {
-  admin:       '#2563eb',
-  owner:       '#2563eb',
-  cs:          '#16a34a',
+  admin:       'var(--color-info)',
+  owner:       'var(--color-info)',
+  cs:          'var(--color-success)',
   cashier:     '#d97706',
   operational: '#7c3aed',
   qc:          '#0891b2',
-  offline:     '#6b7280',
+  offline:     'var(--gray-500)',
 };
 
 function getRoleBadgeColor(role) {
-  return ROLE_BADGE_COLORS[role] ?? '#6b7280';
+  return ROLE_BADGE_COLORS[role] ?? 'var(--gray-500)';
 }
 
 /* ── MessageBubble (reused from ChatsSection pattern) ────── */
@@ -360,7 +360,7 @@ export default function DMSection() {
                   setStaffSearchResults([]);
                 }}
                 style={{
-                  background: '#2563eb',
+                  background: 'var(--color-info)',
                   color: '#fff',
                   border: 'none',
                   borderRadius: '6px',
@@ -389,7 +389,7 @@ export default function DMSection() {
                   autoFocus
                 />
                 {staffSearchLoading && (
-                  <div style={{ fontSize: '12px', color: '#6b7280', padding: '6px 0' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--gray-500)', padding: '6px 0' }}>
                     Mencari…
                   </div>
                 )}
@@ -405,7 +405,7 @@ export default function DMSection() {
                     }}
                   >
                     {staffSearchResults.length === 0 ? (
-                      <div style={{ padding: '10px', fontSize: '13px', color: '#6b7280' }}>
+                      <div style={{ padding: '10px', fontSize: '13px', color: 'var(--gray-500)' }}>
                         Tidak ada staff ditemukan.
                       </div>
                     ) : (
@@ -614,7 +614,7 @@ export default function DMSection() {
                       background: 'none',
                       border: 'none',
                       cursor: 'pointer',
-                      color: '#b91c1c',
+                      color: 'var(--color-danger-dark)',
                     }}
                     aria-label="Hapus file"
                   >
@@ -628,7 +628,7 @@ export default function DMSection() {
                 <div
                   className="chat-send-error"
                   role="alert"
-                  style={{ padding: '8px 20px', color: '#b91c1c', fontSize: '13px' }}
+                  style={{ padding: '8px 20px', color: 'var(--color-danger-dark)', fontSize: '13px' }}
                 >
                   {sendError}
                 </div>

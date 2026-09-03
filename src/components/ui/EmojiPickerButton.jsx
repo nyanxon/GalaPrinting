@@ -114,7 +114,7 @@ export default function EmojiPickerButton({ onEmojiSelect, inputRef }) {
           opacity: open ? 1 : 0.75,
           transition: 'opacity 0.15s, background 0.15s',
         }}
-        onMouseEnter={(e) => { e.currentTarget.style.background = '#f0f0f0'; }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--gray-bg)'; }}
         onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; }}
       >
         😊

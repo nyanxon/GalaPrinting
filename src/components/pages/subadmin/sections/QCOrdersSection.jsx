@@ -142,7 +142,7 @@ function QCDeliveryCell({ order, onRefresh }) {
         ) : (
           /* Pickup mode — Fitur 3 */
           <div style={{ marginBottom: '4px' }}>
-            <label style={{ fontSize: '11px', color: '#6b7280', display: 'block', marginBottom: '2px' }}>
+            <label style={{ fontSize: '11px', color: 'var(--gray-500)', display: 'block', marginBottom: '2px' }}>
               Jadwal Siap Diambil
             </label>
             <input

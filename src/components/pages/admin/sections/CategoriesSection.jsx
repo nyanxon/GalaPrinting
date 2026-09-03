@@ -18,6 +18,7 @@ import {
   deleteCategory,
 } from '../../../../services/categories.js';
 import { api } from '../../../../core/httpClient.js';
+import { BRAND_COLOR } from '../../../../config/brand.js';
 
 // Fetch category list with product counts from the raw API
 async function fetchCategoriesWithCount() {
@@ -163,15 +164,15 @@ function CategoryProductList({ categoryId, categoryName }) {
     load();
   }, [categoryId, categoryName]);
 
-  if (loading) return <p style={{ color: '#9ca3af', fontSize: 12, margin: '4px 0 8px 0', padding: '0 8px' }}>Memuat produk…</p>;
-  if (products.length === 0) return <p style={{ color: '#9ca3af', fontSize: 12, margin: '4px 0 8px 0', padding: '0 8px', fontStyle: 'italic' }}>Tidak ada produk.</p>;
+  if (loading) return <p style={{ color: 'var(--gray-400)', fontSize: 12, margin: '4px 0 8px 0', padding: '0 8px' }}>Memuat produk…</p>;
+  if (products.length === 0) return <p style={{ color: 'var(--gray-400)', fontSize: 12, margin: '4px 0 8px 0', padding: '0 8px', fontStyle: 'italic' }}>Tidak ada produk.</p>;
 
   return (
     <div style={{ padding: '4px 8px 10px', display: 'flex', flexWrap: 'wrap', gap: 6 }}>
       {products.map((p) => (
         <span key={p.id} style={{
           display: 'inline-flex', alignItems: 'center', gap: 6,
-          background: '#f3f4f6', borderRadius: 6, padding: '3px 8px', fontSize: 12,
+          background: 'var(--gray-100)', borderRadius: 6, padding: '3px 8px', fontSize: 12,
           border: '1px solid #e5e7eb',
         }}>
           {p.image && (
@@ -204,12 +205,12 @@ function ExpandableRow({ cat, onSaved, onDelete }) {
             aria-expanded={expanded}
             aria-label={`${expanded ? 'Sembunyikan' : 'Tampilkan'} produk ${cat.name}`}
           >
-            <span style={{ fontSize: 11, color: '#785e40', transition: 'transform 0.2s',
+            <span style={{ fontSize: 11, color: BRAND_COLOR, transition: 'transform 0.2s',
               display: 'inline-block', transform: expanded ? 'rotate(90deg)' : 'none' }}>▶</span>
             {cat.name}
           </button>
         </td>
-        <td style={{ color: '#6b7280', fontSize: 13 }}>
+        <td style={{ color: 'var(--gray-500)', fontSize: 13 }}>
           {cat.count > 0 ? `${cat.count} produk` : '—'}
         </td>
         <td>
@@ -306,7 +307,7 @@ export default function CategoriesSection() {
               style={{ width: '100%' }}
             />
             {addError && (
-              <p style={{ color: '#ef4444', fontSize: 12, margin: '4px 0 0' }}>{addError}</p>
+              <p style={{ color: 'var(--color-danger-bright)', fontSize: 12, margin: '4px 0 0' }}>{addError}</p>
             )}
           </div>
           <button
@@ -322,9 +323,9 @@ export default function CategoriesSection() {
 
       {/* Category table */}
       {loading ? (
-        <p style={{ color: '#6b7280', padding: '12px 0' }}>Memuat…</p>
+        <p style={{ color: 'var(--gray-500)', padding: '12px 0' }}>Memuat…</p>
       ) : categories.length === 0 ? (
-        <p style={{ color: '#6b7280', padding: '12px 0' }}>Belum ada kategori.</p>
+        <p style={{ color: 'var(--gray-500)', padding: '12px 0' }}>Belum ada kategori.</p>
       ) : (
         <div className="adm-table-wrap">
           <table className="adm-table">

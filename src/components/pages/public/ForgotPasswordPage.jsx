@@ -70,7 +70,7 @@ function ForgotPasswordPage() {
               {error && (
                 <div className="alert" role="alert"
                   style={{ background: 'rgba(220,38,38,.08)', border: '1px solid rgba(220,38,38,.3)',
-                           borderRadius: 6, padding: '10px 14px', color: '#b91c1c',
+                           borderRadius: 6, padding: '10px 14px', color: 'var(--color-danger-dark)',
                            fontSize: 13, marginBottom: 16 }}>
                   {error}
                 </div>

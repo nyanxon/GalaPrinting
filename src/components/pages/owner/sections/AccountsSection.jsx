@@ -150,7 +150,7 @@ export default function AccountsSection() {
   }
 
   function getRoleColor(role) {
-    return STAFF_ROLE_CONFIG[role]?.color ?? '#6b7280';
+    return STAFF_ROLE_CONFIG[role]?.color ?? 'var(--gray-500)';
   }
 
   const activeLabel = TABS.find((t) => t.id === activeTab)?.label ?? '';
@@ -290,8 +290,8 @@ export default function AccountsSection() {
                         borderRadius: '999px',
                         fontSize: '12px',
                         fontWeight: 600,
-                        background: u.deleted_at ? '#fef2f2' : '#dcfce7',
-                        color: u.deleted_at ? '#dc2626' : '#16a34a',
+                        background: u.deleted_at ? 'var(--color-danger-bg-2)' : 'var(--color-success-border-light)',
+                        color: u.deleted_at ? 'var(--color-danger)' : 'var(--color-success)',
                       }}
                     >
                       {u.deleted_at ? 'Nonaktif' : 'Aktif'}

@@ -469,7 +469,7 @@ function ProductModal({ product, categories, onClose, onSaved }) {
                 <input className="adm-input" id="pf-price-broker" name="priceBroker" type="number" min="0" value={formData.priceBroker} onChange={handleChange} required placeholder="0" />
               </div>
             </div>
-            <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '6px' }}>
+            <p style={{ fontSize: '12px', color: 'var(--gray-500)', marginTop: '6px' }}>
               💡 Harga broker biasanya lebih murah. Harga customer dipakai di website & order biasa, harga broker untuk order offline via dropdown tipe pembeli.
             </p>
 
@@ -493,7 +493,7 @@ function ProductModal({ product, categories, onClose, onSaved }) {
                 <option value="per_m2">Per M2 (panjang × lebar saat order)</option>
                 <option value="none">Tidak Ada</option>
               </select>
-              <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '6px' }}>
+              <p style={{ fontSize: '12px', color: 'var(--gray-500)', marginTop: '6px' }}>
                 {isPerM2
                   ? '💡 Produk dihitung per m² — customer/kasir memasukkan panjang × lebar saat order.'
                   : '💡 Produk tidak memakai panjang × lebar — harga satuan langsung dipakai saat order.'}
@@ -505,7 +505,7 @@ function ProductModal({ product, categories, onClose, onSaved }) {
               <label className="adm-label">
                 Atribut Produk <span className="adm-hint">(opsional — nama bebas, mis. Warna, Tipe Laminasi, Tipe Kertas)</span>
               </label>
-              <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '0 0 6px 0', marginBottom: '6px' }}>
+              <p style={{ fontSize: '12px', color: 'var(--gray-500)', marginTop: '0 0 6px 0', marginBottom: '6px' }}>
                 Customer akan memilih salah satu nilai untuk setiap atribut saat memesan.
               </p>
               {attributes.length > 0 && (
@@ -553,11 +553,11 @@ function ProductModal({ product, categories, onClose, onSaved }) {
                         </label>
                         {attr.affectsPrice && (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                            <span style={{ fontSize: '12px', color: '#6b7280' }}>
+                            <span style={{ fontSize: '12px', color: 'var(--gray-500)' }}>
                               Tambahan harga per pilihan — harga final = harga dasar + total tambahan:
                             </span>
                             {parsedValues.length === 0 ? (
-                              <span style={{ fontSize: '12px', color: '#9ca3af' }}>
+                              <span style={{ fontSize: '12px', color: 'var(--gray-400)' }}>
                                 Isi pilihan nilai terlebih dahulu.
                               </span>
                             ) : (
@@ -604,7 +604,7 @@ function ProductModal({ product, categories, onClose, onSaved }) {
                 )}
               </label>
               {!USE_BACKEND ? (
-                <p style={{ fontSize: '12px', color: '#9ca3af' }}>
+                <p style={{ fontSize: '12px', color: 'var(--gray-400)' }}>
                   Mode lokal tidak menyimpan stok. Aktifkan VITE_USE_BACKEND untuk mengelola stok per kombinasi atribut.
                 </p>
               ) : (
@@ -641,7 +641,7 @@ function ProductModal({ product, categories, onClose, onSaved }) {
               {images.length > 0 && (() => {
                 const doneCount = images.filter((i) => i.status === 'done').length;
                 return (
-                  <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '6px' }}>
+                  <p style={{ fontSize: '12px', color: 'var(--gray-500)', marginBottom: '6px' }}>
                     {doneCount}/{images.length} foto berhasil diunggah
                   </p>
                 );
@@ -696,7 +696,7 @@ function ProductModal({ product, categories, onClose, onSaved }) {
                       <button
                         type="button"
                         onClick={() => handleRemoveImage(idx)}
-                        style={{ position: 'absolute', top: -6, right: -6, background: '#ef4444', color: '#fff', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', fontSize: 12, lineHeight: '20px', textAlign: 'center', padding: 0 }}
+                        style={{ position: 'absolute', top: -6, right: -6, background: 'var(--color-danger-bright)', color: '#fff', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', fontSize: 12, lineHeight: '20px', textAlign: 'center', padding: 0 }}
                         aria-label={`Hapus foto ${idx + 1}`}
                       >✕</button>
 
@@ -706,14 +706,14 @@ function ProductModal({ product, categories, onClose, onSaved }) {
                           type="button"
                           onClick={() => handleMoveImage(idx, 'left')}
                           disabled={idx === 0}
-                          style={{ flex: 1, fontSize: 12, padding: '1px 0', cursor: idx === 0 ? 'default' : 'pointer', opacity: idx === 0 ? 0.3 : 1, border: '1px solid #d1d5db', borderRadius: '3px 0 0 3px', background: '#f9fafb' }}
+                          style={{ flex: 1, fontSize: 12, padding: '1px 0', cursor: idx === 0 ? 'default' : 'pointer', opacity: idx === 0 ? 0.3 : 1, border: '1px solid #d1d5db', borderRadius: '3px 0 0 3px', background: 'var(--gray-50)' }}
                           aria-label={`Pindah foto ${idx + 1} ke kiri`}
                         >‹</button>
                         <button
                           type="button"
                           onClick={() => handleMoveImage(idx, 'right')}
                           disabled={idx === images.length - 1}
-                          style={{ flex: 1, fontSize: 12, padding: '1px 0', cursor: idx === images.length - 1 ? 'default' : 'pointer', opacity: idx === images.length - 1 ? 0.3 : 1, border: '1px solid #d1d5db', borderLeft: 'none', borderRadius: '0 3px 3px 0', background: '#f9fafb' }}
+                          style={{ flex: 1, fontSize: 12, padding: '1px 0', cursor: idx === images.length - 1 ? 'default' : 'pointer', opacity: idx === images.length - 1 ? 0.3 : 1, border: '1px solid #d1d5db', borderLeft: 'none', borderRadius: '0 3px 3px 0', background: 'var(--gray-50)' }}
                           aria-label={`Pindah foto ${idx + 1} ke kanan`}
                         >›</button>
                       </div>
@@ -730,7 +730,7 @@ function ProductModal({ product, categories, onClose, onSaved }) {
                   hint="JPG, PNG, WEBP · Maks. 10 MB per foto · Maks. 8 foto"
                 />
               )}
-              {imageError && <p style={{ color: '#ef4444', fontSize: '13px', marginTop: '4px' }}>{imageError}</p>}
+              {imageError && <p style={{ color: 'var(--color-danger-bright)', fontSize: '13px', marginTop: '4px' }}>{imageError}</p>}
             </div>
 
             <div className="adm-field adm-field--check">
@@ -746,7 +746,7 @@ function ProductModal({ product, categories, onClose, onSaved }) {
                 {' '}Sembunyikan produk ini dari customer (hanya untuk data internal/kasir)
               </label>
               {formData.isHiddenFromCustomer && (
-                <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '6px' }}>
+                <p style={{ fontSize: '12px', color: 'var(--gray-500)', marginTop: '6px' }}>
                   Produk tidak muncul di homepage &amp; halaman produk customer, tapi tetap tampil &amp; bisa dipilih di kasir/admin.
                 </p>
               )}
@@ -913,7 +913,7 @@ export default function ProductsSection() {
                         <span style={{ marginLeft: 6, fontSize: 11, padding: '2px 6px', borderRadius: 4, background: '#ede9fe', color: '#6d28d9', fontWeight: 600, whiteSpace: 'nowrap' }}>Per M²</span>
                       )}
                       {p.isHiddenFromCustomer && (
-                        <span style={{ marginLeft: 6, fontSize: 11, padding: '2px 6px', borderRadius: 4, background: '#fee2e2', color: '#b91c1c', fontWeight: 600, whiteSpace: 'nowrap' }}>Tersembunyi</span>
+                        <span style={{ marginLeft: 6, fontSize: 11, padding: '2px 6px', borderRadius: 4, background: 'var(--color-danger-bg)', color: 'var(--color-danger-dark)', fontWeight: 600, whiteSpace: 'nowrap' }}>Tersembunyi</span>
                       )}
                     </td>
                     <td>{p.category || '—'}</td>
@@ -923,11 +923,11 @@ export default function ProductsSection() {
                       {totalStock === null ? (
                         '—'
                       ) : totalStock > 0 ? (
-                        <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 999, background: '#dcfce7', color: '#15803d', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 999, background: 'var(--color-success-border-light)', color: 'var(--color-success-mid)', fontWeight: 600, whiteSpace: 'nowrap' }}>
                           Stok {totalStock}
                         </span>
                       ) : (
-                        <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 999, background: '#fee2e2', color: '#b91c1c', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 999, background: 'var(--color-danger-bg)', color: 'var(--color-danger-dark)', fontWeight: 600, whiteSpace: 'nowrap' }}>
                           Stok Habis
                         </span>
                       )}

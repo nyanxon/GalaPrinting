@@ -103,7 +103,7 @@ export default function AdminAccountsListSection() {
   }
 
   function getRoleColor(role) {
-    return STAFF_ROLE_CONFIG[role]?.color ?? '#6b7280';
+    return STAFF_ROLE_CONFIG[role]?.color ?? 'var(--gray-500)';
   }
 
   return (
@@ -112,7 +112,7 @@ export default function AdminAccountsListSection() {
         <h2 className="adm-section-title">
           Kelola Admin ({accounts.length})
           {promotedCount > 0 && (
-            <span style={{ fontSize: '12px', fontWeight: 500, color: '#6b7280', marginLeft: '8px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--gray-500)', marginLeft: '8px' }}>
               · {promotedCount} admin dinamis
             </span>
           )}
@@ -145,7 +145,7 @@ export default function AdminAccountsListSection() {
         </form>
       </div>
 
-      <p style={{ margin: '0 0 12px', fontSize: '13px', color: '#6b7280' }}>
+      <p style={{ margin: '0 0 12px', fontSize: '13px', color: 'var(--gray-500)' }}>
         Pilih akun staff untuk dijadikan Admin Dinamis. Admin Dinamis dikontrol lewat fitur-fitur
         yang dipasang di halaman &ldquo;Atur Fitur&rdquo;, bukan lewat role hardcode.
       </p>
@@ -203,8 +203,8 @@ export default function AdminAccountsListSection() {
                           borderRadius: '999px',
                           fontSize: '12px',
                           fontWeight: 600,
-                          background: promoted ? '#dcfce7' : '#f3f4f6',
-                          color: promoted ? '#16a34a' : '#6b7280',
+                          background: promoted ? 'var(--color-success-border-light)' : 'var(--gray-100)',
+                          color: promoted ? 'var(--color-success)' : 'var(--gray-500)',
                         }}
                       >
                         {promoted ? 'Admin Dinamis' : 'Reguler'}

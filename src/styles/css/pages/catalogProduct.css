@@ -401,10 +401,10 @@
 }
 
 .design-preview-remove {
-  background: #fee2e2;
+  background: var(--color-danger-bg);
   border: none;
   border-radius: 6px;
-  color: #b91c1c;
+  color: var(--color-danger-dark);
   font-size: 12px;
   font-weight: 700;
   padding: 4px 10px;
@@ -414,7 +414,7 @@
 }
 
 .design-preview-remove:hover {
-  background: #fecaca;
+  background: var(--color-danger-border);
 }
 
 /* ── Catalog Product Grid ────────────────────────────────── */

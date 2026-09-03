@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import Chart from '../../../charts/Chart.jsx';
+import { COLORS } from '../../../../config/brand.js';
 import {
   getTotalVisits,
   getVisitStats,
@@ -98,14 +99,14 @@ export default function AnalyticsSection() {
           data={visitChartData}
           type="line"
           title="Website Visits (30 Hari Terakhir)"
-          color="#16a34a"
+          color={COLORS.success}
           formatValue={(n) => `${n}`}
         />
         <Chart
           data={viewedChartData}
           type="hbar"
           title="Produk Paling Dilihat"
-          color="#2563eb"
+          color={COLORS.info}
           formatValue={(n) => `${n}x`}
         />
       </div>

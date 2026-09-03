@@ -114,7 +114,7 @@ function ChangePasswordPage() {
     <main className="register-layout">
       <div className="register-form-side">
         <h1 className="register-title">Ubah Password</h1>
-        <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 24 }}>
+        <p style={{ color: 'var(--gray-500)', fontSize: 14, marginBottom: 24 }}>
           {user && STAFF_ROLES.includes(user.role)
             ? 'Anda harus mengubah password sebelum melanjutkan.'
             : 'Perbarui password akun Anda di bawah ini.'}

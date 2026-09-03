@@ -51,7 +51,7 @@ const saveBtnStyle = {
   padding: '8px 20px',
   borderRadius: '8px',
   border: 'none',
-  background: '#2563eb',
+  background: 'var(--color-info)',
   color: '#fff',
   cursor: 'pointer',
   fontSize: '14px',
@@ -65,17 +65,17 @@ const saveBtnDisabledStyle = {
 };
 
 const errorStyle = {
-  color: '#dc2626',
+  color: 'var(--color-danger)',
   fontSize: '13px',
   margin: '4px 0 0',
 };
 
 const apiErrorStyle = {
-  color: '#dc2626',
+  color: 'var(--color-danger)',
   fontSize: '13px',
   margin: 0,
   padding: '8px 12px',
-  background: '#fef2f2',
+  background: 'var(--color-danger-bg-2)',
   borderRadius: '6px',
   border: '1px solid #fecaca',
 };
@@ -195,14 +195,14 @@ export default function AddressForm({ isOpen, onClose, onSaved, address }) {
         style={modalStyle}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#111827' }}>
+        <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: 'var(--gray-900)' }}>
           {isEditMode ? t('address.editTitle') : t('address.addTitle')}
         </h2>
 
         {/* Judul */}
         <div className="co-field">
           <label className="co-label" htmlFor="addr-judul">
-            {t('address.title')} <span aria-hidden="true" style={{ color: '#dc2626' }}>*</span>
+            {t('address.title')} <span aria-hidden="true" style={{ color: 'var(--color-danger)' }}>*</span>
           </label>
           <input
             id="addr-judul"
@@ -220,7 +220,7 @@ export default function AddressForm({ isOpen, onClose, onSaved, address }) {
         {/* Nama Penerima */}
         <div className="co-field">
           <label className="co-label" htmlFor="addr-nama">
-            {t('address.recipientName')} <span aria-hidden="true" style={{ color: '#dc2626' }}>*</span>
+            {t('address.recipientName')} <span aria-hidden="true" style={{ color: 'var(--color-danger)' }}>*</span>
           </label>
           <input
             id="addr-nama"
@@ -238,7 +238,7 @@ export default function AddressForm({ isOpen, onClose, onSaved, address }) {
         {/* Nomor Telepon */}
         <div className="co-field">
           <label className="co-label" htmlFor="addr-phone">
-            {t('address.phone')} <span aria-hidden="true" style={{ color: '#dc2626' }}>*</span>
+            {t('address.phone')} <span aria-hidden="true" style={{ color: 'var(--color-danger)' }}>*</span>
           </label>
           <input
             id="addr-phone"
@@ -256,7 +256,7 @@ export default function AddressForm({ isOpen, onClose, onSaved, address }) {
         {/* Alamat Lengkap */}
         <div className="co-field">
           <label className="co-label" htmlFor="addr-full-address">
-            {t('address.fullAddress')} <span aria-hidden="true" style={{ color: '#dc2626' }}>*</span>
+            {t('address.fullAddress')} <span aria-hidden="true" style={{ color: 'var(--color-danger)' }}>*</span>
           </label>
           <textarea
             id="addr-full-address"

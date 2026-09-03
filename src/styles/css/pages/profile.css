@@ -53,7 +53,7 @@
   align-items: center;
   gap: 6px;
   padding: 24px 16px 20px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--gray-bg);
   background: #faf8f5;
 }
 
@@ -94,7 +94,7 @@
 
 .pf-sidebar-email {
   font-size: 12px;
-  color: #9b9b9b;
+  color: var(--gray-light);
   text-align: center;
   word-break: break-all;
 }
@@ -157,18 +157,18 @@
   color: #1f1f1f;
   margin: 0 0 22px;
   padding-bottom: 14px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--gray-bg);
 }
 
 .pf-loading {
   text-align: center;
   padding: 64px 16px;
-  color: #9b9b9b;
+  color: var(--gray-light);
   font-size: 15px;
 }
 
 .pf-loading-inline {
-  color: #9b9b9b;
+  color: var(--gray-light);
   font-size: 14px;
   padding: 12px 0;
 }
@@ -249,7 +249,7 @@
 .pf-view-label {
   font-size: 13px;
   font-weight: 700;
-  color: #6b6b6b;
+  color: var(--gray-mid);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -268,8 +268,8 @@
   display: inline-block;
   font-size: 11px;
   font-weight: 700;
-  color: #6b6b6b;
-  background: #f0f0f0;
+  color: var(--gray-mid);
+  background: var(--gray-bg);
   border: 1px solid #e0e0e0;
   border-radius: 4px;
   padding: 1px 6px;
@@ -283,8 +283,8 @@
 }
 
 .pf-input--readonly {
-  background: #f5f5f5 !important;
-  color: #9b9b9b !important;
+  background: var(--gray-bg-2) !important;
+  color: var(--gray-light) !important;
   cursor: not-allowed;
 }
 
@@ -332,7 +332,7 @@
   min-width: 100px;
   height: 46px;
   background: #fff;
-  color: #6b6b6b;
+  color: var(--gray-mid);
   border: 1px solid #ccc;
   border-radius: 8px;
   font-size: 15px;
@@ -341,7 +341,7 @@
   transition: background 0.15s;
 }
 
-.pf-cancel-btn:hover { background: #f5f5f5; }
+.pf-cancel-btn:hover { background: var(--gray-bg-2); }
 .pf-cancel-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* ── Avatar area ─────────────────────────────────────────── */
@@ -425,9 +425,9 @@
   gap: 4px;
   font-size: 12px;
   font-weight: 600;
-  color: #166534;
-  background: #dcfce7;
-  border: 1px solid #bbf7d0;
+  color: var(--color-success-dark);
+  background: var(--color-success-border-light);
+  border: 1px solid var(--color-success-border);
   border-radius: 99px;
   padding: 3px 10px;
   width: fit-content;
@@ -445,9 +445,9 @@
   gap: 4px;
   font-size: 12px;
   font-weight: 600;
-  color: #92400e;
-  background: #fef3c7;
-  border: 1px solid #fde68a;
+  color: var(--color-warning);
+  background: var(--color-warning-bg);
+  border: 1px solid var(--color-warning-border);
   border-radius: 99px;
   padding: 3px 10px;
   width: fit-content;
@@ -469,9 +469,9 @@
 .pf-resend-btn {
   font-size: 12px;
   font-weight: 600;
-  color: #785E40;
+  color: var(--brand-brown);
   background: none;
-  border: 1px solid #785E40;
+  border: 1px solid var(--brand-brown);
   border-radius: 6px;
   padding: 3px 12px;
   cursor: pointer;
@@ -480,7 +480,7 @@
 }
 
 .pf-resend-btn:hover:not(:disabled) {
-  background: #785E40;
+  background: var(--brand-brown);
   color: #fff;
 }
 

@@ -105,7 +105,7 @@ export default function AccountEditModal({ user, permissions, onClose, onSave, s
             {/* Read-only user info */}
             <div
               style={{
-                background: '#fafafa',
+                background: 'var(--gray-bg-3)',
                 border: '1px solid #e0e0e0',
                 borderRadius: '6px',
                 padding: '12px 14px',
@@ -147,14 +147,14 @@ export default function AccountEditModal({ user, permissions, onClose, onSave, s
               <label className="adm-label">
                 Permissions
                 {availablePerms.length > 0 && (
-                  <span style={{ fontWeight: 400, color: '#6b7280', fontSize: '12px', marginLeft: '8px' }}>
+                  <span style={{ fontWeight: 400, color: 'var(--gray-500)', fontSize: '12px', marginLeft: '8px' }}>
                     {checkedCount}/{availablePerms.length} dipilih
                   </span>
                 )}
               </label>
 
               {availablePerms.length === 0 ? (
-                <p style={{ color: '#6b7280', fontSize: '13px', fontStyle: 'italic', margin: '4px 0 0' }}>
+                <p style={{ color: 'var(--gray-500)', fontSize: '13px', fontStyle: 'italic', margin: '4px 0 0' }}>
                   Tidak ada menu untuk role ini.
                 </p>
               ) : (
@@ -208,9 +208,9 @@ export default function AccountEditModal({ user, permissions, onClose, onSave, s
                       padding: '8px 10px',
                       marginTop: '8px',
                       borderRadius: '6px',
-                      border: `1px dashed ${allChecked ? '#c7dba6' : someChecked ? '#fcd34d' : '#d1d5db'}`,
+                      border: `1px dashed ${allChecked ? '#c7dba6' : someChecked ? '#fcd34d' : 'var(--gray-300)'}`,
                       cursor: saving ? 'not-allowed' : 'pointer',
-                      background: allChecked ? '#f4faf0' : someChecked ? '#fffbeb' : '#fafafa',
+                      background: allChecked ? '#f4faf0' : someChecked ? 'var(--color-warning-bg-2)' : 'var(--gray-bg-3)',
                       fontSize: '13px',
                       fontWeight: 600,
                       transition: 'border-color 0.15s, background 0.15s',

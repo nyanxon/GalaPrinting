@@ -16,6 +16,7 @@ import {
   updateNotificationPreferences,
 } from '../../services/profileService.js';
 import { showToast } from '../../core/toastEmitter.js';
+import { BRAND_COLOR } from '../../config/brand.js';
 
 // ── Field definitions ─────────────────────────────────────────────────────────
 // key harus sama persis dengan kolom di tabel notification_preferences
@@ -117,7 +118,7 @@ function NotificationSettings() {
   }
 
   if (loading) {
-    return <p style={{ color: '#9b9b9b', fontSize: '14px' }}>Memuat preferensi notifikasi…</p>;
+    return <p style={{ color: 'var(--gray-light)', fontSize: '14px' }}>Memuat preferensi notifikasi…</p>;
   }
 
   if (error) {
@@ -128,7 +129,7 @@ function NotificationSettings() {
     <div>
       {/* Security group header */}
       <div style={{ marginBottom: '6px' }}>
-        <p style={{ margin: '0 0 4px', fontSize: '12px', fontWeight: 700, color: '#9b9b9b',
+        <p style={{ margin: '0 0 4px', fontSize: '12px', fontWeight: 700, color: 'var(--gray-light)',
                     textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           Status Pesanan
         </p>
@@ -140,7 +141,7 @@ function NotificationSettings() {
       ))}
 
       <div style={{ margin: '20px 0 6px', borderTop: '1px solid #f0f0f0', paddingTop: '16px' }}>
-        <p style={{ margin: '0 0 4px', fontSize: '12px', fontWeight: 700, color: '#9b9b9b',
+        <p style={{ margin: '0 0 4px', fontSize: '12px', fontWeight: 700, color: 'var(--gray-light)',
                     textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           Keamanan Akun
         </p>
@@ -151,7 +152,7 @@ function NotificationSettings() {
           checked={prefs[key]} onChange={() => handleChange(key)} />
       ))}
 
-      <p style={{ margin: '16px 0 12px', fontSize: '12px', color: '#9b9b9b', lineHeight: 1.5 }}>
+      <p style={{ margin: '16px 0 12px', fontSize: '12px', color: 'var(--gray-light)', lineHeight: 1.5 }}>
         ℹ️ Verifikasi email dan reset password selalu dikirimkan dan tidak dapat dinonaktifkan.
       </p>
 
@@ -189,14 +190,14 @@ function NotifRow({ id, label, desc, checked, onChange }) {
       <input
         id={inputId}
         type="checkbox"
-        style={{ width: '18px', height: '18px', marginTop: '2px', cursor: 'pointer', accentColor: '#785E40', flexShrink: 0 }}
+        style={{ width: '18px', height: '18px', marginTop: '2px', cursor: 'pointer', accentColor: BRAND_COLOR, flexShrink: 0 }}
         checked={checked}
         onChange={onChange}
         onClick={(e) => e.stopPropagation()}
       />
       <label htmlFor={inputId} style={{ cursor: 'pointer', userSelect: 'none' }}>
-        <div style={{ fontSize: '14px', fontWeight: 600, color: '#1f1f1f', lineHeight: 1.3 }}>{label}</div>
-        {desc && <div style={{ fontSize: '12px', color: '#9b9b9b', marginTop: '2px', lineHeight: 1.4 }}>{desc}</div>}
+        <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)', lineHeight: 1.3 }}>{label}</div>
+        {desc && <div style={{ fontSize: '12px', color: 'var(--gray-light)', marginTop: '2px', lineHeight: 1.4 }}>{desc}</div>}
       </label>
     </div>
   );

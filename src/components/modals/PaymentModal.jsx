@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Modal from '../ui/Modal.jsx';
 import DropZone from '../ui/DropZone.jsx';
 import { formatCurrency } from '../../utils/format.js';
+import { BRAND_COLOR } from '../../config/brand.js';
 
 /* ── QRIS SVG placeholder ────────────────────────────────── */
 const QRIS_SVG = (
@@ -14,26 +15,26 @@ const QRIS_SVG = (
     aria-label="QRIS Gala Printing"
   >
     <rect width="180" height="180" fill="#f9f5f0" rx="14" />
-    <rect x="18" y="18" width="58" height="58" rx="5" fill="none" stroke="#785E40" strokeWidth="5" />
-    <rect x="30" y="30" width="34" height="34" rx="3" fill="#785E40" />
-    <rect x="104" y="18" width="58" height="58" rx="5" fill="none" stroke="#785E40" strokeWidth="5" />
-    <rect x="116" y="30" width="34" height="34" rx="3" fill="#785E40" />
-    <rect x="18" y="104" width="58" height="58" rx="5" fill="none" stroke="#785E40" strokeWidth="5" />
-    <rect x="30" y="116" width="34" height="34" rx="3" fill="#785E40" />
-    <rect x="104" y="104" width="12" height="12" fill="#785E40" />
-    <rect x="122" y="104" width="12" height="12" fill="#785E40" />
-    <rect x="140" y="104" width="22" height="12" fill="#785E40" />
-    <rect x="104" y="122" width="22" height="12" fill="#785E40" />
-    <rect x="132" y="122" width="16" height="12" fill="#785E40" />
-    <rect x="104" y="140" width="12" height="22" fill="#785E40" />
-    <rect x="122" y="140" width="18" height="12" fill="#785E40" />
-    <rect x="146" y="134" width="16" height="28" fill="#785E40" />
+    <rect x="18" y="18" width="58" height="58" rx="5" fill="none" stroke={BRAND_COLOR} strokeWidth="5" />
+    <rect x="30" y="30" width="34" height="34" rx="3" fill={BRAND_COLOR} />
+    <rect x="104" y="18" width="58" height="58" rx="5" fill="none" stroke={BRAND_COLOR} strokeWidth="5" />
+    <rect x="116" y="30" width="34" height="34" rx="3" fill={BRAND_COLOR} />
+    <rect x="18" y="104" width="58" height="58" rx="5" fill="none" stroke={BRAND_COLOR} strokeWidth="5" />
+    <rect x="30" y="116" width="34" height="34" rx="3" fill={BRAND_COLOR} />
+    <rect x="104" y="104" width="12" height="12" fill={BRAND_COLOR} />
+    <rect x="122" y="104" width="12" height="12" fill={BRAND_COLOR} />
+    <rect x="140" y="104" width="22" height="12" fill={BRAND_COLOR} />
+    <rect x="104" y="122" width="22" height="12" fill={BRAND_COLOR} />
+    <rect x="132" y="122" width="16" height="12" fill={BRAND_COLOR} />
+    <rect x="104" y="140" width="12" height="22" fill={BRAND_COLOR} />
+    <rect x="122" y="140" width="18" height="12" fill={BRAND_COLOR} />
+    <rect x="146" y="134" width="16" height="28" fill={BRAND_COLOR} />
     <text
       x="90"
       y="174"
       textAnchor="middle"
       fontSize="10"
-      fill="#9b9b9b"
+      style={{ fill: 'var(--gray-light)' }}
       fontFamily="sans-serif"
       fontWeight="600"
     >

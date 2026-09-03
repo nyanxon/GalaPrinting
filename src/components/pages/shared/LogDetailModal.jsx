@@ -68,7 +68,7 @@ export default function LogDetailModal({ log, isOpen, onClose }) {
         </div>
         <div className="modal-body" style={{ fontSize: 14 }}>
           <Row label="Waktu">
-            <span style={{ color: log?.read === false ? '#b45309' : 'inherit', fontWeight: log?.read === false ? 700 : 400 }}>
+            <span style={{ color: log?.read === false ? 'var(--color-warning-dark)' : 'inherit', fontWeight: log?.read === false ? 700 : 400 }}>
               {fmtDateTime(log?.createdAt)}
             </span>
           </Row>

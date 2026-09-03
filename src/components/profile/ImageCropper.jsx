@@ -88,7 +88,7 @@ const cancelBtnStyle = {
   cursor: 'pointer',
   fontSize: '14px',
   fontWeight: '600',
-  color: '#6b6b6b',
+  color: 'var(--gray-mid)',
 };
 
 const confirmBtnStyle = {
@@ -109,7 +109,7 @@ const confirmBtnDisabledStyle = {
 };
 
 const errorStyle = {
-  color: '#dc2626',
+  color: 'var(--color-danger)',
   fontSize: '13px',
   margin: 0,
 };
@@ -120,7 +120,7 @@ const fileInputStyle = {
 
 const zoomLabelStyle = {
   fontSize: '13px',
-  color: '#6b7280',
+  color: 'var(--gray-500)',
   display: 'flex',
   flexDirection: 'column',
   gap: '4px',
@@ -230,7 +230,7 @@ export default function ImageCropper({ isOpen, onClose, onAvatarUpdated }) {
         style={modalStyle}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#111827' }}>
+        <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: 'var(--gray-900)' }}>
           Ganti Foto Profil
         </h2>
 
@@ -267,7 +267,7 @@ export default function ImageCropper({ isOpen, onClose, onAvatarUpdated }) {
             onChange={handleFileChange}
             style={fileInputStyle}
           />
-          <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#9b9b9b' }}>
+          <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--gray-light)' }}>
             JPEG, PNG, WebP, atau GIF · Maks. 5 MB
           </p>
         </div>

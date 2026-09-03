@@ -395,9 +395,9 @@ function UsageLogModal({ promo, onClose }) {
           </div>
 
           {loading ? (
-            <p style={{ color: '#9b9b9b', textAlign: 'center', padding: '24px' }}>Memuat log...</p>
+            <p style={{ color: 'var(--gray-light)', textAlign: 'center', padding: '24px' }}>Memuat log...</p>
           ) : log.length === 0 ? (
-            <p style={{ color: '#9b9b9b', textAlign: 'center', padding: '24px' }}>
+            <p style={{ color: 'var(--gray-light)', textAlign: 'center', padding: '24px' }}>
               Belum ada penggunaan untuk promo ini.
             </p>
           ) : (
@@ -417,9 +417,9 @@ function UsageLogModal({ promo, onClose }) {
                     <tr key={entry.id}>
                       <td style={{ whiteSpace: 'nowrap', fontSize: '13px' }}>{formatDate(entry.used_at)}</td>
                       <td>{entry.customer_name || '—'}</td>
-                      <td style={{ fontSize: '13px', color: '#6b6b6b' }}>{entry.customer_email || '—'}</td>
+                      <td style={{ fontSize: '13px', color: 'var(--gray-mid)' }}>{entry.customer_email || '—'}</td>
                       <td style={{ textAlign: 'right' }}>{formatCurrency(entry.order_subtotal)}</td>
-                      <td style={{ textAlign: 'right', color: '#16a34a', fontWeight: 700 }}>
+                      <td style={{ textAlign: 'right', color: 'var(--color-success)', fontWeight: 700 }}>
                         -{formatCurrency(entry.discount_amount)}
                       </td>
                     </tr>
@@ -503,9 +503,9 @@ export default function PromoSection() {
         </div>
 
         {loading ? (
-          <p style={{ padding: '32px', textAlign: 'center', color: '#9b9b9b' }}>Memuat data promo...</p>
+          <p style={{ padding: '32px', textAlign: 'center', color: 'var(--gray-light)' }}>Memuat data promo...</p>
         ) : promos.length === 0 ? (
-          <p style={{ padding: '32px', textAlign: 'center', color: '#9b9b9b' }}>
+          <p style={{ padding: '32px', textAlign: 'center', color: 'var(--gray-light)' }}>
             Belum ada promo. Klik "+ Buat Promo" untuk membuat promo pertama.
           </p>
         ) : (
@@ -538,7 +538,7 @@ export default function PromoSection() {
                       </td>
 
                       {/* Description */}
-                      <td style={{ color: '#6b6b6b', fontSize: '13px', maxWidth: '160px' }}>
+                      <td style={{ color: 'var(--gray-mid)', fontSize: '13px', maxWidth: '160px' }}>
                         {p.description || '—'}
                       </td>
 
@@ -550,14 +550,14 @@ export default function PromoSection() {
                             : formatCurrency(p.value)}
                         </span>
                         {p.maxDiscount != null && (
-                          <div style={{ fontSize: '11px', color: '#9b9b9b', marginTop: '2px' }}>
+                          <div style={{ fontSize: '11px', color: 'var(--gray-light)', marginTop: '2px' }}>
                             maks. {formatCurrency(p.maxDiscount)}
                           </div>
                         )}
                       </td>
 
                       {/* Conditions */}
-                      <td style={{ fontSize: '12px', color: '#6b6b6b' }}>
+                      <td style={{ fontSize: '12px', color: 'var(--gray-mid)' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                           {p.minPurchase > 0 && (
                             <span>Min. {formatCurrency(p.minPurchase)}</span>
@@ -584,7 +584,7 @@ export default function PromoSection() {
                         >
                           {p.usageCount}
                           {p.maxUses != null && (
-                            <span style={{ color: '#9b9b9b', fontWeight: 400 }}>/{p.maxUses}</span>
+                            <span style={{ color: 'var(--gray-light)', fontWeight: 400 }}>/{p.maxUses}</span>
                           )}
                           <span style={{ marginLeft: '4px', fontSize: '11px' }}>👁</span>
                         </button>
@@ -593,11 +593,11 @@ export default function PromoSection() {
                       {/* Expires */}
                       <td style={{ fontSize: '12px', whiteSpace: 'nowrap' }}>
                         {p.expiresAt ? (
-                          <span style={{ color: isExpired ? '#dc2626' : '#3a3a3a' }}>
+                          <span style={{ color: isExpired ? 'var(--color-danger)' : '#3a3a3a' }}>
                             {isExpired ? '⚠️ ' : ''}{formatDate(p.expiresAt)}
                           </span>
                         ) : (
-                          <span style={{ color: '#9b9b9b' }}>Tidak terbatas</span>
+                          <span style={{ color: 'var(--gray-light)' }}>Tidak terbatas</span>
                         )}
                       </td>
 

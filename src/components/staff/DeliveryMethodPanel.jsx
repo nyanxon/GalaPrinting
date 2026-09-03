@@ -12,6 +12,7 @@
 import { useState } from 'react';
 import { setOrderDeliveryMethod, setOrderPickupInfo } from '../../services/api/invoiceService.js';
 import { showToast } from '../../core/toastEmitter.js';
+import { BRAND_COLOR } from '../../config/brand.js';
 
 const METHOD_OPTIONS = [
   { value: 'delivery',        label: '🚚 Pengiriman Kurir',  desc: 'Dikirim via jasa ekspedisi. Isi nomor resi setelah kirim.' },
@@ -73,7 +74,7 @@ export default function DeliveryMethodPanel({ order, onSaved }) {
               gap: '10px',
               padding: '10px 14px',
               borderRadius: '8px',
-              border: `2px solid ${method === opt.value ? '#785E40' : '#e5e7eb'}`,
+              border: `2px solid ${method === opt.value ? BRAND_COLOR : 'var(--gray-200)'}`,
               background: method === opt.value ? '#faf8f5' : '#fff',
               cursor: 'pointer',
               transition: 'border-color 0.15s, background 0.15s',
@@ -85,11 +86,11 @@ export default function DeliveryMethodPanel({ order, onSaved }) {
               value={opt.value}
               checked={method === opt.value}
               onChange={() => setMethod(opt.value)}
-              style={{ marginTop: '2px', accentColor: '#785E40' }}
+              style={{ marginTop: '2px', accentColor: BRAND_COLOR }}
             />
             <div>
-              <div style={{ fontWeight: 700, fontSize: '13px', color: '#111827' }}>{opt.label}</div>
-              <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>{opt.desc}</div>
+              <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--gray-900)' }}>{opt.label}</div>
+              <div style={{ fontSize: '12px', color: 'var(--gray-500)', marginTop: '2px' }}>{opt.desc}</div>
             </div>
           </label>
         ))}
@@ -99,7 +100,7 @@ export default function DeliveryMethodPanel({ order, onSaved }) {
       {isPickup && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px' }}>
           <label style={{ display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '13px', fontWeight: 600, color: '#374151' }}>
-            Lokasi Pengambilan <span style={{ color: '#b91c1c' }}>*</span>
+            Lokasi Pengambilan <span style={{ color: 'var(--color-danger-dark)' }}>*</span>
             <input
               className="adm-input"
               type="text"

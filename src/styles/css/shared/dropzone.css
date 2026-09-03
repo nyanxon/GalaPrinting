@@ -11,7 +11,7 @@
   min-height: 140px;
   border: 2px dashed var(--border, #e5e7eb);
   border-radius: 10px;
-  background: #fafafa;
+  background: var(--gray-bg-3);
   cursor: pointer;
   transition: border-color 0.18s, background 0.18s;
   outline: none;
@@ -86,7 +86,7 @@
 .dz-hint {
   margin: 0;
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--gray-400);
 }
 
 /* Full-surface drag-over overlay */
@@ -118,8 +118,8 @@
   margin: 0;
   padding: 6px 12px;
   font-size: 12px;
-  color: #ef4444;
-  background: #fef2f2;
+  color: var(--color-danger-bright);
+  background: var(--color-danger-bg-2);
   text-align: center;
   pointer-events: auto;
   cursor: default;

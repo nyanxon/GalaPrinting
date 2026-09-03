@@ -63,7 +63,7 @@ function CashierProofCell({ order, onCancel, onUpload, uploading }) {
             type="button"
             className="adm-btn"
             style={{
-              background: '#b91c1c', color: '#fff', border: 'none',
+              background: 'var(--color-danger-dark)', color: '#fff', border: 'none',
               fontSize: '12px', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer',
             }}
             onClick={() => onCancel(order.id)}
@@ -297,9 +297,9 @@ export default function CashierOrdersSection() {
                 const orderState     = getOrderStateForOrder(order);
 
                 const stateBadge = {
-                  action:  { text: 'Butuh Aksi',    bg: '#dcfce7', color: '#166534' },
+                  action:  { text: 'Butuh Aksi',    bg: 'var(--color-success-border-light)', color: 'var(--color-success-dark)' },
                   done:    { text: 'Sudah Diproses', bg: '#e0e7ff', color: '#3730a3' },
-                  pending: { text: 'Menunggu',       bg: '#fef9c3', color: '#92400e' },
+                  pending: { text: 'Menunggu',       bg: '#fef9c3', color: 'var(--color-warning)' },
                   terminal:{ text: '',               bg: '',        color: '' },
                 }[orderState] || { text: '', bg: '', color: '' };
 
@@ -386,7 +386,7 @@ export default function CashierOrdersSection() {
                               {cfg.icon} → {advanceTargets[0]}
                             </button>
                             {order.source === 'offline' && !order.paymentProof && advanceTargets[0] !== 'Cancelled' && (
-                              <span className="adm-date" style={{ color: '#b91c1c', fontSize: '11px', marginTop: '2px' }}>
+                              <span className="adm-date" style={{ color: 'var(--color-danger-dark)', fontSize: '11px', marginTop: '2px' }}>
                                 ⚠️ Unggah bukti bayar dahulu
                               </span>
                             )}
@@ -408,7 +408,7 @@ export default function CashierOrdersSection() {
                               <span className="adm-date" style={{ fontSize: '11px' }}>⏳ Memuat invoice…</span>
                             ) : invoiceMap[order.id] === 'error' ? (
                               <div>
-                                <span className="adm-date" style={{ fontSize: '11px', color: '#b91c1c' }}>
+                                <span className="adm-date" style={{ fontSize: '11px', color: 'var(--color-danger-dark)' }}>
                                   ⚠️ Gagal memuat invoice
                                 </span>
                                 <button
@@ -533,7 +533,7 @@ export default function CashierOrdersSection() {
               aria-label="Alasan pembatalan"
             />
             {cancelReasonErr && (
-              <p style={{ color: '#b91c1c', fontSize: '13px', margin: '0 0 12px' }}>
+              <p style={{ color: 'var(--color-danger-dark)', fontSize: '13px', margin: '0 0 12px' }}>
                 {cancelReasonErr}
               </p>
             )}
@@ -544,7 +544,7 @@ export default function CashierOrdersSection() {
               <button
                 type="button"
                 className="adm-btn"
-                style={{ background: '#b91c1c', color: '#fff', border: 'none' }}
+                style={{ background: 'var(--color-danger-dark)', color: '#fff', border: 'none' }}
                 onClick={handleCancelConfirm}
               >
                 Konfirmasi

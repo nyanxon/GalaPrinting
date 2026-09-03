@@ -99,7 +99,7 @@ function CartItemDetailModal({ item, onClose }) {
             {/* Keterangan */}
             <div className="cdm-spec-row">
               <span className="cdm-spec-label">Keterangan</span>
-              <span className="cdm-spec-value">{item.notes || <span style={{ color: '#9ca3af' }}>—</span>}</span>
+              <span className="cdm-spec-value">{item.notes || <span style={{ color: 'var(--gray-400)' }}>—</span>}</span>
             </div>
           </div>
 
@@ -133,7 +133,7 @@ function CartItemDetailModal({ item, onClose }) {
                   style={{ marginTop: '8px', maxWidth: '100%', borderRadius: '8px', border: '1px solid #e5e7eb' }}
                 />
               ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', padding: '10px 12px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', padding: '10px 12px', background: 'var(--gray-50)', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
                   <span style={{ fontSize: '24px' }}>📄</span>
                   <span style={{ fontSize: '13px', color: '#374151' }}>{designFileName || 'File desain tersimpan'}</span>
                 </div>
@@ -143,7 +143,7 @@ function CartItemDetailModal({ item, onClose }) {
 
           {/* Jika tidak ada file desain */}
           {!hasDesign && (
-            <div style={{ marginTop: '12px', padding: '10px 12px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb', color: '#9ca3af', fontSize: '13px' }}>
+            <div style={{ marginTop: '12px', padding: '10px 12px', background: 'var(--gray-50)', borderRadius: '8px', border: '1px solid #e5e7eb', color: 'var(--gray-400)', fontSize: '13px' }}>
               📎 Belum ada file desain yang diupload
             </div>
           )}
@@ -322,19 +322,19 @@ function CartPage() {
                       <div className="cart-item-meta">{t('cart.notes')}: {item.notes}</div>
                     )}
                     {USE_BACKEND && stockByItem[item.id] !== undefined && (stockInsufficient(item) ? (
-                      <div className="cart-item-meta" style={{ color: '#b91c1c', fontWeight: 600 }}>
+                      <div className="cart-item-meta" style={{ color: 'var(--color-danger-dark)', fontWeight: 600 }}>
                         Stok tersisa {stockByItem[item.id]} pcs — tidak cukup untuk pesanan.
                         {' '}<a
                           href={buildWhatsAppUrl(waItemMessage(item))}
                           target="_blank"
                           rel="noreferrer"
-                          style={{ color: '#15803d', textDecoration: 'underline' }}
+                          style={{ color: 'var(--color-success-mid)', textDecoration: 'underline' }}
                         >
                           Pesan via WhatsApp
                         </a>
                       </div>
                     ) : (
-                      <div className="cart-item-meta" style={{ color: '#15803d' }}>
+                      <div className="cart-item-meta" style={{ color: 'var(--color-success-mid)' }}>
                         Stok tersedia: {stockByItem[item.id]} pcs
                       </div>
                     ))}
@@ -435,12 +435,12 @@ function CartPage() {
                 </Link>
               )}
               {USE_BACKEND && stockChecking && (
-                <p style={{ marginTop: '8px', fontSize: '13px', color: '#6b7280' }}>
+                <p style={{ marginTop: '8px', fontSize: '13px', color: 'var(--gray-500)' }}>
                   Menghitung stok…
                 </p>
               )}
               {USE_BACKEND && hasStockIssue && (
-                <p style={{ marginTop: '8px', fontSize: '13px', color: '#b91c1c' }}>
+                <p style={{ marginTop: '8px', fontSize: '13px', color: 'var(--color-danger-dark)' }}>
                   Sebagian item stoknya tidak cukup — sesuaikan jumlah atau hubungi kami via WhatsApp.
                 </p>
               )}

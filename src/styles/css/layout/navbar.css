@@ -268,7 +268,7 @@
   padding: 13px 22px;
   font-weight: 600;
   font-size: 15px;
-  color: #dc2626;
+  color: var(--color-danger);
   background: none;
   border: none;
   border-top: 1px solid #f3f3f3;
@@ -344,7 +344,7 @@
 .cart-popup-body { padding: 16px 18px 10px; }
 
 .cart-popup-empty {
-  color: #6b6b6b;
+  color: var(--gray-mid);
   font-size: 14px;
   text-align: center;
   padding: 8px 0;
@@ -353,7 +353,7 @@
 
 .cart-popup-total-label {
   font-size: 15px;
-  color: #6b6b6b;
+  color: var(--gray-mid);
   font-weight: 600;
   margin: 0 0 10px;
 }
@@ -365,7 +365,7 @@
   grid-template-columns: 1fr auto;
   gap: 2px 8px;
   font-size: 13px;
-  color: #6b6b6b;
+  color: var(--gray-mid);
 }
 
 .cart-popup-item-name { grid-column: 1; grid-row: 1; }
@@ -378,7 +378,7 @@
   padding-top: 10px;
   border-top: 1px solid var(--border);
   font-size: 15px;
-  color: #6b6b6b;
+  color: var(--gray-mid);
   font-weight: 600;
 }
 
@@ -416,12 +416,12 @@
 }
 
 .login-popup-alert {
-  background: #FEE2E2;
-  border: 1px solid #DC2626;
+  background: var(--color-danger-bg);
+  border: 1px solid var(--color-danger);
   border-radius: 6px;
   padding: 10px 12px;
   font-size: 13px;
-  color: #991B1B;
+  color: var(--color-danger-deep);
   animation: slideDown 0.25s ease-out;
 }
 
@@ -451,13 +451,13 @@
 .login-popup-input:focus { border-color: var(--brand-brown); }
 
 .login-popup-input.error {
-  border-color: #DC2626;
-  background: #FEE2E2;
+  border-color: var(--color-danger);
+  background: var(--color-danger-bg);
 }
 
 .login-popup-error {
   font-size: 12px;
-  color: #991B1B;
+  color: var(--color-danger-deep);
   padding-left: 4px;
   animation: slideDown 0.25s ease-out;
 }
@@ -491,7 +491,7 @@
 .login-popup-register-hint {
   font-size: 12px;
   text-align: center;
-  color: #6b6b6b;
+  color: var(--gray-mid);
   margin: 0;
 }
 
@@ -668,7 +668,7 @@
 
 .profile-popup-email {
   font-size: 12px;
-  color: #9b9b9b;
+  color: var(--gray-light);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -677,7 +677,7 @@
 
 .profile-popup-divider {
   height: 1px;
-  background: #f0f0f0;
+  background: var(--gray-bg);
   margin: 0;
 }
 
@@ -705,16 +705,16 @@
 }
 
 .profile-popup-logout {
-  color: #dc2626;
+  color: var(--color-danger);
 }
 
 .profile-popup-logout:hover {
   background: #fff5f5;
-  color: #b91c1c;
+  color: var(--color-danger-dark);
 }
 
 .profile-popup-admin-link {
-  color: #785e40;
+  color: var(--brand-brown);
   font-weight: 600;
 }
 

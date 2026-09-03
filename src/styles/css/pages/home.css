@@ -353,7 +353,7 @@
   padding: 10px 14px;
   text-decoration: none;
   color: #1f1f1f;
-  border-bottom: 1px solid #f5f5f5;
+  border-bottom: 1px solid var(--gray-bg-2);
   transition: background 0.12s;
 }
 
@@ -391,14 +391,14 @@
 
 .home-search-dropdown-category {
   font-size: 12px;
-  color: #6b6b6b;
+  color: var(--gray-mid);
   margin-top: 2px;
 }
 
 .home-search-dropdown-empty {
   padding: 16px;
   text-align: center;
-  color: #6b6b6b;
+  color: var(--gray-mid);
   font-size: 14px;
 }
 
@@ -406,8 +406,8 @@
   padding: 10px 14px;
   text-align: center;
   font-size: 12px;
-  color: #9b9b9b;
-  background: #fafafa;
+  color: var(--gray-light);
+  background: var(--gray-bg-3);
 }
 
 /* ── Custom Order ────────────────────────────────────────── */

@@ -351,7 +351,7 @@ export default function ChatsSection() {
                   setCustomerSearchQuery('');
                   setCustomerSearchResults([]);
                 }}
-                style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', padding: '5px 10px', cursor: 'pointer', fontSize: '12px', whiteSpace: 'nowrap' }}
+                style={{ background: 'var(--color-info)', color: '#fff', border: 'none', borderRadius: '6px', padding: '5px 10px', cursor: 'pointer', fontSize: '12px', whiteSpace: 'nowrap' }}
                 title="Mulai percakapan baru dengan customer"
               >
                 + Mulai Chat Baru
@@ -372,12 +372,12 @@ export default function ChatsSection() {
                   autoFocus
                 />
                 {customerSearchLoading && (
-                  <div style={{ fontSize: '12px', color: '#6b7280', padding: '6px 0' }}>Mencari…</div>
+                  <div style={{ fontSize: '12px', color: 'var(--gray-500)', padding: '6px 0' }}>Mencari…</div>
                 )}
                 {!customerSearchLoading && customerSearchQuery.length >= 2 && (
                   <div style={{ marginTop: '4px', border: '1px solid #e5e7eb', borderRadius: '6px', maxHeight: '180px', overflowY: 'auto', background: '#fff' }}>
                     {customerSearchResults.length === 0 ? (
-                      <div style={{ padding: '10px', fontSize: '13px', color: '#6b7280' }}>
+                      <div style={{ padding: '10px', fontSize: '13px', color: 'var(--gray-500)' }}>
                         Tidak ada customer ditemukan.
                       </div>
                     ) : (
@@ -394,7 +394,7 @@ export default function ChatsSection() {
                         >
                           <div style={{ fontWeight: 500 }}>{customer.name}</div>
                           {customer.phone && (
-                            <div style={{ color: '#6b7280', fontSize: '12px' }}>{customer.phone}</div>
+                            <div style={{ color: 'var(--gray-500)', fontSize: '12px' }}>{customer.phone}</div>
                           )}
                         </div>
                       ))
@@ -413,7 +413,7 @@ export default function ChatsSection() {
               style={{ marginTop: '10px', fontSize: '13px', padding: '6px 10px', width: '100%' }}
               aria-label="Cari percakapan"
             />
-            <div style={{ marginTop: '5px', fontSize: '11px', color: '#9ca3af', lineHeight: 1.4 }}>
+            <div style={{ marginTop: '5px', fontSize: '11px', color: 'var(--gray-400)', lineHeight: 1.4 }}>
               Chat yang ditutup dapat dibuka kembali lewat "+ Mulai Chat Baru".
             </div>
           </div>
@@ -533,7 +533,7 @@ export default function ChatsSection() {
                   <button
                     type="button"
                     onClick={handleRemoveFile}
-                    style={{ marginLeft: '8px', background: 'none', border: 'none', cursor: 'pointer', color: '#b91c1c' }}
+                    style={{ marginLeft: '8px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-danger-dark)' }}
                     aria-label="Hapus file"
                   >
                     ✕
@@ -545,7 +545,7 @@ export default function ChatsSection() {
                 <div
                   className="chat-send-error"
                   role="alert"
-                  style={{ padding: '8px 20px', color: '#b91c1c', fontSize: '13px' }}
+                  style={{ padding: '8px 20px', color: 'var(--color-danger-dark)', fontSize: '13px' }}
                 >
                   {sendError}
                 </div>

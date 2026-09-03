@@ -230,13 +230,13 @@ export default function SubAdminOrdersSection({ extraColumn = null }) {
                             fontSize: '11px',
                             fontWeight: 600,
                             background:
-                              orderState === 'action'  ? '#dcfce7' :
+                              orderState === 'action'  ? 'var(--color-success-border-light)' :
                               orderState === 'done'    ? '#e0e7ff' :
-                              orderState === 'pending' ? '#fef9c3' : '#f3f4f6',
+                              orderState === 'pending' ? '#fef9c3' : 'var(--gray-100)',
                             color:
-                              orderState === 'action'  ? '#166534' :
+                              orderState === 'action'  ? 'var(--color-success-dark)' :
                               orderState === 'done'    ? '#3730a3' :
-                              orderState === 'pending' ? '#92400e' : '#6b7280',
+                              orderState === 'pending' ? 'var(--color-warning)' : 'var(--gray-500)',
                           }}
                         >
                           {stateInfo.text}

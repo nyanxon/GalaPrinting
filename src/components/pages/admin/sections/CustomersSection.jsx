@@ -58,7 +58,7 @@ function DeleteUserModal({ customer, onConfirm, onCancel, deleting }) {
         <div
           className="adm-modal-body"
           style={{
-            background: '#fafafa',
+            background: 'var(--gray-bg-3)',
             border: '1px solid #e0e0e0',
             borderRadius: '6px',
             padding: '12px 14px',

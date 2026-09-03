@@ -72,7 +72,7 @@ function ResetPasswordPage() {
           {success ? (
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
-              <h1 className="section-title" style={{ color: '#16a34a' }}>Password Berhasil Direset</h1>
+              <h1 className="section-title" style={{ color: 'var(--color-success)' }}>Password Berhasil Direset</h1>
               <p style={{ color: '#374151', marginBottom: 8, lineHeight: 1.6 }}>{successMsg}</p>
               <p className="muted" style={{ fontSize: 13, marginBottom: 24 }}>
                 Anda akan diarahkan ke halaman login dalam beberapa detik…
@@ -89,7 +89,7 @@ function ResetPasswordPage() {
               {error && (
                 <div className="alert" role="alert"
                   style={{ background: 'rgba(220,38,38,.08)', border: '1px solid rgba(220,38,38,.3)',
-                           borderRadius: 6, padding: '10px 14px', color: '#b91c1c',
+                           borderRadius: 6, padding: '10px 14px', color: 'var(--color-danger-dark)',
                            fontSize: 13, marginBottom: 16 }}>
                   {error}
                 </div>

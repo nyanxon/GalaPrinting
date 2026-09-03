@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS product_stock (
   KEY idx_product_stock_product (product_id),
   CONSTRAINT fk_product_stock_product FOREIGN KEY (product_id)
     REFERENCES products(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ── DOWN (rollback manual) ────────────────────────────────────
 -- DROP TABLE IF EXISTS product_stock;

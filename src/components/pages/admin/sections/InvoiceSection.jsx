@@ -3,7 +3,7 @@
  *
  * Fitur 2: list invoice, update payment status.
  * Fitur 3: tampilkan delivery method di detail order.
- * Fitur 4: tombol Print Resi (termal) & Download/Kirim PDF A4.
+ * Fitur 4: tombol Print Nota (termal) & Download/Kirim PDF A4.
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -23,9 +23,9 @@ import { getSocket } from '../../../../core/socket.js';
 const PAGE_SIZE = 20;
 
 const PAYMENT_STATUS_LABELS = {
-  unpaid:  { label: 'Belum Bayar', color: '#b91c1c', bg: '#fee2e2' },
-  paid:    { label: 'Lunas',       color: '#166534', bg: '#dcfce7' },
-  dp:      { label: 'DP',          color: '#92400e', bg: '#fef3c7' },
+  unpaid:  { label: 'Belum Bayar', color: 'var(--color-danger-dark)', bg: 'var(--color-danger-bg)' },
+  paid:    { label: 'Lunas',       color: 'var(--color-success-dark)', bg: 'var(--color-success-border-light)' },
+  dp:      { label: 'DP',          color: 'var(--color-warning)', bg: 'var(--color-warning-bg)' },
 };
 
 // ── Invoice Detail Modal ──────────────────────────────────────────────────────
@@ -44,7 +44,7 @@ function InvoiceDetailModal({ invoiceId, onClose, onUpdated }) {
     getInvoiceById(invoiceId)
       .then((inv) => {
         setInvoice(inv);
-        setNewStatus(inv.payment_status);
+        setNewStatus(inv.payment_status === 'dp' ? 'paid' : inv.payment_status);
         setNewMethod(inv.payment_method || '');
         setNewDpAmount(inv.dp_amount != null ? String(inv.dp_amount) : '');
       })
@@ -97,7 +97,7 @@ function InvoiceDetailModal({ invoiceId, onClose, onUpdated }) {
           <div className="inv-modal-header">
             <div>
               <h3>🧾 {invoice.invoice_number}</h3>
-              <span style={{ fontSize: '12px', color: '#6b7280' }}>Order: {invoice.order_number}</span>
+              <span style={{ fontSize: '12px', color: 'var(--gray-500)' }}>Order: {invoice.order_number}</span>
             </div>
             <button type="button" className="inv-modal-close" onClick={onClose}>✕</button>
           </div>
@@ -124,7 +124,7 @@ function InvoiceDetailModal({ invoiceId, onClose, onUpdated }) {
                   {psCfg.label}
                 </span>
                 {invoice.locked && (
-                  <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '4px' }}>🔒 Locked (sudah paid)</div>
+                  <div style={{ fontSize: '11px', color: 'var(--gray-500)', marginTop: '4px' }}>🔒 Locked (sudah paid)</div>
                 )}
               </div>
               <div>
@@ -147,7 +147,7 @@ function InvoiceDetailModal({ invoiceId, onClose, onUpdated }) {
                 </thead>
                 <tbody>
                   {items.length === 0 ? (
-                    <tr><td colSpan={4} style={{ color: '#9ca3af', padding: '12px' }}>—</td></tr>
+                    <tr><td colSpan={4} style={{ color: 'var(--gray-400)', padding: '12px' }}>—</td></tr>
                   ) : items.map((item, i) => (
                     <tr key={item.id || i}>
                       <td>{item.name}</td>
@@ -169,6 +169,38 @@ function InvoiceDetailModal({ invoiceId, onClose, onUpdated }) {
               {Number(invoice.tax_amount) > 0 && (
                 <div className="inv-total-row"><span>Pajak</span><span>{formatCurrency(invoice.tax_amount)}</span></div>
               )}
+              {(() => {
+                const isDp = invoice.payment_status === 'dp';
+                const hasDp = isDp || (invoice.payment_status === 'paid' && invoice.dp_amount != null);
+                if (!hasDp) return null;
+                const dp = Number(invoice.dp_amount || 0);
+                const sisa = Math.max(Number(invoice.total || 0) - dp, 0);
+                const dpDate = invoice.dp_paid_at
+                  ? new Date(invoice.dp_paid_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
+                  : '';
+                const paidDate = invoice.paid_at
+                  ? new Date(invoice.paid_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
+                  : '';
+                return (
+                  <>
+                    <div className="inv-total-row">
+                      <span>{dpDate ? `DP diterima (${dpDate})` : 'DP'}</span>
+                      <span>{formatCurrency(dp)}</span>
+                    </div>
+                    {isDp ? (
+                      <div className="inv-total-row inv-total-row--discount">
+                        <span>Sisa Pembayaran</span>
+                        <span>{formatCurrency(sisa)}</span>
+                      </div>
+                    ) : (
+                      <div className="inv-total-row">
+                        <span>{paidDate ? `Pelunasan diterima (${paidDate})` : 'Pelunasan'}</span>
+                        <span>{formatCurrency(sisa)}</span>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
               <div className="inv-total-row inv-total-row--grand"><span>TOTAL</span><span>{formatCurrency(invoice.total)}</span></div>
             </div>
 
@@ -180,9 +212,15 @@ function InvoiceDetailModal({ invoiceId, onClose, onUpdated }) {
                   <label className="inv-label">
                     Status
                     <select className="adm-input" value={newStatus} onChange={(e) => setNewStatus(e.target.value)}>
-                      <option value="unpaid">Belum Bayar</option>
-                      <option value="dp">DP</option>
-                      <option value="paid">Lunas</option>
+                      {invoice.payment_status === 'dp' ? (
+                        <option value="paid">Lunas</option>
+                      ) : (
+                        <>
+                          <option value="unpaid">Belum Bayar</option>
+                          <option value="dp">DP</option>
+                          <option value="paid">Lunas</option>
+                        </>
+                      )}
                     </select>
                   </label>
                   <label className="inv-label">
@@ -216,7 +254,7 @@ function InvoiceDetailModal({ invoiceId, onClose, onUpdated }) {
                     </div>
                     <div className="inv-label">
                       <div className="inv-detail-label">Sisa Pembayaran</div>
-                      <div className="inv-detail-value" style={{ color: '#b91c1c' }}>
+                      <div className="inv-detail-value" style={{ color: 'var(--color-danger-dark)' }}>
                         {formatCurrency(Math.max(Number(invoice.total || 0) - (Number(newDpAmount) || 0), 0))}
                       </div>
                     </div>
@@ -240,14 +278,14 @@ function InvoiceDetailModal({ invoiceId, onClose, onUpdated }) {
           {/* Footer actions */}
           <div className="inv-modal-footer">
             <button type="button" className="adm-btn" onClick={onClose}>Tutup</button>
-            {/* Fitur 4: Print Resi Termal */}
+            {/* Fitur 4: Print Nota Termal */}
             <button
               type="button"
               className="adm-btn adm-btn--thermal"
               onClick={() => setThermalOpen(true)}
-              title="Print resi termal (58mm)"
+              title="Print nota termal (58mm)"
             >
-              🖨️ Print Resi
+              🖨️ Print Nota
             </button>
             {/* Fitur 4: Download PDF A4 */}
             <button

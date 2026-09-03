@@ -17,6 +17,7 @@
 import { useRef, useEffect, useState, useCallback, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext.jsx';
 import { track } from '../../utils/activityTracker.js';
+import { BRAND_COLOR } from '../../config/brand.js';
 
 const STORAGE_KEY = 'gala.thermal.paperSize';
 
@@ -334,7 +335,7 @@ export default function ThermalSpkModal({ invoice, onClose, autoPrint }) {
             onClick={onClose}
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: '18px', color: '#6b7280', lineHeight: 1,
+              fontSize: '18px', color: 'var(--gray-500)', lineHeight: 1,
             }}
           >✕</button>
         </div>
@@ -343,7 +344,7 @@ export default function ThermalSpkModal({ invoice, onClose, autoPrint }) {
         <div style={{
           display: 'flex', alignItems: 'center', gap: '12px',
           padding: '10px 20px', borderBottom: '1px solid #e5e7eb',
-          background: '#f9fafb',
+          background: 'var(--gray-50)',
         }}>
           <span style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>Ukuran Kertas:</span>
           <div style={{ display: 'flex', gap: '6px' }}>
@@ -355,8 +356,8 @@ export default function ThermalSpkModal({ invoice, onClose, autoPrint }) {
                 style={{
                   padding: '4px 14px',
                   borderRadius: '6px',
-                  border: paperSize === size ? '2px solid #785E40' : '1px solid #d1d5db',
-                  background: paperSize === size ? '#785E40' : '#fff',
+                  border: paperSize === size ? `2px solid ${BRAND_COLOR}` : '1px solid #d1d5db',
+                  background: paperSize === size ? BRAND_COLOR : '#fff',
                   color: paperSize === size ? '#fff' : '#374151',
                   fontSize: '13px',
                   fontWeight: 600,
@@ -368,13 +369,13 @@ export default function ThermalSpkModal({ invoice, onClose, autoPrint }) {
               </button>
             ))}
           </div>
-          <span style={{ fontSize: '11px', color: '#9ca3af', marginLeft: 'auto' }}>
+          <span style={{ fontSize: '11px', color: 'var(--gray-400)', marginLeft: 'auto' }}>
             {cfg.contentWidthPx}px content
           </span>
         </div>
 
         {/* Preview */}
-        <div style={{ padding: '20px', background: '#f9fafb', display: 'flex', justifyContent: 'center' }}>
+        <div style={{ padding: '20px', background: 'var(--gray-50)', display: 'flex', justifyContent: 'center' }}>
           <div
             style={{
               background: '#fff',
@@ -398,7 +399,7 @@ export default function ThermalSpkModal({ invoice, onClose, autoPrint }) {
             type="button"
             className="adm-btn adm-btn--primary"
             onClick={handlePrint}
-            style={{ background: '#785E40', borderColor: '#785E40' }}
+            style={{ background: BRAND_COLOR, borderColor: BRAND_COLOR }}
           >
             Print SPK
           </button>

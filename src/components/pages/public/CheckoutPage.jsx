@@ -316,7 +316,7 @@ function CheckoutPage() {
                       {item.name}
                       <span className="co-summary-qty">×{item.quantity}</span>
                       {attrs.length > 0 && (
-                        <span style={{ display: 'block', fontSize: '12px', color: '#6b7280', fontWeight: 400 }}>
+                        <span style={{ display: 'block', fontSize: '12px', color: 'var(--gray-500)', fontWeight: 400 }}>
                           {attrs.map((a) => `${a.name}: ${a.value}`).join(' • ')}
                         </span>
                       )}

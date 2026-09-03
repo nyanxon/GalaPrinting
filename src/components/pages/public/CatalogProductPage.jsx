@@ -464,7 +464,7 @@ function CatalogProductPage() {
             <span
               className="product-stars"
               aria-hidden="true"
-              style={{ color: '#f59e0b' }}
+              style={{ color: 'var(--color-warning-alt)' }}
             >
               {'★'.repeat(roundedRating)}
               {'☆'.repeat(5 - roundedRating)}
@@ -625,13 +625,13 @@ function CatalogProductPage() {
               )}
             </div>
             {overStock && (
-              <p className="muted" style={{ color: '#b91c1c', fontSize: '13px', marginTop: '6px' }}>
+              <p className="muted" style={{ color: 'var(--color-danger-dark)', fontSize: '13px', marginTop: '6px' }}>
                 Stok tersedia hanya {stockInfo.stock} pcs — kurangi jumlah atau pesan via{' '}
                 <a
                   href={buildWhatsAppUrl(waMessage)}
                   target="_blank"
                   rel="noreferrer"
-                  style={{ color: '#15803d', textDecoration: 'underline' }}
+                  style={{ color: 'var(--color-success-mid)', textDecoration: 'underline' }}
                 >
                   WhatsApp
                 </a>
@@ -639,12 +639,12 @@ function CatalogProductPage() {
               </p>
             )}
             {stockOut && (
-              <p className="muted" style={{ color: '#b91c1c', fontSize: '13px', marginTop: '6px' }}>
+              <p className="muted" style={{ color: 'var(--color-danger-dark)', fontSize: '13px', marginTop: '6px' }}>
                 Maaf, stok kombinasi ini sedang kosong. Hubungi kami via WhatsApp untuk menanyakan ketersediaan.
               </p>
             )}
             {USE_BACKEND && !stockOut && stockInfo && stockInfo.stock > 0 && !overStock && (
-              <p className="muted" style={{ color: '#15803d', fontSize: '13px', marginTop: '6px' }}>
+              <p className="muted" style={{ color: 'var(--color-success-mid)', fontSize: '13px', marginTop: '6px' }}>
                 Stok tersedia: {stockInfo.stock} pcs
               </p>
             )}
@@ -723,13 +723,13 @@ function CatalogProductPage() {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '12px' }}>
                   {reviews.map((r) => (
-                    <div key={r.id} style={{ padding: '14px 16px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+                    <div key={r.id} style={{ padding: '14px 16px', background: 'var(--gray-50)', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
                         <span style={{ fontWeight: 600, fontSize: '14px' }}>{r.customer_name ?? r.customerName ?? 'Anonim'}</span>
-                        <span style={{ color: '#f59e0b', fontSize: '14px' }}>
+                        <span style={{ color: 'var(--color-warning-alt)', fontSize: '14px' }}>
                           {'⭐'.repeat(Math.min(5, Math.max(1, Number(r.rating) || 5)))}
                         </span>
-                        <span style={{ color: '#9ca3af', fontSize: '12px', marginLeft: 'auto' }}>
+                        <span style={{ color: 'var(--gray-400)', fontSize: '12px', marginLeft: 'auto' }}>
                           {new Date(r.created_at ?? r.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
                         </span>
                       </div>

@@ -19,9 +19,9 @@
 }
 
 .alert.muted {
-  background: #FEE2E2;
-  border: 1px solid #DC2626;
-  color: #991B1B;
+  background: var(--color-danger-bg);
+  border: 1px solid var(--color-danger);
+  color: var(--color-danger-deep);
 }
 
 /* ── Register / Login Layout ─────────────────────────────── */
@@ -109,8 +109,8 @@
 }
 
 .register-input.error {
-  border-color: #DC2626;
-  background-color: #FEE2E2;
+  border-color: var(--color-danger);
+  background-color: var(--color-danger-bg);
   text-decoration: none !important;
 }
 
@@ -129,7 +129,7 @@
 
 .register-field-error {
   font-size: 12px;
-  color: #991B1B;
+  color: var(--color-danger-deep);
   padding-left: 2px;
   animation: slideDown 0.25s ease-out;
 }
@@ -154,7 +154,7 @@
 }
 
 .register-input.error.register-select {
-  background-color: #FEE2E2;
+  background-color: var(--color-danger-bg);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23DC2626' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 

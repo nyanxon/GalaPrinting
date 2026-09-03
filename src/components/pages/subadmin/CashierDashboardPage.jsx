@@ -2,7 +2,7 @@
  * CashierDashboardPage.jsx — Dashboard for the Cashier (Kasir) role.
  *
  * Fitur 1: Semua pesanan tampil di list, tidak hilang setelah status berubah.
- * Fitur 2: Menu Invoices — list invoice, update status pembayaran, print resi.
+ * Fitur 2: Menu Invoices — list invoice, update status pembayaran, print nota.
  *
  * Requirements: 11.1, 11.2, 13.4
  */

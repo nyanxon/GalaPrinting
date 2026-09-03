@@ -34,7 +34,7 @@
 }
 
 .btn.danger{
-  background: #dc2626;
+  background: var(--color-danger);
   border-color: rgba(0,0,0,0.0);
   color: #fff;
 }

@@ -142,8 +142,8 @@
 
 /* Tokopedia */
 .rev-source-badge--tokopedia {
-  background: #dcfce7;
-  color: #166534;
+  background: var(--color-success-border-light);
+  color: var(--color-success-dark);
 }
 
 /* TikTok Shop */

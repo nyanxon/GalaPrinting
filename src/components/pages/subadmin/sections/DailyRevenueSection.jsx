@@ -499,8 +499,8 @@ export default function DailyRevenueSection() {
                           style={{
                             padding: '4px 12px',
                             fontSize: '13px',
-                            color: '#dc2626',
-                            borderColor: '#fca5a5',
+                            color: 'var(--color-danger)',
+                            borderColor: 'var(--color-danger-soft-border)',
                           }}
                           onClick={() => handleOpenDelete(tx)}
                           aria-label={`Hapus transaksi ${tx.id}`}
@@ -653,7 +653,7 @@ export default function DailyRevenueSection() {
             {/* Detail transaksi yang akan dihapus */}
             <div
               style={{
-                background: '#fef2f2',
+                background: 'var(--color-danger-bg-2)',
                 border: '1px solid #fca5a5',
                 borderRadius: 'var(--radius-sm)',
                 padding: '12px 16px',
@@ -705,9 +705,9 @@ export default function DailyRevenueSection() {
                 type="button"
                 className="adm-btn"
                 style={{
-                  background: '#dc2626',
+                  background: 'var(--color-danger)',
                   color: '#fff',
-                  borderColor: '#dc2626',
+                  borderColor: 'var(--color-danger)',
                 }}
                 onClick={handleConfirmDelete}
                 disabled={submitting}

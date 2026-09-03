@@ -318,30 +318,50 @@ export async function generateInvoicePdf(invoice) {
         }
       });
 
-      // Baris DP & Sisa Pembayaran — hanya saat status = DP
-      if (invoice.payment_status === 'dp') {
+      // Baris DP & Sisa/Pelunasan — saat status = DP, atau saat LUNAS yang
+      // berawal dari DP (dp_amount dipertahankan sebagai histori).
+      const hasDpHistory = invoice.payment_status === 'dp'
+        || (invoice.payment_status === 'paid' && invoice.dp_amount != null);
+      if (hasDpHistory) {
         const dpPaid = Number(invoice.dp_amount || 0);
         const remaining = Math.max(Number(invoice.total || 0) - dpPaid, 0);
 
         currentY += 8;
 
-        doc
-          .fillColor(GRAY_HEX)
-          .font('Helvetica')
-          .fontSize(9)
-          .text('DP', totalsLabelX, currentY + 3)
-          .fillColor(BLACK_HEX)
-          .text(formatIDR(dpPaid), totalsValueX, currentY + 3, { align: 'right', width: 80 });
-        currentY += 18;
+        const dpLabel = invoice.dp_paid_at
+          ? `DP (${formatDate(invoice.dp_paid_at)})`
+          : 'DP';
 
         doc
           .fillColor(GRAY_HEX)
           .font('Helvetica')
           .fontSize(9)
-          .text('Sisa Pembayaran', totalsLabelX, currentY + 3)
-          .fillColor('#b91c1c')
-          .font('Helvetica-Bold')
-          .text(formatIDR(remaining), totalsValueX, currentY + 3, { align: 'right', width: 80 });
+          .text(dpLabel, totalsLabelX, currentY + 3)
+          .fillColor(BLACK_HEX)
+          .text(formatIDR(dpPaid), totalsValueX, currentY + 3, { align: 'right', width: 80 });
+        currentY += 18;
+
+        if (invoice.payment_status === 'dp') {
+          doc
+            .fillColor(GRAY_HEX)
+            .font('Helvetica')
+            .fontSize(9)
+            .text('Sisa Pembayaran', totalsLabelX, currentY + 3)
+            .fillColor('#b91c1c')
+            .font('Helvetica-Bold')
+            .text(formatIDR(remaining), totalsValueX, currentY + 3, { align: 'right', width: 80 });
+        } else {
+          const pelunasanLabel = invoice.paid_at
+            ? `Pelunasan (${formatDate(invoice.paid_at)})`
+            : 'Pelunasan';
+          doc
+            .fillColor(GRAY_HEX)
+            .font('Helvetica')
+            .fontSize(9)
+            .text(pelunasanLabel, totalsLabelX, currentY + 3)
+            .fillColor(BLACK_HEX)
+            .text(formatIDR(remaining), totalsValueX, currentY + 3, { align: 'right', width: 80 });
+        }
         currentY += 18;
       }
 

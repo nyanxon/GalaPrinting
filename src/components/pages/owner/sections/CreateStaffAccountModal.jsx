@@ -142,7 +142,7 @@ export default function CreateStaffAccountModal({ onClose, onCreated }) {
               onChange={handleChange}
             />
             {errors.password && <span className="register-field-error">{errors.password}</span>}
-            <p style={{ fontSize: '12px', color: '#6b7280', marginTop: 4 }}>
+            <p style={{ fontSize: '12px', color: 'var(--gray-500)', marginTop: 4 }}>
               Staff wajib mengganti password ini pada login pertama.
             </p>
           </div>

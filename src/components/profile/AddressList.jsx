@@ -25,7 +25,7 @@ const addBtnStyle = {
   padding: '8px 18px',
   borderRadius: '8px',
   border: 'none',
-  background: '#2563eb',
+  background: 'var(--color-info)',
   color: '#fff',
   cursor: 'pointer',
   fontSize: '14px',
@@ -40,7 +40,7 @@ const addBtnDisabledStyle = {
 
 const limitMsgStyle = {
   fontSize: '13px',
-  color: '#dc2626',
+  color: 'var(--color-danger)',
   margin: '4px 0 0',
 };
 
@@ -58,7 +58,7 @@ const cardStyle = {
 const cardTitleStyle = {
   fontWeight: '600',
   fontSize: '15px',
-  color: '#111827',
+  color: 'var(--gray-900)',
   margin: 0,
 };
 
@@ -79,7 +79,7 @@ const editBtnStyle = {
   borderRadius: '6px',
   border: '1px solid #2563eb',
   background: '#fff',
-  color: '#2563eb',
+  color: 'var(--color-info)',
   cursor: 'pointer',
   fontSize: '13px',
   fontWeight: '500',
@@ -90,29 +90,29 @@ const deleteBtnStyle = {
   borderRadius: '6px',
   border: '1px solid #dc2626',
   background: '#fff',
-  color: '#dc2626',
+  color: 'var(--color-danger)',
   cursor: 'pointer',
   fontSize: '13px',
   fontWeight: '500',
 };
 
 const loadingStyle = {
-  color: '#6b7280',
+  color: 'var(--gray-500)',
   fontSize: '14px',
   padding: '12px 0',
 };
 
 const errorMsgStyle = {
-  color: '#dc2626',
+  color: 'var(--color-danger)',
   fontSize: '14px',
   padding: '12px',
-  background: '#fef2f2',
+  background: 'var(--color-danger-bg-2)',
   borderRadius: '8px',
   border: '1px solid #fecaca',
 };
 
 const emptyStyle = {
-  color: '#6b7280',
+  color: 'var(--gray-500)',
   fontSize: '14px',
   padding: '12px 0',
 };
@@ -204,7 +204,7 @@ export default function AddressList() {
     <div style={sectionStyle}>
       {/* Header row: title + add button */}
       <div style={headerRowStyle}>
-        <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#111827' }}>
+        <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: 'var(--gray-900)' }}>
           {t('address.listTitle')}
         </h3>
         <div>
@@ -237,7 +237,7 @@ export default function AddressList() {
       {!loading && !error && addresses.map((address) => (
         <div key={address.id} style={cardStyle}>
           <p style={cardTitleStyle}>{address.title}</p>
-          <p style={cardTextStyle}><span style={{ color: '#6b7280', fontSize: '12px' }}>{t('address.recipient')}: </span>{address.name}</p>
+          <p style={cardTextStyle}><span style={{ color: 'var(--gray-500)', fontSize: '12px' }}>{t('address.recipient')}: </span>{address.name}</p>
           <p style={cardTextStyle}>{address.phone}</p>
           <p style={cardTextStyle}>{address.full_address}</p>
           <div style={cardActionsStyle}>

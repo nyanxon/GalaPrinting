@@ -62,7 +62,7 @@ function VerifyEmailPage() {
           {status === 'success' && (
             <>
               <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
-              <h1 className="section-title" style={{ color: '#16a34a' }}>Email Terverifikasi!</h1>
+              <h1 className="section-title" style={{ color: 'var(--color-success)' }}>Email Terverifikasi!</h1>
               <p style={{ marginBottom: 24, color: '#374151' }}>{message}</p>
               <Link className="btn primary" to="/">Ke Beranda</Link>
             </>
@@ -71,10 +71,10 @@ function VerifyEmailPage() {
           {status === 'expired' && (
             <>
               <div style={{ fontSize: 48, marginBottom: 16 }}>⌛</div>
-              <h1 className="section-title" style={{ color: '#b45309' }}>Link Kedaluwarsa</h1>
+              <h1 className="section-title" style={{ color: 'var(--color-warning-dark)' }}>Link Kedaluwarsa</h1>
               <p style={{ marginBottom: 24, color: '#374151' }}>{message}</p>
               {resendMsg ? (
-                <p style={{ color: '#16a34a', fontWeight: 600 }}>{resendMsg}</p>
+                <p style={{ color: 'var(--color-success)', fontWeight: 600 }}>{resendMsg}</p>
               ) : (
                 <button
                   className="btn primary"
@@ -91,7 +91,7 @@ function VerifyEmailPage() {
           {status === 'error' && (
             <>
               <div style={{ fontSize: 48, marginBottom: 16 }}>❌</div>
-              <h1 className="section-title" style={{ color: '#dc2626' }}>Verifikasi Gagal</h1>
+              <h1 className="section-title" style={{ color: 'var(--color-danger)' }}>Verifikasi Gagal</h1>
               <p style={{ marginBottom: 24, color: '#374151' }}>{message}</p>
               <Link className="btn" to="/">Ke Beranda</Link>
             </>

@@ -63,7 +63,7 @@ function stopIntervalIfEmpty() {
 
 /**
  * Public: record an activity.
- * @param {string} actionLabel - human-readable description, e.g. "Cetak Resi"
+ * @param {string} actionLabel - human-readable description, e.g. "Cetak Nota"
  * @param {object} [meta]
  * @param {string} [meta.pagePath]  - overrides the tracked current page
  * @param {string} [meta.targetType]

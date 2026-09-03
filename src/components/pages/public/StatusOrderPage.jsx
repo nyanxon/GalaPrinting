@@ -268,7 +268,7 @@ function ItemReviewCard({ item, user, orderId }) {
               <span className="so-review-photo-btn">
                 📷 {t('orderStatus.addPhoto')}
               </span>
-              <span style={{ fontSize: 11, color: '#9ca3af', marginLeft: 6 }}>{t('orderStatus.photoHint')}</span>
+              <span style={{ fontSize: 11, color: 'var(--gray-400)', marginLeft: 6 }}>{t('orderStatus.photoHint')}</span>
             </label>
           )}
         </div>
