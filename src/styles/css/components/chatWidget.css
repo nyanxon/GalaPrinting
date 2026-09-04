@@ -22,7 +22,7 @@
 .cw-toggle {
   width: 56px;
   height: 56px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--brand-brown, #785E40);
   color: #fff;
   border: none;
@@ -55,7 +55,7 @@
   font-weight: 700;
   min-width: 20px;
   height: 20px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -77,7 +77,7 @@
   content: '';
   position: absolute;
   inset: -3px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 2px solid var(--color-danger-bright);
   opacity: 0;
   animation: cw-badge-pulse 2s ease-out infinite;
@@ -94,7 +94,7 @@
   max-width: 100vw;
   max-height: 80vh;
   background: #fff;
-  border-radius: 20px;
+  border-radius: var(--radius-3xl);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
   display: flex;
   flex-direction: column;
@@ -127,7 +127,7 @@
 .cw-header-avatar {
   width: 36px;
   height: 36px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: rgba(255, 255, 255, 0.25);
   display: flex;
   align-items: center;
@@ -179,7 +179,7 @@
 
 .cw-bubble {
   padding: 9px 13px;
-  border-radius: 16px;
+  border-radius: var(--radius-2xl);
   font-size: 13px;
   line-height: 1.5;
   word-break: break-word;
@@ -194,7 +194,7 @@
 .cw-msg--admin .cw-bubble {
   background: #fff;
   border: 1px solid var(--gray-border);
-  color: #1f1f1f;
+  color: var(--text);
   border-bottom-left-radius: 4px;
 }
 
@@ -240,11 +240,11 @@
 .cw-input {
   flex: 1;
   border: 1px solid var(--gray-border);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 9px 16px;
   font-size: 14px;
   outline: none;
-  color: #1f1f1f;
+  color: var(--text);
   background: var(--gray-bg-4);
   transition: border-color 0.15s;
 }
@@ -258,7 +258,7 @@
   font-size: 20px;
   cursor: pointer;
   padding: 5px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   transition: background 0.15s;
   line-height: 1;
   display: flex;
@@ -270,7 +270,7 @@
 .cw-send {
   width: 38px;
   height: 38px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--brand-brown, #785E40);
   color: #fff;
   border: none;
@@ -291,7 +291,7 @@
   margin-top: 6px;
   padding: 6px 10px;
   background: #f5f0eb;
-  border-radius: 8px;
+  border-radius: var(--radius-base);
   font-size: 12px;
   color: var(--brand-brown);
 }
@@ -322,7 +322,7 @@
   font-weight: 700;
   min-width: 18px;
   height: 18px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -335,7 +335,7 @@
   background: var(--color-success-border-light);
   color: var(--color-success-dark);
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-weight: 600;
   margin-left: auto;
 }
@@ -345,7 +345,7 @@
   background: var(--color-warning-bg);
   color: var(--color-warning);
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-weight: 600;
   margin-left: auto;
 }
@@ -354,7 +354,7 @@
   font-size: 18px;
   cursor: pointer;
   padding: 4px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   transition: background 0.15s;
   line-height: 1;
 }
@@ -393,7 +393,7 @@
 .cw-guest-title {
   font-size: 15px;
   font-weight: 700;
-  color: #1f1f1f;
+  color: var(--text);
   margin: 0;
 }
 
@@ -413,7 +413,7 @@
   background: var(--brand-brown, #785E40);
   color: #fff;
   border: none;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
@@ -456,7 +456,7 @@
     width: 100%;
     max-width: 100%;
     max-height: calc(100dvh - 80px);
-    border-radius: 16px;
+    border-radius: var(--radius-2xl);
   }
 
   .cw-body {

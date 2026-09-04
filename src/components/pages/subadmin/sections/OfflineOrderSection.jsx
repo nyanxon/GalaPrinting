@@ -13,7 +13,7 @@ import { showToast } from '../../../../core/toastEmitter.js';
 import { getInvoiceByOrderId, openInvoicePdf, sendInvoiceEmail } from '../../../../services/api/invoiceService.js';
 import { searchProducts, parseAttributes } from '../../../../services/products.js';
 import { parseNumber, billedAreaM2 } from '../../../../utils/billing.js';
-import { computeOneDiscount, discountTotalFor, parseDiscountRows } from '../../../../utils/discounts.js';
+import { discountTotalFor, parseDiscountRows } from '../../../../utils/discounts.js';
 import { track } from '../../../../utils/activityTracker.js';
 import ThermalReceiptModal from '../../../modals/ThermalReceiptModal.jsx';
 import ThermalSpkModal from '../../../modals/ThermalSpkModal.jsx';

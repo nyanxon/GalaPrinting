@@ -327,54 +327,6 @@ export async function listCategories() {
 /* ── Admin CRUD ──────────────────────────────────────────── */
 
 /**
- * Daftar stok per kombinasi sebuah produk (mode backend).
- * @param {string} productId
- * @returns {Promise<Array<{ id: string, combination: {name:string,value:string}[], stockQuantity: number }>|null>}
- */
-export async function listProductStock(productId) {
-  if (!USE_BACKEND) return null;
-  const res = await api.get(`/api/products/${productId}/stock`);
-  return res.data?.data ?? [];
-}
-
-/**
- * Set stok untuk satu atau banyak kombinasi produk (mode backend).
- * @param {string} productId
- * @param {Array<{ combination: {name:string,value:string}[], stock: number }>} stocks
- * @returns {Promise<Array|null>} daftar stok terbaru
- */
-export async function setProductStock(productId, stocks) {
-  if (!USE_BACKEND) return null;
-  const res = await api.put(`/api/products/${productId}/stock`, { stocks });
-  return res.data?.data ?? [];
-}
-
-/**
- * Cek stok real-time satu kombinasi di detail produk (mode backend).
- * @param {string} productId
- * @param {Array<{ name: string, value: string }>} combination
- * @returns {Promise<{ productId: string, combination: Array, stock: number, available: boolean }|null>}
- */
-export async function getProductStockAvailable(productId, combination) {
-  if (!USE_BACKEND) return null;
-  const res = await api.get(`/api/products/${productId}/stock/available`, {
-    params: { combination: JSON.stringify(combination ?? []) },
-  });
-  return res.data?.data ?? null;
-}
-
-/**
- * Cek stok banyak kombinasi sekaligus (validasi checkout/cart, mode backend).
- * @param {Array<{ key: string, productId: string, combination: Array }>} entries
- * @returns {Promise<Array<{ key: string|null, productId: string|null, combination: Array, stock: number }>|null>}
- */
-export async function batchCheckStock(entries) {
-  if (!USE_BACKEND) return null;
-  const res = await api.post('/api/products/stock/batch-available', { items: entries ?? [] });
-  return res.data?.data ?? [];
-}
-
-/**
  * Add a new product.
  * @param {Omit<object, "id">} data
  */

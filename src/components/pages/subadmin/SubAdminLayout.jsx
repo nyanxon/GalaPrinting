@@ -20,14 +20,6 @@ import { track, flush as flushActivity } from '../../../utils/activityTracker.js
 import SidebarShell from '../../staff/SidebarShell.jsx';
 import '../../../styles/css/pages/dashboard.css';
 
-// TODO: ROLE_DESCRIPTIONS is defined but never rendered in the sidebar (unlike OfflineDashboardPage which shows its ROLE_DESC). Consider rendering or removing.
-const ROLE_DESCRIPTIONS = {
-  cashier:     'Verifikasi pembayaran dan konfirmasi pesanan masuk.',
-  cs:          'Konsultasi desain dengan customer dan konfirmasi persetujuan desain.',
-  operational: 'Proses produksi — cetak, finishing, dan persiapan produk.',
-  qc:          'Quality check, pengemasan, dan pengiriman ke kurir.',
-};
-
 export default function SubAdminLayout({ navItems, sections, title }) {
   const { user, updateUser } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -39,7 +31,6 @@ export default function SubAdminLayout({ navItems, sections, title }) {
   const role      = user?.role ?? '';
   const roleInfo  = STAFF_ROLE_CONFIG[role] ?? { label: role, color: BRAND_COLOR };
   const userName  = user?.name || roleInfo.label || role;
-  const roleDesc  = ROLE_DESCRIPTIONS[role] ?? '';
   const sidebarBg = roleInfo.color ?? BRAND_COLOR;
 
   // Fitur 4: sound notifikasi

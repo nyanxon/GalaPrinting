@@ -151,7 +151,7 @@ export default function AddressList() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     fetchAddresses();

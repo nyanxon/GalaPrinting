@@ -6,7 +6,6 @@
 
 import { validationResult } from 'express-validator';
 import * as svc from '../services/products.service.js';
-import * as stockSvc from '../services/stock.service.js';
 import { StorageService } from '../utils/storage.js';
 
 // ── Upload ────────────────────────────────────────────────────────────────────
@@ -127,115 +126,6 @@ export async function deleteProduct(req, res, next) {
   try {
     await svc.deleteProduct(req.params.id);
     return res.json({ ok: true, message: 'Produk berhasil dihapus.' });
-  } catch (err) {
-    next(err);
-  }
-}
-
-// ── Product stock ─────────────────────────────────────────────────────────────
-
-/** GET /api/products/:id/stock — daftar stok per kombinasi (admin). */
-export async function listProductStock(req, res, next) {
-  try {
-    const product = await svc.getProductById(req.params.id);
-    if (!product) {
-      return res.status(404).json({ ok: false, message: 'Produk tidak ditemukan.' });
-    }
-    const items = await stockSvc.listProductStock(req.params.id);
-    return res.json({ ok: true, data: items });
-  } catch (err) {
-    next(err);
-  }
-}
-
-/**
- * PUT /api/products/:id/stock — set stok satu atau banyak kombinasi.
- * Body: { stocks: [{ combination: {name,value}[], stock: number }] }
- *       atau { combination, stock } (satu kombinasi).
- * stock harus bilangan bulat >= 0.
- */
-export async function updateProductStock(req, res, next) {
-  try {
-    const product = await svc.getProductById(req.params.id);
-    if (!product) {
-      return res.status(404).json({ ok: false, message: 'Produk tidak ditemukan.' });
-    }
-
-    let stocks;
-    if (Array.isArray(req.body?.stocks)) {
-      stocks = req.body.stocks;
-    } else if (req.body && 'combination' in req.body) {
-      stocks = [req.body];
-    } else {
-      return res.status(422).json({ ok: false, message: 'Badan request harus berisi { stocks } atau { combination, stock }.' });
-    }
-
-    for (const entry of stocks) {
-      const qty = Number(entry?.stock);
-      if (!Number.isInteger(qty) || qty < 0) {
-        return res.status(422).json({ ok: false, message: 'Nilai stok harus berupa bilangan bulat >= 0.' });
-      }
-      await stockSvc.setProductStock(req.params.id, entry.combination, qty);
-    }
-
-    const data = await stockSvc.listProductStock(req.params.id);
-    return res.json({ ok: true, data });
-  } catch (err) {
-    next(err);
-  }
-}
-
-/**
- * GET /api/products/:id/stock/available?combination=<JSON>
- * Cek stok real-time satu kombinasi di detail produk (publik).
- * combination default '[]' jika tidak dikirim.
- */
-export async function checkProductStockAvailable(req, res, next) {
-  try {
-    const product = await svc.getProductById(req.params.id, { visible: req.query.visible });
-    if (!product) {
-      return res.status(404).json({ ok: false, message: 'Produk tidak ditemukan.' });
-    }
-
-    let combination = [];
-    if (req.query.combination) {
-      try {
-        combination = JSON.parse(req.query.combination);
-      } catch {
-        return res.status(422).json({ ok: false, message: 'Parameter combination harus berupa JSON array yang valid.' });
-      }
-    }
-
-    const stock = await stockSvc.getStock(req.params.id, combination);
-    const canonical = stockSvc.canonicalCombination(combination);
-    return res.json({ ok: true, data: { productId: req.params.id, combination: canonical, stock, available: stock > 0 } });
-  } catch (err) {
-    next(err);
-  }
-}
-
-/**
- * POST /api/products/stock/batch-available — cek stok banyak kombinasi
- * (validasi checkout/cart).
- * Body: { items: [{ key: string, productId: string, combination: array }] }
- * Response data mengembalikan key yang sama per item, stock 0 untuk yang
- * belum punya baris stok (fail-safe).
- */
-export async function batchCheckStockAvailable(req, res, next) {
-  try {
-    const rawItems = Array.isArray(req.body?.items) ? req.body.items : [];
-    const stocks = await stockSvc.batchGetStocks(
-      rawItems.map((it) => ({ productId: it?.productId, combination: it?.combination }))
-    );
-    const data = rawItems.map((it) => {
-      const key = it?.key ?? null;
-      const canonical = stockSvc.canonicalCombination(it?.combination);
-      const stock = it?.productId
-        ? stocks.get(`${it.productId}:${stockSvc.hashCombination(canonical)}`) ?? 0
-        : 0;
-      return { key, productId: it?.productId ?? null, combination: canonical, stock };
-    });
-    return res.json({ ok: true, data });
   } catch (err) {
     next(err);
   }

@@ -83,7 +83,7 @@ const DEFAULT_ROLE_STAGES = {
 export default function useOrderList({
   fetchOrders,
   defaultRole = 'admin',
-  enableCancel = false,
+  _enableCancel = false,
   enableInvoice = false,
   enableStateFilter = false,
   roleStages = DEFAULT_ROLE_STAGES,
@@ -115,7 +115,9 @@ export default function useOrderList({
 
   // Ref to hold latest fetchOrders for socket/event listeners
   const fetchRef = useRef(fetchOrders);
-  fetchRef.current = fetchOrders;
+  useEffect(() => {
+    fetchRef.current = fetchOrders;
+  });
 
   // ── Real-time listeners ──────────────────────────────────────────────────
 

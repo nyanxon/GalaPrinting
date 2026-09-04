@@ -7,7 +7,7 @@ html{
 body{
   margin: 0;
   background: #ffffff;
-  color: #1f1f1f;
+  color: var(--text);
 }
 img, svg, video, canvas{ display: block; max-width: 100%; }
 button, input, select, textarea{ font: inherit; color: inherit; }

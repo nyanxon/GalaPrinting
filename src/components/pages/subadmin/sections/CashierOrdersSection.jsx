@@ -96,7 +96,7 @@ export default function CashierOrdersSection() {
 
   const {
     searchQuery, setSearchQuery,
-    selectedOrder, setSelectedOrder,
+    selectedOrder, _setSelectedOrder,
     detailOpen, setDetailOpen,
     noteValues, setNoteValues,
     stateFilter, setStateFilter,
@@ -178,8 +178,9 @@ export default function CashierOrdersSection() {
     }
   }, [searchQuery, getOrderStateForOrder]);
 
-  // Keep ref fresh for socket/event listeners
-  fetchOrdersRef.current = fetchOrders;
+  useEffect(() => {
+    fetchOrdersRef.current = fetchOrders;
+  });
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 

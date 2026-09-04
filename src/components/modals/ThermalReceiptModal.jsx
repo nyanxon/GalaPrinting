@@ -264,7 +264,6 @@ export default function ThermalReceiptModal({ invoice, onClose, autoPrint }) {
       window.print();
       return;
     }
-  const logoSize = paperSize === '80mm' ? 60 : 48;
     printWindow.document.write(`<!DOCTYPE html>
 <html lang="id">
 <head>

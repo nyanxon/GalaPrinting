@@ -32,7 +32,7 @@
 
 .inv-modal {
   background: #fff;
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
   width: 100%;
   max-width: 520px;
@@ -116,7 +116,7 @@
   gap: 5px;
   font-size: 13px;
   font-weight: 600;
-  color: #374151;
+  color: var(--gray-700);
 }
 
 .inv-error {
@@ -193,7 +193,7 @@
 .inv-items-table td {
   padding: 8px 10px;
   border-bottom: 1px solid var(--gray-100);
-  color: #374151;
+  color: var(--gray-700);
 }
 
 /* ── Totals ──────────────────────────────────────────── */
@@ -208,7 +208,7 @@
   justify-content: space-between;
   padding: 5px 0;
   font-size: 13px;
-  color: #374151;
+  color: var(--gray-700);
   border-bottom: 1px solid var(--gray-100);
 }
 
@@ -227,7 +227,7 @@
 /* ── Update section ───────────────────────────────────── */
 .inv-update-section {
   background: #faf8f5;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 16px;
   margin-top: 8px;
 }
@@ -250,9 +250,9 @@
 .adm-btn--secondary:hover { background: #1d3a9b; }
 
 .adm-btn--thermal {
-  background: #0369a1;
+  background: var(--color-sky);
   color: #fff;
-  border-color: #0369a1;
+  border-color: var(--color-sky);
 }
 
 .adm-btn--thermal:hover { background: #0257875; }
@@ -263,7 +263,7 @@
   background: var(--color-success-border-light);
   color: var(--color-success-dark);
   border: 1px solid var(--color-success-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 4px 8px;
   font-size: 11px;
   font-weight: 600;

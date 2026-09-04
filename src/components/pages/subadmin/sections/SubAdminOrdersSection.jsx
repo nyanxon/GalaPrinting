@@ -18,7 +18,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { listAllOrders, getAllowedNextStatuses, STATUS_CONFIG } from '../../../../services/orders.js';
 import { formatCurrency } from '../../../../utils/format.js';
 import OrderDetailModal from '../../../modals/OrderDetailModal.jsx';
-import useOrderList, { getOrderState } from '../../../../hooks/useOrderList.js';
+import useOrderList from '../../../../hooks/useOrderList.js';
 
 const ROLE_STAGES = {
   cashier:     ['Waiting for Payment', 'Payment Accepted'],
@@ -40,7 +40,7 @@ export default function SubAdminOrdersSection({ extraColumn = null }) {
 
   const {
     searchQuery, setSearchQuery,
-    selectedOrder, setSelectedOrder,
+    selectedOrder, _setSelectedOrder,
     detailOpen, setDetailOpen,
     noteValues, setNoteValues,
     stateFilter, setStateFilter,
@@ -92,8 +92,9 @@ export default function SubAdminOrdersSection({ extraColumn = null }) {
     }
   }, [searchQuery, getOrderStateForRole]);
 
-  // Keep ref fresh for socket/event listeners
-  fetchOrdersRef.current = fetchOrders;
+  useEffect(() => {
+    fetchOrdersRef.current = fetchOrders;
+  });
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 

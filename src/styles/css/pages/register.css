@@ -1,6 +1,6 @@
 /* Alert box for errors */
 .alert {
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 12px 14px;
   font-size: 14px;
   margin-bottom: 16px;
@@ -94,7 +94,7 @@
 
 .register-input {
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-base);
   padding: 12px 14px;
   font-size: 15px;
   outline: none;
@@ -174,7 +174,7 @@
   background: var(--brand-brown);
   color: #fff;
   border-color: transparent;
-  border-radius: 8px;
+  border-radius: var(--radius-base);
   padding: 14px;
   font-size: 15px;
   font-weight: 800;

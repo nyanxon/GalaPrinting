@@ -113,8 +113,6 @@ export async function getRecapRange(start, end) {
 import { query } from '../db/connection.js';
 import { randomUUID } from 'crypto';
 
-const SOURCE_CATEGORIES = ['shopee', 'tokopedia', 'tiktok_shop'];
-
 /**
  * Hitung rekap pendapatan harian untuk satu tanggal.
  *

@@ -34,7 +34,7 @@
   align-items: center;
   flex: 1;
   border: 0px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-base);
   height: 44px;
   /* IMPORTANT: must NOT be overflow:hidden — popup must escape */
   overflow: visible;
@@ -88,7 +88,7 @@
   padding: 0 14px;
   font-size: 15px;
   background: #fff;
-  color: #1f1f1f;
+  color: var(--text);
   border-radius: 0 0px 0px 0;
 }
 
@@ -109,7 +109,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #1f1f1f;
+  color: var(--text);
   flex-shrink: 0;
   background: none;
   border: none;
@@ -130,7 +130,7 @@
   font-weight: 700;
   min-width: 18px;
   height: 18px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -144,7 +144,7 @@
   justify-content: center;
   width: 44px;
   height: 44px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: #fff;
   cursor: pointer;
@@ -161,7 +161,7 @@
   padding: 10px 18px;
   font-size: 14px;
   font-weight: 500;
-  color: #1f1f1f;
+  color: var(--text);
   white-space: nowrap;
 }
 
@@ -223,12 +223,12 @@
   justify-content: center;
   width: 36px;
   height: 36px;
-  border-radius: 8px;
+  border-radius: var(--radius-base);
   border: 1px solid var(--border);
   background: #fff;
   font-size: 16px;
   cursor: pointer;
-  color: #1f1f1f;
+  color: var(--text);
   flex-shrink: 0;
 }
 .nav-sidebar-close:hover {
@@ -247,7 +247,7 @@
   padding: 13px 22px;
   font-size: 15px;
   font-weight: 600;
-  color: #1f1f1f;
+  color: var(--text);
   text-decoration: none;
   border-bottom: 1px solid #f3f3f3;
   transition: background 0.12s, color 0.12s;
@@ -287,7 +287,7 @@
   z-index: 999;
   background: #fff;
   border: 1px solid #333;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   box-shadow: 0 8px 24px rgba(0,0,0,0.15);
 }
 
@@ -322,7 +322,7 @@
   padding: 11px 20px;
   font-size: 15px;
   font-weight: 500;
-  color: #1f1f1f;
+  color: var(--text);
   text-decoration: none;
   white-space: nowrap;
 }
@@ -418,7 +418,7 @@
 .login-popup-alert {
   background: var(--color-danger-bg);
   border: 1px solid var(--color-danger);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 10px 12px;
   font-size: 13px;
   color: var(--color-danger-deep);
@@ -438,12 +438,12 @@
 
 .login-popup-input {
   border: 1px solid #ccc;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 11px 13px;
   font-size: 14px;
   outline: none;
   width: 100%;
-  color: #1f1f1f;
+  color: var(--text);
   background: #fff;
   transition: border-color 0.2s ease, background-color 0.2s ease;
 }
@@ -478,7 +478,7 @@
   background: var(--brand-brown);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-base);
   padding: 13px;
   font-size: 15px;
   font-weight: 700;
@@ -544,11 +544,11 @@
 
   /* Make search bar full-width and rounded on both sides */
   .navbar-search-wrap {
-    border-radius: 8px !important;
+    border-radius: var(--radius-base) !important;
   }
 
   .navbar-search-input {
-    border-radius: 8px;
+    border-radius: var(--radius-base);
   }
 
   /* Profile picture / avatar button — hidden on mobile,
@@ -582,7 +582,7 @@
   border: none;
   cursor: pointer;
   padding: 2px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   transition: box-shadow 0.15s;
   min-width: 44px;
   min-height: 44px;
@@ -597,7 +597,7 @@
 .nav-avatar-img {
   width: 36px;
   height: 36px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   object-fit: cover;
   display: block;
   border: 2px solid #d0d0d0;
@@ -605,7 +605,7 @@
 
 .nav-avatar-svg {
   display: block;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
 }
 
 /* Profile popup */
@@ -633,7 +633,7 @@
 .profile-popup-avatar {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   overflow: hidden;
   background: #e8e8e8;
   display: flex;
@@ -659,7 +659,7 @@
 .profile-popup-name {
   font-size: 14px;
   font-weight: 700;
-  color: #1f1f1f;
+  color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -689,7 +689,7 @@
   padding: 12px 18px;
   font-size: 14px;
   font-weight: 600;
-  color: #1f1f1f;
+  color: var(--text);
   text-decoration: none;
   background: none;
   border: none;
@@ -720,7 +720,7 @@
 
 .profile-popup-admin-link:hover {
   background: #f5f0eb;
-  color: #5c4630;
+  color: var(--brand-brown-dark);
 }
 
 /* ── Language Switcher (Dropdown) ───────────────────────── */
@@ -739,11 +739,11 @@
   height: 36px;
   background: #fff;
   border: 1px solid var(--border, #e0e0e0);
-  border-radius: 8px;
+  border-radius: var(--radius-base);
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.5px;
-  color: #1f1f1f;
+  color: var(--text);
   cursor: pointer;
   white-space: nowrap;
   transition: border-color 0.15s, background 0.15s, color 0.15s;
@@ -783,7 +783,7 @@
   z-index: 1000;
   background: #fff;
   border: 1px solid #333;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.14);
   min-width: 148px;
   overflow: hidden;
@@ -813,7 +813,7 @@
   padding: 10px 16px;
   font-size: 13px;
   font-weight: 500;
-  color: #1f1f1f;
+  color: var(--text);
   cursor: pointer;
   transition: background 0.12s, color 0.12s;
   list-style: none;
@@ -915,7 +915,7 @@
 .nav-sidebar-lang-label {
   font-size: 14px;
   font-weight: 600;
-  color: #1f1f1f;
+  color: var(--text);
 }
 
 /* Inside sidebar: dropdown opens upward so it doesn't go off-screen */

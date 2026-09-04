@@ -15,16 +15,12 @@ import {
   deleteProduct,
   listCategories,
   uploadProductImage,
-  listProductStock,
-  setProductStock,
 } from '../../../../services/products.js';
 import { createCategory } from '../../../../services/categories.js';
 import { validateProduct } from '../../../../utils/validate.js';
 import { formatCurrency } from '../../../../utils/format.js';
 import { track } from '../../../../utils/activityTracker.js';
 import { showToast } from '../../../../core/toastEmitter.js';
-import { USE_BACKEND } from '../../../../core/httpClient.js';
-import { canonicalizeCombination, generateCombinations } from '../../../../utils/stock.js';
 
 const PAGE_SIZE = 10;
 
@@ -122,49 +118,6 @@ function ProductModal({ product, categories, onClose, onSaved }) {
   );
 
   const overlayRef = useRef(null);
-
-  // Stok per kombinasi atribut — key map by JSON.stringify(kombinasi kanonik).
-  // Hanya bermakna di mode backend; mode localStorage dibiarkan kosong.
-  const [stockValues, setStockValues] = useState({});
-
-  // Saat mengedit produk, ambil nilai stok existing agar form terisi.
-  useEffect(() => {
-    let cancelled = false;
-    if (!USE_BACKEND || !product?.id) return undefined;
-    (async () => {
-      try {
-        const rows = await listProductStock(product.id);
-        if (cancelled || !Array.isArray(rows)) return;
-        const map = {};
-        for (const r of rows) {
-          map[JSON.stringify(r.combination ?? [])] = String(r.stockQuantity ?? 0);
-        }
-        setStockValues(map);
-      } catch (_err) {
-        // Gagal memuat stok — biarkan kosong (default 0), tidak blokir form.
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [product?.id]);
-
-  // Bangun definisi atribut dari state editor ({ name, values: "a, b, c" }
-  // atau array [{ value }]) untuk menghitung kombinasi stok.
-  function buildAttributeDefs(list) {
-    const defs = [];
-    for (const attr of list ?? []) {
-      const name = String(attr?.name ?? '').trim();
-      const values = Array.isArray(attr?.values)
-        ? attr.values
-            .map((v) => (typeof v === 'string' ? v.trim() : String(v?.value ?? '').trim()))
-            .filter(Boolean)
-        : String(attr?.values ?? '').split(',').map((v) => v.trim()).filter(Boolean);
-      if (name && values.length) defs.push({ name, values });
-    }
-    return defs;
-  }
-
-  // Kombinasi stok yang ditampilkan — dihitung live dari atribut editor.
-  const stockCombos = generateCombinations(buildAttributeDefs(attributes));
 
   // Per-M2 products use panjang × lebar input at order time.
   const isPerM2 = formData.sizeType === 'per_m2';
@@ -379,26 +332,6 @@ function ProductModal({ product, categories, onClose, onSaved }) {
         showToast('Produk ditambahkan.', 'success');
       }
 
-      // Simpan stok per kombinasi (hanya bermakna saat mode backend aktif).
-      if (USE_BACKEND && productId) {
-        const finalCombos = generateCombinations(buildAttributeDefs(cleanedAttributes));
-        const stocks = finalCombos.map((combo) => {
-          const canonical = canonicalizeCombination(combo);
-          return {
-            combination: canonical,
-            stock: Math.max(0, Number(stockValues[JSON.stringify(canonical)]) || 0),
-          };
-        });
-        if (stocks.length > 0) {
-          try {
-            await setProductStock(productId, stocks);
-          } catch (stockErr) {
-            setFormError(`Produk tersimpan, tapi gagal menyimpan stok: ${stockErr?.response?.data?.message || stockErr?.message || 'coba lagi.'}`);
-            return;
-          }
-        }
-      }
-
       onSaved();
       onClose();
     } catch (err) {
@@ -591,45 +524,6 @@ function ProductModal({ product, categories, onClose, onSaved }) {
               >
                 + Tambah Atribut
               </button>
-            </div>
-
-            {/* ── Stok Per Kombinasi (Fitur Stok) ── */}
-            <div className="adm-field">
-              <label className="adm-label">
-                Stok Per Kombinasi{' '}
-                {USE_BACKEND ? (
-                  <span className="adm-hint">(opsional — biarkan 0 untuk stok kosong)</span>
-                ) : (
-                  <span className="adm-hint">(aktif saat backend diaktifkan)</span>
-                )}
-              </label>
-              {!USE_BACKEND ? (
-                <p style={{ fontSize: '12px', color: 'var(--gray-400)' }}>
-                  Mode lokal tidak menyimpan stok. Aktifkan VITE_USE_BACKEND untuk mengelola stok per kombinasi atribut.
-                </p>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {stockCombos.map((combo) => {
-                    const canonical = canonicalizeCombination(combo);
-                    const key = JSON.stringify(canonical);
-                    const attrsText = canonical.map((a) => `${a.name}: ${a.value}`).join(' · ') || 'Stok Barang';
-                    return (
-                      <div key={key} style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: '8px', alignItems: 'center' }}>
-                        <span style={{ fontSize: '13px', color: '#374151', wordBreak: 'break-word' }}>{attrsText}</span>
-                        <input
-                          className="adm-input"
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          value={stockValues[key] ?? ''}
-                          onChange={(e) => setStockValues((prev) => ({ ...prev, [key]: e.target.value }))}
-                          aria-label={`Stok ${attrsText}`}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
             </div>
 
             {/* ── Image Upload ── */}
@@ -891,20 +785,18 @@ export default function ProductsSection() {
                 <th>Kategori</th>
                 <th>Harga Customer</th>
                 <th>Harga Broker</th>
-                <th>Stok</th>
                 <th>Aksi</th>
               </tr>
             </thead>
             <tbody>
               {result.items.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="adm-empty">
+                  <td colSpan={5} className="adm-empty">
                     Belum ada produk.
                   </td>
                 </tr>
               ) : (
                 result.items.map((p) => {
-                  const totalStock = USE_BACKEND ? Number(p.total_stock ?? 0) : null;
                   return (
                   <tr key={p.id}>
                     <td>
@@ -919,19 +811,6 @@ export default function ProductsSection() {
                     <td>{p.category || '—'}</td>
                     <td>{formatCurrency(p.priceCustomer ?? p.price)}</td>
                     <td>{formatCurrency(p.priceBroker ?? p.priceCustomer ?? p.price)}</td>
-                    <td>
-                      {totalStock === null ? (
-                        '—'
-                      ) : totalStock > 0 ? (
-                        <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 999, background: 'var(--color-success-border-light)', color: 'var(--color-success-mid)', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                          Stok {totalStock}
-                        </span>
-                      ) : (
-                        <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 999, background: 'var(--color-danger-bg)', color: 'var(--color-danger-dark)', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                          Stok Habis
-                        </span>
-                      )}
-                    </td>
                     <td>
                       <div className="adm-actions">
                         <button

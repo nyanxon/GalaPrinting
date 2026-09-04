@@ -22,7 +22,7 @@
   content: counter(step);
   width: 34px;
   height: 34px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -52,7 +52,7 @@
   .step-title::before {
     width: 30px;
     height: 30px;
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     font-size: 14px;
     flex-shrink: 0;
   }

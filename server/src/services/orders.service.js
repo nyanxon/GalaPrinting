@@ -18,7 +18,6 @@ import {
   sendInvoiceEmail,
 } from './email.service.js';
 import { getPreferences } from './notifications.service.js';
-import { decrementStock, restockItems } from './stock.service.js';
 import { assertNotLocked, recordApproval, APPROVAL_STAGE_FOR_STATUS } from './orderApprovals.service.js';
 import { generateInvoicePdf } from '../utils/invoicePdf.js';
 
@@ -314,15 +313,6 @@ export async function createOrder({ customer, items, subtotal, source = 'online'
         ]
       );
     }
-
-    // Kurangi stok untuk semua item ber-product (atomik, dalam transaksi).
-    // Stok belum cukup → StockInsufficientError → rollback seluruh order.
-    await decrementStock(conn, (items || []).map((item) => ({
-      productId: item.productId ?? item.product_id ?? null,
-      name: item.name,
-      combination: item.attributes,
-      quantity: item.quantity || 1,
-    })));
 
     // Increment promo code usage inside the transaction + record usage log
     if (promoCode) {
@@ -620,13 +610,6 @@ export async function updateOrderStatus(id, newStatus, actorId, actorRole, cance
 
   // Delete uploaded files when an order is cancelled (fix C6a)
   if (newStatus === 'Cancelled') {
-    // Kembalikan stok untuk semua item produk pada order yang dibatalkan.
-    const [cancelItems] = await query(
-      'SELECT product_id, quantity, attributes FROM order_items WHERE order_id = ?',
-      [id]
-    );
-    await restockItems(cancelItems);
-
     const filesToDelete = [];
 
     if (order.payment_proof_path) {
@@ -851,12 +834,6 @@ export async function deleteOrder(id) {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
-    // Kembalikan stok untuk item ber-produk sebelum baris item dihapus.
-    const [removeItems] = await conn.execute(
-      'SELECT product_id, quantity, attributes FROM order_items WHERE order_id = ?',
-      [id]
-    );
-    await restockItems(removeItems, conn);
     // Delete related records in dependency order
     const [invRows] = await conn.execute('SELECT id FROM invoices WHERE order_id = ?', [id]);
     for (const inv of invRows) {

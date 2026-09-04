@@ -17,7 +17,7 @@
   align-items: center;
   gap: 10px;
   padding: 12px 18px;
-  border-radius: 8px;
+  border-radius: var(--radius-base);
   font-size: 14px;
   font-weight: 600;
   color: #fff;

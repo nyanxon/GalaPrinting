@@ -10,7 +10,7 @@
   justify-content: center;
   min-height: 140px;
   border: 2px dashed var(--border, #e5e7eb);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--gray-bg-3);
   cursor: pointer;
   transition: border-color 0.18s, background 0.18s;
@@ -28,7 +28,7 @@
 /* Compact variant — used inside chat / inline forms */
 .dz-root--compact {
   min-height: 72px;
-  border-radius: 8px;
+  border-radius: var(--radius-base);
 }
 
 /* Drag-over state */
@@ -79,7 +79,7 @@
 .dz-label {
   margin: 0;
   font-size: 14px;
-  color: #374151;
+  color: var(--gray-700);
   line-height: 1.4;
 }
 
@@ -144,7 +144,7 @@
   height: 36px;
   border: none !important;
   background: transparent !important;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   flex-shrink: 0;
 }
 

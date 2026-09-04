@@ -80,7 +80,9 @@ export default function OrdersSection() {
     }
   }, [currentPage, filterStatus, searchQuery]);
 
-  fetchOrdersRef.current = fetchOrders;
+  useEffect(() => {
+    fetchOrdersRef.current = fetchOrders;
+  });
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 

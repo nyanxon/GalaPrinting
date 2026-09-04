@@ -57,7 +57,7 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   border: 1px solid var(--border);
   background: var(--surface);
   font-size: 20px;
@@ -125,7 +125,7 @@
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   user-select: none;
   -webkit-user-drag: none;
 }
@@ -140,7 +140,7 @@
   font-size: 22px;
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -163,7 +163,7 @@
   font-size: 36px;
   width: 48px;
   height: 48px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -193,7 +193,7 @@
 .gallery-lightbox-dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   border: none;
   background: rgba(255,255,255,0.4);
   cursor: pointer;
@@ -275,7 +275,7 @@
   display: grid;
   grid-template-columns: 56px 1fr 56px;
   border: 1px solid rgba(0, 0, 0, 0.45);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
   height: 44px;
   width: 100%;
@@ -310,7 +310,7 @@
   background: var(--brand-brown);
   color: #fff;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
@@ -366,7 +366,7 @@
 /* ── Design file preview box ─────────────────────────────── */
 .design-preview-box {
   border: 2px solid var(--brand-brown);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   background: #faf7f4;
 }
@@ -391,7 +391,7 @@
 
 .design-preview-name {
   font-size: 13px;
-  color: #3a3a3a;
+  color: var(--text-secondary);
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -403,7 +403,7 @@
 .design-preview-remove {
   background: var(--color-danger-bg);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   color: var(--color-danger-dark);
   font-size: 12px;
   font-weight: 700;

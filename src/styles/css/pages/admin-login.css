@@ -51,7 +51,7 @@
 .adm-login-alert {
   background: rgba(220, 38, 38, 0.08);
   border: 1px solid rgba(220, 38, 38, 0.3);
-  border-radius: 8px;
+  border-radius: var(--radius-base);
   padding: 10px 14px;
   color: var(--color-danger-dark);
   font-size: 13px;
@@ -79,7 +79,7 @@
   width: 100%;
   padding: 13px 14px;
   border: 1.5px solid #e2d8ca;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: #fff;
   font-size: 15px;
   color: #3a2f24;
@@ -147,7 +147,7 @@
   width: 100%;
   padding: 14px;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: linear-gradient(180deg, #8a6644 0%, var(--brand-brown, #785E40) 100%);
   color: #fff;
   font-size: 15px;

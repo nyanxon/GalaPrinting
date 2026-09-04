@@ -3,7 +3,7 @@
  * Requirements: 9.1, 9.2, 9.3, 9.4, 13.4, 16.4
  */
 
-import { useState, useContext, useEffect } from 'react';
+import { useState, useContext, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { AuthContext, getUserAuthPath } from '../../context/AuthContext.jsx';
 import { logout } from '../../../services/auth.js';
@@ -49,7 +49,7 @@ function ActivitySidebar({ onGoToOrders, onGoToChats }) {
   const [recentOrders, setRecentOrders]     = useState([]);
   const [unhandledChats, setUnhandledChats] = useState([]);
 
-  async function loadActivity() {
+  const loadActivity = useCallback(async () => {
     try {
       const orders = await listAllOrders();
       const unprocessed = (Array.isArray(orders) ? orders : [])
@@ -74,7 +74,7 @@ function ActivitySidebar({ onGoToOrders, onGoToChats }) {
     } catch (err) {
       console.error('Failed to load activity chats:', err);
     }
-  }
+  }, []);
 
   useEffect(() => {
     loadActivity();
@@ -94,7 +94,7 @@ function ActivitySidebar({ onGoToOrders, onGoToChats }) {
       window.removeEventListener('gala:chat-updated', handleChatUpdate);
       window.removeEventListener('storage', handleStorage);
     };
-  }, []);
+  }, [loadActivity]);
 
   // useEffect terpisah untuk socket listener saja
   useEffect(() => {

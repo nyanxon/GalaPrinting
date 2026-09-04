@@ -22,7 +22,7 @@
   font-size: 24px;
   font-weight: 800;
   margin: 0;
-  color: #1f1f1f;
+  color: var(--text);
 }
 
 .co-auth-desc {
@@ -45,7 +45,7 @@
   align-items: center;
   justify-content: center;
   padding: 13px 24px;
-  border-radius: 8px;
+  border-radius: var(--radius-base);
   font-size: 15px;
   font-weight: 700;
   text-decoration: none;
@@ -61,7 +61,7 @@
 
 .co-auth-btn:not(.co-auth-btn--primary) {
   border: 1px solid #ccc;
-  color: #1f1f1f;
+  color: var(--text);
   background: #fff;
 }
 
@@ -89,7 +89,7 @@
   margin: 8px auto 0;
   background: var(--color-warning-bg-2);
   border: 1px solid var(--color-warning-border);
-  border-radius: 8px;
+  border-radius: var(--radius-base);
   padding: 10px 20px;
   font-size: 13px;
   color: var(--color-warning);
@@ -128,7 +128,7 @@
 }
 
 .email-verify-banner__btn:hover {
-  color: #5c4630;
+  color: var(--brand-brown-dark);
 }
 
 .email-verify-banner__btn:disabled {

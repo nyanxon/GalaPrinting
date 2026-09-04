@@ -17,6 +17,8 @@
   /* Neutrals (single gray scale) */
   --white: #ffffff;
   --text: #1f1f1f;
+  --text-strong: #2d2d2d;   /* darker near-black text */
+  --text-secondary: #3a3a3a; /* secondary dark text */
   --muted: #6b6b6b;
   --border: rgba(31, 31, 31, 0.12);
   --bg: #ffffff;
@@ -80,14 +82,31 @@
   --color-info-bg-2: #eff6ff;
   --color-info-border: #bfdbfe;
 
+  --color-sky: #0369a1;      /* QC / info sky accent */
+  --color-sky-bg: #e0f2fe;   /* QC / info sky light bg */
+
+  --color-purple: #5b21b6;   /* waiting-design / custom-source badge */
+  --color-purple-bg: #ede9fe;
+  --color-orange: #9a3412;   /* on-progress status badge */
+  --color-orange-bg: #ffedd5;
+  --color-indigo: #3730a3;   /* checkout / revenue accent */
+  --color-indigo-border: #c7d2fe;
+  --color-alert: #c0392b;    /* toast-error / error alert red */
+
   /* Layout */
   --container: 1120px;
 
   /* Radius */
-  --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 16px;
-  --radius-full: 999px;
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-base: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 14px;
+  --radius-2xl: 16px;
+  --radius-3xl: 20px;
+  --radius-full: 50%;
+  --radius-pill: 999px;
 
   /* Shadows */
   --shadow-sm: 0 6px 18px rgba(0, 0, 0, 0.08);

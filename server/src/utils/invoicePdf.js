@@ -9,12 +9,8 @@ import PDFDocument from 'pdfkit';
 import { BRAND_COLOR } from '../config/brand.js';
 import { parseDiscountList, discountTotalFor } from './discounts.js';
 
-const BRAND_COLOR_R = 120;
-const BRAND_COLOR_G = 94;
-const BRAND_COLOR_B = 64;
 const GRAY_HEX  = '#6b7280';
 const BLACK_HEX = '#111827';
-const LIGHT_BG  = '#faf8f5';
 
 function formatIDR(amount) {
   const num = Number(amount || 0);

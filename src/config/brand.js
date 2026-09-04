@@ -26,6 +26,8 @@ export const BRAND = {
  */
 export const COLORS = {
   text: '#1f1f1f',              // --text
+  textStrong: '#2d2d2d',        // --text-strong
+  textSecondary: '#3a3a3a',     // --text-secondary
   muted: '#6b6b6b',             // --muted / --gray-mid
   gray900: '#111827',           // --gray-900
   gray700: '#374151',           // --gray-700
@@ -46,4 +48,13 @@ export const COLORS = {
   dangerDeep: '#991b1b',        // --color-danger-deep
   info: '#2563eb',              // --color-info
   infoDark: '#1e40af',          // --color-info-dark
+  sky: '#0369a1',               // --color-sky
+  skyBg: '#e0f2fe',             // --color-sky-bg
+  purple: '#5b21b6',            // --color-purple
+  purpleBg: '#ede9fe',          // --color-purple-bg
+  orange: '#9a3412',            // --color-orange
+  orangeBg: '#ffedd5',          // --color-orange-bg
+  indigo: '#3730a3',            // --color-indigo
+  indigoBorder: '#c7d2fe',      // --color-indigo-border
+  alert: '#c0392b',             // --color-alert
 };

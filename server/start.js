@@ -4,7 +4,6 @@
  * Menggunakan path absolut berdasarkan lokasi file ini,
  * sehingga bisa dijalankan dari working directory manapun.
  */
-import { createRequire } from 'module';
 import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
 

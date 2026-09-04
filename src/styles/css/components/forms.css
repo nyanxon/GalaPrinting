@@ -8,7 +8,7 @@
 .input, .select, .textarea{
   border: 1px solid var(--border);
   background: var(--surface);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 10px 12px;
   outline: none;
 }
@@ -29,7 +29,7 @@
 
 .alert{
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   padding: 12px 14px;
   background: rgba(237, 200, 174, 0.24);
 }

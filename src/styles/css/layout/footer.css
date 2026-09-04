@@ -65,7 +65,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
   transition: opacity 0.15s, transform 0.15s;
 }

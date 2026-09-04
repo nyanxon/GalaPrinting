@@ -10,7 +10,6 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import mysql from 'mysql2/promise';
-import { backfillProductStock } from './backfillProductStock.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const MIGRATIONS_DIR = path.join(__dirname, 'migrations');
@@ -66,15 +65,6 @@ async function run() {
       await conn.end();
       process.exit(1);
     }
-  }
-
-  // Seed stok awal (idempotent) setelah semua migration SQL sukses
-  try {
-    await backfillProductStock(conn);
-  } catch (err) {
-    console.error(`[migrate] ✗ Backfill product stock: ${err.message}`);
-    await conn.end();
-    process.exit(1);
   }
 
   console.log('[migrate] All migrations completed successfully.');

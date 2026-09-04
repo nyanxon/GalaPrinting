@@ -11,7 +11,7 @@
 .mo-title {
   font-size: 28px;
   font-weight: 900;
-  color: #1f1f1f;
+  color: var(--text);
   margin: 0 0 6px;
   letter-spacing: -0.02em;
 }
@@ -53,7 +53,7 @@
 .mo-card {
   background: #fff;
   border: 1px solid var(--gray-border);
-  border-radius: 16px;
+  border-radius: var(--radius-2xl);
   padding: 18px 20px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
   transition: box-shadow 0.15s;
@@ -104,16 +104,16 @@
   font-size: 11px;
   font-weight: 700;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
-.mo-source-tag--custom  { background: #ede9fe; color: #5b21b6; }
+.mo-source-tag--custom  { background: var(--color-purple-bg); color: var(--color-purple); }
 .mo-source-tag--offline { background: #fce7f3; color: #be185d; }
 
 /* ── Items summary ───────────────────────────────────────── */
 .mo-card-items {
   font-size: 14px;
-  color: #3a3a3a;
+  color: var(--text-secondary);
   margin-bottom: 14px;
   line-height: 1.5;
 }
@@ -130,7 +130,7 @@
 .mo-total {
   font-size: 18px;
   font-weight: 800;
-  color: #1f1f1f;
+  color: var(--text);
 }
 
 /* Promo discount display in order card */
@@ -156,7 +156,7 @@
   color: var(--color-success-mid);
   background: var(--color-success-bg);
   border: 1px solid var(--color-success-border);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   padding: 2px 8px;
   width: fit-content;
 }
@@ -179,7 +179,7 @@
   background: var(--brand-brown, #785E40);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-base);
   padding: 10px 20px;
   font-size: 14px;
   font-weight: 700;
@@ -195,7 +195,7 @@
   background: #f9f5f0;
   color: var(--brand-brown, #785E40);
   border: 1px solid rgba(120, 94, 64, 0.2);
-  border-radius: 8px;
+  border-radius: var(--radius-base);
   padding: 9px 16px;
   font-size: 13px;
   font-weight: 600;
@@ -211,7 +211,7 @@
   background: var(--color-warning-bg);
   color: var(--color-warning);
   border: 1px solid var(--color-warning-border);
-  border-radius: 8px;
+  border-radius: var(--radius-base);
   padding: 9px 16px;
   font-size: 13px;
   font-weight: 700;
@@ -228,7 +228,7 @@
   font-weight: 600;
   color: var(--color-success-dark);
   background: var(--color-success-border-light);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 6px 12px;
 }
 
@@ -239,7 +239,7 @@
   gap: 8px;
   background: var(--color-warning-bg-2);
   border: 1px solid var(--color-warning-border);
-  border-radius: 8px;
+  border-radius: var(--radius-base);
   padding: 10px 14px;
   margin-top: 12px;
   font-size: 13px;
@@ -268,7 +268,7 @@
 .mo-empty-btn {
   background: var(--brand-brown, #785E40);
   color: #fff;
-  border-radius: 8px;
+  border-radius: var(--radius-base);
   padding: 11px 24px;
   font-size: 14px;
   font-weight: 700;

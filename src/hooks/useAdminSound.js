@@ -123,7 +123,6 @@ export function useAdminSound(socket) {
       socket.off('order:new', handleOrderNew);
       socket.off('order:status_changed', handleStatusChanged);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket, muted]);
 
   return { muted, toggleMute, unlockAudio };

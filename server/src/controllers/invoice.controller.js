@@ -6,9 +6,6 @@
 import * as svc from '../services/invoice.service.js';
 import { generateInvoicePdf } from '../utils/invoicePdf.js';
 import { sendInvoiceEmail } from '../services/email.service.js';
-import { config } from '../config/env.js';
-import path from 'path';
-import fs from 'fs';
 
 /** GET /api/invoices */
 export async function listInvoices(req, res, next) {
