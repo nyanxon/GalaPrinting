@@ -34,10 +34,13 @@ const ALLOWED = {
     'Payment Accepted':    ['Cancelled'],
   },
   cs:          {
-    'Payment Accepted':            ['Waiting for Design Approval'],
     'Waiting for Design Approval': ['Design Accepted'],
+    'Design Accepted':             ['Waiting for Payment'],
   },
-  operational: { 'Design Accepted': ['On Progress'] },
+  operational: {
+    'Design Accepted': ['On Progress'],
+    'Payment Accepted': ['On Progress'],
+  },
   qc:          {
     'On Progress':      ['Quality Checking'],
     'Quality Checking': ['In Delivery'],
@@ -47,9 +50,9 @@ const ALLOWED = {
     'Waiting for Payment':         ['Payment Accepted', 'Cancelled'],
     'Payment Accepted':            ['Waiting for Design Approval', 'Cancelled'],
     'Waiting for Design Approval': ['Design Accepted', 'Cancelled'],
-    'Design Accepted':             ['On Progress', 'Cancelled'],
+    'Design Accepted':             ['On Progress', 'Waiting for Payment', 'Cancelled'],
     'On Progress':                 ['Quality Checking', 'Cancelled'],
-    'Quality Checking':            ['In Delivery', 'Cancelled'],
+    'Quality Checking':            ['In Delivery', 'On Progress', 'Cancelled'],
     'In Delivery':                 ['Finished', 'Cancelled'],
   },
   owner: {

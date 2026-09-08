@@ -56,21 +56,17 @@ function generateOrderNumber() {
 /* ── Status transitions ──────────────────────────────────── */
 
 /**
- * Standard 8-step order flow (online/offline orders):
- *   Waiting for Payment → Payment Accepted → Waiting for Design Approval
- *   → Design Accepted → On Progress → Quality Checking → In Delivery → Finished
- *
- * Custom order flow (CS-initiated):
+ * All orders (standard, custom, offline) follow the same flow:
  *   Waiting for Design Approval → Design Accepted → Waiting for Payment
  *   → Payment Accepted → On Progress → Quality Checking → In Delivery → Finished
  *
- * The `orderType` field on the order distinguishes the two flows.
+ * Role sequence: CS → Cashier → Operational → QC
  */
 export const ORDER_STATUSES = [
-  "Waiting for Payment",
-  "Payment Accepted",
   "Waiting for Design Approval",
   "Design Accepted",
+  "Waiting for Payment",
+  "Payment Accepted",
   "On Progress",
   "Quality Checking",
   "In Delivery",
@@ -78,12 +74,12 @@ export const ORDER_STATUSES = [
   "Cancelled",
 ];
 
-/** Timeline steps for standard orders */
+/** Timeline steps for all orders */
 export const STANDARD_TIMELINE = [
-  "Waiting for Payment",
-  "Payment Accepted",
   "Waiting for Design Approval",
   "Design Accepted",
+  "Waiting for Payment",
+  "Payment Accepted",
   "On Progress",
   "Quality Checking",
   "In Delivery",
@@ -91,7 +87,7 @@ export const STANDARD_TIMELINE = [
   "Cancelled",
 ];
 
-/** Timeline steps for custom orders (CS-first flow) */
+/** Timeline steps for custom orders (same as standard — kept for backward compat) */
 export const CUSTOM_TIMELINE = [
   "Waiting for Design Approval",
   "Design Accepted",
@@ -104,19 +100,19 @@ export const CUSTOM_TIMELINE = [
   "Cancelled",
 ];
 
-/** Which roles can advance an order from a given status — standard flow */
+/** Which roles can advance an order from a given status */
 export const ALLOWED_TRANSITIONS = {
-  "Waiting for Payment":        { next: ["Payment Accepted"],             roles: ["cashier", "admin"] },
-  "Payment Accepted":           { next: ["Waiting for Design Approval"],  roles: ["cs", "admin"] },
   "Waiting for Design Approval":{ next: ["Design Accepted"],              roles: ["cs", "admin"] },
-  "Design Accepted":            { next: ["On Progress"],                  roles: ["operational", "admin"] },
+  "Design Accepted":            { next: ["Waiting for Payment"],          roles: ["cs", "admin"] },
+  "Waiting for Payment":        { next: ["Payment Accepted"],             roles: ["cashier", "admin"] },
+  "Payment Accepted":           { next: ["On Progress"],                  roles: ["operational", "admin"] },
   "On Progress":                { next: ["Quality Checking"],             roles: ["qc", "admin"] },
   "Quality Checking":           { next: ["In Delivery", "On Progress"],   roles: ["qc", "admin"] }, // QC reject → back to Operational
   "In Delivery":                { next: ["Finished"],                     roles: ["qc", "admin", "courier_api"] },
   "Finished":                   { next: [],                               roles: [] },
 };
 
-/** Transitions for custom order flow (CS-first) */
+/** Transitions for custom orders (same as standard — kept for backward compat) */
 export const CUSTOM_TRANSITIONS = {
   "Waiting for Design Approval":{ next: ["Design Accepted"],              roles: ["cs", "admin"] },
   "Design Accepted":            { next: ["Waiting for Payment"],          roles: ["cs", "admin"] },

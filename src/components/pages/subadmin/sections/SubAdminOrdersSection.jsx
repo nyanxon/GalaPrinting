@@ -22,8 +22,8 @@ import useOrderList from '../../../../hooks/useOrderList.js';
 
 const ROLE_STAGES = {
   cashier:     ['Waiting for Payment', 'Payment Accepted'],
-  cs:          ['Payment Accepted', 'Waiting for Design Approval', 'Design Accepted'],
-  operational: ['Design Accepted', 'On Progress'],
+  cs:          ['Waiting for Design Approval', 'Design Accepted'],
+  operational: ['Payment Accepted', 'On Progress'],
   qc:          ['On Progress', 'Quality Checking', 'In Delivery', 'Finished'],
 };
 

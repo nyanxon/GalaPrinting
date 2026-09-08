@@ -29,8 +29,8 @@ import { showToast } from '../core/toastEmitter.js';
 import { track } from '../utils/activityTracker.js';
 
 const STATUS_ORDER = [
-  'Waiting for Payment', 'Payment Accepted', 'Waiting for Design Approval',
-  'Design Accepted', 'On Progress', 'Quality Checking', 'In Delivery', 'Finished',
+  'Waiting for Design Approval', 'Design Accepted', 'Waiting for Payment',
+  'Payment Accepted', 'On Progress', 'Quality Checking', 'In Delivery', 'Finished',
 ];
 
 /**
@@ -66,8 +66,8 @@ export function getOrderState(order, role, roleStages) {
 
 const DEFAULT_ROLE_STAGES = {
   cashier:     ['Waiting for Payment', 'Payment Accepted'],
-  cs:          ['Payment Accepted', 'Waiting for Design Approval', 'Design Accepted'],
-  operational: ['Design Accepted', 'On Progress'],
+  cs:          ['Waiting for Design Approval', 'Design Accepted'],
+  operational: ['Payment Accepted', 'On Progress'],
   qc:          ['On Progress', 'Quality Checking', 'In Delivery', 'Finished'],
 };
 

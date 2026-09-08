@@ -27,8 +27,8 @@ function fmtDate(iso) {
 const STANDARD_STEPS = ORDER_STATUSES.filter((s) => s !== 'Cancelled');
 
 /**
- * Timeline steps untuk custom order (CS-first flow).
- * Urutan berbeda: design review dulu, baru payment.
+ * Timeline steps untuk semua order.
+ * Semua order mengikuti alur yang sama: design dulu → payment → produksi → QC → delivery.
  */
 const CUSTOM_STEPS = [
   'Waiting for Design Approval',

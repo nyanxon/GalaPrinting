@@ -18,10 +18,13 @@ import fc from 'fast-check';
 const TRANSITIONS = {
   cashier:     { 'Waiting for Payment': ['Payment Accepted'] },
   cs:          {
-    'Payment Accepted':            ['Waiting for Design Approval'],
     'Waiting for Design Approval': ['Design Accepted'],
+    'Design Accepted':             ['Waiting for Payment'],
   },
-  operational: { 'Design Accepted': ['On Progress'] },
+  operational: {
+    'Design Accepted':  ['On Progress'],
+    'Payment Accepted': ['On Progress'],
+  },
   qc:          {
     'On Progress':      ['Quality Checking'],
     'Quality Checking': ['In Delivery'],

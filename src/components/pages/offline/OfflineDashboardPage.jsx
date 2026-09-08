@@ -10,7 +10,7 @@
  *  1. Fill in customer info (name, phone, address)
  *  2. Add order items (product name, qty, unit price — free-form)
  *  3. Submit → calls createOfflineOrder() → displays printable receipt
- *  4. Order enters the normal 8-step flow starting at "Waiting for Payment"
+ *  4. Order enters the normal 8-step flow starting at "Waiting for Design Approval"
  *  5. View list of all offline orders via the "Daftar Pesanan" nav
  *
  * Requirements: 12.1, 12.2, 13.4

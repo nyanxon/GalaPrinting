@@ -271,6 +271,7 @@ export default function CashierOrdersSection() {
           <thead>
             <tr>
               <th>No. Transaksi</th>
+              <th>Dibuat oleh</th>
               <th>Customer</th>
               <th>Produk</th>
               <th>Status Order</th>
@@ -278,7 +279,6 @@ export default function CashierOrdersSection() {
               <th>Catatan</th>
               <th>Aksi</th>
               <th>Bukti Bayar</th>
-              <th>Dibuat oleh</th>
             </tr>
           </thead>
           <tbody>
@@ -316,6 +316,9 @@ export default function CashierOrdersSection() {
                           {new Date(order.updatedAt).toLocaleDateString('id-ID')}
                         </div>
                       )}
+                    </td>
+                    <td>
+                      <span className="adm-date">{order.createdByName || '—'}</span>
                     </td>
                     <td>
                       <div>{order.customer?.name || order.customerPhone || '—'}</div>
@@ -478,9 +481,6 @@ export default function CashierOrdersSection() {
                         onUpload={handleProofUpload}
                         uploading={proofUploading === order.id}
                       />
-                    </td>
-                    <td>
-                      <span className="adm-date">{order.createdByName || '—'}</span>
                     </td>
                   </tr>
                 );

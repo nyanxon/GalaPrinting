@@ -29,15 +29,12 @@ const TRANSITIONS = {
     'Payment Accepted':    [], // Setelah Payment Accepted, cashier tidak bisa membatalkan
   },
   cs:          {
-    // Standard flow
-    'Payment Accepted':            ['Waiting for Design Approval'],
     'Waiting for Design Approval': ['Design Accepted'],
-    // Custom order flow (CS-first): Design Accepted → Waiting for Payment
     'Design Accepted':             ['Waiting for Payment'],
   },
   operational: {
     'Design Accepted': ['On Progress'],
-    // Custom order flow: Payment Accepted → On Progress
+    // All orders: Payment Accepted → On Progress
     'Payment Accepted': ['On Progress'],
   },
   qc:          {
@@ -243,14 +240,14 @@ async function attachItemsToOrders(orders) {
  */
 export async function createOrder({ customer, items, subtotal, source = 'online', orderType = 'standard', initialStatus, promoCode, discountAmount, discounts, adminNote, customerType = 'customer', createdByAdminId = null }) {
   const id     = randomUUID();
-  const status = initialStatus || 'Waiting for Payment';
+  const status = initialStatus || 'Waiting for Design Approval';
 
   // For offline orders starting at 'On Progress', record all prior steps as completed
   const OFFLINE_PRIOR_STEPS = [
-    'Waiting for Payment',
-    'Payment Accepted',
     'Waiting for Design Approval',
     'Design Accepted',
+    'Waiting for Payment',
+    'Payment Accepted',
   ];
 
   const conn = await pool.getConnection();

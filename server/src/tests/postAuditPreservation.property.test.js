@@ -400,10 +400,10 @@ describe('Preservation 4 — Non-cancelled orders keep files', () => {
    */
 
   const NON_CANCELLED_TRANSITIONS = [
-    { from: 'Waiting for Payment', to: 'Payment Accepted' },
-    { from: 'Payment Accepted', to: 'Waiting for Design Approval' },
     { from: 'Waiting for Design Approval', to: 'Design Accepted' },
-    { from: 'Design Accepted', to: 'On Progress' },
+    { from: 'Design Accepted', to: 'Waiting for Payment' },
+    { from: 'Waiting for Payment', to: 'Payment Accepted' },
+    { from: 'Payment Accepted', to: 'On Progress' },
     { from: 'On Progress', to: 'Quality Checking' },
     { from: 'Quality Checking', to: 'In Delivery' },
     { from: 'In Delivery', to: 'Finished' },
