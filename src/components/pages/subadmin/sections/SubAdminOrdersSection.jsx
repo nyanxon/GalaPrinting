@@ -148,7 +148,7 @@ export default function SubAdminOrdersSection({ extraColumn = null }) {
           <thead>
             <tr>
                <th>No. Transaksi</th>
-               <th>Dibuat oleh</th>
+               <th>Nama CS</th>
                <th>Customer</th>
                <th>Produk</th>
                <th>Status Order</th>

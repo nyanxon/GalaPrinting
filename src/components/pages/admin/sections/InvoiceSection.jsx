@@ -128,7 +128,7 @@ function InvoiceDetailModal({ invoiceId, onClose, onUpdated }) {
                 )}
               </div>
               <div>
-                <div className="inv-detail-label">Dibuat oleh</div>
+                <div className="inv-detail-label">Nama CS</div>
                 <div className="inv-detail-value">{invoice.creator_name || '—'}</div>
               </div>
             </div>
@@ -398,7 +398,7 @@ export default function InvoiceSection() {
             <tr>
                <th>No. Invoice</th>
                <th>No. Order</th>
-               <th>Dibuat oleh</th>
+               <th>Nama CS</th>
                <th>Customer</th>
                <th>Total</th>
                <th>Status</th>
