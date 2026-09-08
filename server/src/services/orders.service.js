@@ -586,9 +586,17 @@ export async function updateOrderStatus(id, newStatus, actorId, actorRole, cance
     await assertNotLocked(id, newStatus);
   }
 
-  // Order offline wajib punya bukti bayar sebelum statusnya bisa dimajukan.
-  if (order.source === 'offline' && !order.payment_proof_path && newStatus !== 'Cancelled') {
-    const err = new Error('Order offline belum bisa dimajukan sebelum bukti bayar diunggah.');
+  // Order offline wajib punya bukti bayar SAAT melewati tahap Cashier — bukan
+  // sebelum semua tahap (CS menyetujui desain dulu tanpa bukti bayar).
+  // Bukti bayar wajib ada untuk: masuk ke 'Payment Accepted' (WfP→PA), atau
+  // transisi apa pun yang statusnya sudah berada di/di atas tahap Cashier.
+  const POST_PAYMENT_STATUSES = ['Payment Accepted', 'On Progress', 'Quality Checking', 'In Delivery', 'Finished'];
+  const crossesCashierStage =
+    newStatus === 'Payment Accepted' ||
+    POST_PAYMENT_STATUSES.includes(order.status) ||
+    POST_PAYMENT_STATUSES.includes(newStatus);
+  if (order.source === 'offline' && !order.payment_proof_path && newStatus !== 'Cancelled' && crossesCashierStage) {
+    const err = new Error('Order offline wajib mengunggah bukti bayar sebelum status melewati tahap pembayaran.');
     err.status = 422;
     throw err;
   }
