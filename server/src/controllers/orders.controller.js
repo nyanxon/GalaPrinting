@@ -321,15 +321,14 @@ export async function createOfflineOrder(req, res, next) {
       email:   customerObj?.email   || customerEmail   || '',
     };
 
-    // Offline orders start at "On Progress" — payment and design steps are
-    // handled in-store before the order is entered into the system.
+    // Offline orders follow the same 8-step flow as online/custom orders,
+    // starting at "Waiting for Design Approval" (CS → Cashier → Operational → QC).
     const order = await svc.createOrder({
       customer,
       items: resolvedItems,
       subtotal: resolvedSubtotal,
       source: 'offline',
       orderType: 'standard',
-      initialStatus: 'On Progress',
       promoCode: null,
       discountAmount: totalDiscount,
       discounts: orderDiscounts.length > 0 ? orderDiscounts : undefined,

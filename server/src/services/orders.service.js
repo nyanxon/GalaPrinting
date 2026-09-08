@@ -242,7 +242,8 @@ export async function createOrder({ customer, items, subtotal, source = 'online'
   const id     = randomUUID();
   const status = initialStatus || 'Waiting for Design Approval';
 
-  // For offline orders starting at 'On Progress', record all prior steps as completed
+  // Steps before "On Progress" — used to backfill history when an offline
+  // order is created with an initialStatus that skips earlier steps.
   const OFFLINE_PRIOR_STEPS = [
     'Waiting for Design Approval',
     'Design Accepted',

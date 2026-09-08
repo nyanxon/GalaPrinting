@@ -415,7 +415,7 @@ function SuccessCard({ order, onReset }) {
         </div>
         <div className="offline-receipt-mini-row" style={{ marginTop: '6px' }}>
           <span className="offline-receipt-mini-key">Status</span>
-          <span className="offline-status-badge">On Progress</span>
+          <span className="offline-status-badge">{order.status || 'Waiting for Design Approval'}</span>
         </div>
       </div>
 

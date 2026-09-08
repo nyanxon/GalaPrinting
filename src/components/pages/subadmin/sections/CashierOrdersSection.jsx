@@ -185,7 +185,7 @@ export default function CashierOrdersSection() {
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
   // Fitur 2: lazy-load invoice
-  const pastPaymentStatuses = ['Waiting for Design Approval', 'On Progress', 'Ready to Ship', 'Shipped', 'Completed'];
+  const pastPaymentStatuses = ['On Progress', 'Quality Checking', 'In Delivery', 'Finished'];
   useEffect(() => {
     orders.forEach((order) => {
       if (order.status !== 'Payment Accepted' && !pastPaymentStatuses.includes(order.status)) return;
