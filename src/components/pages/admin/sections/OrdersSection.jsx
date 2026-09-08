@@ -181,13 +181,13 @@ export default function OrdersSection() {
         <table className="adm-table">
           <thead>
             <tr>
-              <th>No. Transaksi</th>
-              <th>Customer</th>
-              <th>Produk</th>
-              <th>Status</th>
-              <th>Catatan</th>
-              <th>Aksi</th>
-              <th>Dibuat oleh</th>
+               <th>No. Transaksi</th>
+               <th>Dibuat oleh</th>
+               <th>Customer</th>
+               <th>Produk</th>
+               <th>Status</th>
+               <th>Catatan</th>
+               <th>Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -211,6 +211,9 @@ export default function OrdersSection() {
                           Diperbarui: {new Date(order.updatedAt).toLocaleDateString('id-ID')}
                         </div>
                       )}
+                    </td>
+                    <td>
+                      <span className="adm-date">{order.createdByName || '—'}</span>
                     </td>
                     <td>
                       <div>{order.customer?.name || order.customerPhone || '—'}</div>
@@ -332,9 +335,6 @@ export default function OrdersSection() {
                       <div className="adm-date" style={{ marginTop: '4px' }}>
                         {new Date(order.createdAt).toLocaleDateString('id-ID')}
                       </div>
-                    </td>
-                    <td>
-                      <span className="adm-date">{order.createdByName || '—'}</span>
                     </td>
                   </tr>
                 );

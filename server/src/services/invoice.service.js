@@ -184,9 +184,11 @@ export async function listInvoices({ page = 1, limit = 20, payment_status } = {}
        i.payment_method,
        i.created_at,
        i.paid_at,
-       i.locked
+       i.locked,
+       creator.name AS creator_name
      FROM invoices i
      LEFT JOIN orders o ON i.order_id = o.id
+     LEFT JOIN users_admin creator ON i.created_by = creator.id
      ${whereClause}
      ORDER BY i.created_at DESC
      LIMIT ? OFFSET ?`,

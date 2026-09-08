@@ -396,28 +396,30 @@ export default function InvoiceSection() {
         <table className="adm-table">
           <thead>
             <tr>
-              <th>No. Invoice</th>
-              <th>No. Order</th>
-              <th>Customer</th>
-              <th>Total</th>
-              <th>Status</th>
-              <th>Metode Bayar</th>
-              <th>Tanggal</th>
-              <th>Aksi</th>
+               <th>No. Invoice</th>
+               <th>No. Order</th>
+               <th>Dibuat oleh</th>
+               <th>Customer</th>
+               <th>Total</th>
+               <th>Status</th>
+               <th>Metode Bayar</th>
+               <th>Tanggal</th>
+               <th>Aksi</th>
             </tr>
           </thead>
           <tbody>
             {result.items.length === 0 ? (
               <tr>
-                <td colSpan={8} className="adm-empty">Belum ada invoice.</td>
+                <td colSpan={9} className="adm-empty">Belum ada invoice.</td>
               </tr>
             ) : result.items.map((inv) => {
               const psCfg = PAYMENT_STATUS_LABELS[inv.payment_status] || { label: inv.payment_status, color: '#333', bg: '#eee' };
               return (
                 <tr key={inv.id}>
                   <td><code>{inv.invoice_number}</code></td>
-                  <td><code>{inv.order_number || '—'}</code></td>
-                  <td>{inv.customer_name || '—'}</td>
+<td><code>{inv.order_number || '—'}</code></td>
+                   <td>{inv.creator_name || '—'}</td>
+                   <td>{inv.customer_name || '—'}</td>
                   <td><strong>{formatCurrency(inv.total)}</strong></td>
                   <td>
                     <span className="inv-status-badge" style={{ background: psCfg.bg, color: psCfg.color }}>

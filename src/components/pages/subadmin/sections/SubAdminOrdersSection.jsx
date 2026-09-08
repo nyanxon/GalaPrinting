@@ -147,15 +147,15 @@ export default function SubAdminOrdersSection({ extraColumn = null }) {
         <table className="adm-table">
           <thead>
             <tr>
-              <th>No. Transaksi</th>
-              <th>Customer</th>
-              <th>Produk</th>
-              <th>Status Order</th>
-              <th>Status Saya</th>
-              <th>Catatan</th>
-              <th>Aksi</th>
-              <th>Dibuat oleh</th>
-              {extraColumn && <th>{extraColumn.header}</th>}
+               <th>No. Transaksi</th>
+               <th>Dibuat oleh</th>
+               <th>Customer</th>
+               <th>Produk</th>
+               <th>Status Order</th>
+               <th>Status Saya</th>
+               <th>Catatan</th>
+               <th>Aksi</th>
+               {extraColumn && <th>{extraColumn.header}</th>}
             </tr>
           </thead>
           <tbody>
@@ -196,6 +196,9 @@ export default function SubAdminOrdersSection({ extraColumn = null }) {
                           {new Date(order.updatedAt).toLocaleDateString('id-ID')}
                         </div>
                       )}
+                    </td>
+                    <td>
+                      <span className="adm-date">{order.createdByName || '—'}</span>
                     </td>
                     <td>
                       <div>{order.customer?.name || order.customerPhone || '—'}</div>
@@ -288,9 +291,6 @@ export default function SubAdminOrdersSection({ extraColumn = null }) {
                     {extraColumn && (
                       <td>{extraColumn.renderCell(order, fetchOrders)}</td>
                     )}
-                    <td>
-                      <span className="adm-date">{order.createdByName || '—'}</span>
-                    </td>
                   </tr>
                 );
               })
