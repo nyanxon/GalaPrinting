@@ -293,9 +293,12 @@ export default function CategoriesSection() {
           className="adm-form"
           onSubmit={handleAdd}
           noValidate
-          style={{ flex: '1 1 360px', display: 'flex', gap: 8, alignItems: 'flex-start', margin: 0, minWidth: 0 }}
+          style={{
+            marginLeft: 'auto', flex: '0 1 auto', minWidth: 0,
+            display: 'flex', flexDirection: 'row', gap: 8, alignItems: 'flex-start', margin: 0,
+          }}
         >
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ minWidth: 0 }}>
             <input
               ref={newInputRef}
               className="adm-input"
@@ -304,7 +307,7 @@ export default function CategoriesSection() {
               onChange={(e) => { setNewName(e.target.value); setAddError(''); }}
               disabled={adding}
               aria-label="Nama kategori baru"
-              style={{ width: '100%' }}
+              style={{ width: 'clamp(180px, 22vw, 260px)' }}
             />
             {addError && (
               <p style={{ color: 'var(--color-danger-bright)', fontSize: 12, margin: '4px 0 0' }}>{addError}</p>
