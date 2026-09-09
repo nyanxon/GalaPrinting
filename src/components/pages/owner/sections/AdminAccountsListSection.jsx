@@ -9,6 +9,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { listAdminAccounts, promoteAccount, revokeAccount } from '../../../../services/adminManagement.js';
+import { deleteUser } from '../../../../services/auth.js';
 import { STAFF_ROLE_CONFIG } from '../../../../config/roles.js';
 import { showToast } from '../../../../core/toastEmitter.js';
 import { track } from '../../../../utils/activityTracker.js';
@@ -23,6 +24,7 @@ export default function AdminAccountsListSection() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [pendingRevoke, setPendingRevoke] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null);
   const [busyUserId, setBusyUserId] = useState(null);
   const [showCreateStaff, setShowCreateStaff] = useState(false);
 
@@ -93,6 +95,31 @@ export default function AdminAccountsListSection() {
     } finally {
       setBusyUserId(null);
       setPendingRevoke(null);
+    }
+  }
+
+  async function handleDeleteConfirm() {
+    if (!pendingDelete) return;
+    const account = pendingDelete;
+    setBusyUserId(account.id);
+    try {
+      const result = await deleteUser(account.id);
+      if (result.ok) {
+        track('Hapus Akun', {
+          targetType: 'account', targetId: account.id,
+          metadata: { name: account.name ?? null, email: account.email ?? null },
+        });
+        showToast(`${account.name || account.email} berhasil dinonaktifkan.`);
+        await loadAccounts();
+      } else {
+        showToast(result.message || 'Gagal menghapus akun.', 'error');
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Gagal menghapus akun.';
+      showToast(msg, 'error');
+    } finally {
+      setBusyUserId(null);
+      setPendingDelete(null);
     }
   }
 
@@ -243,6 +270,17 @@ export default function AdminAccountsListSection() {
                             {busy ? 'Memproses…' : 'Jadikan Admin'}
                           </button>
                         )}
+                        {u.role !== 'owner' && (
+                          <button
+                            className="adm-btn adm-btn-sm adm-btn--delete"
+                            type="button"
+                            disabled={busy}
+                            onClick={() => setPendingDelete(u)}
+                            aria-label={`Hapus akun ${u.name || u.email}`}
+                          >
+                            {busy ? 'Memproses…' : 'Hapus'}
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -252,6 +290,16 @@ export default function AdminAccountsListSection() {
           </tbody>
         </table>
       </div>
+
+      <ConfirmDialog
+        isOpen={Boolean(pendingDelete)}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={handleDeleteConfirm}
+        title="Hapus Akun"
+        message={`Nonaktifkan akun ${pendingDelete?.name || pendingDelete?.email || 'ini'}? Akun tidak bisa login lagi, tetapi data riwayat tetap tersimpan.`}
+        confirmLabel="Hapus"
+        confirmClass="danger"
+      />
 
       <ConfirmDialog
         isOpen={Boolean(pendingRevoke)}

@@ -17,6 +17,7 @@ import { STAFF_ROLES } from '../../../config/roles.js';
 import { STAFF_ROLE_DASHBOARD_PATH } from '../../../config/roles.js';
 import { track } from '../../../utils/activityTracker.js';
 import '../../../styles/css/pages/register.css';
+import '../../../styles/css/pages/change-password.css';
 
 function ChangePasswordPage() {
   const { user, updateUser } = useContext(AuthContext);
@@ -93,7 +94,7 @@ function ChangePasswordPage() {
 
   if (success) {
     return (
-      <main className="register-layout">
+      <main className="change-password-layout">
         <div className="register-form-side" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ textAlign: 'center', padding: '40px 32px', maxWidth: 400 }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>&#x2705;</div>
@@ -111,7 +112,7 @@ function ChangePasswordPage() {
   }
 
   return (
-    <main className="register-layout">
+    <main className="change-password-layout">
       <div className="register-form-side">
         <h1 className="register-title">Ubah Password</h1>
         <p style={{ color: 'var(--gray-500)', fontSize: 14, marginBottom: 24 }}>

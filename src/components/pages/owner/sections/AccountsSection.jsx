@@ -14,10 +14,12 @@
 
 import { useState, useEffect, useCallback, useContext } from 'react';
 import { listAccounts, getAccount, updateAccount } from '../../../../services/accounts.js';
+import { deleteUser } from '../../../../services/auth.js';
 import { AuthContext } from '../../../context/AuthContext.jsx';
 import { STAFF_ROLES, STAFF_ROLE_CONFIG } from '../../../../config/roles.js';
 import PaginationBar from '../../../ui/PaginationBar.jsx';
 import { track } from '../../../../utils/activityTracker.js';
+import ConfirmDialog from '../../../ui/ConfirmDialog.jsx';
 import AccountEditModal from './AccountEditModal.jsx';
 import CreateStaffAccountModal from './CreateStaffAccountModal.jsx';
 import CreateCustomerAccountModal from '../../admin/sections/CreateCustomerAccountModal.jsx';
@@ -48,6 +50,8 @@ export default function AccountsSection() {
   const [saving, setSaving]                 = useState(false);
   const [showCreateStaff, setShowCreateStaff]     = useState(false);
   const [showCreateCustomer, setShowCreateCustomer] = useState(false);
+  const [pendingDelete, setPendingDelete]   = useState(null); // account object
+  const [deleting, setDeleting]             = useState(false);
 
   const [toast, setToast] = useState(null);
 
@@ -143,6 +147,34 @@ export default function AccountsSection() {
       message: `Akun customer ${customer.name || customer.email} berhasil dibuat.`,
     });
     loadAccounts();
+  }
+
+  async function handleDeleteConfirm() {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    try {
+      const result = await deleteUser(pendingDelete.id);
+      if (result.ok) {
+        track('Hapus Akun', {
+          targetType: 'account', targetId: pendingDelete.id,
+          metadata: {
+            name: pendingDelete.name ?? null,
+            email: pendingDelete.email ?? null,
+            target_role: activeTab,
+          },
+        });
+        setToast({ type: 'success', message: `${pendingDelete.name || pendingDelete.email} berhasil dinonaktifkan.` });
+        setPendingDelete(null);
+        loadAccounts();
+      } else {
+        setToast({ type: 'error', message: result.message || 'Gagal menghapus akun.' });
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Gagal menghapus akun.';
+      setToast({ type: 'error', message: msg });
+    } finally {
+      setDeleting(false);
+    }
   }
 
   function getRoleLabel(role) {
@@ -298,14 +330,27 @@ export default function AccountsSection() {
                     </span>
                   </td>
                   <td>
-                    <button
-                      className="adm-btn adm-btn-sm"
-                      type="button"
-                      onClick={() => handleEditClick(u)}
-                      aria-label={`Edit akun ${u.name || u.email}`}
-                    >
-                      Edit
-                    </button>
+                    <div className="adm-actions">
+                      <button
+                        className="adm-btn adm-btn-sm"
+                        type="button"
+                        onClick={() => handleEditClick(u)}
+                        aria-label={`Edit akun ${u.name || u.email}`}
+                      >
+                        Edit
+                      </button>
+                      {isOwner && u.role !== 'owner' && (
+                        <button
+                          className="adm-btn adm-btn-sm adm-btn--delete"
+                          type="button"
+                          disabled={deleting}
+                          onClick={() => setPendingDelete(u)}
+                          aria-label={`Hapus akun ${u.name || u.email}`}
+                        >
+                          Hapus
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))
@@ -345,6 +390,16 @@ export default function AccountsSection() {
           onCreated={handleCustomerCreated}
         />
       )}
+
+      <ConfirmDialog
+        isOpen={Boolean(pendingDelete)}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={handleDeleteConfirm}
+        title="Hapus Akun"
+        message={`Nonaktifkan akun ${pendingDelete?.name || pendingDelete?.email || 'ini'}? Akun tidak bisa login lagi, tetapi data riwayat pesanan dan chat tetap tersimpan.`}
+        confirmLabel="Hapus"
+        confirmClass="danger"
+      />
     </div>
   );
 }

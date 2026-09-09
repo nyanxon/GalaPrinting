@@ -43,9 +43,12 @@ export async function createStaff(req, res, next) {
 
 export async function deleteUser(req, res, next) {
   try {
-    await svc.softDeleteUser(req.params.id);
+    await svc.softDeleteUser(req.params.id, req.user.id);
     return res.json({ ok: true, message: 'User berhasil dinonaktifkan.' });
   } catch (err) {
+    if (err.status === 403) {
+      return res.status(403).json({ ok: false, message: err.message });
+    }
     next(err);
   }
 }

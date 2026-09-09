@@ -1,6 +1,7 @@
 // Feature: admin login page (/admin/login) — renders for guests, redirects
-// declaratively when already logged in. Guards against the render-time
-// navigate() bug that produced a blank white page.
+// declaratively when already logged in as staff. Guards against the render-time
+// navigate() bug that produced a blank white page. A customer session is
+// auto-logged-out so the page is shown logged-out and ready to log in as staff.
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router';
@@ -10,11 +11,12 @@ import AdminLoginPage from '../components/pages/staff/AdminLoginPage.jsx';
 vi.mock('../services/auth.js', () => ({
   adminLogin: vi.fn(),
   getCurrentUser: vi.fn(() => null),
+  logout: vi.fn(() => Promise.resolve()),
 }));
 
-function renderLogin(user) {
+function renderLogin(user, updateUser = vi.fn()) {
   return render(
-    <AuthContext.Provider value={{ user, updateUser: vi.fn(), loading: false }}>
+    <AuthContext.Provider value={{ user, updateUser, loading: false }}>
       <MemoryRouter initialEntries={['/admin/login']}>
         <Routes>
           <Route path="/admin/login" element={<AdminLoginPage />} />
@@ -39,13 +41,21 @@ describe('AdminLoginPage — /admin/login', () => {
     unmount();
   });
 
-  it('redirects an already-logged-in customer away from /admin/login', async () => {
-    const { unmount } = renderLogin({ id: 'c1', name: 'Customer', role: 'customer' });
+  it('lets a logged-in customer access /admin/login and auto-logs them out', async () => {
+    const updateUser = vi.fn();
+    const { unmount } = renderLogin({ id: 'c1', name: 'Customer', role: 'customer' }, updateUser);
 
+    // Customer is NOT redirected away — the login form is accessible.
     await waitFor(() => {
-      expect(screen.getByTestId('page-register')).toBeTruthy();
+      expect(screen.getByText('Login Staff')).toBeTruthy();
     });
-    expect(screen.queryByText('Login Staff')).toBeNull();
+
+    // Their customer session is cleared so the page is ready for staff login.
+    const { logout } = await import('../services/auth.js');
+    await waitFor(() => {
+      expect(logout).toHaveBeenCalled();
+    });
+    expect(updateUser).toHaveBeenCalledWith(null);
 
     unmount();
   });

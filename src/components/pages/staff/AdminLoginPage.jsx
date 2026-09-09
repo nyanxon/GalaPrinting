@@ -7,11 +7,11 @@
  * Gala brand theme: brown gradient background + centered login card.
  */
 
-import { useState, useContext } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { useNavigate, Link, Navigate } from 'react-router';
 import { AuthContext } from '../../context/AuthContext.jsx';
-import { adminLogin, getCurrentUser } from '../../../services/auth.js';
-import { STAFF_ROLE_DASHBOARD_PATH } from '../../../config/roles.js';
+import { adminLogin, getCurrentUser, logout } from '../../../services/auth.js';
+import { STAFF_ROLES, STAFF_ROLE_DASHBOARD_PATH } from '../../../config/roles.js';
 import { track, flush as flushActivity } from '../../../utils/activityTracker.js';
 import logoImg from '../../../assets/logo.png';
 import '../../../styles/css/pages/admin-login.css';
@@ -26,10 +26,31 @@ function AdminLoginPage() {
   const [loginFieldErrors, setLoginFieldErrors] = useState({});
   const [loginSubmitting, setLoginSubmitting] = useState(false);
 
-  // If already logged in, redirect to the appropriate dashboard (declaratively —
-  // calling navigate() during render leaves the tree blank/white).
-  if (user) {
-    const path = STAFF_ROLE_DASHBOARD_PATH[user.role] || '/register';
+  // A customer session must NOT block access to /admin/login. If the active
+  // session is a customer (not staff), auto-logout so the page is shown in a
+  // logged-out, ready-to-login-as-staff state.
+  const isStaff = Boolean(user) && STAFF_ROLES.includes(user.role);
+
+  useEffect(() => {
+    // Only auto-logout when a logged-in role is NOT a staff role (i.e. a
+    // customer session reached the staff login page).
+    if (user && !STAFF_ROLES.includes(user.role)) {
+      let cancelled = false;
+      (async () => {
+        await logout();
+        updateUser(null);
+        if (!cancelled) navigate('/admin/login', { replace: true });
+      })();
+      return () => { cancelled = true; };
+    }
+  }, [user, navigate, updateUser]);
+
+  // If already logged in as staff, redirect to the appropriate dashboard
+  // (declaratively — calling navigate() during render leaves the tree
+  // blank/white). Staff behavior is unchanged; customer sessions are handled
+  // by the auto-logout effect above and render the login form below.
+  if (isStaff) {
+    const path = STAFF_ROLE_DASHBOARD_PATH[user.role];
     return <Navigate to={path} replace />;
   }
 

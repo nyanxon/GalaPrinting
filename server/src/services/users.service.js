@@ -102,8 +102,28 @@ export async function createStaff({ name, email, phone, password, role }) {
   return rows[0];
 }
 
-export async function softDeleteUser(id) {
-  // Try both tables — caller may not know which table the user is in
+export async function softDeleteUser(id, actorId) {
+  // Owner cannot delete their own account via this endpoint.
+  if (id === actorId) {
+    const err = new Error('Anda tidak dapat menghapus akun sendiri.');
+    err.status = 403;
+    throw err;
+  }
+
+  // Owner cannot delete another Owner account (only one Owner should remain).
+  const [ownerRows] = await query(
+    'SELECT id FROM users_admin WHERE id = ? AND role = ? AND deleted_at IS NULL',
+    [id, 'owner']
+  );
+  if (ownerRows.length > 0) {
+    const err = new Error('Tidak dapat menghapus akun Owner lain.');
+    err.status = 403;
+    throw err;
+  }
+
+  // Try both tables — caller may not know which table the user is in.
+  // Soft-delete only: data stays for history/reports, account just can't log in
+  // and disappears from active lists (all reads filter deleted_at IS NULL).
   const [adminResult] = await query('UPDATE users_admin SET deleted_at = NOW() WHERE id = ? AND deleted_at IS NULL', [id]);
   if (adminResult.affectedRows > 0) return;
 
