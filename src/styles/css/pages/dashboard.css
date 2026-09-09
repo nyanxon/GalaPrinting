@@ -922,30 +922,39 @@
   color: var(--text);
 }
 
-/* Single-row toolbar (e.g. ProductsSection header): keeps search,
-   dropdown and primary button on one line. */
-.adm-toolbar--row {
+/* Single-row toolbar (e.g. ProductsSection / CategoriesSection header):
+   keeps search bar, dropdown and primary button on one line, right-aligned.
+   Specificity boosted to beat later base .adm-toolbar(-right) rules. */
+.adm-toolbar.adm-toolbar--row {
   flex-wrap: nowrap;
   align-items: center;
 }
 
-.adm-toolbar--row .adm-section-title {
+.adm-toolbar.adm-toolbar--row .adm-section-title {
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.adm-toolbar-right--row {
+.adm-toolbar.adm-toolbar--row .adm-toolbar-right.adm-toolbar-right--row {
   flex-wrap: nowrap;
   min-width: 0;
+  margin-left: auto;
 }
 
 .adm-toolbar-right--row .adm-search {
   width: clamp(140px, 24vw, 240px);
   flex: 1 1 auto;
+  min-width: 0;
 }
 
-.adm-toolbar-right--row .adm-input[type='search'],
+.adm-toolbar-right--row .adm-input:not([type='search']),
 .adm-toolbar-right--row select.adm-input {
+  flex-shrink: 1;
   min-width: 0;
+}
+
+.adm-toolbar-right--row .adm-btn {
+  flex-shrink: 0;
 }
 
 /* ── Buttons ─────────────────────────────────────────────── */
