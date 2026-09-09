@@ -396,7 +396,7 @@ export async function getOrder(req, res, next) {
 
 export async function updateOrderStatus(req, res, next) {
   try {
-    const { newStatus, cancellationReason } = req.body;
+    const { newStatus, cancellationReason, paymentMethod, paymentStatus, dpAmount } = req.body;
     if (!newStatus) {
       return res.status(422).json({ ok: false, message: 'Status wajib diisi.' });
     }
@@ -405,11 +405,20 @@ export async function updateOrderStatus(req, res, next) {
     }
     const current = await svc.getOrderById(req.params.id);
     const previousStatus = current?.status;
-    const order = await svc.updateOrderStatus(req.params.id, newStatus, req.user.id, req.user.role, cancellationReason, req.user.name);
+    const order = await svc.updateOrderStatus(
+      req.params.id,
+      newStatus,
+      req.user.id,
+      req.user.role,
+      cancellationReason,
+      req.user.name,
+      // Data pembayaran opsional — wajib untuk transisi Payment Accepted
+      { paymentStatus, paymentMethod, dpAmount }
+    );
     emitOrderStatusChanged(order, previousStatus);
     return res.json({ ok: true, data: order });
   } catch (err) {
-    if (err.status === 403 || err.status === 404) {
+    if (err.status === 403 || err.status === 404 || err.status === 422) {
       return res.status(err.status).json({ ok: false, message: err.message });
     }
     next(err);

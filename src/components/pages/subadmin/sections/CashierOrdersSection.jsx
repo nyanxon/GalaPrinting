@@ -13,14 +13,16 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { listAllOrders, getAllowedNextStatuses, STATUS_CONFIG, attachPaymentProof } from '../../../../services/orders.js';
+import { listAllOrders, getAllowedNextStatuses, STATUS_CONFIG, attachPaymentProof, getOrderById, updateOrderStatus } from '../../../../services/orders.js';
 import { formatCurrency } from '../../../../utils/format.js';
 import { resolveApiUrl } from '../../../../core/httpClient.js';
 import { getInvoiceByOrderId, openInvoicePdf } from '../../../../services/api/invoiceService.js';
 import { showToast } from '../../../../core/toastEmitter.js';
+import { track } from '../../../../utils/activityTracker.js';
 import OrderDetailModal from '../../../modals/OrderDetailModal.jsx';
 import ThermalReceiptModal from '../../../modals/ThermalReceiptModal.jsx';
 import ThermalSpkModal from '../../../modals/ThermalSpkModal.jsx';
+import CashierPaymentModal from '../../../modals/CashierPaymentModal.jsx';
 import DropZone from '../../../ui/DropZone.jsx';
 import useOrderList from '../../../../hooks/useOrderList.js';
 
@@ -131,6 +133,13 @@ export default function CashierOrdersSection() {
   // Id order yang sedang mengunggah bukti bayar di kolom tabel.
   const [proofUploading, setProofUploading] = useState(null);
 
+  // Modal konfirmasi pembayaran saat Cashier menaikkan status ke 'Payment Accepted'.
+  // Berisi order target + nextStatus yang sedang diproses.
+  const [paymentModal, setPaymentModal] = useState(null);
+
+  // Set paymentModal[orderId] true berarti advance ke Payment Accepted sedang berjalan.
+  const [paymentAdvancing, setPaymentAdvancing] = useState(false);
+
   const handleProofUpload = useCallback(async (orderId, files) => {
     const file = files?.[0];
     if (!file) return;
@@ -212,14 +221,74 @@ export default function CashierOrdersSection() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orders]);
 
-  // Wrap advance to handle invoice reset + auto-print tracking
-  const handleAdvance = useCallback(async (orderId, nextStatus) => {
+  // Wrap advance — untuk transisi Waiting for Payment → Payment Accepted,
+  // buka modal konfirmasi pembayaran dulu; status baru naik setelah modal di-submit.
+  // Transisi lain (CS, Operational, QC) tetap jalan langsung tanpa modal.
+  const handleAdvance = useCallback(async (orderId, nextStatus, order) => {
     if (nextStatus === 'Payment Accepted') {
-      setInvoiceMap((prev) => { const n = { ...prev }; delete n[orderId]; return n; });
-      pendingAutoPrintRef.current.add(orderId);
+      setPaymentModal({ orderId, nextStatus, order });
+      return;
     }
     hookAdvance(orderId, nextStatus);
-  }, [hookAdvance, setInvoiceMap, pendingAutoPrintRef]);
+  }, [hookAdvance]);
+
+  // Submit modal pembayaran → naikkan status ke Payment Accepted + simpan data
+  // pembayaran (invoice + orders.payment_method) dalam satu request/transaction backend.
+  const handlePaymentConfirm = useCallback(async (paymentData) => {
+    if (!paymentModal) return;
+    const { orderId, nextStatus, order } = paymentModal;
+
+    // Reset invoice cache + tandai auto-print (sama seperti perilaku advance lama).
+    setInvoiceMap((prev) => { const n = { ...prev }; delete n[orderId]; return n; });
+    pendingAutoPrintRef.current.add(orderId);
+
+    setPaymentAdvancing(true);
+    try {
+      // Buat advance manual (memakai hookAdvance aksi tidak mungkin — jalankan logika
+      // yang sama: update status + payment data, lalu toast/refetch).
+      let fromStatus = order?.status ?? null;
+      try {
+        const loaded = await getOrderById(orderId);
+        fromStatus = loaded?.status ?? fromStatus;
+      } catch { /* keep null */ }
+
+      const res = await updateOrderStatus(
+        orderId,
+        nextStatus,
+        actorRole,
+        undefined,
+        {
+          paymentMethod: paymentData.paymentMethod,
+          paymentStatus: paymentData.paymentStatus,
+          dpAmount: paymentData.dpAmount,
+        }
+      );
+
+      if (res.ok) {
+        track('Ubah Status Order', {
+          targetType: 'order', targetId: orderId,
+          metadata: {
+            from: fromStatus, to: nextStatus, role: actorRole,
+            paymentStatus: paymentData.paymentStatus,
+            paymentMethod: paymentData.paymentMethod,
+            dpAmount: paymentData.dpAmount,
+          },
+        });
+        showToast(`Status → "${nextStatus}".`, 'success');
+        setPaymentModal(null);
+      } else {
+        showToast(res.message || 'Gagal mengubah status.', 'error');
+        // Kalau transisi gagal, jangan auto-print resep.
+        pendingAutoPrintRef.current.delete(orderId);
+      }
+    } catch (err) {
+      showToast(err?.response?.data?.message || 'Gagal memproses pembayaran.', 'error');
+      pendingAutoPrintRef.current.delete(orderId);
+    } finally {
+      setPaymentAdvancing(false);
+      fetchOrdersRef.current?.();
+    }
+  }, [paymentModal, setInvoiceMap, pendingAutoPrintRef, actorRole]);
 
   const displayOrders = stateFilter === 'all'
     ? orders
@@ -385,7 +454,7 @@ export default function CashierOrdersSection() {
                                   ? 'Unggah bukti bayar dahulu untuk memajukan status'
                                   : undefined
                               }
-                              onClick={() => handleAdvance(order.id, advanceTargets[0])}
+                              onClick={() => handleAdvance(order.id, advanceTargets[0], order)}
                             >
                               {cfg.icon} → {advanceTargets[0]}
                             </button>
@@ -553,6 +622,15 @@ export default function CashierOrdersSection() {
             </div>
           </div>
         </div>
+      )}
+
+      {paymentModal && (
+        <CashierPaymentModal
+          order={paymentModal.order}
+          busy={paymentAdvancing}
+          onClose={() => { if (!paymentAdvancing) setPaymentModal(null); }}
+          onConfirm={handlePaymentConfirm}
+        />
       )}
     </div>
   );

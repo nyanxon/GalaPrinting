@@ -19,6 +19,7 @@ import {
 } from './email.service.js';
 import { getPreferences } from './notifications.service.js';
 import { assertNotLocked, recordApproval, APPROVAL_STAGE_FOR_STATUS } from './orderApprovals.service.js';
+import { computeInvoicePayment } from './invoice.service.js';
 import { generateInvoicePdf } from '../utils/invoicePdf.js';
 
 // ── Status transition rules ───────────────────────────────────────────────────
@@ -557,14 +558,25 @@ export async function getOrderById(id) {
  * Advance an order to a new status, enforcing role-based transition rules.
  * Fitur 1: cek approval lock sebelum update — tolak 403 jika tahap sudah di-ACC.
  *
+ * Transisi ke 'Payment Accepted' (Waiting for Payment → Payment Accepted) adalah
+ * gerbang WAJIB: data pembayaran (paymentMethod + paymentStatus, dan dpAmount jika
+ * DP) harus dikirim. Data pembayaran ditulis ke tabel invoices (payment_status,
+ * payment_method, dp_amount, locked, paid_at, dp_paid_at) + orders.payment_method
+ * DALAM SATU transaksi dengan kenaikan status order, sehingga tidak ada order
+ * berstatus 'Payment Accepted' tanpa data pembayaran, atau sebaliknya.
+ *
  * @param {string} id
  * @param {string} newStatus
  * @param {string} actorId
  * @param {string} actorRole
  * @param {string|null} cancellationReason
  * @param {string|null} actorName  Nama admin (untuk approval record snapshot)
+ * @param {object} [payment]  Data pembayaran (wajib untuk transisi Payment Accepted)
+ * @param {'paid'|'dp'} [payment.paymentStatus]
+ * @param {string} [payment.paymentMethod]
+ * @param {number|string} [payment.dpAmount]  Nominal DP, wajib jika paymentStatus='dp'
  */
-export async function updateOrderStatus(id, newStatus, actorId, actorRole, cancellationReason, actorName) {
+export async function updateOrderStatus(id, newStatus, actorId, actorRole, cancellationReason, actorName, payment = null) {
   const order = await getOrderById(id);
   if (!order) {
     const err = new Error('Pesanan tidak ditemukan.');
@@ -602,6 +614,135 @@ export async function updateOrderStatus(id, newStatus, actorId, actorRole, cance
   }
 
   const prevStatus = order.status;
+
+  // ── Payment Accepted: gerbang wajib data pembayaran, ditulis dalam SATU transaksi ──
+  if (newStatus === 'Payment Accepted') {
+    const paymentStatus = payment?.paymentStatus;
+    const paymentMethod = payment?.paymentMethod;
+    const dpAmount      = payment?.dpAmount;
+
+    // Gerbang wajib: tanpa data pembayaran, transisi ini ditolak (bukan fallback 'paid').
+    if (!['paid', 'dp'].includes(paymentStatus)) {
+      const err = new Error(
+        'Transisi ke Payment Accepted wajib menyertakan data pembayaran (paymentStatus = paid|dp).'
+      );
+      err.status = 422;
+      throw err;
+    }
+    if (!paymentMethod || !String(paymentMethod).trim()) {
+      const err = new Error('Metode pembayaran wajib diisi.');
+      err.status = 422;
+      throw err;
+    }
+
+    // Pastikan invoice sudah ada (dijamin dibuat saat order dibuat; fallback safety).
+    let [[inv]] = await query('SELECT * FROM invoices WHERE order_id = ?', [id]);
+    if (!inv) {
+      await autoCreateInvoice(order);
+      [[inv]] = await query('SELECT * FROM invoices WHERE order_id = ?', [id]);
+    }
+    if (!inv) {
+      const err = new Error('Invoice untuk order ini tidak ditemukan.');
+      err.status = 422;
+      throw err;
+    }
+
+    // Pakai fungsi validasi yang sama dengan flow invoice (tidak duplikasi logika DP).
+    const fields = computeInvoicePayment({
+      invoice: inv,
+      newStatus: paymentStatus,
+      paymentMethod,
+      dpAmount,
+    });
+
+    const conn = await pool.getConnection();
+    try {
+      await conn.beginTransaction();
+
+      // 1. Update status order
+      await conn.execute('UPDATE orders SET status = ? WHERE id = ?', [newStatus, id]);
+
+      // 2. Update orders.payment_method (dipakai agregasi analytics.service.js:184)
+      await conn.execute('UPDATE orders SET payment_method = ? WHERE id = ?', [fields.payment_method, id]);
+
+      // 3. Update invoice terkait (payment_status/locked/paid_at/dp_paid_at sesuai pilihan)
+      await conn.execute(
+        `UPDATE invoices
+         SET payment_status = ?, payment_method = ?, dp_amount = ?, locked = ?, paid_at = ?, dp_paid_at = ?
+         WHERE id = ?`,
+        [fields.payment_status, fields.payment_method, fields.dp_amount, fields.locked, fields.paid_at, fields.dp_paid_at, inv.id]
+      );
+
+      // 4. History entry
+      await conn.execute(
+        `INSERT INTO order_history (id, order_id, from_status, to_status, actor_id, cancellation_reason)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [randomUUID(), id, prevStatus, newStatus, actorId, null]
+      );
+
+      // 5. Approval record
+      if (APPROVAL_STAGE_FOR_STATUS[newStatus]) {
+        await conn.execute(
+          `INSERT IGNORE INTO order_approvals
+             (id, order_id, stage, approved_by, approved_role, approved_name)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [randomUUID(), id, newStatus, actorId, actorRole, actorName || actorRole]
+        );
+      }
+
+      await conn.commit();
+    } catch (err) {
+      await conn.rollback();
+      throw err;
+    } finally {
+      conn.release();
+    }
+
+    const updatedOrder = await getOrderById(id);
+
+    // ── Kirim email invoice PDF (paid maupun dp) — invoicePdf.js menampilkan baris
+    //    DP/Sisa Pembayaran otomatis saat payment_status = 'dp'. ──
+    const recipientEmail = order.customer_email || null;
+    if (recipientEmail) {
+      (async () => {
+        try {
+          const [invRows] = await query(
+            `SELECT i.*,
+                    o.order_number, o.customer_name, o.customer_phone, o.customer_address,
+                    COALESCE(u.email, o.customer_email) AS customer_email, creator.name AS creator_name
+             FROM invoices i
+             LEFT JOIN orders o ON i.order_id = o.id
+             LEFT JOIN users_customer u ON i.customer_id = u.id
+             LEFT JOIN users_admin creator ON o.created_by_admin_id = creator.id
+             WHERE i.id = ?`,
+            [inv.id]
+          );
+          if (!invRows.length) return;
+          const [itemRows] = await query('SELECT * FROM order_items WHERE order_id = ?', [id]);
+          const fullInvoice = { ...invRows[0], items: itemRows };
+
+          if (order.customer_id) {
+            const prefs = await getPreferences(order.customer_id);
+            if (!prefs.payment_accepted) return;
+          }
+
+          const { pdfBuffer } = await generateInvoicePdf(fullInvoice);
+          await sendInvoiceEmail({ invoice: fullInvoice, pdfBuffer });
+        } catch (err) {
+          console.error('[orders] Invoice email failed:', err.message);
+        }
+      })();
+    }
+
+    // Fire-and-forget email notification — only for logged-in customers
+    if (order.customer_id) {
+      sendEmailIfEnabled(updatedOrder, newStatus, order.customer_id);
+    }
+
+    return updatedOrder;
+  }
+
+  // ── Transisi lain (CS, Operational, QC, Cancelled) — alur lama tidak berubah ──
   if (newStatus === 'Cancelled') {
     await query('UPDATE orders SET status = ?, cancellation_reason = ? WHERE id = ?', [newStatus, cancellationReason || null, id]);
   } else {
@@ -638,71 +779,6 @@ export async function updateOrderStatus(id, newStatus, actorId, actorRole, cance
   }
 
   const updatedOrder = await getOrderById(id);
-
-  // ── Payment Accepted: auto-create invoice synchronously, mark paid, send invoice email ──
-  if (newStatus === 'Payment Accepted') {
-    try {
-      // 1. Ensure invoice exists (may have been auto-created on order creation)
-      let [[inv]] = await query('SELECT id FROM invoices WHERE order_id = ?', [id]);
-      if (!inv) {
-        await autoCreateInvoice(updatedOrder);
-        [[inv]] = await query('SELECT id FROM invoices WHERE order_id = ?', [id]);
-      }
-
-      if (inv) {
-        const invoiceId = inv.id;
-
-        // 2. Mark invoice as paid with current timestamp (the exact time cashier accepted)
-        const [[invRow]] = await query('SELECT payment_status, locked FROM invoices WHERE id = ?', [invoiceId]);
-        if (invRow && !invRow.locked) {
-          await query(
-            `UPDATE invoices
-             SET payment_status = 'paid', locked = 1, paid_at = NOW()
-             WHERE id = ?`,
-            [invoiceId]
-          );
-        }
-
-        // 3. Send invoice email fire-and-forget (email tidak boleh blokir response)
-        const recipientEmail = order.customer_email || null;
-        if (recipientEmail) {
-          (async () => {
-            try {
-              const [invRows] = await query(
-                `SELECT i.*,
-                        o.order_number, o.customer_name, o.customer_phone, o.customer_address,
-                        COALESCE(u.email, o.customer_email) AS customer_email, creator.name AS creator_name
-                 FROM invoices i
-                 LEFT JOIN orders o ON i.order_id = o.id
-                 LEFT JOIN users_customer u ON i.customer_id = u.id
-                 LEFT JOIN users_admin creator ON i.created_by = creator.id
-                 WHERE i.id = ?`,
-                [invoiceId]
-              );
-              if (!invRows.length) return;
-              const [itemRows] = await query('SELECT * FROM order_items WHERE order_id = ?', [id]);
-              const fullInvoice = { ...invRows[0], items: itemRows };
-
-              // For logged-in customers, respect notification preferences;
-              // for offline customers with email, always send
-              if (order.customer_id) {
-                const prefs = await getPreferences(order.customer_id);
-                if (!prefs.payment_accepted) return;
-              }
-
-              const { pdfBuffer } = await generateInvoicePdf(fullInvoice);
-              await sendInvoiceEmail({ invoice: fullInvoice, pdfBuffer });
-            } catch (err) {
-              console.error('[orders] Invoice email failed:', err.message);
-            }
-          })();
-        }
-      }
-    } catch (err) {
-      // Invoice creation failure must NOT block the status update response
-      console.error('[orders] Payment Accepted post-processing failed:', err.message);
-    }
-  }
 
   // Fire-and-forget email notification — only for logged-in customers
   if (order.customer_id) {

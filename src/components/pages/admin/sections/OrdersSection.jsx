@@ -18,6 +18,7 @@ import { getInvoiceByOrderId, openInvoicePdf } from '../../../../services/api/in
 import { showToast } from '../../../../core/toastEmitter.js';
 import OrderDetailModal from '../../../modals/OrderDetailModal.jsx';
 import ThermalReceiptModal from '../../../modals/ThermalReceiptModal.jsx';
+import CashierPaymentModal from '../../../modals/CashierPaymentModal.jsx';
 import PaginationBar from '../../../ui/PaginationBar.jsx';
 import useOrderList from '../../../../hooks/useOrderList.js';
 
@@ -33,6 +34,10 @@ export default function OrdersSection() {
   const [currentPage, setCurrentPage] = useState(1);
   const [filterStatus, setFilterStatus] = useState('');
   const fetchOrdersRef = useRef(null);
+
+  // Modal konfirmasi pembayaran saat transisi WfP → Payment Accepted (gate wajib backend).
+  const [paymentModal, setPaymentModal] = useState(null);
+  const [paymentAdvancing, setPaymentAdvancing] = useState(false);
 
   const {
     searchQuery, setSearchQuery,
@@ -118,9 +123,12 @@ export default function OrdersSection() {
       return;
     }
 
+    // Transisi ke Payment Accepted wajib lewat modal konfirmasi pembayaran
+    // (backend menolak transisi ini tanpa data pembayaran).
     if (newStatus === 'Payment Accepted') {
-      setInvoiceMap((prev) => { const n = { ...prev }; delete n[orderId]; return n; });
-      pendingAutoPrintRef.current.add(orderId);
+      const current = result.items?.find((o) => o.id === orderId);
+      setPaymentModal({ orderId, nextStatus: newStatus, order: current });
+      return;
     }
 
     const current = result.items?.find((o) => o.id === orderId);
@@ -135,6 +143,51 @@ export default function OrdersSection() {
       showToast(res.message || 'Gagal mengubah status.', 'error');
     }
     fetchOrders();
+  }
+
+  async function handlePaymentConfirm(paymentData) {
+    if (!paymentModal) return;
+    const { orderId, nextStatus, order } = paymentModal;
+
+    setInvoiceMap((prev) => { const n = { ...prev }; delete n[orderId]; return n; });
+    pendingAutoPrintRef.current.add(orderId);
+
+    setPaymentAdvancing(true);
+    try {
+      const res = await updateOrderStatus(
+        orderId,
+        nextStatus,
+        actorRole,
+        undefined,
+        {
+          paymentMethod: paymentData.paymentMethod,
+          paymentStatus: paymentData.paymentStatus,
+          dpAmount: paymentData.dpAmount,
+        }
+      );
+      if (res.ok) {
+        track('Ubah Status Order', {
+          targetType: 'order', targetId: orderId,
+          metadata: {
+            from: order?.status ?? null, to: nextStatus, role: actorRole,
+            paymentStatus: paymentData.paymentStatus,
+            paymentMethod: paymentData.paymentMethod,
+            dpAmount: paymentData.dpAmount,
+          },
+        });
+        showToast(`Status → "${nextStatus}".`, 'success');
+        setPaymentModal(null);
+      } else {
+        showToast(res.message || 'Gagal mengubah status.', 'error');
+        pendingAutoPrintRef.current.delete(orderId);
+      }
+    } catch (err) {
+      showToast(err?.response?.data?.message || 'Gagal memproses pembayaran.', 'error');
+      pendingAutoPrintRef.current.delete(orderId);
+    } finally {
+      setPaymentAdvancing(false);
+      fetchOrders();
+    }
   }
 
   function handleFilterChange(e) {
@@ -425,6 +478,15 @@ export default function OrdersSection() {
             </div>
           </div>
         </div>
+      )}
+
+      {paymentModal && (
+        <CashierPaymentModal
+          order={paymentModal.order}
+          busy={paymentAdvancing}
+          onClose={() => { if (!paymentAdvancing) setPaymentModal(null); }}
+          onConfirm={handlePaymentConfirm}
+        />
       )}
     </div>
   );

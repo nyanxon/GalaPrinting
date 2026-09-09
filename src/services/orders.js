@@ -719,10 +719,21 @@ function listOrdersPaginatedLocal(opts = {}) {
  * @param {string} orderId
  * @param {string} newStatus
  * @param {string} [actorRole="admin"]  role of the person making the change
+ * @param {string} [cancellationReason]
+ * @param {{ paymentMethod?: string, paymentStatus?: 'paid'|'dp', dpAmount?: number|string }} [payment]
+ *   Data pembayaran — WAJIB untuk transisi ke 'Payment Accepted' (ditulis backend ke invoices
+ *   + orders.payment_method dalam satu transaksi dengan kenaikan status).
  */
-export function updateOrderStatus(orderId, newStatus, actorRole = "admin", cancellationReason) {
+export function updateOrderStatus(orderId, newStatus, actorRole = "admin", cancellationReason, payment) {
   if (USE_BACKEND) {
-    return api.patch(`/api/orders/${orderId}/status`, { newStatus, cancellationReason: cancellationReason || null })
+    const body = {
+      newStatus,
+      cancellationReason: cancellationReason || null,
+      paymentMethod: payment?.paymentMethod || null,
+      paymentStatus: payment?.paymentStatus || null,
+      dpAmount: payment?.dpAmount != null ? payment.dpAmount : null,
+    };
+    return api.patch(`/api/orders/${orderId}/status`, body)
       .then((res) => ({ ok: true, order: mapOrder(res.data.data) }))
       .catch((err) => {
         const message = err.response?.data?.message ?? "Gagal memperbarui status order.";

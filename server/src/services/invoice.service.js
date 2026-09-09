@@ -111,7 +111,7 @@ export async function getInvoiceById(id) {
      FROM invoices i
      LEFT JOIN orders o ON i.order_id = o.id
      LEFT JOIN users_customer u ON i.customer_id = u.id
-     LEFT JOIN users_admin creator ON i.created_by = creator.id
+     LEFT JOIN users_admin creator ON o.created_by_admin_id = creator.id
      WHERE i.id = ?
      LIMIT 1`,
     [id]
@@ -141,7 +141,7 @@ export async function getInvoiceByOrderId(orderId) {
      FROM invoices i
      LEFT JOIN orders o ON i.order_id = o.id
      LEFT JOIN users_customer u ON i.customer_id = u.id
-     LEFT JOIN users_admin creator ON i.created_by = creator.id
+     LEFT JOIN users_admin creator ON o.created_by_admin_id = creator.id
      WHERE i.order_id = ?
      LIMIT 1`,
     [orderId]
@@ -188,7 +188,7 @@ export async function listInvoices({ page = 1, limit = 20, payment_status } = {}
        creator.name AS creator_name
      FROM invoices i
      LEFT JOIN orders o ON i.order_id = o.id
-     LEFT JOIN users_admin creator ON i.created_by = creator.id
+     LEFT JOIN users_admin creator ON o.created_by_admin_id = creator.id
      ${whereClause}
      ORDER BY i.created_at DESC
      LIMIT ? OFFSET ?`,
@@ -201,6 +201,64 @@ export async function listInvoices({ page = 1, limit = 20, payment_status } = {}
     page: pageNum,
     limit: limitNum,
     totalPages: Math.ceil(Number(total) / limitNum),
+  };
+}
+
+/**
+ * Hitung field payment invoice yang akan ditulis ke DB, sekaligus validasi.
+ * Dipakai bersama oleh updateInvoicePaymentStatus() (flow manual invoice) dan
+ * updateOrderStatus() (flow Payment Accepted, agar validasi DP konsisten).
+ *
+ * @param {object}  obj
+ * @param {object}  obj.invoice            Baris invoice (min. butuh total, dp_amount, dp_paid_at)
+ * @param {string}  obj.newStatus          'unpaid'|'paid'|'dp'
+ * @param {string}  [obj.paymentMethod]
+ * @param {number|string} [obj.dpAmount]   nominal DP, wajib & >0 & < total jika newStatus='dp'
+ * @returns {{ payment_status, payment_method, dp_amount, locked, paid_at, dp_paid_at }}
+ */
+export function computeInvoicePayment({ invoice, newStatus, paymentMethod, dpAmount }) {
+  // Validasi status
+  if (!['unpaid', 'paid', 'dp'].includes(newStatus)) {
+    const err = new Error('payment_status tidak valid. Gunakan: unpaid, paid, atau dp.');
+    err.status = 422;
+    throw err;
+  }
+
+  const total = Number(invoice?.total || 0);
+
+  // Nominal DP wajib & masuk akal saat status = DP
+  let dpAmountValue;
+  if (newStatus === 'dp') {
+    const dp = Number(dpAmount);
+    if (!dpAmount || Number.isNaN(dp) || !Number.isFinite(dp)) {
+      const err = new Error('Nominal DP wajib diisi.'); err.status = 422; throw err;
+    }
+    if (dp <= 0) {
+      const err = new Error('Nominal DP harus lebih dari 0.'); err.status = 422; throw err;
+    }
+    if (dp >= total) {
+      const err = new Error('Nominal DP harus lebih kecil dari total tagihan (jika lunas, gunakan status Lunas).');
+      err.status = 422; throw err;
+    }
+    dpAmountValue = dp;
+  } else {
+    // Pertahankan dp_amount sebagai histori (tidak direset).
+    dpAmountValue = invoice?.dp_amount != null ? Number(invoice.dp_amount) : null;
+  }
+
+  const locked  = newStatus === 'paid' ? 1 : 0;
+  const paidAt  = newStatus === 'paid' ? new Date() : null;
+  // Tanggal DP diterima: diisi saat status berubah jadi DP, dipertahankan
+  // sebagai histori saat status berubah (mis. DP -> LUNAS).
+  const dpPaidAt = newStatus === 'dp' ? new Date() : (invoice?.dp_paid_at || null);
+
+  return {
+    payment_status: newStatus,
+    payment_method: paymentMethod || invoice?.payment_method || null,
+    dp_amount: dpAmountValue,
+    locked,
+    paid_at: paidAt,
+    dp_paid_at: dpPaidAt,
   };
 }
 
@@ -228,13 +286,6 @@ export async function updateInvoicePaymentStatus(id, newStatus, paymentMethod, d
     throw err;
   }
 
-  // Validasi status
-  if (!['unpaid', 'paid', 'dp'].includes(newStatus)) {
-    const err = new Error('payment_status tidak valid. Gunakan: unpaid, paid, atau dp.');
-    err.status = 422;
-    throw err;
-  }
-
   // Aturan transisi status pembayaran:
   //   - Belum Bayar (unpaid) → boleh ke DP atau Lunas (bebas).
   //   - DP → HANYA bisa ke Lunas (pelunasan). Tidak boleh balik ke Belum Bayar
@@ -246,41 +297,13 @@ export async function updateInvoicePaymentStatus(id, newStatus, paymentMethod, d
     throw err;
   }
 
-  const total = Number(invoice.total || 0);
-
-  // Nominal DP wajib & masuk akal saat status = DP
-  let dpAmountValue;
-  if (newStatus === 'dp') {
-    const dp = Number(dpAmount);
-    if (!dpAmount || Number.isNaN(dp) || !Number.isFinite(dp)) {
-      const err = new Error('Nominal DP wajib diisi.'); err.status = 422; throw err;
-    }
-    if (dp <= 0) {
-      const err = new Error('Nominal DP harus lebih dari 0.'); err.status = 422; throw err;
-    }
-    if (dp >= total) {
-      const err = new Error('Nominal DP harus lebih kecil dari total tagihan (jika lunas, gunakan status Lunas).');
-      err.status = 422; throw err;
-    }
-    dpAmountValue = dp;
-  } else {
-    // Pertahankan dp_amount sebagai histori (tidak direset).
-    dpAmountValue = invoice.dp_amount != null
-      ? Number(invoice.dp_amount)
-      : null;
-  }
-
-  const locked = newStatus === 'paid' ? 1 : 0;
-  const paidAt = newStatus === 'paid' ? new Date() : null;
-  // Tanggal DP diterima: diisi saat status berubah jadi DP, dipertahankan
-  // sebagai histori saat status berubah (mis. DP -> LUNAS).
-  const dpPaidAt = newStatus === 'dp' ? new Date() : (invoice.dp_paid_at || null);
+  const fields = computeInvoicePayment({ invoice, newStatus, paymentMethod, dpAmount });
 
   await query(
     `UPDATE invoices
      SET payment_status = ?, payment_method = ?, dp_amount = ?, locked = ?, paid_at = ?, dp_paid_at = ?
      WHERE id = ?`,
-    [newStatus, paymentMethod || invoice.payment_method, dpAmountValue, locked, paidAt, dpPaidAt, id]
+    [fields.payment_status, fields.payment_method, fields.dp_amount, fields.locked, fields.paid_at, fields.dp_paid_at, id]
   );
 
   return getInvoiceById(id);
