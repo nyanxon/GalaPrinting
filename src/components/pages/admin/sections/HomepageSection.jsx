@@ -1,5 +1,5 @@
 /**
- * HomepageSection.jsx — Admin panel section for managing Homepage content.
+ * HomepageSection.jsx ï¿½ Admin panel section for managing Homepage content.
  *
  * Tabs:
  *   A. Landing Page Banner (hero)
@@ -7,12 +7,11 @@
  *   C. Category Banners   (per-category section banners)
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { showToast } from '../../../../core/toastEmitter.js';
 import { track } from '../../../../utils/activityTracker.js';
 import { resolveApiUrl } from '../../../../core/httpClient.js';
 import DropZone from '../../../ui/DropZone.jsx';
-import ProductCard from '../../../ui/ProductCard.jsx';
 import '../../../../styles/css/pages/home.css';
 import {
   listAllHeroBanners,
@@ -31,7 +30,6 @@ import {
   deleteCatBanner,
 } from '../../../../services/api/homepageService.js';
 import { api } from '../../../../core/httpClient.js';
-import { listProducts } from '../../../../services/products.js';
 
 // Fetch categories as [{id, name}] objects (not the name-only array from products)
 async function fetchCategoriesWithIds() {
@@ -105,14 +103,14 @@ function ImagePickerField({ label, currentUrl, onUrlChange, uploading, setUpload
         onFiles={handleFiles}
         disabled={uploading}
         compact
-        label={uploading ? 'Mengunggah…' : (preview ? 'Ganti gambar' : undefined)}
-        hint="JPG, PNG, WEBP · Maks. 10 MB"
+        label={uploading ? 'Mengunggahï¿½' : (preview ? 'Ganti gambar' : undefined)}
+        hint="JPG, PNG, WEBP ï¿½ Maks. 10 MB"
       />
     </div>
   );
 }
 
-// -- A. Hero Banners Tab (carousel — up to 8 slides) --------------------------
+// -- A. Hero Banners Tab (carousel ï¿½ up to 8 slides) --------------------------
 
 function HeroBannerModal({ banner, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -241,7 +239,7 @@ function HeroBannerModal({ banner, onClose, onSaved }) {
             {error && <div className="adm-form-alert" role="alert">{error}</div>}
             <div className="adm-form-actions">
               <button className="adm-btn adm-btn--primary" type="submit" disabled={saving || uploading}>
-                {saving ? 'Menyimpan…' : (banner ? 'Simpan Perubahan' : 'Tambah Banner')}
+                {saving ? 'Menyimpanï¿½' : (banner ? 'Simpan Perubahan' : 'Tambah Banner')}
               </button>
               <button className="adm-btn" type="button" onClick={onClose} disabled={saving}>Batal</button>
             </div>
@@ -296,7 +294,7 @@ function HeroTab() {
           <h2 className="adm-section-title">
             Banner Halaman Utama
             <span style={{ fontSize: 13, fontWeight: 400, color: 'var(--gray-500)', marginLeft: 8 }}>
-              (carousel · maks. 8 slide)
+              (carousel ï¿½ maks. 8 slide)
             </span>
           </h2>
           <div className="adm-toolbar-right">
@@ -309,7 +307,7 @@ function HeroTab() {
         </div>
 
         {loading ? (
-          <p style={{ padding: 16, color: 'var(--gray-500)' }}>Memuat…</p>
+          <p style={{ padding: 16, color: 'var(--gray-500)' }}>Memuatï¿½</p>
         ) : banners.length === 0 ? (
           <p style={{ padding: 16, color: 'var(--gray-500)' }}>
             Belum ada banner. Tambahkan slide pertama untuk carousel Homepage.
@@ -473,7 +471,7 @@ function DesignItemModal({ item, onClose, onSaved }) {
             {error && <div className="adm-form-alert" role="alert">{error}</div>}
             <div className="adm-form-actions">
               <button className="adm-btn adm-btn--primary" type="submit" disabled={saving || uploading}>
-                {saving ? 'Menyimpan…' : (item ? 'Simpan Perubahan' : 'Tambah')}
+                {saving ? 'Menyimpanï¿½' : (item ? 'Simpan Perubahan' : 'Tambah')}
               </button>
               <button className="adm-btn" type="button" onClick={onClose} disabled={saving}>Batal</button>
             </div>
@@ -550,7 +548,7 @@ function DesignShowcaseTab() {
         </div>
 
         {loading ? (
-          <p style={{ padding: 16, color: 'var(--gray-500)' }}>Memuat…</p>
+          <p style={{ padding: 16, color: 'var(--gray-500)' }}>Memuatï¿½</p>
         ) : items.length === 0 ? (
           <p style={{ padding: 16, color: 'var(--gray-500)' }}>Belum ada item design.</p>
         ) : (
@@ -670,7 +668,7 @@ function CatBannerModal({ banner, categories, onClose, onSaved }) {
               <label className="adm-label" htmlFor="cb-cat">Kategori</label>
               <select className="adm-input" id="cb-cat" name="categoryId"
                 value={form.categoryId} onChange={handleChange}>
-                <option value="">— Produk (tanpa kategori) —</option>
+                <option value="">ï¿½ Produk (tanpa kategori) ï¿½</option>
                 {categories.map((c) => (
                   <option key={c.id || c} value={c.id || c}>{c.name || c}</option>
                 ))}
@@ -715,7 +713,7 @@ function CatBannerModal({ banner, categories, onClose, onSaved }) {
                 }}>
                   <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#fff',
                     textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>
-                    {form.title || '—'}
+                    {form.title || 'ï¿½'}
                   </p>
                   <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>
                     {form.ctaText}
@@ -726,7 +724,7 @@ function CatBannerModal({ banner, categories, onClose, onSaved }) {
             {error && <div className="adm-form-alert" role="alert">{error}</div>}
             <div className="adm-form-actions">
               <button className="adm-btn adm-btn--primary" type="submit" disabled={saving || uploading}>
-                {saving ? 'Menyimpan…' : 'Simpan'}
+                {saving ? 'Menyimpanï¿½' : 'Simpan'}
               </button>
               <button className="adm-btn" type="button" onClick={onClose} disabled={saving}>Batal</button>
             </div>
@@ -786,7 +784,7 @@ function CatBannersTab() {
         </div>
 
         {loading ? (
-          <p style={{ padding: 16, color: 'var(--gray-500)' }}>Memuat…</p>
+          <p style={{ padding: 16, color: 'var(--gray-500)' }}>Memuatï¿½</p>
         ) : banners.length === 0 ? (
           <p style={{ padding: 16, color: 'var(--gray-500)' }}>
             Belum ada banner kategori. Tambahkan banner untuk setiap section kategori di Homepage.
@@ -812,12 +810,12 @@ function CatBannersTab() {
                         <img src={b.imageUrl} alt="" style={{ width: 60, height: 40,
                           objectFit: 'cover', borderRadius: 4, border: '1px solid var(--border)' }}
                           onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                      ) : <span style={{ color: '#ccc', fontSize: 12 }}>—</span>}
+                      ) : <span style={{ color: '#ccc', fontSize: 12 }}>ï¿½</span>}
                     </td>
                     <td>{b.category_name || b.categoryName || '(Produk)'}</td>
-                    <td>{b.title || '—'}</td>
+                    <td>{b.title || 'ï¿½'}</td>
                     <td style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12 }}>
-                      {b.linkUrl || '—'}
+                      {b.linkUrl || 'ï¿½'}
                     </td>
                     <td style={{ fontSize: 12 }}>{b.ctaText}</td>
                     <td>
@@ -850,314 +848,10 @@ function CatBannersTab() {
 
 // -- Root HomepageSection with tab switching -----------------------------------
 
-// -- E. Full Homepage Preview --------------------------------------------------
-// Uses the exact same CSS classes as home.css + real ProductCard component
-// so the preview looks pixel-identical to what the customer sees.
-
-const PER_SECTION = 8;
-
-function PreviewHeroCarousel({ slides }) {
-  const [current, setCurrent] = useState(0);
-  const [paused, setPaused]   = useState(false);
-  const timerRef = useRef(null);
-  const total = slides.length;
-
-  const goTo = useCallback((idx) => setCurrent((idx + total) % total), [total]);
-
-  useEffect(() => {
-    if (total <= 1 || paused) return;
-    timerRef.current = setInterval(() => setCurrent((p) => (p + 1) % total), 5000);
-    return () => clearInterval(timerRef.current);
-  }, [total, paused]);
-
-  useEffect(() => { setCurrent(0); }, [total]);
-
-  if (total === 0) {
-    return (
-      <section className="home-hero" aria-label="Hero banner">
-        <div className="home-hero-inner">
-          <p className="home-hero-label"></p>
-          <p className="home-hero-sub"></p>
-        </div>
-      </section>
-    );
-  }
-
-  const slide = slides[current];
-  return (
-    <section
-      className="home-hero home-hero--carousel"
-      aria-label="Hero banner"
-      data-has-image={slide.image_path ? 'true' : 'false'}
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-    >
-      <div className="home-hero-slides">
-        {slides.map((s, i) => (
-          <div key={s.id}
-            className={`home-hero-slide${i === current ? ' home-hero-slide--active' : ''}`}
-            style={s.image_path ? { backgroundImage: `url(${resolveImg(s.image_path)})`,
-              backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
-            aria-hidden={i !== current} />
-        ))}
-      </div>
-      <div className="home-hero-content">
-        <div className="home-hero-inner">
-          {slide.title    && <p className="home-hero-label">{slide.title}</p>}
-          {slide.subtitle && <p className="home-hero-sub">{slide.subtitle}</p>}
-        </div>
-      </div>
-      {total > 1 && (
-        <>
-          <button className="home-hero-arrow home-hero-arrow--prev" type="button"
-            aria-label="Slide sebelumnya" onClick={() => goTo(current - 1)}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </button>
-          <button className="home-hero-arrow home-hero-arrow--next" type="button"
-            aria-label="Slide berikutnya" onClick={() => goTo(current + 1)}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </button>
-          <div className="home-hero-dots">
-            {slides.map((s, i) => (
-              <button key={s.id}
-                className={`home-hero-dot${i === current ? ' home-hero-dot--active' : ''}`}
-                type="button" aria-label={`Slide ${i + 1}`} onClick={() => goTo(i)} />
-            ))}
-          </div>
-        </>
-      )}
-    </section>
-  );
-}
-
-function PreviewDesignShowcase({ items }) {
-  const visible = items.slice(0, 4);
-  return (
-    <div className="home-cat-grid">
-      {(visible.length > 0 ? visible : Array(4).fill(null)).map((item, i) => (
-        <div key={item?.id ?? i} className={`home-cat-item ${item ? 'home-cat-item--showcase' : 'home-cat-placeholder'}`}>
-          {item?.image_path && (
-            <img src={resolveImg(item.image_path)} alt={item?.title || ''} className="home-cat-item-img"
-              onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-          )}
-          {item?.title && <span className="home-cat-item-label">{item.title}</span>}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function PreviewProductSection({ products, category, reverse, bannerData }) {
-  const name    = bannerData?.title || category?.name || 'Produk';
-  const ctaText = bannerData?.cta_text || 'Lihat Semua ?';
-  const bgImage = bannerData?.image_path ? `url(${resolveImg(bannerData.image_path)})` : undefined;
-
-  const bannerEl = (
-    <div className="home-section-banner-wrap">
-      <div className="home-section-banner">
-        <div className="home-section-banner-bg"
-          style={bgImage ? { backgroundImage: bgImage, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined} />
-        <div className="home-section-banner-label">
-          <span className="home-section-banner-name">{name}</span>
-          <span className="home-section-banner-cta">{ctaText}</span>
-        </div>
-      </div>
-    </div>
-  );
-
-  const gridEl = (
-    <div className="home-section-grid" data-cols="4">
-      {products.map((p) => <ProductCard key={p.id} product={p} />)}
-    </div>
-  );
-
-  return (
-    <section className={`home-product-section${reverse ? ' home-product-section--reverse' : ''}`}
-      aria-label={category?.name ?? 'Produk'}>
-      {reverse ? <>{gridEl}{bannerEl}</> : <>{bannerEl}{gridEl}</>}
-    </section>
-  );
-}
-
-function HomepageFullPreview() {
-  const [heroBanners, setHeroBanners] = useState([]);
-  const [designItems, setDesignItems] = useState([]);
-  const [catBanners, setCatBanners]   = useState({});
-  const [products, setProducts]       = useState([]);
-  const [categories, setCategories]   = useState([]);
-  const [loading, setLoading]         = useState(true);
-
-  useEffect(() => {
-    async function load() {
-      setLoading(true);
-      try {
-        const [bannersData, designData, catBannersData, prods, catsRes] = await Promise.all([
-          listAllHeroBanners().catch(() => []),
-          listAllDesignItems().catch(() => []),
-          listCatBanners().catch(() => []),
-          // listProducts() uses normalizeProduct() which calls resolveApiUrl on image paths
-          listProducts().catch(() => []),
-          api.get('/api/categories').catch(() => ({ data: [] })),
-        ]);
-
-        setHeroBanners(Array.isArray(bannersData) ? bannersData.filter((b) => b.is_active) : []);
-        setDesignItems(Array.isArray(designData)  ? designData.filter((d) => d.is_active).slice(0, 4) : []);
-
-        const catBannerMap = {};
-        (Array.isArray(catBannersData) ? catBannersData : []).forEach((b) => {
-          const key = b.category_id ?? b.categoryId ?? '__uncategorised__';
-          catBannerMap[String(key)] = b;
-        });
-        setCatBanners(catBannerMap);
-
-        // prods already has resolved image URLs from normalizeProduct()
-        setProducts(Array.isArray(prods) ? prods : []);
-
-        const rawCats = catsRes.data?.data ?? catsRes.data?.items ?? catsRes.data ?? [];
-        setCategories(Array.isArray(rawCats) ? rawCats.map((c) =>
-          typeof c === 'string' ? { id: c, name: c } : c
-        ) : []);
-      } catch (err) {
-        console.error('[HomepageFullPreview] load error:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="adm-card" style={{ padding: 32, textAlign: 'center', color: 'var(--gray-500)' }}>
-        <p>Memuat preview homepage…</p>
-      </div>
-    );
-  }
-
-  // Group products by category — same logic as real HomePage
-  const grouped = categories
-    .map((cat) => ({
-      category: cat,
-      products: products.filter((p) => p.category === cat.name),
-    }))
-    .filter((g) => g.products.length > 0);
-
-  const categorisedIds = new Set(grouped.flatMap((g) => g.products.map((p) => p.id)));
-  const uncategorised  = products.filter((p) => !categorisedIds.has(p.id));
-  if (uncategorised.length) grouped.push({ category: null, products: uncategorised });
-
-  return (
-    <div style={{ border: '2px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
-      {/* Admin label bar */}
-      <div style={{
-        padding: '9px 16px', background: 'var(--brand-brown, #785e40)', color: '#fff',
-        fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8,
-      }}>
-        <span>??  PREVIEW HOMEPAGE — tampilan customer</span>
-        <span style={{ marginLeft: 'auto', fontWeight: 400, fontSize: 12, opacity: 0.75 }}>
-          scroll untuk melihat seluruh halaman
-        </span>
-      </div>
-
-      {/* -- Exact same structure as public HomePage -- */}
-      <main style={{ background: '#fff' }}>
-        {/* Hero carousel */}
-        <div className="container">
-          <PreviewHeroCarousel slides={heroBanners} />
-        </div>
-
-        <div className="container">
-          {/* Design Showcase + Search */}
-          <section className="home-categories" aria-label="Design showcase">
-            <PreviewDesignShowcase items={designItems} />
-            <div className="home-search-row">
-              <span className="home-search-greeting">
-                Hallo, <strong>Mau Pesan apa?</strong>
-              </span>
-              <div className="home-search-input-wrap">
-                <input
-                  className="home-search-input"
-                  type="search"
-                  placeholder="Cari semua produk disini..."
-                  aria-label="Cari produk"
-                  readOnly
-                />
-                <button className="home-search-btn" type="button" aria-label="Cari">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none"
-                    viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
-                    <circle cx="11" cy="11" r="8" />
-                    <path strokeLinecap="round" d="M21 21l-4.35-4.35" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </section>
-
-          {/* Custom Order section */}
-          <section className="home-custom-order card" aria-label="Custom Order">
-            <div className="home-custom-drop">
-              <DropZone
-                accept=".jpg,.jpeg,.png,.pdf,.ai,.cdr,image/jpeg,image/png,application/pdf"
-                onFiles={() => {}}
-                label="Letakkan design kamu di sini"
-                hint="JPG, PNG, PDF, AI, CDR"
-              />
-            </div>
-            <div className="home-custom-info">
-              <h2 className="home-custom-title">Custom Order</h2>
-              <p className="home-custom-desc">
-                Silahkan masukkan design kamu ke dalam kotak yang telah disediakan.
-              </p>
-              <p className="home-custom-desc">
-                Kamu akan diminta untuk mengisi beberapa keterangan mengenai pesanan kamu.
-              </p>
-              <span className="btn home-custom-btn" style={{ cursor: 'default' }}>
-                Buat Pesanan
-              </span>
-            </div>
-          </section>
-
-          {/* Product sections grouped by category */}
-          <div id="home-product-sections">
-            {grouped.length === 0 ? (
-              <p className="muted" style={{ padding: '24px 0' }}>Belum ada produk.</p>
-            ) : (
-              grouped.map((group, idx) => {
-                const chunks = [];
-                for (let i = 0; i < group.products.length; i += PER_SECTION) {
-                  chunks.push(group.products.slice(i, i + PER_SECTION));
-                }
-                const bannerKey  = group.category?.id ? String(group.category.id) : '__uncategorised__';
-                const bannerData = catBanners[bannerKey] || null;
-                return chunks.map((chunk, chunkIdx) => (
-                  <PreviewProductSection
-                    key={`${group.category?.id ?? 'uncategorised'}-${chunkIdx}`}
-                    products={chunk}
-                    category={group.category}
-                    reverse={idx % 2 !== 0}
-                    bannerData={bannerData}
-                  />
-                ));
-              })
-            )}
-          </div>
-        </div>
-      </main>
-    </div>
-  );
-}
-
 const TABS = [
   { id: 'hero',        label: 'Banner Halaman Utama' },
   { id: 'design',      label: 'Showcase Design' },
   { id: 'banners',     label: 'Banner Kategori' },
-  { id: 'fullpreview', label: '??  Pratinjau Homepage' },
 ];
 
 export default function HomepageSection() {
@@ -1194,7 +888,6 @@ export default function HomepageSection() {
       {activeTab === 'hero'        && <HeroTab />}
       {activeTab === 'design'      && <DesignShowcaseTab />}
       {activeTab === 'banners'     && <CatBannersTab />}
-      {activeTab === 'fullpreview' && <HomepageFullPreview />}
     </div>
   );
 }

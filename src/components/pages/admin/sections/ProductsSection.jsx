@@ -743,9 +743,9 @@ export default function ProductsSection() {
   return (
     <>
       <div className="adm-card">
-        <div className="adm-toolbar">
+        <div className="adm-toolbar adm-toolbar--row">
           <h2 className="adm-section-title">Daftar Produk ({result.total})</h2>
-          <div className="adm-toolbar-right">
+          <div className="adm-toolbar-right adm-toolbar-right--row">
             <input
               className="adm-input adm-search"
               type="search"

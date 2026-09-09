@@ -922,6 +922,32 @@
   color: var(--text);
 }
 
+/* Single-row toolbar (e.g. ProductsSection header): keeps search,
+   dropdown and primary button on one line. */
+.adm-toolbar--row {
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
+.adm-toolbar--row .adm-section-title {
+  white-space: nowrap;
+}
+
+.adm-toolbar-right--row {
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.adm-toolbar-right--row .adm-search {
+  width: clamp(140px, 24vw, 240px);
+  flex: 1 1 auto;
+}
+
+.adm-toolbar-right--row .adm-input[type='search'],
+.adm-toolbar-right--row select.adm-input {
+  min-width: 0;
+}
+
 /* ── Buttons ─────────────────────────────────────────────── */
 .adm-btn {
   display: inline-flex;

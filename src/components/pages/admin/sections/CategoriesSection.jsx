@@ -285,17 +285,17 @@ export default function CategoriesSection() {
   return (
     <div className="adm-card">
       {/* Header + Add form in one row */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-        <h2 className="adm-section-title" style={{ margin: 0, alignSelf: 'center', whiteSpace: 'nowrap' }}>
+      <div className="adm-toolbar adm-toolbar--row" style={{ alignItems: 'center' }}>
+        <h2 className="adm-section-title" style={{ margin: 0, whiteSpace: 'nowrap' }}>
           Kategori ({categories.length})
         </h2>
         <form
           className="adm-form"
           onSubmit={handleAdd}
           noValidate
-          style={{ flex: '1 1 360px', display: 'flex', gap: 8, alignItems: 'flex-start', margin: 0 }}
+          style={{ flex: '1 1 360px', display: 'flex', gap: 8, alignItems: 'flex-start', margin: 0, minWidth: 0 }}
         >
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <input
               ref={newInputRef}
               className="adm-input"
