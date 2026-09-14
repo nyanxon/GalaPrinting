@@ -1,22 +1,36 @@
 /**
- * profile.service.js — Customer profile business logic.
+ * profile.service.js — Profile business logic for both customers and staff.
  *
  * Requirements: 2.3, 2.4, 2.5, 3.6, 9.2
  *
- * Operates on users_customer only (customer-facing profile).
+ * Operates on users_customer or users_admin based on the caller's role.
  */
 
 import { query } from '../db/connection.js';
 import { StorageService } from '../utils/storage.js';
 
-const PROFILE_FIELDS = "id, name, email, phone, dob, gender, avatar_url, 'customer' AS role, is_email_verified, created_at, updated_at";
+const CUSTOMER_FIELDS = "id, name, email, phone, dob, gender, avatar_url, 'customer' AS role, is_email_verified, created_at, updated_at";
+const ADMIN_FIELDS    = "id, name, email, phone, dob, gender, avatar_url, role, is_email_verified, created_at, updated_at";
+
+function isAdminRole(role) {
+  return role && role !== 'customer';
+}
+
+function tableFor(role) {
+  return isAdminRole(role) ? 'users_admin' : 'users_customer';
+}
+
+function fieldsFor(role) {
+  return isAdminRole(role) ? ADMIN_FIELDS : CUSTOMER_FIELDS;
+}
 
 /**
- * Fetch a customer's profile by ID.
+ * Fetch a user's profile by ID and role.
  */
-export async function getProfile(userId) {
+export async function getProfile(userId, role) {
+  const table = tableFor(role);
   const [rows] = await query(
-    `SELECT ${PROFILE_FIELDS} FROM users_customer WHERE id = ? AND deleted_at IS NULL`,
+    `SELECT ${fieldsFor(role)} FROM ${table} WHERE id = ? AND deleted_at IS NULL`,
     [userId]
   );
 
@@ -30,9 +44,9 @@ export async function getProfile(userId) {
 }
 
 /**
- * Update a customer's profile fields (name, phone, dob, gender).
+ * Update a user's profile fields (name, phone, dob, gender).
  */
-export async function updateProfile(userId, data) {
+export async function updateProfile(userId, role, data) {
   const { name, phone, dob, gender } = data;
 
   if (name !== undefined) {
@@ -78,20 +92,21 @@ export async function updateProfile(userId, data) {
     setClauses.push('updated_at = NOW()');
     params.push(userId);
 
+    const table = tableFor(role);
     await query(
-      `UPDATE users_customer SET ${setClauses.join(', ')} WHERE id = ? AND deleted_at IS NULL`,
+      `UPDATE ${table} SET ${setClauses.join(', ')} WHERE id = ? AND deleted_at IS NULL`,
       params
     );
   }
 
-  return getProfile(userId);
+  return getProfile(userId, role);
 }
 
 /**
- * Upload a new avatar for a customer.
+ * Upload a new avatar for a user.
  */
-export async function uploadAvatar(userId, file) {
-  const currentProfile = await getProfile(userId);
+export async function uploadAvatar(userId, role, file) {
+  const currentProfile = await getProfile(userId, role);
 
   if (currentProfile.avatar_url) {
     const existingAvatarPath = currentProfile.avatar_url.replace(/^\//, '');
@@ -100,10 +115,11 @@ export async function uploadAvatar(userId, file) {
 
   const saved = await StorageService.save(file, 'avatars');
 
+  const table = tableFor(role);
   await query(
-    'UPDATE users_customer SET avatar_url = ?, updated_at = NOW() WHERE id = ? AND deleted_at IS NULL',
+    `UPDATE ${table} SET avatar_url = ?, updated_at = NOW() WHERE id = ? AND deleted_at IS NULL`,
     [saved.url, userId]
   );
 
-  return getProfile(userId);
+  return getProfile(userId, role);
 }

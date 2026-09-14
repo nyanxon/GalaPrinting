@@ -1,4 +1,4 @@
-// Feature: customer-profile-page, Property 1: non-customer role redirect
+// Feature: customer-profile-page, Property 1: authenticated-role access
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
@@ -30,10 +30,10 @@ vi.mock('../services/addressService.js', () => ({
 
 /**
  * Minimal ProfilePage stub that mirrors the real route guard logic:
- * redirect to /register if not logged in or role !== 'customer'.
+ * redirect to /register only when not logged in.
  */
 function ProfilePageStub({ user }) {
-  if (!user || user.role !== 'customer') {
+  if (!user) {
     return <Navigate to="/register" replace />;
   }
   return <div data-testid="profile-page">Profile Page</div>;
@@ -56,28 +56,28 @@ function renderProfilePage(user) {
 }
 
 /**
- * All non-customer roles in the system.
+ * All roles in the system that may be logged in.
  */
-const NON_CUSTOMER_ROLES = ['admin', 'owner', 'cashier', 'cs', 'operational', 'qc', 'offline'];
+const ALL_ROLES = ['customer', 'admin', 'owner', 'cashier', 'cs', 'operational', 'qc', 'offline'];
 
-describe('Property 1: Non-customer role redirect', () => {
+describe('Property 1: Authenticated-role access to profile', () => {
   /**
-   * For any user role that is not 'customer', rendering ProfilePage
-   * should result in a redirect to /register.
+   * Any authenticated role (customer or any staff role) must be able to
+   * access the profile page — no role-based redirect.
    *
    * Validates: Requirements 1.3
    */
-  it('redirects non-customer roles to /register (100 iterations)', () => {
+  it('allows every authenticated role (customer & all staff) on /profile (100 iterations)', () => {
     fc.assert(
       fc.property(
-        fc.constantFrom(...NON_CUSTOMER_ROLES),
+        fc.constantFrom(...ALL_ROLES),
         (role) => {
           const user = { id: 'u1', name: 'Test User', role };
           const { unmount } = renderProfilePage(user);
 
-          // Should show register page, not profile page
-          expect(screen.getByTestId('register-page')).toBeTruthy();
-          expect(screen.queryByTestId('profile-page')).toBeNull();
+          // Should show profile page, never redirect to register
+          expect(screen.getByTestId('profile-page')).toBeTruthy();
+          expect(screen.queryByTestId('register-page')).toBeNull();
 
           unmount();
         }
@@ -87,7 +87,7 @@ describe('Property 1: Non-customer role redirect', () => {
   });
 
   /**
-   * Unauthenticated users (null) should also be redirected to /register.
+   * Unauthenticated users (null) should be redirected to /register.
    *
    * Validates: Requirements 1.2
    */
@@ -99,11 +99,11 @@ describe('Property 1: Non-customer role redirect', () => {
   });
 
   /**
-   * Customers should NOT be redirected.
+   * Customers should be allowed.
    *
    * Validates: Requirements 1.1
    */
-  it('does not redirect customers', () => {
+  it('allows customers on /profile', () => {
     const user = { id: 'u1', name: 'Customer', role: 'customer' };
     const { unmount } = renderProfilePage(user);
     expect(screen.getByTestId('profile-page')).toBeTruthy();

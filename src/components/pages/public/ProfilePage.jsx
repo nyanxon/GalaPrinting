@@ -1,7 +1,7 @@
 /**
  * ProfilePage.jsx
  *
- * Route-guarded profile page for customers.
+ * Route-guarded profile page for authenticated users (customers & staff).
  * Sidebar navigation: Profile, Pesanan Saya, Daftar Alamat, Notifikasi.
  *
  * Requirements: 1.1, 1.2, 1.3, 2.1, 3.7, 4.2
@@ -35,12 +35,11 @@ function ProfilePage() {
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileError, setProfileError] = useState('');
 
-  const isCustomer = !loading && user?.role === 'customer';
-  const isAdminOrOwner = !loading && (user?.role === 'admin' || user?.role === 'owner');
+  const isLoggedIn = !loading && !!user;
 
   useEffect(() => {
-    // Allow customer, admin, and owner to access profile
-    if (!isCustomer && !isAdminOrOwner) return;
+    // Allow any authenticated user (customer or any staff role) to access profile
+    if (!isLoggedIn) return;
 
     let cancelled = false;
     setProfileLoading(true);
@@ -53,13 +52,13 @@ function ProfilePage() {
       .finally(() => { if (!cancelled) setProfileLoading(false); });
 
     return () => { cancelled = true; };
-  }, [isCustomer, isAdminOrOwner]);
+  }, [isLoggedIn]);
 
   if (loading) {
     return <main><div className="pf-loading">{t('profile.loading')}</div></main>;
   }
 
-  if (!user || (user.role !== 'customer' && user.role !== 'admin' && user.role !== 'owner')) {
+  if (!user) {
     return <Navigate to="/register" replace />;
   }
 

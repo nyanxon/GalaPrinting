@@ -8,7 +8,7 @@ import * as svc from '../services/profile.service.js';
 
 export async function getProfile(req, res, next) {
   try {
-    const profile = await svc.getProfile(req.user.id);
+    const profile = await svc.getProfile(req.user.id, req.user.role);
     return res.json({ ok: true, data: profile });
   } catch (err) {
     next(err);
@@ -17,7 +17,7 @@ export async function getProfile(req, res, next) {
 
 export async function updateProfile(req, res, next) {
   try {
-    const updatedProfile = await svc.updateProfile(req.user.id, req.body);
+    const updatedProfile = await svc.updateProfile(req.user.id, req.user.role, req.body);
     return res.json({ ok: true, data: updatedProfile });
   } catch (err) {
     if (err.status === 422) {
@@ -33,7 +33,7 @@ export async function uploadAvatar(req, res, next) {
   }
 
   try {
-    const updatedProfile = await svc.uploadAvatar(req.user.id, req.file);
+    const updatedProfile = await svc.uploadAvatar(req.user.id, req.user.role, req.file);
     return res.json({ ok: true, data: updatedProfile });
   } catch (err) {
     next(err);
