@@ -470,23 +470,6 @@
   background: rgba(120, 94, 64, 0.06);
 }
 
-.staff-homepage-btn {
-  font-size: 13px;
-  color: #fff;
-  background: var(--brand-brown);
-  border: 1px solid var(--brand-brown);
-  border-radius: var(--radius-pill);
-  padding: 6px 14px;
-  cursor: pointer;
-  transition: background 0.15s, opacity 0.15s;
-  white-space: nowrap;
-}
-
-.staff-homepage-btn:hover {
-  background: var(--brand-brown-dark);
-  border-color: var(--brand-brown-dark);
-}
-
 /* Tombol shared "Dashboard Admin" (logo gear) di header dashboard */
 .admin-dashboard-btn {
   display: inline-flex;

@@ -180,10 +180,6 @@ function AdminLoginPage() {
             {loginSubmitting ? 'Memproses...' : 'LOGIN'}
           </button>
         </form>
-
-        <Link to="/" className="adm-login-back">
-          ← Kembali ke website
-        </Link>
       </div>
     </main>
   );

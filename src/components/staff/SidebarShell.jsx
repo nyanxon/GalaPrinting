@@ -13,7 +13,6 @@
  *   - Role badge (passed as preNavSlot)
  */
 
-import { useNavigate } from 'react-router';
 import StaffAvatarButton from '../staff/StaffAvatarButton.jsx';
 import AdminDashboardButton from '../staff/AdminDashboardButton.jsx';
 import logoImg from '../../assets/logo.png';
@@ -33,10 +32,8 @@ export default function SidebarShell({
   navStyle,
   headerSlot,
   preNavSlot,
-  showHomepage = true,
   children,
 }) {
-  const navigate = useNavigate();
   const hasNoAccess = navItems.length === 0;
 
   return (
@@ -122,16 +119,6 @@ export default function SidebarShell({
               {headerSlot}
               <div className="staff-header-auth">
                 <span className="staff-header-name">{userName}</span>
-                {showHomepage && (
-                  <button
-                    className="staff-homepage-btn"
-                    type="button"
-                    onClick={() => navigate('/')}
-                    title="Buka Homepage"
-                  >
-                    Homepage
-                  </button>
-                )}
                 <button className="staff-logout-btn" type="button" onClick={onLogout}>
                   Keluar
                 </button>
