@@ -81,7 +81,21 @@ function InvoiceDetailModal({ invoiceId, onClose, onUpdated }) {
 
   if (loading) return (
     <div className="inv-modal-overlay">
-      <div className="inv-modal" style={{ textAlign: 'center', padding: '40px' }}>Memuat invoice…</div>
+      <div
+        className="inv-modal"
+        style={{
+          textAlign: 'center',
+          padding: '40px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '10px',
+          color: 'var(--gray-mid)',
+        }}
+      >
+        <span className="adm-spinner" aria-hidden="true" />
+        Sedang memuat invoice…
+      </div>
     </div>
   );
 
@@ -330,16 +344,20 @@ function InvoiceDetailModal({ invoiceId, onClose, onUpdated }) {
 
 export default function InvoiceSection() {
   const [result, setResult]           = useState({ items: [], total: 0, page: 1, limit: PAGE_SIZE, totalPages: 1 });
+  const [loading, setLoading]         = useState(true);
   const [page, setPage]               = useState(1);
   const [filterStatus, setFilterStatus] = useState('');
   const [detailId, setDetailId]       = useState(null);
 
   const fetchInvoices = useCallback(async () => {
+    setLoading(true);
     try {
       const data = await listInvoices({ page, limit: PAGE_SIZE, payment_status: filterStatus });
       setResult(data);
     } catch (err) {
       console.error('Failed to load invoices:', err);
+    } finally {
+      setLoading(false);
     }
   }, [page, filterStatus]);
 
@@ -408,7 +426,16 @@ export default function InvoiceSection() {
             </tr>
           </thead>
           <tbody>
-            {result.items.length === 0 ? (
+            {loading ? (
+              <tr>
+                <td colSpan={9} className="adm-loading">
+                  <span className="adm-loading-bar">
+                    <span className="adm-spinner" aria-hidden="true" />
+                    Sedang memuat data invoice…
+                  </span>
+                </td>
+              </tr>
+            ) : result.items.length === 0 ? (
               <tr>
                 <td colSpan={9} className="adm-empty">Belum ada invoice.</td>
               </tr>

@@ -26,6 +26,9 @@ import { filterNavByPermissions } from '../../../config/permissions.js';
 import { formatCurrency } from '../../../utils/format.js';
 import { track, flush as flushActivity } from '../../../utils/activityTracker.js';
 import { showToast } from '../../../core/toastEmitter.js';
+import { getInvoiceByOrderId, openInvoicePdf } from '../../../services/api/invoiceService.js';
+import ThermalReceiptModal from '../../modals/ThermalReceiptModal.jsx';
+import ThermalSpkModal from '../../modals/ThermalSpkModal.jsx';
 import ChatsSection from '../admin/sections/ChatsSection.jsx';
 import DMSection from '../admin/sections/DMSection.jsx';
 import StaffAvatarButton from '../../staff/StaffAvatarButton.jsx';
@@ -44,6 +47,68 @@ function makeItem() {
 
 /* ── Receipt component ───────────────────────────────────── */
 function Receipt({ order, onNewOrder }) {
+  const [invoice, setInvoice] = useState(null);
+  const [invoiceLoading, setInvoiceLoading] = useState(false);
+  const [thermalOpen, setThermalOpen] = useState(false);
+  const [spkOpen, setSpkOpen] = useState(false);
+
+  async function loadInvoice(silent = false) {
+    if (invoice || invoiceLoading) return;
+    setInvoiceLoading(true);
+    try {
+      const inv = await getInvoiceByOrderId(order.id);
+      if (inv) setInvoice(inv);
+    } catch {
+      // Invoice mungkin belum siap, retry sekali
+      await new Promise((r) => setTimeout(r, 1500));
+      try {
+        const inv = await getInvoiceByOrderId(order.id);
+        if (inv) setInvoice(inv);
+      } catch {
+        if (!silent) showToast('Invoice belum tersedia, coba lagi sebentar.', 'error');
+      }
+    } finally {
+      setInvoiceLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadInvoice(true);
+    return () => {};
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function handleOpenPdf() {
+    await loadInvoice();
+    if (!invoice) {
+      showToast('Invoice belum tersedia.', 'error');
+      return;
+    }
+    try {
+      await openInvoicePdf(invoice.id);
+    } catch {
+      showToast('Gagal membuka PDF invoice.', 'error');
+    }
+  }
+
+  async function handlePrintReceipt() {
+    await loadInvoice();
+    if (!invoice) {
+      showToast('Invoice belum tersedia.', 'error');
+      return;
+    }
+    setThermalOpen(true);
+  }
+
+  async function handlePrintSpk() {
+    await loadInvoice();
+    if (!invoice) {
+      showToast('Invoice belum tersedia.', 'error');
+      return;
+    }
+    setSpkOpen(true);
+  }
+
   return (
     <div className="offline-receipt">
       <div className="offline-receipt-card">
@@ -133,14 +198,40 @@ function Receipt({ order, onNewOrder }) {
             ➕ Buat Pesanan Baru
           </button>
           <button
-            className="adm-btn"
             type="button"
-            onClick={() => window.print()}
+            className="adm-btn adm-btn--secondary"
+            onClick={handleOpenPdf}
+            disabled={invoiceLoading}
           >
-            🖨️ Print
+            📄 Invoice PDF
+          </button>
+          <button
+            type="button"
+            className="adm-btn adm-btn--thermal"
+            onClick={handlePrintReceipt}
+            disabled={invoiceLoading}
+          >
+            🖨️ Print Nota
+          </button>
+          <button
+            type="button"
+            className="adm-btn adm-btn--thermal"
+            onClick={handlePrintSpk}
+            disabled={invoiceLoading}
+            title="Cetak SPK produksi (58mm)"
+          >
+            📋 Cetak SPK
           </button>
         </div>
       </div>
+
+      {thermalOpen && invoice && (
+        <ThermalReceiptModal invoice={invoice} onClose={() => setThermalOpen(false)} />
+      )}
+
+      {spkOpen && invoice && (
+        <ThermalSpkModal invoice={invoice} onClose={() => setSpkOpen(false)} />
+      )}
     </div>
   );
 }

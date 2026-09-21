@@ -31,6 +31,7 @@ function getApprovalForCurrentStatus(order) {
 
 export default function OrdersSection() {
   const [result, setResult] = useState({ items: [], total: 0, page: 1, limit: PAGE_SIZE, totalPages: 1 });
+  const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [filterStatus, setFilterStatus] = useState('');
   const fetchOrdersRef = useRef(null);
@@ -66,6 +67,7 @@ export default function OrdersSection() {
   });
 
   const fetchOrders = useCallback(async () => {
+    setLoading(true);
     try {
       const data = await listOrdersPaginated({ page: currentPage, limit: PAGE_SIZE, status: filterStatus });
       const q = searchQuery.toLowerCase();
@@ -82,6 +84,8 @@ export default function OrdersSection() {
       }
     } catch (err) {
       console.error('Failed to load orders:', err);
+    } finally {
+      setLoading(false);
     }
   }, [currentPage, filterStatus, searchQuery]);
 
@@ -244,7 +248,16 @@ export default function OrdersSection() {
             </tr>
           </thead>
           <tbody>
-            {result.items.length === 0 ? (
+            {loading ? (
+              <tr>
+                <td colSpan={7} className="adm-loading">
+                  <span className="adm-loading-bar">
+                    <span className="adm-spinner" aria-hidden="true" />
+                    Sedang memuat data pesanan…
+                  </span>
+                </td>
+              </tr>
+            ) : result.items.length === 0 ? (
               <tr>
                 <td colSpan={7} className="adm-empty">Belum ada pesanan.</td>
               </tr>

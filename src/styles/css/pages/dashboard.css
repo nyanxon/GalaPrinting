@@ -843,6 +843,15 @@
   color: #6a6a6a;
 }
 
+.staff-activity-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--gray-mid);
+  padding: 12px 0;
+}
+
 @media (max-width: 1150px) {
   /* Collapse the activity sidebar column on narrower screens */
   .staff-body-row:not(.staff-body-row--full) {
@@ -1054,6 +1063,34 @@
   text-align: center;
   color: var(--gray-mid);
   padding: 24px !important;
+}
+
+/* ── Loading row (data buffering) ────────────────────────── */
+.adm-loading {
+  text-align: center;
+  color: var(--gray-mid);
+  padding: 28px 24px !important;
+}
+
+.adm-loading-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.adm-spinner {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border: 3px solid var(--gray-border);
+  border-top-color: var(--brand-brown, #785e40);
+  border-radius: 50%;
+  animation: adm-spin 0.7s linear infinite;
+}
+
+@keyframes adm-spin {
+  to { transform: rotate(360deg); }
 }
 
 .adm-date { color: var(--gray-mid); font-size: 13px; white-space: nowrap; }

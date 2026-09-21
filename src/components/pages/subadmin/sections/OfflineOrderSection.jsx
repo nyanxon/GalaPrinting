@@ -274,7 +274,7 @@ function SuccessCard({ order, onReset }) {
   const [thermalOpen, setThermalOpen] = useState(false);
   const [spkOpen, setSpkOpen] = useState(false);
 
-  async function loadInvoice() {
+  async function loadInvoice(silent = false) {
     if (invoice || invoiceLoading) return;
     setInvoiceLoading(true);
     try {
@@ -287,12 +287,20 @@ function SuccessCard({ order, onReset }) {
         const inv = await getInvoiceByOrderId(order.id);
         if (inv) setInvoice(inv);
       } catch {
-        showToast('Invoice belum tersedia, coba lagi sebentar.', 'error');
+        if (!silent) showToast('Invoice belum tersedia, coba lagi sebentar.', 'error');
       }
     } finally {
       setInvoiceLoading(false);
     }
   }
+
+  // Muat invoice otomatis setelah order dibuat (sama seperti lazy-load di
+  // tabel kasir) supaya tombol cetak langsung siap dengan data invoice.
+  useEffect(() => {
+    loadInvoice(true);
+    return () => {};
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleOpenPdf() {
     await loadInvoice();

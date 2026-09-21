@@ -48,9 +48,12 @@ function ActivitySidebar({ onGoToOrders, onGoToChats }) {
   const socket = useSocket();
   const [recentOrders, setRecentOrders]     = useState([]);
   const [unhandledChats, setUnhandledChats] = useState([]);
+  const [ordersLoading, setOrdersLoading]   = useState(true);
+  const [chatsLoading, setChatsLoading]     = useState(true);
 
   const loadActivity = useCallback(async () => {
     try {
+      setOrdersLoading(true);
       const orders = await listAllOrders();
       const unprocessed = (Array.isArray(orders) ? orders : [])
         .filter((o) => o.status === 'Waiting for Payment')
@@ -58,8 +61,11 @@ function ActivitySidebar({ onGoToOrders, onGoToChats }) {
       setRecentOrders(unprocessed);
     } catch (err) {
       console.error('Failed to load activity orders:', err);
+    } finally {
+      setOrdersLoading(false);
     }
     try {
+      setChatsLoading(true);
       const convs = await listConversations();
       const unhandled = (Array.isArray(convs) ? convs : [])
         .filter((c) => {
@@ -73,6 +79,8 @@ function ActivitySidebar({ onGoToOrders, onGoToChats }) {
       setUnhandledChats(unhandled);
     } catch (err) {
       console.error('Failed to load activity chats:', err);
+    } finally {
+      setChatsLoading(false);
     }
   }, []);
 
@@ -116,7 +124,12 @@ function ActivitySidebar({ onGoToOrders, onGoToChats }) {
           <div className="staff-activity-card-title">NEW ORDER</div>
           <button className="staff-activity-goto" type="button" aria-label="Lihat semua pesanan" onClick={onGoToOrders}>→</button>
         </div>
-        {recentOrders.length === 0 ? (
+        {ordersLoading ? (
+          <p className="staff-activity-loading">
+            <span className="adm-spinner" aria-hidden="true" />
+            Memuat pesanan terbaru…
+          </p>
+        ) : recentOrders.length === 0 ? (
           <p className="staff-activity-empty">Tidak ada pesanan baru.</p>
         ) : (
           recentOrders.map((o) => (
@@ -134,7 +147,12 @@ function ActivitySidebar({ onGoToOrders, onGoToChats }) {
           <div className="staff-activity-card-title">NEW CHAT</div>
           <button className="staff-activity-goto" type="button" aria-label="Lihat semua chat" onClick={onGoToChats}>→</button>
         </div>
-        {unhandledChats.length === 0 ? (
+        {chatsLoading ? (
+          <p className="staff-activity-loading">
+            <span className="adm-spinner" aria-hidden="true" />
+            Memuat chat terbaru…
+          </p>
+        ) : unhandledChats.length === 0 ? (
           <p className="staff-activity-empty">Semua chat sudah ditangani.</p>
         ) : (
           unhandledChats.map((c) => {
