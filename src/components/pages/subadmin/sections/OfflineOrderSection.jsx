@@ -427,7 +427,7 @@ function SuccessCard({ order, onReset }) {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '12px' }}>
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-start', marginTop: '12px' }}>
         <button
           type="button"
           className="adm-btn adm-btn--secondary"
