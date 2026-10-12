@@ -178,11 +178,13 @@ function mapOrder(row) {
     },
     customerPhone: row.customer_phone ?? row.customerPhone ?? "",
     customerEmail: row.customer_email ?? row.customerEmail ?? "",
+    customerType:  row.customer_type  ?? row.customerType  ?? "customer",
     status:        row.status,
     subtotal:      Number(row.subtotal ?? 0),
     cancellationReason: row.cancellation_reason ?? row.cancellationReason ?? null,
     promoCode:          row.promo_code          ?? row.promoCode          ?? null,
     discountAmount:     Number(row.discount_amount ?? row.discountAmount ?? 0),
+    discounts:          row.discounts ?? null,
     adminNote:     row.admin_note    ?? row.adminNote    ?? "",
     shippingCost:  Number(row.shipping_cost  ?? row.shippingCost  ?? 0),
     taxAmount:     Number(row.tax_amount     ?? row.taxAmount     ?? 0),
@@ -259,6 +261,7 @@ function mapOrderItem(item) {
     designFileName: rawPath,
     designFileUrl:  designUrl,
     designDataUrl:  item.designDataUrl   ?? null,
+    discounts:      item.discounts       ?? null,
   };
 }
 
@@ -876,6 +879,24 @@ export function createOfflineOrder({ customer, items, subtotal, adminNote = "", 
       .then((res) => mapOrder(res.data.data));
   }
   return createOfflineOrderLocal({ customer, items, subtotal, adminNote });
+}
+
+/**
+ * Staff (CS/admin): edit pesanan offline/custom yang belum Finished/Cancelled —
+ * untuk memperbaiki salah input (data customer, item, harga, diskon, catatan).
+ * Body sama dengan createOfflineOrder; server menghitung ulang harga & diskon.
+ *
+ * @param {string} orderId
+ * @param {object} payload  { customerName, customerPhone, customerAddress, customerEmail,
+ *                            adminNote, customerType, items, discounts }
+ * @returns {Promise<object>} the updated order
+ */
+export function updateStaffOrder(orderId, payload) {
+  if (USE_BACKEND) {
+    return api.patch(`/api/orders/${orderId}/edit`, payload)
+      .then((res) => mapOrder(res.data.data));
+  }
+  return Promise.reject(new Error("Edit pesanan hanya tersedia saat mode backend aktif."));
 }
 
 /**

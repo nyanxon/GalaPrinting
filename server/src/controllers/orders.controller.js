@@ -177,167 +177,228 @@ export async function createCustomOrder(req, res, next) {
   }
 }
 
-export async function createOfflineOrder(req, res, next) {
-  try {
-    // Accept both flat fields (customerName/Phone/Address) and nested customer object
-    const {
-      items,
-      customer: customerObj,
-      customerName,
-      customerPhone,
-      customerAddress,
-      customerEmail,
-      adminNote,
-      customerType,
-    } = req.body;
+/**
+ * Validasi + resolve payload order buatan staff (offline/custom) dari body
+ * request. Harga item ber-product_id dihitung ulang server-side (client tidak
+ * dipercaya); diskon divalidasi & totalnya dihitung ulang.
+ *
+ * Throw Error dengan `status = 422` untuk input yang tidak valid.
+ *
+ * @param {object} body  req.body
+ * @returns {Promise<{ customer, resolvedItems, resolvedSubtotal, orderDiscounts, totalDiscount, adminNote, customerType }>}
+ */
+async function buildStaffOrderPayload(body) {
+  const {
+    items,
+    customer: customerObj,
+    customerName,
+    customerPhone,
+    customerAddress,
+    customerEmail,
+    adminNote,
+    customerType,
+  } = body;
 
-    if (!Array.isArray(items) || items.length === 0) {
-      return res.status(422).json({ ok: false, message: 'Pesanan harus memiliki minimal 1 item.' });
-    }
+  if (!Array.isArray(items) || items.length === 0) {
+    const err = new Error('Pesanan harus memiliki minimal 1 item.');
+    err.status = 422;
+    throw err;
+  }
 
-    const type = customerType === 'broker' ? 'broker' : 'customer';
+  const type = customerType === 'broker' ? 'broker' : 'customer';
 
-    // ── Server-side price resolution ────────────────────────────────────────
-    // Harga tidak dipercaya dari client. Untuk item yang punya product_id,
-    // harga satuan di-resolve dari tabel products sesuai customer_type.
-    // Hasilnya disimpan sebagai snapshot di order_items.price.
-    const productIds = [...new Set(
-      items.map((i) => i.productId ?? i.product_id ?? null).filter(Boolean)
-    )];
-    const productsById = new Map();
-    if (productIds.length > 0) {
-      const prods = await productSvc.getProductsByIds(productIds);
-      for (const p of prods) productsById.set(p.id, p);
-    }
+  // ── Server-side price resolution ────────────────────────────────────────
+  // Harga tidak dipercaya dari client. Untuk item yang punya product_id,
+  // harga satuan di-resolve dari tabel products sesuai customer_type.
+  // Hasilnya disimpan sebagai snapshot di order_items.price.
+  const productIds = [...new Set(
+    items.map((i) => i.productId ?? i.product_id ?? null).filter(Boolean)
+  )];
+  const productsById = new Map();
+  if (productIds.length > 0) {
+    const prods = await productSvc.getProductsByIds(productIds);
+    for (const p of prods) productsById.set(p.id, p);
+  }
 
-    const resolvedItems = items.map((item) => {
-      const pid = item.productId ?? item.product_id ?? null;
-      const quantity = Math.max(1, parseInt(item.quantity, 10) || 1);
-      const notes = item.notes ?? item.keterangan ?? null;
-      // Diskon per item divalidasi server; angka potongan dihitung ulang
-      // dari harga hasil resolve (client tidak mengirim hasil akhir).
-      const itemDiscounts = parseDiscountList(item.discounts);
+  const resolvedItems = items.map((item) => {
+    const pid = item.productId ?? item.product_id ?? null;
+    const quantity = Math.max(1, parseInt(item.quantity, 10) || 1);
+    const notes = item.notes ?? item.keterangan ?? null;
+    // Diskon per item divalidasi server; angka potongan dihitung ulang
+    // dari harga hasil resolve (client tidak mengirim hasil akhir).
+    const itemDiscounts = parseDiscountList(item.discounts);
 
-      if (pid) {
-        const prod = productsById.get(pid);
-        if (!prod) {
-          const err = new Error(`Produk tidak ditemukan: ${item.name || pid}`);
+    if (pid) {
+      const prod = productsById.get(pid);
+      if (!prod) {
+        const err = new Error(`Produk tidak ditemukan: ${item.name || pid}`);
+        err.status = 422;
+        throw err;
+      }
+
+      // Produk per m²: harga = luas (min. 1 m²) × harga/m², dimensi wajib.
+      if (prod.size_type === 'per_m2') {
+        const lengthCm = item.lengthCm ?? item.length_cm ?? item.panjang ?? null;
+        const widthCm  = item.widthCm  ?? item.width_cm  ?? item.lebar  ?? null;
+        const l = Number(lengthCm);
+        const w = Number(widthCm);
+        if (!(l > 0) || !(w > 0)) {
+          const err = new Error(`Panjang dan lebar wajib diisi untuk produk per m²: ${item.name || prod.name}`);
           err.status = 422;
           throw err;
         }
-
-        // Produk per m²: harga = luas (min. 1 m²) × harga/m², dimensi wajib.
-        if (prod.size_type === 'per_m2') {
-          const lengthCm = item.lengthCm ?? item.length_cm ?? item.panjang ?? null;
-          const widthCm  = item.widthCm  ?? item.width_cm  ?? item.lebar  ?? null;
-          const l = Number(lengthCm);
-          const w = Number(widthCm);
-          if (!(l > 0) || !(w > 0)) {
-            const err = new Error(`Panjang dan lebar wajib diisi untuk produk per m²: ${item.name || prod.name}`);
-            err.status = 422;
-            throw err;
-          }
-          const base = Number(type === 'broker' ? prod.price_broker : prod.price_customer) || 0;
-          // Dimensi yang ditagih: panjang/lebar < 100 cm dibulatkan naik ke 100 cm (1 m), ≥ 100 cm tetap.
-          const billableL = l < 100 ? 100 : l;
-          const billableW = w < 100 ? 100 : w;
-          // Luas yang ditagih dalam desimal: (billableL × billableW) / 10000 m².
-          // 4 desimal hanya untuk membersihkan error float.
-          const totalLuas = Math.round((billableL / 100) * (billableW / 100) * 10000) / 10000;
-          // Modifier atribut flat per panel/satuan — tidak dikalikan luas.
-          const selectedAttrs = parseSelectedAttrs(item.attributes ?? item.selectedAttributes);
-          const attrModifier = productSvc.sumSelectedAttributeModifiers(prod.attributes, selectedAttrs);
-          const linePrice = Math.round(totalLuas * base) + attrModifier;
-          return {
-            productId: pid,
-            name: item.name || prod.name,
-            price: linePrice,
-            quantity,
-            attributes: selectedAttrs.length > 0 ? selectedAttrs : undefined,
-            discounts: itemDiscounts.length > 0 ? itemDiscounts : undefined,
-            notes,
-            lengthCm: l,
-            widthCm: w,
-            designFilePath: item.designFilePath ?? item.design_file_path ?? null,
-          };
-        }
-
-        // Modifier atribut flat per satuan — dihitung dari definisi atribut
-        // produk di server, bukan dari harga yang dikirim client.
+        const base = Number(type === 'broker' ? prod.price_broker : prod.price_customer) || 0;
+        // Dimensi yang ditagih: panjang/lebar < 100 cm dibulatkan naik ke 100 cm (1 m), ≥ 100 cm tetap.
+        const billableL = l < 100 ? 100 : l;
+        const billableW = w < 100 ? 100 : w;
+        // Luas yang ditagih dalam desimal: (billableL × billableW) / 10000 m².
+        // 4 desimal hanya untuk membersihkan error float.
+        const totalLuas = Math.round((billableL / 100) * (billableW / 100) * 10000) / 10000;
+        // Modifier atribut flat per panel/satuan — tidak dikalikan luas.
         const selectedAttrs = parseSelectedAttrs(item.attributes ?? item.selectedAttributes);
         const attrModifier = productSvc.sumSelectedAttributeModifiers(prod.attributes, selectedAttrs);
-        const unitPrice =
-          (Number(type === 'broker' ? prod.price_broker : prod.price_customer) || 0) + attrModifier;
+        const linePrice = Math.round(totalLuas * base) + attrModifier;
         return {
           productId: pid,
           name: item.name || prod.name,
-          price: unitPrice,
+          price: linePrice,
           quantity,
           attributes: selectedAttrs.length > 0 ? selectedAttrs : undefined,
           discounts: itemDiscounts.length > 0 ? itemDiscounts : undefined,
           notes,
+          lengthCm: l,
+          widthCm: w,
           designFilePath: item.designFilePath ?? item.design_file_path ?? null,
         };
       }
 
-      // Item manual tanpa product_id (backward compat) — pakai harga dari form.
+      // Modifier atribut flat per satuan — dihitung dari definisi atribut
+      // produk di server, bukan dari harga yang dikirim client.
+      const selectedAttrs = parseSelectedAttrs(item.attributes ?? item.selectedAttributes);
+      const attrModifier = productSvc.sumSelectedAttributeModifiers(prod.attributes, selectedAttrs);
+      const unitPrice =
+        (Number(type === 'broker' ? prod.price_broker : prod.price_customer) || 0) + attrModifier;
       return {
-        productId: null,
-        name: item.name,
-        price: Number(item.price || 0),
+        productId: pid,
+        name: item.name || prod.name,
+        price: unitPrice,
         quantity,
+        attributes: selectedAttrs.length > 0 ? selectedAttrs : undefined,
         discounts: itemDiscounts.length > 0 ? itemDiscounts : undefined,
         notes,
         designFilePath: item.designFilePath ?? item.design_file_path ?? null,
       };
-    });
+    }
 
-    // Subtotal dihitung ulang dari harga hasil resolve — tidak percaya client.
-    // subtotal = GROSS (sebelum diskon apa pun), sesuai konvensi orders.subtotal.
-    const resolvedSubtotal = resolvedItems.reduce(
-      (sum, i) => sum + Number(i.price || 0) * Number(i.quantity || 1),
-      0
-    );
-
-    // ── Diskon manual (basis GROSS, additive, clamp per scope) ─────────────
-    // - Per item : potongan = min(Σ potongan baris, gross item)
-    // - Subtotal : potongan = min(Σ potongan baris, Σ gross semua item)
-    // Total gabungan ditulis ke orders.discount_amount agar invoice
-    // (subtotal − discount_amount + tax) dan laporan profit tetap benar.
-    const orderDiscounts = parseDiscountList(req.body.discounts);
-    const totalItemDiscount = resolvedItems.reduce((sum, ri) => {
-      if (!ri.discounts) return sum;
-      const gross = Number(ri.price || 0) * Number(ri.quantity || 1);
-      return sum + discountTotalFor(ri.discounts, gross);
-    }, 0);
-    const subtotalDiscount = discountTotalFor(orderDiscounts, resolvedSubtotal);
-    const totalDiscount = totalItemDiscount + subtotalDiscount;
-
-    const customer = {
-      id:      null,
-      name:    customerObj?.name    || customerName    || '',
-      phone:   customerObj?.phone   || customerPhone   || '',
-      address: customerObj?.address || customerAddress || '',
-      email:   customerObj?.email   || customerEmail   || '',
+    // Item manual tanpa product_id (backward compat) — pakai harga dari form.
+    return {
+      productId: null,
+      name: item.name,
+      price: Number(item.price || 0),
+      quantity,
+      discounts: itemDiscounts.length > 0 ? itemDiscounts : undefined,
+      notes,
+      designFilePath: item.designFilePath ?? item.design_file_path ?? null,
     };
+  });
+
+  // Subtotal dihitung ulang dari harga hasil resolve — tidak percaya client.
+  // subtotal = GROSS (sebelum diskon apa pun), sesuai konvensi orders.subtotal.
+  const resolvedSubtotal = resolvedItems.reduce(
+    (sum, i) => sum + Number(i.price || 0) * Number(i.quantity || 1),
+    0
+  );
+
+  // ── Diskon manual (basis GROSS, additive, clamp per scope) ─────────────
+  // - Per item : potongan = min(Σ potongan baris, gross item)
+  // - Subtotal : potongan = min(Σ potongan baris, Σ gross semua item)
+  // Total gabungan ditulis ke orders.discount_amount agar invoice
+  // (subtotal − discount_amount + tax) dan laporan profit tetap benar.
+  const orderDiscounts = parseDiscountList(body.discounts);
+  const totalItemDiscount = resolvedItems.reduce((sum, ri) => {
+    if (!ri.discounts) return sum;
+    const gross = Number(ri.price || 0) * Number(ri.quantity || 1);
+    return sum + discountTotalFor(ri.discounts, gross);
+  }, 0);
+  const subtotalDiscount = discountTotalFor(orderDiscounts, resolvedSubtotal);
+  const totalDiscount = totalItemDiscount + subtotalDiscount;
+
+  const customer = {
+    id:      null,
+    name:    customerObj?.name    || customerName    || '',
+    phone:   customerObj?.phone   || customerPhone   || '',
+    address: customerObj?.address || customerAddress || '',
+    email:   customerObj?.email   || customerEmail   || '',
+  };
+
+  return {
+    customer,
+    resolvedItems,
+    resolvedSubtotal,
+    orderDiscounts,
+    totalDiscount,
+    adminNote: adminNote || '',
+    customerType: type,
+  };
+}
+
+export async function createOfflineOrder(req, res, next) {
+  try {
+    const payload = await buildStaffOrderPayload(req.body);
 
     // Offline orders follow the same 8-step flow as online/custom orders,
     // starting at "Waiting for Design Approval" (CS → Cashier → Operational → QC).
     const order = await svc.createOrder({
-      customer,
-      items: resolvedItems,
-      subtotal: resolvedSubtotal,
+      customer: payload.customer,
+      items: payload.resolvedItems,
+      subtotal: payload.resolvedSubtotal,
       source: 'offline',
       orderType: 'standard',
       promoCode: null,
-      discountAmount: totalDiscount,
-      discounts: orderDiscounts.length > 0 ? orderDiscounts : undefined,
-      adminNote: adminNote || '',
-      customerType: type,
+      discountAmount: payload.totalDiscount,
+      discounts: payload.orderDiscounts.length > 0 ? payload.orderDiscounts : undefined,
+      adminNote: payload.adminNote,
+      customerType: payload.customerType,
       createdByAdminId: req.user.id,
     });
     emitOrderNew(order);
     return res.status(201).json({ ok: true, data: order });
+  } catch (err) {
+    if (err.status === 422) {
+      return res.status(422).json({ ok: false, message: err.message });
+    }
+    next(err);
+  }
+}
+
+/**
+ * Edit pesanan buatan staff (offline/custom) — untuk memperbaiki salah input.
+ * Hanya boleh selama status belum Finished/Cancelled.
+ */
+export async function updateStaffOrder(req, res, next) {
+  try {
+    const existing = await svc.getOrderById(req.params.id);
+    if (!existing) {
+      return res.status(404).json({ ok: false, message: 'Pesanan tidak ditemukan.' });
+    }
+    if (!['offline', 'custom'].includes(existing.source)) {
+      return res.status(422).json({ ok: false, message: 'Hanya pesanan offline/custom yang bisa diedit.' });
+    }
+    if (['Finished', 'Cancelled'].includes(existing.status)) {
+      return res.status(422).json({ ok: false, message: 'Pesanan yang sudah selesai/dibatalkan tidak bisa diedit.' });
+    }
+
+    const payload = await buildStaffOrderPayload(req.body);
+    const order = await svc.updateStaffOrder(req.params.id, {
+      customer: payload.customer,
+      items: payload.resolvedItems,
+      subtotal: payload.resolvedSubtotal,
+      discountAmount: payload.totalDiscount,
+      discounts: payload.orderDiscounts,
+      adminNote: payload.adminNote,
+      customerType: payload.customerType,
+    });
+    return res.json({ ok: true, data: order });
   } catch (err) {
     if (err.status === 422) {
       return res.status(422).json({ ok: false, message: err.message });

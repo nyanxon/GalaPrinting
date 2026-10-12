@@ -11,7 +11,8 @@ import { api } from '../../../../core/httpClient.js';
 import { formatCurrency } from '../../../../utils/format.js';
 import { showToast } from '../../../../core/toastEmitter.js';
 import { getInvoiceByOrderId, sendInvoiceEmail } from '../../../../services/api/invoiceService.js';
-import { searchProducts, parseAttributes } from '../../../../services/products.js';
+import { searchProducts, parseAttributes, getProductById } from '../../../../services/products.js';
+import { updateStaffOrder } from '../../../../services/orders.js';
 import { parseNumber, billedAreaM2 } from '../../../../utils/billing.js';
 import { discountTotalFor, parseDiscountRows } from '../../../../utils/discounts.js';
 import { track } from '../../../../utils/activityTracker.js';
@@ -34,6 +35,7 @@ function makeItem() {
     attrDefs: [],
     selectedAttrs: {},
     designFile: null,
+    designFilePath: null,
     designPreviewUrl: null,
     designUploadError: '',
   };
@@ -48,6 +50,50 @@ function makeDiscountRow() {
     value: '',
     label: '',
   };
+}
+
+/** Map satu order_item (hasil mapOrder) ke bentuk item form. */
+function orderItemToFormItem(it) {
+  const selectedAttrs = {};
+  (it.attributes || []).forEach((a) => {
+    if (a?.name && a?.value) selectedAttrs[a.name] = a.value;
+  });
+  const isPerM2 = it.lengthCm != null && it.widthCm != null;
+  return {
+    id: crypto.randomUUID(),
+    productId: it.productId ?? null,
+    name: it.name || '',
+    priceCustomer: '',
+    priceBroker: '',
+    price: it.price ?? '',
+    quantity: it.quantity ?? 1,
+    notes: it.notes || '',
+    sizeType: isPerM2 ? 'per_m2' : 'fixed',
+    lengthCm: it.lengthCm ?? '',
+    widthCm: it.widthCm ?? '',
+    attrDefs: [],
+    selectedAttrs,
+    designFile: null,
+    designFilePath: it.designFileName || it.designFilePath || null,
+    designPreviewUrl: it.designFileUrl || it.designDataUrl || null,
+    designUploadError: '',
+  };
+}
+
+/** Susun ulang baris diskon (order + per item) dari order yang diedit. */
+function buildDiscountRows(order, formItems) {
+  const rows = [];
+  parseDiscountRows(order.discounts).forEach((d) => {
+    rows.push({ id: crypto.randomUUID(), scope: 'order', type: d.type, value: String(d.value), label: d.label || '' });
+  });
+  (order.items || []).forEach((it, idx) => {
+    const fi = formItems[idx];
+    if (!fi) return;
+    parseDiscountRows(it.discounts).forEach((d) => {
+      rows.push({ id: crypto.randomUUID(), scope: fi.id, type: d.type, value: String(d.value), label: d.label || '' });
+    });
+  });
+  return rows;
 }
 
 function priceForType(item, customerType) {
@@ -417,7 +463,8 @@ function SuccessCard({ order, onReset }) {
   );
 }
 
-export default function OfflineOrderSection() {
+export default function OfflineOrderSection({ editOrder = null, onSaved = null, onCancel = null }) {
+  const isEdit = Boolean(editOrder);
   const [customerName,    setCustomerName]    = useState('');
   const [customerPhone,   setCustomerPhone]   = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
@@ -430,6 +477,44 @@ export default function OfflineOrderSection() {
   const [uploadingFiles,  setUploadingFiles]  = useState(false);
   const [fieldErrors,     setFieldErrors]     = useState({});
   const [createdOrder,    setCreatedOrder]    = useState(null);
+  const [hydrating,       setHydrating]       = useState(isEdit);
+
+  // ── Mode edit: isi form dari order yang dipilih ───────────────────────────
+  useEffect(() => {
+    if (!editOrder) return;
+    let cancelled = false;
+    setHydrating(true);
+    (async () => {
+      const type = editOrder.customerType === 'broker' ? 'broker' : 'customer';
+      const formItems = (editOrder.items || []).map(orderItemToFormItem);
+
+      // Ambil definisi atribut dari katalog agar selector & harga tetap akurat.
+      await Promise.all(formItems.map(async (fi) => {
+        if (!fi.productId) return;
+        try {
+          const prod = await getProductById(fi.productId);
+          if (!prod) return;
+          fi.attrDefs = parseAttributes(prod.attributes);
+          fi.priceCustomer = prod.priceCustomer ?? prod.price ?? '';
+          fi.priceBroker = prod.priceBroker ?? prod.price ?? '';
+          fi.sizeType = prod.sizeType === 'per_m2' ? 'per_m2' : 'fixed';
+          fi.price = computeLinePrice(fi, type);
+        } catch { /* produk mungkin sudah dihapus — pakai snapshot lama */ }
+      }));
+
+      if (cancelled) return;
+      setCustomerName(editOrder.customer?.name || editOrder.customerName || '');
+      setCustomerPhone(editOrder.customer?.phone || editOrder.customerPhone || '');
+      setCustomerAddress(editOrder.customer?.address || '');
+      setCustomerEmail(editOrder.customer?.email || editOrder.customerEmail || '');
+      setCustomerType(type);
+      setAdminNote(editOrder.adminNote || '');
+      setItems(formItems.length > 0 ? formItems : [makeItem()]);
+      setDiscounts(buildDiscountRows(editOrder, formItems));
+      setHydrating(false);
+    })();
+    return () => { cancelled = true; };
+  }, [editOrder]);
 
   // ── Preview hitungan diskon (mirror rumus server: gross, additive, clamp) ──
   const grossList     = items.map((it) => itemLineTotal(it));
@@ -545,7 +630,9 @@ export default function OfflineOrderSection() {
   }
 
   function revokeDesignPreview(item) {
-    if (item.designPreviewUrl) URL.revokeObjectURL(item.designPreviewUrl);
+    if (item.designPreviewUrl && String(item.designPreviewUrl).startsWith('blob:')) {
+      URL.revokeObjectURL(item.designPreviewUrl);
+    }
   }
 
   function handleSelectDesignFile(id, files) {
@@ -570,7 +657,7 @@ export default function OfflineOrderSection() {
       prev.map((it) => {
         if (it.id !== id) return it;
         revokeDesignPreview(it);
-        return { ...it, designFile: null, designPreviewUrl: null, designUploadError: '' };
+        return { ...it, designFile: null, designFilePath: null, designPreviewUrl: null, designUploadError: '' };
       })
     );
   }
@@ -727,7 +814,7 @@ export default function OfflineOrderSection() {
         price:     Number(it.price),
         quantity:  Number(it.quantity) || 1,
         notes:     (it.notes || '').trim() || null,
-        designFilePath: designPathByItem.get(it.id) || null,
+        designFilePath: designPathByItem.get(it.id) || it.designFilePath || null,
         lengthCm:  it.sizeType === 'per_m2' ? (parseNumber(it.lengthCm) || null) : null,
         widthCm:   it.sizeType === 'per_m2' ? (parseNumber(it.widthCm)  || null) : null,
         attributes:
@@ -743,7 +830,7 @@ export default function OfflineOrderSection() {
         })(),
       }));
 
-      const res = await api.post('/api/orders/offline', {
+      const requestBody = {
         customerName:    customerName.trim(),
         customerPhone:   customerPhone.trim(),
         customerAddress: customerAddress.trim(),
@@ -752,7 +839,20 @@ export default function OfflineOrderSection() {
         customerType,
         items:           validItems,
         discounts:       orderLevelRows.length > 0 ? orderLevelRows : undefined,
-      });
+      };
+
+      if (isEdit) {
+        const updated = await updateStaffOrder(editOrder.id, requestBody);
+        track('Edit Order', {
+          targetType: 'order', targetId: editOrder.id,
+          metadata: { order_number: updated?.orderNumber ?? null },
+        });
+        showToast(`Pesanan ${updated?.orderNumber || ''} berhasil diperbarui.`, 'success');
+        if (onSaved) onSaved(updated);
+        return;
+      }
+
+      const res = await api.post('/api/orders/offline', requestBody);
 
       setCreatedOrder(res.data.data);
       track('Buat Order Offline', {
@@ -764,7 +864,8 @@ export default function OfflineOrderSection() {
       });
       showToast(`Order offline ${res.data.data.order_number} berhasil dibuat.`, 'success');
     } catch (err) {
-      const msg = err.response?.data?.message || 'Gagal membuat order offline.';
+      const msg = err.response?.data?.message
+        || (isEdit ? 'Gagal memperbarui pesanan.' : 'Gagal membuat order offline.');
       showToast(msg, 'error');
     } finally {
       setSubmitting(false);
@@ -788,7 +889,7 @@ export default function OfflineOrderSection() {
     setFieldErrors({});
   }
 
-  if (createdOrder) {
+  if (createdOrder && !isEdit) {
     return (
       <div className="adm-card">
         <SuccessCard order={createdOrder} onReset={handleReset} />
@@ -797,11 +898,19 @@ export default function OfflineOrderSection() {
   }
 
   return (
-    <div className="adm-card offline-scrollable">
+    <div className={isEdit ? 'offline-edit-panel' : 'adm-card offline-scrollable'}>
       <div className="adm-toolbar">
-        <h2 className="adm-section-title">🏪 Input Order Offline</h2>
+        <h2 className="adm-section-title">{isEdit ? '✏️ Edit Pesanan' : '🏪 Input Order Offline'}</h2>
+        {isEdit && (
+          <span className="adm-date">
+            {editOrder.orderNumber || editOrder.order_number}
+          </span>
+        )}
       </div>
 
+      {hydrating ? (
+        <div className="offline-edit-loading">Memuat data pesanan…</div>
+      ) : (
       <form className="offline-form" onSubmit={handleSubmit} noValidate>
         {/* ── Data Customer ── */}
         <section className="offline-form-section">
@@ -1280,23 +1389,41 @@ export default function OfflineOrderSection() {
         </section>
 
         <div className="offline-form-actions">
-          <button
-            type="button"
-            className="adm-btn"
-            onClick={handleReset}
-            disabled={submitting || uploadingFiles}
-          >
-            Reset
-          </button>
+          {isEdit ? (
+            <button
+              type="button"
+              className="adm-btn"
+              onClick={() => (onCancel ? onCancel() : handleReset())}
+              disabled={submitting || uploadingFiles}
+            >
+              Batal
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="adm-btn"
+              onClick={handleReset}
+              disabled={submitting || uploadingFiles}
+            >
+              Reset
+            </button>
+          )}
           <button
             type="submit"
             className="adm-btn adm-btn--primary"
             disabled={submitting || uploadingFiles}
           >
-            {uploadingFiles ? 'Mengupload file…' : submitting ? 'Menyimpan…' : '💾 Simpan Order Offline'}
+            {uploadingFiles
+              ? 'Mengupload file…'
+              : submitting
+                ? 'Menyimpan…'
+                : isEdit
+                  ? '💾 Simpan Perubahan'
+                  : '💾 Simpan Order Offline'}
           </button>
         </div>
       </form>
+      )}
     </div>
   );
 }

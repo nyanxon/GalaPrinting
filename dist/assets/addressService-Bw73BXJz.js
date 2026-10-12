@@ -1,1 +1,0 @@
-import{e as a}from"./index-DUYKZdVu.js";async function d(){return(await a.get("/api/addresses")).data.data}async function n(s){return(await a.post("/api/addresses",s)).data.data}async function c(s,e){return(await a.put(`/api/addresses/${s}`,e)).data.data}async function i(s){return(await a.delete(`/api/addresses/${s}`)).data}export{n as c,i as d,d as g,c as u};

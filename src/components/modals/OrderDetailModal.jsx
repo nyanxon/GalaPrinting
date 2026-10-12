@@ -4,6 +4,7 @@ import { formatCurrency } from '../../utils/format.js';
 import { parseDiscountRows, discountTotalFor, describeDiscount } from '../../utils/discounts.js';
 import { api, resolveApiUrl } from '../../core/httpClient.js';
 import DeliveryMethodPanel from '../staff/DeliveryMethodPanel.jsx';
+import EditOrderModal from './EditOrderModal.jsx';
 import { getInvoiceByOrderId, updateInvoicePaymentStatus, openInvoicePdf } from '../../services/api/invoiceService.js';
 import { showToast } from '../../core/toastEmitter.js';
 import { STATUS_CONFIG } from '../../services/orders.js';
@@ -56,6 +57,7 @@ function OrderDetailModal({ isOpen, onClose, order, actorRole, onOrderUpdated })
   const [invoiceNewStatus, setInvoiceNewStatus] = useState('');
   const [invoiceNewMethod, setInvoiceNewMethod] = useState('');
   const [invoiceNewDpAmount, setInvoiceNewDpAmount] = useState('');
+  const [editOpen, setEditOpen] = useState(false);
 
   // Sync when parent passes a different order object
   useEffect(() => {
@@ -121,9 +123,24 @@ function OrderDetailModal({ isOpen, onClose, order, actorRole, onOrderUpdated })
     if (onOrderUpdated) onOrderUpdated(updatedOrder);
   }
 
+  // Edit pesanan (perbaiki salah input) — hanya CS/admin, order offline/custom,
+  // dan belum masuk status akhir (Finished/Cancelled).
+  const canEdit =
+    (actorRole === 'cs' || actorRole === 'admin') &&
+    (o.source === 'offline' || o.source === 'custom') &&
+    o.status !== 'Finished' &&
+    o.status !== 'Cancelled';
+
+  function handleEditSaved(updatedOrder) {
+    setLocalOrder(updatedOrder);
+    if (onOrderUpdated) onOrderUpdated(updatedOrder);
+    setEditOpen(false);
+  }
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
-      <div className="odm-box">
+    <>
+      <Modal isOpen={isOpen && !editOpen} onClose={onClose}>
+        <div className="odm-box">
 
         {/* ── Header ── */}
         <div className="odm-header">
@@ -135,7 +152,18 @@ function OrderDetailModal({ isOpen, onClose, order, actorRole, onOrderUpdated })
             {o.source === 'custom'  && <span className="odm-source-badge odm-source-badge--custom">Custom Order</span>}
             {o.source === 'offline' && <span className="odm-source-badge odm-source-badge--offline">Offline Order</span>}
           </div>
-          <button className="odm-close" type="button" aria-label="Tutup" onClick={onClose}>✕</button>
+          <div className="odm-header-actions">
+            {canEdit && (
+              <button
+                className="adm-btn adm-btn--secondary odm-edit-btn"
+                type="button"
+                onClick={() => setEditOpen(true)}
+              >
+                ✏️ Edit Pesanan
+              </button>
+            )}
+            <button className="odm-close" type="button" aria-label="Tutup" onClick={onClose}>✕</button>
+          </div>
         </div>
 
         {/* ── Scrollable body ── */}
@@ -589,7 +617,15 @@ function OrderDetailModal({ isOpen, onClose, order, actorRole, onOrderUpdated })
         </div>
 
       </div>
-    </Modal>
+      </Modal>
+
+      <EditOrderModal
+        isOpen={editOpen}
+        onClose={() => setEditOpen(false)}
+        order={o}
+        onSaved={handleEditSaved}
+      />
+    </>
   );
 }
 

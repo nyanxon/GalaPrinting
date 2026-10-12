@@ -303,6 +303,8 @@ export default function SubAdminOrdersSection({ extraColumn = null }) {
         isOpen={detailOpen}
         onClose={() => setDetailOpen(false)}
         order={selectedOrder}
+        actorRole={actorRole}
+        onOrderUpdated={() => fetchOrders()}
       />
     </div>
   );

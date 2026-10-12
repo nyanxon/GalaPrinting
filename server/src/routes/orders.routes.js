@@ -36,6 +36,7 @@ router.get('/:id',       authenticate, ctrl.getOrder);
 // Status transitions (staff)
 router.patch('/:id/status',          authenticate, requireRole(...STAFF_ROLES), ctrl.updateOrderStatus);
 router.patch('/:id/note',            authenticate, requireRole('admin', 'cs'), ctrl.updateAdminNote);
+router.patch('/:id/edit',            authenticate, requireRole('cs', 'admin'), ctrl.updateStaffOrder);
 router.patch('/:id/tracking',        authenticate, requireRole('qc', 'admin'), ctrl.setTracking);
 router.patch('/:id/delivery-method', authenticate, requireRole('qc', 'cs', 'admin'), ctrl.setDeliveryMethod);
 router.patch('/:id/pickup',          authenticate, requireRole('qc', 'admin'), ctrl.setPickupInfo);

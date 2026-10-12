@@ -2708,6 +2708,61 @@
   overflow: hidden;
 }
 
+/* ── Header actions (edit + close) ── */
+.odm-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.odm-edit-btn {
+  font-size: 13px;
+  padding: 6px 14px;
+  white-space: nowrap;
+}
+
+/* ── Edit order modal (reuses offline order form) ── */
+.edit-order-box {
+  background: #fff;
+  border-radius: var(--radius-2xl);
+  width: min(760px, 100%);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+}
+
+.offline-edit-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.offline-edit-panel .offline-form {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px 24px 0;
+}
+
+.offline-edit-panel .adm-toolbar {
+  flex-shrink: 0;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--gray-bg);
+}
+
+.offline-edit-loading {
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--gray-500);
+  font-size: 14px;
+}
+
+
 /* ── Header ── */
 .odm-header {
   display: flex;

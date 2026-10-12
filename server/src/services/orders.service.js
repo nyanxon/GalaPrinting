@@ -797,6 +797,86 @@ export async function updateAdminNote(id, note) {
 }
 
 /**
+ * Edit pesanan buatan staff (offline/custom) — perbaiki salah input.
+ * Mengganti seluruh item lama dengan item baru, memperbarui data customer,
+ * subtotal, diskon manual, dan catatan admin dalam satu transaksi.
+ * Nominal invoice terkait ikut disinkronkan agar tidak selisih.
+ *
+ * @param {string} id
+ * @param {object} data  Hasil buildStaffOrderPayload() di controller
+ */
+export async function updateStaffOrder(id, { customer, items, subtotal, discountAmount, discounts, adminNote, customerType }) {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    await conn.execute(
+      `UPDATE orders
+         SET customer_name = ?, customer_type = ?, customer_phone = ?, customer_address = ?,
+             customer_email = ?, subtotal = ?, discount_amount = ?, discounts = ?, admin_note = ?
+       WHERE id = ?`,
+      [
+        customer?.name || null,
+        customerType === 'broker' ? 'broker' : 'customer',
+        customer?.phone || null,
+        customer?.address || null,
+        customer?.email || null,
+        Number(subtotal) || 0,
+        Number(discountAmount) || 0,
+        serializeDiscountList(discounts),
+        adminNote || null,
+        id,
+      ]
+    );
+
+    // Ganti seluruh item lama dengan item baru.
+    await conn.execute('DELETE FROM order_items WHERE order_id = ?', [id]);
+    for (const item of (items || [])) {
+      await conn.execute(
+        `INSERT INTO order_items
+           (id, order_id, product_id, name, price, quantity, attributes, discounts, length_cm, width_cm, notes, design_file_path)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          randomUUID(),
+          id,
+          item.productId ?? item.product_id ?? null,
+          item.name,
+          Number(item.price) || 0,
+          item.quantity || 1,
+          normalizeSelectedAttributes(item.attributes),
+          serializeDiscountList(item.discounts),
+          item.lengthCm ?? item.length_cm ?? null,
+          item.widthCm  ?? item.width_cm  ?? null,
+          item.notes || null,
+          item.designFilePath || null,
+        ]
+      );
+    }
+
+    // Sinkronkan nominal invoice dengan order (jika invoice sudah dibuat).
+    const [invRows] = await conn.execute('SELECT id, tax_amount FROM invoices WHERE order_id = ?', [id]);
+    for (const inv of invRows) {
+      const taxAmount = Number(inv.tax_amount || 0);
+      const newSubtotal = Number(subtotal) || 0;
+      const newDiscount = Number(discountAmount) || 0;
+      await conn.execute(
+        'UPDATE invoices SET subtotal = ?, discount_amount = ?, total = ? WHERE id = ?',
+        [newSubtotal, newDiscount, newSubtotal - newDiscount + taxAmount, inv.id]
+      );
+    }
+
+    await conn.commit();
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
+
+  return getOrderById(id);
+}
+
+/**
  * Set tracking number and courier; auto-advance to "In Delivery" if applicable.
  * Fitur 3: hanya berlaku untuk delivery — kalau pickup, update lokasi & jadwal.
  */
