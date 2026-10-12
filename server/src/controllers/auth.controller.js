@@ -10,8 +10,8 @@
  *   - GET  /me            → shared
  *   - GET  /verify-email  → shared (checks both tables)
  *   - POST /resend-verification → shared
- *   - POST /forgot-password    → customer only
- *   - POST /reset-password     → customer only
+ *   - POST /forgot-password    → shared (dispatches by which table holds the email)
+ *   - POST /reset-password     → shared (dispatches by which table holds the token)
  *
  * Requirements: 4.1, 4.2, 4.6, 4.7, 4.8, 4.9
  */
@@ -52,6 +52,28 @@ async function getUserTypeFromRefreshToken(token) {
 /** Return the auth service that matches a user_type. */
 function svc(userType) {
   return userType === 'admin' ? adminAuth : customerAuth;
+}
+
+/**
+ * Resolve which auth service handles a given email address.
+ * Staff/owner accounts live in users_admin, customers in users_customer.
+ * Returns null when the email is not found in either table (caller keeps
+ * the generic response so account existence is not leaked).
+ */
+async function authServiceForEmail(email) {
+  const [cust] = await query(
+    'SELECT id FROM users_customer WHERE email = ? AND deleted_at IS NULL',
+    [email]
+  );
+  if (cust.length > 0) return customerAuth;
+
+  const [adm] = await query(
+    'SELECT id FROM users_admin WHERE email = ? AND deleted_at IS NULL',
+    [email]
+  );
+  if (adm.length > 0) return adminAuth;
+
+  return null;
 }
 
 // ── Shared cookie helpers ─────────────────────────────────────────────────────
@@ -341,7 +363,7 @@ export async function resendVerification(req, res, next) {
   }
 }
 
-// ── Forgot / Reset Password (customer only for now) ──────────────────────────
+// ── Forgot / Reset Password (customer + admin/staff) ───────────────────────
 
 // POST /api/auth/forgot-password
 export async function forgotPassword(req, res, next) {
@@ -351,7 +373,8 @@ export async function forgotPassword(req, res, next) {
       return res.status(422).json({ ok: false, message: 'Email tidak valid.' });
     }
     const { email } = req.body;
-    const result = await customerAuth.forgotPassword(email);
+    const service = (await authServiceForEmail(email)) ?? customerAuth;
+    const result = await service.forgotPassword(email);
     return res.json(result);
   } catch (err) {
     next(err);
@@ -366,7 +389,11 @@ export async function resetPassword(req, res, next) {
       return res.status(422).json({ ok: false, message: 'Password minimal 6 karakter.' });
     }
     const { token, password } = req.body;
-    const result = await customerAuth.resetPassword(token, password);
+    let result = await customerAuth.resetPassword(token, password);
+    // Token not in users_customer → try users_admin (mirrors verifyEmail flow)
+    if (!result.ok && result.message === 'Link reset password tidak valid atau sudah digunakan.') {
+      result = await adminAuth.resetPassword(token, password);
+    }
     return res.status(result.ok ? 200 : 400).json(result);
   } catch (err) {
     next(err);
