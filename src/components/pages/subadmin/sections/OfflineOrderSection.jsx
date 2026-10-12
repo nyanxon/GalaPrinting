@@ -3,20 +3,18 @@
  *
  * Tidak menggunakan modal — form langsung ditampilkan di halaman.
  * Setelah submit berhasil, menampilkan ringkasan order, tombol reset,
- * tombol PDF invoice, tombol print nota, dan opsional kirim email.
+ * dan opsional kirim email invoice.
  */
 
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../../../../core/httpClient.js';
 import { formatCurrency } from '../../../../utils/format.js';
 import { showToast } from '../../../../core/toastEmitter.js';
-import { getInvoiceByOrderId, openInvoicePdf, sendInvoiceEmail } from '../../../../services/api/invoiceService.js';
+import { getInvoiceByOrderId, sendInvoiceEmail } from '../../../../services/api/invoiceService.js';
 import { searchProducts, parseAttributes } from '../../../../services/products.js';
 import { parseNumber, billedAreaM2 } from '../../../../utils/billing.js';
 import { discountTotalFor, parseDiscountRows } from '../../../../utils/discounts.js';
 import { track } from '../../../../utils/activityTracker.js';
-import ThermalReceiptModal from '../../../modals/ThermalReceiptModal.jsx';
-import ThermalSpkModal from '../../../modals/ThermalSpkModal.jsx';
 import DropZone from '../../../ui/DropZone.jsx';
 import { DESIGN_ACCEPT, DESIGN_MAX_SIZE, DESIGN_HINT } from '../../../../utils/designUpload.js';
 
@@ -271,8 +269,6 @@ function SuccessCard({ order, onReset }) {
   const [invoiceLoading, setInvoiceLoading] = useState(false);
   const [invoiceSent, setInvoiceSent] = useState(false);
   const [emailSending, setEmailSending] = useState(false);
-  const [thermalOpen, setThermalOpen] = useState(false);
-  const [spkOpen, setSpkOpen] = useState(false);
 
   async function loadInvoice(silent = false) {
     if (invoice || invoiceLoading) return;
@@ -294,44 +290,13 @@ function SuccessCard({ order, onReset }) {
     }
   }
 
-  // Muat invoice otomatis setelah order dibuat (sama seperti lazy-load di
-  // tabel kasir) supaya tombol cetak langsung siap dengan data invoice.
+  // Muat invoice otomatis setelah order dibuat supaya tombol kirim email
+  // langsung siap dengan data invoice.
   useEffect(() => {
     loadInvoice(true);
     return () => {};
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  async function handleOpenPdf() {
-    await loadInvoice();
-    if (!invoice) {
-      showToast('Invoice belum tersedia.', 'error');
-      return;
-    }
-    try {
-      await openInvoicePdf(invoice.id);
-    } catch {
-      showToast('Gagal membuka PDF invoice.', 'error');
-    }
-  }
-
-  async function handlePrintReceipt() {
-    await loadInvoice();
-    if (!invoice) {
-      showToast('Invoice belum tersedia.', 'error');
-      return;
-    }
-    setThermalOpen(true);
-  }
-
-  async function handlePrintSpk() {
-    await loadInvoice();
-    if (!invoice) {
-      showToast('Invoice belum tersedia.', 'error');
-      return;
-    }
-    setSpkOpen(true);
-  }
 
   async function handleSendEmail() {
     await loadInvoice();
@@ -427,32 +392,7 @@ function SuccessCard({ order, onReset }) {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-start', marginTop: '12px' }}>
-        <button
-          type="button"
-          className="adm-btn adm-btn--secondary"
-          onClick={handleOpenPdf}
-          disabled={invoiceLoading}
-        >
-          📄 Invoice PDF
-        </button>
-        <button
-          type="button"
-          className="adm-btn adm-btn--thermal"
-          onClick={handlePrintReceipt}
-          disabled={invoiceLoading}
-        >
-          🖨️ Print Nota
-        </button>
-        <button
-          type="button"
-          className="adm-btn adm-btn--thermal"
-          onClick={handlePrintSpk}
-          disabled={invoiceLoading}
-          title="Cetak SPK produksi (58mm)"
-        >
-          📋 Cetak SPK
-        </button>
+      <div className="offline-success-actions">
         {order.customer_email && !invoiceSent && (
           <button
             type="button"
@@ -473,14 +413,6 @@ function SuccessCard({ order, onReset }) {
       >
         ➕ Input Order Baru
       </button>
-
-      {thermalOpen && invoice && (
-        <ThermalReceiptModal invoice={invoice} onClose={() => setThermalOpen(false)} />
-      )}
-
-      {spkOpen && invoice && (
-        <ThermalSpkModal invoice={invoice} onClose={() => setSpkOpen(false)} />
-      )}
     </div>
   );
 }
