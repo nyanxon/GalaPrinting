@@ -4,7 +4,12 @@
  * Controls whether the service layer calls the real backend API or
  * continues using the localStorage-backed mock implementations.
  *
- * Set VITE_USE_BACKEND=true in your .env to enable backend mode.
+ * Backend mode is ON by default for production builds. Set
+ * VITE_USE_BACKEND=false to force mock mode, or VITE_USE_BACKEND=true to
+ * enable backend mode during `vite dev` (where it defaults to mock).
+ *
+ * This default prevents a production build from silently shipping the
+ * localStorage mocks when the env var is forgotten.
  *
  * Requirements: 16.2, 16.3, 16.4, 16.5
  */
@@ -15,7 +20,9 @@ import axios from 'axios';
 // Feature flag — read once at module load time
 // ---------------------------------------------------------------------------
 
-export const USE_BACKEND = import.meta.env.VITE_USE_BACKEND === 'true';
+export const USE_BACKEND = import.meta.env.VITE_USE_BACKEND
+  ? import.meta.env.VITE_USE_BACKEND === 'true'
+  : import.meta.env.PROD;
 export const API_BASE = import.meta.env.VITE_API_URL || '';
 
 export function resolveApiUrl(path) {
