@@ -383,7 +383,7 @@ export default function StaffProfileModal({ isOpen, onClose }) {
                   </button>
                 </div>
                 <div style={{ marginTop: 12, textAlign: 'center' }}>
-                  <Link to="/change-password" className="adm-link" onClick={onClose}>
+                  <Link to="/admin/change-password" className="adm-link" onClick={onClose}>
                     Ubah Password
                   </Link>
                 </div>

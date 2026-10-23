@@ -305,7 +305,7 @@ export async function forgotPassword(email) {
     [hashed, expiresAt, user.id]
   );
 
-  const resetUrl = `${config.email.frontendUrl}/reset-password?token=${raw}`;
+  const resetUrl = `${config.email.frontendUrl}/admin/reset-password?token=${raw}`;
 
   sendPasswordResetEmail({ to: email, name: user.name, resetUrl }).catch((err) => {
     console.error('[adminAuth] Password reset email failed:', err.message);

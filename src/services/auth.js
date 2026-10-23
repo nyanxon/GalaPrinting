@@ -367,6 +367,48 @@ export async function resetPassword(token, password) {
   }
 }
 
+/**
+ * Request a password reset email for staff/admin (users_admin only).
+ * POST /api/auth/staff/forgot-password
+ * @param {string} email
+ * @returns {Promise<{ ok: boolean, message: string }>}
+ */
+export async function staffForgotPassword(email) {
+  if (!USE_BACKEND) {
+    return { ok: true, message: 'Jika email terdaftar sebagai staff, link reset telah dikirim.' };
+  }
+  try {
+    const res = await api.post('/api/auth/staff/forgot-password', { email });
+    return res.data;
+  } catch (err) {
+    return {
+      ok: false,
+      message: err.response?.data?.message || 'Gagal memproses permintaan. Coba lagi nanti.',
+    };
+  }
+}
+
+/**
+ * Reset password using token from URL query param (staff/admin only).
+ * POST /api/auth/staff/reset-password
+ * @param {string} token
+ * @param {string} password
+ * @returns {Promise<{ ok: boolean, message: string }>}
+ */
+export async function staffResetPassword(token, password) {
+  if (!USE_BACKEND) {
+    return { ok: true, message: 'Password berhasil direset (mode lokal).' };
+  }
+  try {
+    const res = await api.post('/api/auth/staff/reset-password', { token, password });
+    return res.data;
+  } catch (err) {
+    return {
+      ok: false,
+      message: err.response?.data?.message || 'Reset password gagal. Link mungkin sudah kedaluwarsa.',
+    };
+  }
+}
 // ---------------------------------------------------------------------------
 // Change Password (authenticated)
 // ---------------------------------------------------------------------------

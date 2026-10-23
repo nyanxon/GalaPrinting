@@ -35,6 +35,9 @@ const ChangePasswordPage   = lazy(() => import('./components/pages/public/Change
 // /admin/owner, etc.
 const AdminDashboardPage       = lazy(() => import('./components/pages/admin/AdminDashboardPage.jsx'));
 const AdminLoginPage           = lazy(() => import('./components/pages/staff/AdminLoginPage.jsx'));
+const StaffForgotPasswordPage  = lazy(() => import('./components/pages/staff/StaffForgotPasswordPage.jsx'));
+const StaffResetPasswordPage   = lazy(() => import('./components/pages/staff/StaffResetPasswordPage.jsx'));
+const StaffChangePasswordPage  = lazy(() => import('./components/pages/staff/StaffChangePasswordPage.jsx'));
 const OwnerDashboardPage       = lazy(() => import('./components/pages/owner/OwnerDashboardPage.jsx'));
 const AdminManagementPage      = lazy(() => import('./components/pages/owner/AdminManagementPage.jsx'));
 const CashierDashboardPage     = lazy(() => import('./components/pages/subadmin/CashierDashboardPage.jsx'));
@@ -146,6 +149,11 @@ function App() {
 
             {/* Staff login — no shell, no guard */}
             <Route path="/admin/login" element={<AdminLoginPage />} />
+
+            {/* Staff password flows — dedicated pages, isolated from customer side */}
+            <Route path="/admin/forgot-password" element={<StaffForgotPasswordPage />} />
+            <Route path="/admin/reset-password"  element={<StaffResetPasswordPage />} />
+            <Route path="/admin/change-password" element={<StaffChangePasswordPage />} />
 
             {/* Staff routes — no public shell, role-guarded */}
             <Route

@@ -130,4 +130,22 @@ router.post(
   ctrl.resetPassword
 );
 
+// Staff-only forgot / reset password — always scoped to users_admin.
+router.post(
+  '/staff/forgot-password',
+  forgotPasswordLimiter,
+  [body('email').isEmail().normalizeEmail().withMessage('Email tidak valid.')],
+  ctrl.staffForgotPassword
+);
+
+router.post(
+  '/staff/reset-password',
+  resetPasswordLimiter,
+  [
+    body('token').notEmpty().withMessage('Token wajib diisi.'),
+    body('password').isLength({ min: 6 }).withMessage('Password minimal 6 karakter.'),
+  ],
+  ctrl.staffResetPassword
+);
+
 export default router;

@@ -73,7 +73,8 @@ function AuthNavigationHandler() {
       navigate(getUserAuthPath(user), { replace: true });
     }
     function handleMustChangePassword() {
-      navigate('/change-password', { replace: true });
+      const isStaff = Boolean(user) && STAFF_ROLES.includes(user.role);
+      navigate(isStaff ? '/admin/change-password' : '/change-password', { replace: true });
     }
     window.addEventListener('gala:session-expired', handleSessionExpired);
     window.addEventListener('gala:must-change-password', handleMustChangePassword);

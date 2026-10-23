@@ -94,7 +94,7 @@ function AdminLoginPage() {
       flushActivity();
       // If the account has must_change_password, force the user to change it first
       if (res.mustChangePassword) {
-        navigate('/change-password', { replace: true });
+        navigate('/admin/change-password', { replace: true });
         return;
       }
       const path = STAFF_ROLE_DASHBOARD_PATH[res.role] || '/register';
@@ -171,7 +171,7 @@ function AdminLoginPage() {
               />
               <span>Ingat saya</span>
             </label>
-            <Link to="/forgot-password" className="adm-login-link">
+            <Link to="/admin/forgot-password" className="adm-login-link">
               Lupa password?
             </Link>
           </div>

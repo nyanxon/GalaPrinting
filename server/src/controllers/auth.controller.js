@@ -12,6 +12,8 @@
  *   - POST /resend-verification → shared
  *   - POST /forgot-password    → shared (dispatches by which table holds the email)
  *   - POST /reset-password     → shared (dispatches by which table holds the token)
+ *   - POST /staff/forgot-password → adminAuth only (users_admin)
+ *   - POST /staff/reset-password  → adminAuth only (users_admin)
  *
  * Requirements: 4.1, 4.2, 4.6, 4.7, 4.8, 4.9
  */
@@ -394,6 +396,42 @@ export async function resetPassword(req, res, next) {
     if (!result.ok && result.message === 'Link reset password tidak valid atau sudah digunakan.') {
       result = await adminAuth.resetPassword(token, password);
     }
+    return res.status(result.ok ? 200 : 400).json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ── Staff-only Forgot / Reset Password (always users_admin) ─────────────────
+// The shared /forgot-password and /reset-password endpoints dispatch by which
+// table holds the email/token. These explicit staff variants are used by the
+// dedicated staff UI (/admin/forgot-password, /admin/reset-password) so a staff
+// address is ALWAYS looked up in users_admin — never users_customer.
+
+// POST /api/auth/staff/forgot-password
+export async function staffForgotPassword(req, res, next) {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json({ ok: false, message: 'Email tidak valid.' });
+    }
+    const { email } = req.body;
+    const result = await adminAuth.forgotPassword(email);
+    return res.json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// POST /api/auth/staff/reset-password
+export async function staffResetPassword(req, res, next) {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json({ ok: false, message: 'Password minimal 6 karakter.' });
+    }
+    const { token, password } = req.body;
+    const result = await adminAuth.resetPassword(token, password);
     return res.status(result.ok ? 200 : 400).json(result);
   } catch (err) {
     next(err);
