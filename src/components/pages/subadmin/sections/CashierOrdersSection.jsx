@@ -13,7 +13,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { listAllOrders, getAllowedNextStatuses, STATUS_CONFIG, attachPaymentProof, getOrderById, updateOrderStatus } from '../../../../services/orders.js';
+import { listAllOrders, getAllowedNextStatuses, STATUS_CONFIG, attachPaymentProof, getOrderById, updateOrderStatus, deleteOrder } from '../../../../services/orders.js';
 import { formatCurrency } from '../../../../utils/format.js';
 import { resolveApiUrl } from '../../../../core/httpClient.js';
 import { getInvoiceByOrderId, openInvoicePdf } from '../../../../services/api/invoiceService.js';
@@ -24,6 +24,7 @@ import ThermalReceiptModal from '../../../modals/ThermalReceiptModal.jsx';
 import ThermalSpkModal from '../../../modals/ThermalSpkModal.jsx';
 import CashierPaymentModal from '../../../modals/CashierPaymentModal.jsx';
 import DropZone from '../../../ui/DropZone.jsx';
+import ConfirmDialog from '../../../ui/ConfirmDialog.jsx';
 import useOrderList from '../../../../hooks/useOrderList.js';
 
 const CASHIER_STAGES = ['Waiting for Payment', 'Payment Accepted'];
@@ -139,6 +140,10 @@ export default function CashierOrdersSection() {
 
   // Set paymentModal[orderId] true berarti advance ke Payment Accepted sedang berjalan.
   const [paymentAdvancing, setPaymentAdvancing] = useState(false);
+
+  // Konfirmasi hapus order (khusus Cashier, hanya saat Waiting for Payment).
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const handleProofUpload = useCallback(async (orderId, files) => {
     const file = files?.[0];
@@ -289,6 +294,31 @@ export default function CashierOrdersSection() {
       fetchOrdersRef.current?.();
     }
   }, [paymentModal, setInvoiceMap, pendingAutoPrintRef, actorRole]);
+
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!deleteTarget || deleting) return;
+    const target = deleteTarget;
+    setDeleting(true);
+    try {
+      const res = await deleteOrder(target.id);
+      if (res?.ok === false) {
+        showToast(res.message || 'Gagal menghapus pesanan.', 'error');
+        return;
+      }
+      track('Hapus Order', {
+        targetType: 'order',
+        targetId: target.id,
+        metadata: { status: target.status, role: actorRole },
+      });
+      showToast('Pesanan berhasil dihapus.', 'success');
+      setDeleteTarget(null);
+      fetchOrdersRef.current?.();
+    } catch (err) {
+      showToast(err?.response?.data?.message || err.message || 'Gagal menghapus pesanan.', 'error');
+    } finally {
+      setDeleting(false);
+    }
+  }, [deleteTarget, deleting, actorRole]);
 
   const displayOrders = stateFilter === 'all'
     ? orders
@@ -475,6 +505,18 @@ export default function CashierOrdersSection() {
                           🔍 Detail
                         </button>
 
+                        {actorRole === 'cashier' && order.status === 'Waiting for Payment' && (
+                          <button
+                            className="adm-btn adm-btn--delete"
+                            type="button"
+                            title="Hapus pesanan (mis. bukti pembayaran palsu)"
+                            style={{ marginTop: '4px' }}
+                            onClick={() => setDeleteTarget(order)}
+                          >
+                            Hapus
+                          </button>
+                        )}
+
                         {invoiceMap[order.id] !== undefined && (
                           <div style={{ marginTop: '4px' }}>
                             {invoiceMap[order.id] === 'loading' ? (
@@ -632,6 +674,19 @@ export default function CashierOrdersSection() {
           onConfirm={handlePaymentConfirm}
         />
       )}
+
+      <ConfirmDialog
+        isOpen={Boolean(deleteTarget)}
+        onClose={() => { if (!deleting) setDeleteTarget(null); }}
+        onConfirm={handleDeleteConfirm}
+        title="Hapus Pesanan"
+        message={
+          deleteTarget
+            ? `Pesanan ${deleteTarget.orderNumber} akan dihapus secara permanen. Gunakan Hapus jika pembayaran terbukti palsu. Tindakan ini tidak bisa dibatalkan.`
+            : ''
+        }
+        confirmLabel={deleting ? 'Menghapus...' : 'Ya, Hapus'}
+      />
     </div>
   );
 }

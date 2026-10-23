@@ -567,9 +567,12 @@ export async function uploadPaymentProof(req, res, next) {
 
 export async function deleteOrder(req, res, next) {
   try {
-    const order = await svc.deleteOrder(req.params.id);
+    const order = await svc.deleteOrder(req.params.id, req.user);
     return res.json({ ok: true, data: order });
   } catch (err) {
+    if (err.status === 400 || err.status === 403 || err.status === 404) {
+      return res.status(err.status).json({ ok: false, message: err.message });
+    }
     next(err);
   }
 }

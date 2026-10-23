@@ -969,41 +969,88 @@ export async function attachDesignFile(itemId, filePath) {
 // ── Auto-invoice helper ────────────────────────────────────────────────────────
 
 /**
- * Delete a custom order and its related data.
- * Only allowed for CS/admin on custom orders that haven't been paid yet.
+ * Tentukan apakah seorang aktor boleh menghapus order ini.
+ *
+ * Aturan:
+ *   - admin (Super Admin): boleh menghapus order dari status/source apa pun.
+ *   - cashier            : hanya boleh saat order berstatus 'Waiting for Payment'
+ *                          (mis. bukti pembayaran palsu).
+ *   - cs                 : aturan lama — hanya custom order yang belum diproses.
+ *
+ * @param {object} order
+ * @param {string} role
+ * @returns {{ allowed: boolean, status?: number, message?: string }}
+ */
+export function getOrderDeletePermission(order, role) {
+  if (role === 'admin') return { allowed: true };
+
+  if (role === 'cashier') {
+    if (order.status === 'Waiting for Payment') return { allowed: true };
+    return {
+      allowed: false,
+      status: 403,
+      message: 'Cashier hanya bisa menghapus pesanan saat status Waiting for Payment.',
+    };
+  }
+
+  if (role === 'cs') {
+    if (order.order_type !== 'custom') {
+      return { allowed: false, status: 400, message: 'Hanya pesanan custom yang bisa dihapus.' };
+    }
+    const blockedStatuses = ['Payment Accepted', 'Waiting for Design Approval', 'On Progress', 'Ready to Ship', 'Shipped', 'Completed'];
+    if (blockedStatuses.includes(order.status)) {
+      return { allowed: false, status: 400, message: 'Pesanan yang sudah diproses tidak bisa dihapus.' };
+    }
+    return { allowed: true };
+  }
+
+  return { allowed: false, status: 403, message: 'Anda tidak memiliki izin untuk menghapus pesanan.' };
+}
+
+/**
+ * Delete an order and its related data.
+ *
+ * Role rules are enforced by getOrderDeletePermission().
+ *
  * @param {string} id  Order UUID
+ * @param {{ id?: string, role?: string, name?: string }} [actor]
  * @returns {object} The deleted order row
  */
-export async function deleteOrder(id) {
+export async function deleteOrder(id, actor = {}) {
   const [[order]] = await query('SELECT * FROM orders WHERE id = ?', [id]);
   if (!order) {
     const err = new Error('Pesanan tidak ditemukan.');
     err.status = 404;
     throw err;
   }
-  if (order.order_type !== 'custom') {
-    const err = new Error('Hanya pesanan custom yang bisa dihapus.');
-    err.status = 400;
-    throw err;
-  }
-  const paidStatuses = ['Payment Accepted', 'Waiting for Design Approval', 'On Progress', 'Ready to Ship', 'Shipped', 'Completed'];
-  if (paidStatuses.includes(order.status)) {
-    const err = new Error('Pesanan yang sudah diproses tidak bisa dihapus.');
-    err.status = 400;
+
+  const permission = getOrderDeletePermission(order, actor.role);
+  if (!permission.allowed) {
+    const err = new Error(permission.message);
+    err.status = permission.status || 403;
     throw err;
   }
 
   const conn = await pool.getConnection();
+  let filesToDelete = [];
   try {
     await conn.beginTransaction();
-    // Delete related records in dependency order
-    const [invRows] = await conn.execute('SELECT id FROM invoices WHERE order_id = ?', [id]);
-    for (const inv of invRows) {
-      await conn.execute('DELETE FROM invoice_items WHERE invoice_id = ?', [inv.id]);
+
+    // Kumpulkan file upload terkait supaya tidak jadi orphan setelah order dihapus.
+    if (order.payment_proof_path) filesToDelete.push(order.payment_proof_path);
+    const [itemRows] = await conn.execute(
+      'SELECT design_file_path FROM order_items WHERE order_id = ? AND design_file_path IS NOT NULL',
+      [id]
+    );
+    for (const item of itemRows) {
+      if (item.design_file_path) filesToDelete.push(item.design_file_path);
     }
+
+    // Delete related records in dependency order
     await conn.execute('DELETE FROM invoices WHERE order_id = ?', [id]);
     await conn.execute('DELETE FROM order_items WHERE order_id = ?', [id]);
     await conn.execute('DELETE FROM order_history WHERE order_id = ?', [id]);
+    await conn.execute('DELETE FROM order_approvals WHERE order_id = ?', [id]);
     await conn.execute('DELETE FROM orders WHERE id = ?', [id]);
     await conn.commit();
   } catch (err) {
@@ -1012,6 +1059,9 @@ export async function deleteOrder(id) {
   } finally {
     conn.release();
   }
+
+  // File hanya dihapus setelah transaksi DB berhasil.
+  await Promise.all(filesToDelete.map((p) => StorageService.delete(p))).catch(() => {});
   return order;
 }
 

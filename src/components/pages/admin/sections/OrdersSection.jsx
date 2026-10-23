@@ -11,6 +11,7 @@ import {
   getAllowedNextStatuses,
   STATUS_CONFIG,
   ORDER_STATUSES,
+  deleteOrder,
 } from '../../../../services/orders.js';
 import { formatCurrency } from '../../../../utils/format.js';
 import { track } from '../../../../utils/activityTracker.js';
@@ -20,6 +21,7 @@ import OrderDetailModal from '../../../modals/OrderDetailModal.jsx';
 import ThermalReceiptModal from '../../../modals/ThermalReceiptModal.jsx';
 import CashierPaymentModal from '../../../modals/CashierPaymentModal.jsx';
 import PaginationBar from '../../../ui/PaginationBar.jsx';
+import ConfirmDialog from '../../../ui/ConfirmDialog.jsx';
 import useOrderList from '../../../../hooks/useOrderList.js';
 
 const PAGE_SIZE = 10;
@@ -34,6 +36,8 @@ export default function OrdersSection() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [filterStatus, setFilterStatus] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const fetchOrdersRef = useRef(null);
 
   // Modal konfirmasi pembayaran saat transisi WfP → Payment Accepted (gate wajib backend).
@@ -191,6 +195,31 @@ export default function OrdersSection() {
     } finally {
       setPaymentAdvancing(false);
       fetchOrders();
+    }
+  }
+
+  async function handleDeleteConfirm() {
+    if (!deleteTarget || deleting) return;
+    const target = deleteTarget;
+    setDeleting(true);
+    try {
+      const res = await deleteOrder(target.id);
+      if (res?.ok === false) {
+        showToast(res.message || 'Gagal menghapus pesanan.', 'error');
+        return;
+      }
+      track('Hapus Order', {
+        targetType: 'order',
+        targetId: target.id,
+        metadata: { status: target.status, role: actorRole },
+      });
+      showToast('Pesanan berhasil dihapus.', 'success');
+      setDeleteTarget(null);
+      fetchOrders();
+    } catch (err) {
+      showToast(err?.response?.data?.message || err.message || 'Gagal menghapus pesanan.', 'error');
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -372,6 +401,18 @@ export default function OrdersSection() {
                           🔍 Detail
                         </button>
 
+                        {actorRole === 'admin' && (
+                          <button
+                            className="adm-btn adm-btn--delete"
+                            type="button"
+                            title="Hapus pesanan secara permanen"
+                            style={{ marginTop: '4px' }}
+                            onClick={() => setDeleteTarget(order)}
+                          >
+                            Hapus
+                          </button>
+                        )}
+
                         {order.status === 'Payment Accepted' && invoiceMap[order.id] && invoiceMap[order.id] !== 'loading' && invoiceMap[order.id] !== null && (
                           <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                             <button
@@ -501,6 +542,19 @@ export default function OrdersSection() {
           onConfirm={handlePaymentConfirm}
         />
       )}
+
+      <ConfirmDialog
+        isOpen={Boolean(deleteTarget)}
+        onClose={() => { if (!deleting) setDeleteTarget(null); }}
+        onConfirm={handleDeleteConfirm}
+        title="Hapus Pesanan"
+        message={
+          deleteTarget
+            ? `Pesanan ${deleteTarget.orderNumber} akan dihapus secara permanen. Tindakan ini tidak bisa dibatalkan.`
+            : ''
+        }
+        confirmLabel={deleting ? 'Menghapus...' : 'Ya, Hapus'}
+      />
     </div>
   );
 }

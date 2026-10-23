@@ -408,7 +408,7 @@ export function createCustomOrder({ customerId, customerName, customerPhone, cus
 }
 
 /**
- * Delete a custom order by ID (CS/admin only).
+ * Delete an order by ID (admin/cashier/cs — rules enforced by backend).
  * @param {string} orderId
  */
 export function deleteOrder(orderId) {
