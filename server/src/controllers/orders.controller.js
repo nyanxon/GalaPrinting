@@ -4,13 +4,43 @@
  * Requirements: 7.1–7.11
  */
 
+import { unlink } from 'fs/promises';
 import * as svc from '../services/orders.service.js';
 import * as productSvc from '../services/products.service.js';
 import { parseDiscountList, discountTotalFor } from '../utils/discounts.js';
 import { StorageService } from '../utils/storage.js';
 import { getIO } from '../socket/index.js';
+import { assertCanAccessOrder, OrderAccessError } from '../utils/orderAccess.js';
+import {
+  assertCustomerUploadAllowed,
+  isStaffRole,
+  UploadAccessError,
+} from '../utils/uploadAccess.js';
+import { isValidOrderStatus } from '../config/orderStatuses.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+async function cleanupTempFile(file) {
+  if (!file?.path) return;
+  await unlink(file.path).catch(() => {});
+}
+
+/**
+ * FASE 2D D5 — customer upload guard.
+ * Runs after the ownership check and before StorageService.save().
+ * Staff are exempt; customers need the order status (and, for payment proofs,
+ * the invoice payment state) to permit the upload.
+ */
+async function assertUploadAllowed(user, order, kind) {
+  if (isStaffRole(user)) return;
+
+  let invoice = null;
+  if (kind === 'payment_proof') {
+    invoice = await svc.getInvoicePaymentState(order.id);
+  }
+
+  assertCustomerUploadAllowed(user, order, invoice, kind);
+}
 
 /**
  * Normalisasi defensif pilihan atribut dari client untuk order offline.
@@ -426,18 +456,65 @@ export async function listMyOrders(req, res, next) {
   }
 }
 
+const MIN_PHONE_DIGITS = 8;
+const PHONE_SUFFIX_LENGTH = 9;
+
+function phoneDigits(value) {
+  return String(value ?? '').replace(/\D/g, '');
+}
+
+function normalizePhone(value) {
+  const digits = phoneDigits(value);
+  if (!digits) return '';
+  if (digits.startsWith('62')) return `0${digits.slice(2)}`;
+  if (digits.startsWith('8')) return `0${digits}`;
+  return digits;
+}
+
+/**
+ * Compare two phone numbers after normalizing the country/trunk prefix.
+ * The last 9 digits must match; numbers with fewer than 8 digits never match
+ * because they are too short to identify a customer reliably.
+ */
+function phonesMatch(storedPhone, inputPhone) {
+  const storedDigits = phoneDigits(storedPhone);
+  const inputDigits = phoneDigits(inputPhone);
+  if (storedDigits.length < MIN_PHONE_DIGITS || inputDigits.length < MIN_PHONE_DIGITS) {
+    return false;
+  }
+  return (
+    normalizePhone(storedDigits).slice(-PHONE_SUFFIX_LENGTH) ===
+    normalizePhone(inputDigits).slice(-PHONE_SUFFIX_LENGTH)
+  );
+}
+
 export async function trackOrder(req, res, next) {
   try {
     const { orderNumber, phone } = req.query;
-    if (!orderNumber) {
-      return res.status(400).json({ ok: false, message: 'orderNumber wajib diisi.' });
-    }
-    // phone is optional — if omitted, findOrder matches by orderNumber only
-    const order = await svc.findOrder({ orderNumber, phone: phone || null });
-    if (!order) {
+    if (!orderNumber || !phone) {
       return res.status(404).json({ ok: false, message: 'Pesanan tidak ditemukan.' });
     }
-    return res.json({ ok: true, data: order });
+
+    const order = await svc.findOrder({ orderNumber: String(orderNumber).trim(), phone: null });
+    const isPhoneMatch = order && phonesMatch(order.customer_phone, phone);
+    if (!order || !isPhoneMatch) {
+      return res.status(404).json({ ok: false, message: 'Pesanan tidak ditemukan.' });
+    }
+
+    const safe = {
+      orderNumber: order.order_number,
+      status: order.status,
+      timelineMap: order.timelineMap,
+      items: (order.items || []).map((item) => ({
+        name: item.name,
+        quantity: Number(item.quantity) || 1,
+      })),
+      deliveryMethod: order.delivery_method ?? null,
+      trackingNumber: order.tracking_number ?? null,
+      courierName: order.courier_name ?? null,
+    };
+
+    return res.json({ ok: true, data: safe });
   } catch (err) {
     next(err);
   }
@@ -446,26 +523,30 @@ export async function trackOrder(req, res, next) {
 export async function getOrder(req, res, next) {
   try {
     const order = await svc.getOrderById(req.params.id);
-    if (!order) {
-      return res.status(404).json({ ok: false, message: 'Pesanan tidak ditemukan.' });
-    }
+    assertCanAccessOrder(req.user, order);
     return res.json({ ok: true, data: order });
   } catch (err) {
+    if (err instanceof OrderAccessError) {
+      return res.status(err.status).json({ ok: false, message: err.message });
+    }
     next(err);
   }
 }
 
 export async function updateOrderStatus(req, res, next) {
   try {
-    const { newStatus, cancellationReason, paymentMethod, paymentStatus, dpAmount } = req.body;
+    const { newStatus, cancellationReason, paymentMethod, paymentStatus, dpAmount, expectedStatus } = req.body;
     if (!newStatus) {
       return res.status(422).json({ ok: false, message: 'Status wajib diisi.' });
     }
     if (newStatus === 'Cancelled' && !cancellationReason?.trim()) {
       return res.status(422).json({ ok: false, message: 'Alasan pembatalan wajib diisi.' });
     }
-    const current = await svc.getOrderById(req.params.id);
-    const previousStatus = current?.status;
+    const hasExpectedStatus = expectedStatus !== undefined && expectedStatus !== null;
+    if (hasExpectedStatus && !isValidOrderStatus(expectedStatus)) {
+      return res.status(400).json({ ok: false, message: 'Nilai expectedStatus tidak valid.' });
+    }
+    const out = {};
     const order = await svc.updateOrderStatus(
       req.params.id,
       newStatus,
@@ -474,12 +555,14 @@ export async function updateOrderStatus(req, res, next) {
       cancellationReason,
       req.user.name,
       // Data pembayaran opsional — wajib untuk transisi Payment Accepted
-      { paymentStatus, paymentMethod, dpAmount }
+      { paymentStatus, paymentMethod, dpAmount },
+      // expectedStatus opsional — untuk deteksi konflik optimistik (409)
+      { expectedStatus: hasExpectedStatus ? expectedStatus : undefined, out }
     );
-    emitOrderStatusChanged(order, previousStatus);
+    emitOrderStatusChanged(order, out.previousStatus);
     return res.json({ ok: true, data: order });
   } catch (err) {
-    if (err.status === 403 || err.status === 404 || err.status === 422) {
+    if ([400, 403, 404, 409, 422].includes(err.status)) {
       return res.status(err.status).json({ ok: false, message: err.message });
     }
     next(err);
@@ -501,9 +584,24 @@ export async function setTracking(req, res, next) {
     if (!trackingNumber) {
       return res.status(422).json({ ok: false, message: 'Nomor resi wajib diisi.' });
     }
-    const order = await svc.setTrackingNumber(req.params.id, trackingNumber, courierName, req.user.id);
+    const out = {};
+    const order = await svc.setTrackingNumber(
+      req.params.id,
+      trackingNumber,
+      courierName,
+      req.user.id,
+      req.user.role,
+      req.user.name,
+      { out }
+    );
+    if (out.previousStatus && out.previousStatus !== order.status) {
+      emitOrderStatusChanged(order, out.previousStatus);
+    }
     return res.json({ ok: true, data: order });
   } catch (err) {
+    if ([403, 404, 409, 422].includes(err.status)) {
+      return res.status(err.status).json({ ok: false, message: err.message });
+    }
     next(err);
   }
 }
@@ -545,9 +643,25 @@ export async function setPickupInfo(req, res, next) {
 
 export async function uploadPaymentProof(req, res, next) {
   try {
+    const existing = await svc.getOrderById(req.params.id);
+    try {
+      assertCanAccessOrder(req.user, existing);
+    } catch (err) {
+      await cleanupTempFile(req.file);
+      throw err;
+    }
+
     if (!req.file) {
       return res.status(422).json({ ok: false, message: 'File bukti pembayaran wajib diunggah.' });
     }
+
+    try {
+      await assertUploadAllowed(req.user, existing, 'payment_proof');
+    } catch (err) {
+      await cleanupTempFile(req.file);
+      throw err;
+    }
+
     const { path: filePath } = await StorageService.save(req.file, 'payments');
     const order = await svc.attachPaymentProof(req.params.id, filePath);
 
@@ -561,16 +675,26 @@ export async function uploadPaymentProof(req, res, next) {
 
     return res.json({ ok: true, data: order });
   } catch (err) {
+    if (err instanceof OrderAccessError || err instanceof UploadAccessError) {
+      return res.status(err.status).json({ ok: false, message: err.message });
+    }
     next(err);
   }
 }
 
 export async function deleteOrder(req, res, next) {
   try {
-    const order = await svc.deleteOrder(req.params.id, req.user);
+    const { expectedStatus } = req.body || {};
+    const hasExpectedStatus = expectedStatus !== undefined && expectedStatus !== null;
+    if (hasExpectedStatus && !isValidOrderStatus(expectedStatus)) {
+      return res.status(400).json({ ok: false, message: 'Nilai expectedStatus tidak valid.' });
+    }
+    const order = await svc.deleteOrder(req.params.id, req.user, {
+      expectedStatus: hasExpectedStatus ? expectedStatus : undefined,
+    });
     return res.json({ ok: true, data: order });
   } catch (err) {
-    if (err.status === 400 || err.status === 403 || err.status === 404) {
+    if ([400, 403, 404, 409].includes(err.status)) {
       return res.status(err.status).json({ ok: false, message: err.message });
     }
     next(err);
@@ -579,19 +703,31 @@ export async function deleteOrder(req, res, next) {
 
 export async function uploadDesignFile(req, res, next) {
   try {
+    const { id: orderId, itemId } = req.params;
+
+    const order = await svc.getOrderById(orderId);
+    try {
+      assertCanAccessOrder(req.user, order);
+    } catch (err) {
+      await cleanupTempFile(req.file);
+      throw err;
+    }
+
+    const ownsItem = (order.items || []).some((item) => item.id === itemId);
+    if (!ownsItem) {
+      await cleanupTempFile(req.file);
+      return res.status(404).json({ ok: false, message: 'Pesanan tidak ditemukan.' });
+    }
+
     if (!req.file) {
       return res.status(422).json({ ok: false, message: 'File desain wajib diunggah.' });
     }
 
-    const { id: orderId, itemId } = req.params;
-
-    // Verify order belongs to this customer
-    const order = await svc.getOrderById(orderId);
-    if (!order) {
-      return res.status(404).json({ ok: false, message: 'Pesanan tidak ditemukan.' });
-    }
-    if (order.customer_id && order.customer_id !== req.user.id) {
-      return res.status(403).json({ ok: false, message: 'Akses ditolak.' });
+    try {
+      await assertUploadAllowed(req.user, order, 'design');
+    } catch (err) {
+      await cleanupTempFile(req.file);
+      throw err;
     }
 
     const { path: filePath, url } = await StorageService.save(req.file, 'designs');
@@ -599,6 +735,9 @@ export async function uploadDesignFile(req, res, next) {
 
     return res.json({ ok: true, data: { itemId, designFilePath: url } });
   } catch (err) {
+    if (err instanceof OrderAccessError || err instanceof UploadAccessError) {
+      return res.status(err.status).json({ ok: false, message: err.message });
+    }
     next(err);
   }
 }

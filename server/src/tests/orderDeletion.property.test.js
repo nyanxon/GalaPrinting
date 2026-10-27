@@ -7,9 +7,26 @@
  *   - cs may delete only custom orders that have not been processed
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import fc from 'fast-check';
-import { getOrderDeletePermission } from '../services/orders.service.js';
+
+vi.hoisted(() => {
+  Object.assign(process.env, {
+    DB_HOST: '127.0.0.1',
+    DB_NAME: 'gala_test',
+    DB_USER: 'root',
+    DB_PASSWORD: '',
+    JWT_ACCESS_SECRET: 'test-access',
+    JWT_REFRESH_SECRET: 'test-refresh',
+  });
+});
+
+vi.mock('../db/connection.js', () => ({
+  query: vi.fn(),
+  pool: { getConnection: vi.fn() },
+}));
+
+const { getOrderDeletePermission } = await import('../services/orders.service.js');
 
 const ALL_STATUSES = [
   'Waiting for Payment',
@@ -26,13 +43,10 @@ const ALL_STATUSES = [
 const ALL_SOURCES = ['online', 'offline', 'custom'];
 const ALL_ORDER_TYPES = ['standard', 'custom'];
 
-const CS_BLOCKED_STATUSES = [
-  'Payment Accepted',
+const CS_CUSTOM_DELETABLE_STATUSES = [
   'Waiting for Design Approval',
-  'On Progress',
-  'Ready to Ship',
-  'Shipped',
-  'Completed',
+  'Design Accepted',
+  'Waiting for Payment',
 ];
 
 const orderArb = fc.record({
@@ -64,13 +78,25 @@ describe('Order deletion permissions', () => {
     );
   });
 
-  it('cs follows the legacy custom-order rules', () => {
+  it('cs may delete only custom orders in the D3 status allowlist', () => {
     fc.assert(
       fc.property(orderArb, (order) => {
         const result = getOrderDeletePermission(order, 'cs');
         const expectedAllowed =
-          order.order_type === 'custom' && !CS_BLOCKED_STATUSES.includes(order.status);
+          order.order_type === 'custom' && CS_CUSTOM_DELETABLE_STATUSES.includes(order.status);
         expect(result.allowed).toBe(expectedAllowed);
+        if (!expectedAllowed) expect(result.status).toBe(403);
+      })
+    );
+  });
+
+  it('cs is denied with 403 for non-custom orders', () => {
+    fc.assert(
+      fc.property(orderArb, (order) => {
+        if (order.order_type === 'custom') return;
+        const result = getOrderDeletePermission(order, 'cs');
+        expect(result.allowed).toBe(false);
+        expect(result.status).toBe(403);
       })
     );
   });

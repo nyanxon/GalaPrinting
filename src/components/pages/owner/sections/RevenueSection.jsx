@@ -21,10 +21,13 @@ import {
 import {
   listOrdersPaginated,
   getOrderById,
+  updateOrderStatus,
   STATUS_CONFIG,
 } from '../../../../services/orders.js';
+import { canCancelOrder, STATUS_CONFLICT_MESSAGE } from '../../../../services/orderStatusConfig.js';
 import { listCategories } from '../../../../services/categories.js';
 import { formatCurrency } from '../../../../utils/format.js';
+import { showToast } from '../../../../core/toastEmitter.js';
 import OrderDetailModal from '../../../modals/OrderDetailModal.jsx';
 import PaginationBar from '../../../ui/PaginationBar.jsx';
 import { BRAND_COLOR, COLORS } from '../../../../config/brand.js';
@@ -349,6 +352,12 @@ export default function RevenueSection() {
   const [resetOpen,    setResetOpen]    = useState(false);
   const [resetResult,  setResetResult]  = useState(null);
 
+  // Owner cancellation (only non-terminal statuses; backend allows owner → Cancelled).
+  const [cancelTarget, setCancelTarget] = useState(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelErr,    setCancelErr]    = useState('');
+  const [cancelBusy,   setCancelBusy]   = useState(false);
+
   // Load categories once
   useEffect(() => {
     listCategories().then((cats) => setCategories(Array.isArray(cats) ? cats : [])).catch(() => {});
@@ -413,6 +422,57 @@ export default function RevenueSection() {
       const order = await getOrderById(orderId);
       if (order) { setSelectedOrder(order); setDetailOpen(true); }
     } catch (err) { console.error(err); }
+  }
+
+  function openCancel(order) {
+    setCancelTarget(order);
+    setCancelReason('');
+    setCancelErr('');
+  }
+
+  function closeCancel() {
+    if (cancelBusy) return;
+    setCancelTarget(null);
+    setCancelReason('');
+    setCancelErr('');
+  }
+
+  async function handleCancelConfirm() {
+    if (!cancelTarget) return;
+    if (!cancelReason.trim()) {
+      setCancelErr('Alasan pembatalan wajib diisi.');
+      return;
+    }
+    setCancelBusy(true);
+    try {
+      const res = await updateOrderStatus(
+        cancelTarget.id,
+        'Cancelled',
+        'owner',
+        cancelReason.trim(),
+        undefined,
+        { expectedStatus: cancelTarget.status ?? undefined }
+      );
+      if (res.ok) {
+        showToast('Pesanan dibatalkan.', 'success');
+        setCancelTarget(null);
+        setCancelReason('');
+        setCancelErr('');
+        fetchAll();
+      } else if (res.status === 409) {
+        showToast(STATUS_CONFLICT_MESSAGE, 'error');
+        setCancelTarget(null);
+        setCancelReason('');
+        setCancelErr('');
+        fetchAll();
+      } else {
+        setCancelErr(res.message || 'Gagal membatalkan pesanan.');
+      }
+    } catch (err) {
+      setCancelErr(err?.response?.data?.message || 'Gagal membatalkan pesanan.');
+    } finally {
+      setCancelBusy(false);
+    }
   }
 
   function handleExport(format) {
@@ -750,14 +810,26 @@ export default function RevenueSection() {
                       </td>
                       <td className="adm-date">{new Date(order.createdAt).toLocaleDateString('id-ID')}</td>
                       <td>
-                        <button
-                          className="adm-btn adm-btn--detail"
-                          type="button"
-                          title="Lihat detail pesanan"
-                          onClick={() => handleOrderDetail(order.id)}
-                        >
-                          🔍 Detail
-                        </button>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                          <button
+                            className="adm-btn adm-btn--detail"
+                            type="button"
+                            title="Lihat detail pesanan"
+                            onClick={() => handleOrderDetail(order.id)}
+                          >
+                            🔍 Detail
+                          </button>
+                          {canCancelOrder(order, 'owner') && (
+                            <button
+                              className="adm-btn adm-btn--danger"
+                              type="button"
+                              title="Batalkan pesanan"
+                              onClick={() => openCancel(order)}
+                            >
+                              ❌ Batalkan
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -786,6 +858,57 @@ export default function RevenueSection() {
                 <span>{ins.text}</span>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Cancel Order Modal (owner) ── */}
+      {cancelTarget && (
+        <div className="adm-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="owner-cancel-title">
+          <div className="adm-modal" style={{ maxWidth: 480 }}>
+            <div className="adm-modal-header" style={{ background: 'var(--color-danger-bg-2)', borderBottom: '1px solid #fecaca' }}>
+              <h2 className="adm-modal-title" id="owner-cancel-title" style={{ color: 'var(--color-danger-dark)' }}>
+                ❌ Batalkan Pesanan
+              </h2>
+              <button className="adm-modal-close" type="button" aria-label="Tutup" onClick={closeCancel} disabled={cancelBusy}>
+                ✕
+              </button>
+            </div>
+            <div className="adm-modal-body">
+              <p style={{ margin: '0 0 12px', fontSize: 14, color: '#374151' }}>
+                Pesanan <strong>{cancelTarget.orderNumber}</strong> akan dibatalkan. Alasan ini
+                akan ditampilkan kepada customer.
+              </p>
+              <textarea
+                className="adm-input"
+                rows={4}
+                placeholder="Contoh: Customer membatalkan pesanan, stok habis, dll."
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                style={{ width: '100%', resize: 'vertical', marginBottom: 8 }}
+                aria-label="Alasan pembatalan"
+                disabled={cancelBusy}
+              />
+              {cancelErr && (
+                <p style={{ color: 'var(--color-danger-dark)', fontSize: 13, margin: '0 0 12px' }}>
+                  {cancelErr}
+                </p>
+              )}
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                <button type="button" className="adm-btn" onClick={closeCancel} disabled={cancelBusy}>
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  className="adm-btn adm-btn--danger"
+                  style={{ background: 'var(--color-danger-dark)', color: '#fff', border: 'none' }}
+                  onClick={handleCancelConfirm}
+                  disabled={cancelBusy}
+                >
+                  {cancelBusy ? 'Membatalkan…' : 'Konfirmasi'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

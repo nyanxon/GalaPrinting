@@ -246,7 +246,7 @@ describe('Preservation 1 — Order list metadata preserved', () => {
             order_number: fc.string({ minLength: 5, maxLength: 30 }),
             status: fc.constantFrom(...VALID_STATUSES),
             subtotal: fc.integer({ min: 0, max: 10000000 }),
-            created_at: fc.date().map((d) => d.toISOString()),
+            created_at: fc.date({ noInvalidDate: true }).map((d) => d.toISOString()),
             customer_name: fc.string({ minLength: 1, maxLength: 50 }),
             customer_id: fc.uuid(),
           }),

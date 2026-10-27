@@ -286,10 +286,11 @@ describe('authenticate — must_change_password enforcement', () => {
     );
   });
 
-  it('allows /me even when must_change_password = 1', async () => {
+  it('allows /me even when must_change_password = 1 (still verifies the account exists)', async () => {
     verifyAccessToken.mockReturnValue({
       sub: 'a-1', role: 'admin', name: 'A', email: 'a@test.com',
     });
+    query.mockResolvedValueOnce([[{ must_change_password: 1 }]]);
     const next = vi.fn();
     const res = makeRes();
     const req = staffReq({ id: 'a-1', role: 'admin', name: 'A', email: 'a@test.com' }, '/api/auth/me');
@@ -297,14 +298,20 @@ describe('authenticate — must_change_password enforcement', () => {
     await authenticate(req, res, next);
 
     expect(next).toHaveBeenCalled();
-    // Exception path — no DB query
-    expect(query).not.toHaveBeenCalled();
+    // Exception only skips the 403 gate: the soft-deleted / missing-account
+    // check must still run so a revoked staff token cannot reach /me.
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining('FROM users_admin'),
+      ['a-1']
+    );
+    expect(res.status).not.toHaveBeenCalled();
   });
 
-  it('allows /change-password even when must_change_password = 1', async () => {
+  it('allows /change-password even when must_change_password = 1 (still verifies the account exists)', async () => {
     verifyAccessToken.mockReturnValue({
       sub: 'a-1', role: 'admin', name: 'A', email: 'a@test.com',
     });
+    query.mockResolvedValueOnce([[{ must_change_password: 1 }]]);
     const next = vi.fn();
     const res = makeRes();
     const req = staffReq({ id: 'a-1', role: 'admin', name: 'A', email: 'a@test.com' }, '/api/auth/change-password');
@@ -312,7 +319,11 @@ describe('authenticate — must_change_password enforcement', () => {
     await authenticate(req, res, next);
 
     expect(next).toHaveBeenCalled();
-    expect(query).not.toHaveBeenCalled();
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining('FROM users_admin'),
+      ['a-1']
+    );
+    expect(res.status).not.toHaveBeenCalled();
   });
 
   it('strips query string from path before checking exceptions', async () => {

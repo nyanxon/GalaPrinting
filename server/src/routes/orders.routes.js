@@ -5,6 +5,7 @@
  */
 
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import { authenticate } from '../middleware/auth.js';
 import { requireRole } from '../middleware/requireRole.js';
 import { uploadPayment, uploadDesign } from '../middleware/upload.js';
@@ -14,8 +15,16 @@ import { getInvoiceByOrder } from '../controllers/invoice.controller.js';
 
 const router = Router();
 
+const trackLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, message: 'Terlalu banyak permintaan. Coba lagi nanti.' },
+});
+
 // Public
-router.get('/track', ctrl.trackOrder);
+router.get('/track', trackLimiter, ctrl.trackOrder);
 
 // Customer + all authenticated roles
 const ALL_ROLES = ['customer', 'cashier', 'cs', 'operational', 'qc', 'admin', 'owner', 'offline'];

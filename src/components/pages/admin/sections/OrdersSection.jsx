@@ -13,6 +13,10 @@ import {
   ORDER_STATUSES,
   deleteOrder,
 } from '../../../../services/orders.js';
+import {
+  canCancelOrder,
+  STATUS_CONFLICT_MESSAGE,
+} from '../../../../services/orderStatusConfig.js';
 import { formatCurrency } from '../../../../utils/format.js';
 import { track } from '../../../../utils/activityTracker.js';
 import { getInvoiceByOrderId, openInvoicePdf } from '../../../../services/api/invoiceService.js';
@@ -126,11 +130,6 @@ export default function OrdersSection() {
   }, [result.items]);
 
   async function handleStatusChange(orderId, newStatus) {
-    if (newStatus === 'Cancelled') {
-      handleOpenCancel(orderId);
-      return;
-    }
-
     // Transisi ke Payment Accepted wajib lewat modal konfirmasi pembayaran
     // (backend menolak transisi ini tanpa data pembayaran).
     if (newStatus === 'Payment Accepted') {
@@ -140,13 +139,22 @@ export default function OrdersSection() {
     }
 
     const current = result.items?.find((o) => o.id === orderId);
-    const res = await updateOrderStatus(orderId, newStatus, actorRole);
+    const res = await updateOrderStatus(
+      orderId,
+      newStatus,
+      actorRole,
+      undefined,
+      undefined,
+      { expectedStatus: current?.status ?? undefined }
+    );
     if (res.ok) {
       track('Ubah Status Order', {
         targetType: 'order', targetId: orderId,
         metadata: { from: current?.status ?? null, to: newStatus, role: actorRole },
       });
       showToast(`Status → "${newStatus}".`, 'success');
+    } else if (res.status === 409) {
+      showToast(STATUS_CONFLICT_MESSAGE, 'error');
     } else {
       showToast(res.message || 'Gagal mengubah status.', 'error');
     }
@@ -171,7 +179,8 @@ export default function OrdersSection() {
           paymentMethod: paymentData.paymentMethod,
           paymentStatus: paymentData.paymentStatus,
           dpAmount: paymentData.dpAmount,
-        }
+        },
+        { expectedStatus: order?.status ?? undefined }
       );
       if (res.ok) {
         track('Ubah Status Order', {
@@ -184,6 +193,10 @@ export default function OrdersSection() {
           },
         });
         showToast(`Status → "${nextStatus}".`, 'success');
+        setPaymentModal(null);
+      } else if (res.status === 409) {
+        showToast(STATUS_CONFLICT_MESSAGE, 'error');
+        pendingAutoPrintRef.current.delete(orderId);
         setPaymentModal(null);
       } else {
         showToast(res.message || 'Gagal mengubah status.', 'error');
@@ -203,7 +216,7 @@ export default function OrdersSection() {
     const target = deleteTarget;
     setDeleting(true);
     try {
-      const res = await deleteOrder(target.id);
+      const res = await deleteOrder(target.id, actorRole, { expectedStatus: target.status });
       if (res?.ok === false) {
         showToast(res.message || 'Gagal menghapus pesanan.', 'error');
         return;
@@ -217,7 +230,13 @@ export default function OrdersSection() {
       setDeleteTarget(null);
       fetchOrders();
     } catch (err) {
-      showToast(err?.response?.data?.message || err.message || 'Gagal menghapus pesanan.', 'error');
+      if (err?.response?.status === 409) {
+        showToast(STATUS_CONFLICT_MESSAGE, 'error');
+        setDeleteTarget(null);
+        fetchOrders();
+      } else {
+        showToast(err?.response?.data?.message || err.message || 'Gagal menghapus pesanan.', 'error');
+      }
     } finally {
       setDeleting(false);
     }
@@ -400,6 +419,18 @@ export default function OrdersSection() {
                         >
                           🔍 Detail
                         </button>
+
+                        {canCancelOrder(order, actorRole) && (
+                          <button
+                            className="adm-btn adm-btn--danger"
+                            type="button"
+                            title="Batalkan pesanan"
+                            style={{ marginTop: '4px' }}
+                            onClick={() => handleOpenCancel(order.id, order.status)}
+                          >
+                            ❌ Batalkan
+                          </button>
+                        )}
 
                         {actorRole === 'admin' && (
                           <button

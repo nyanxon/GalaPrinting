@@ -71,7 +71,7 @@ const cartItemWithoutDesign = fc.record({
   price:     fc.float({ min: 0, max: 10000000, noNaN: true }),
   quantity:  fc.integer({ min: 1, max: 100 }),
   notes:     fc.string({ maxLength: 200 }),
-  createdAt: fc.date().map((d) => d.toISOString()),
+  createdAt: fc.date({ noInvalidDate: true }).map((d) => d.toISOString()),
 });
 
 /**

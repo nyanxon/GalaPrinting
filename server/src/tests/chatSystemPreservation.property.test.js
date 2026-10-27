@@ -168,8 +168,8 @@ describe('P1 — localStorage path unchanged (USE_BACKEND=false)', () => {
             customerName: fc.string({ minLength: 1, maxLength: 50 }),
             assignedAdminId: fc.option(fc.uuid(), { nil: null }),
             status: fc.constantFrom('open', 'closed'),
-            createdAt: fc.date({ min: new Date(0), max: new Date(2100, 0, 1) }).map((d) => d.toISOString()),
-            lastAt: fc.date({ min: new Date(0), max: new Date(2100, 0, 1) }).map((d) => d.toISOString()),
+            createdAt: fc.date({ min: new Date(0), max: new Date(2100, 0, 1), noInvalidDate: true }).map((d) => d.toISOString()),
+            lastAt: fc.date({ min: new Date(0), max: new Date(2100, 0, 1), noInvalidDate: true }).map((d) => d.toISOString()),
             needsReply: fc.boolean(),
           }),
           { minLength: 1, maxLength: 10 }

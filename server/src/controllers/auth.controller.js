@@ -104,12 +104,23 @@ function clearRefreshCookie(res) {
 
 const failedLoginMap = new Map();
 const FAILED_THRESHOLD = 5;
+const FAILED_LOGIN_TTL_MS = 60 * 60 * 1000;
+
+function pruneFailedLogins() {
+  const now = Date.now();
+  for (const [key, entry] of failedLoginMap) {
+    if (!entry.lastAt || now - entry.lastAt > FAILED_LOGIN_TTL_MS) {
+      failedLoginMap.delete(key);
+    }
+  }
+}
 
 /**
  * Shared failed-login tracking + alert email.
  * @param {'customer'|'admin'} loginType  Which table was queried.
  */
 async function handleFailedLogin({ loginType, email, ip, timeStr }) {
+  pruneFailedLogins();
   const key = `${loginType}:${ip}:${email}`;
   const entry = failedLoginMap.get(key) || { count: 0 };
   entry.count += 1;

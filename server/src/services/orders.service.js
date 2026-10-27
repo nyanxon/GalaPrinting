@@ -21,10 +21,14 @@ import { getPreferences } from './notifications.service.js';
 import { assertNotLocked, recordApproval, APPROVAL_STAGE_FOR_STATUS } from './orderApprovals.service.js';
 import { computeInvoicePayment } from './invoice.service.js';
 import { generateInvoicePdf } from '../utils/invoicePdf.js';
+import {
+  STATUS_CHANGED_MESSAGE,
+  isValidOrderStatus,
+} from '../config/orderStatuses.js';
 
 // ── Status transition rules ───────────────────────────────────────────────────
 
-const TRANSITIONS = {
+export const TRANSITIONS = {
   cashier:     {
     'Waiting for Payment': ['Payment Accepted', 'Cancelled'],
     'Payment Accepted':    [], // Setelah Payment Accepted, cashier tidak bisa membatalkan
@@ -34,7 +38,6 @@ const TRANSITIONS = {
     'Design Accepted':             ['Waiting for Payment'],
   },
   operational: {
-    'Design Accepted': ['On Progress'],
     // All orders: Payment Accepted → On Progress
     'Payment Accepted': ['On Progress'],
   },
@@ -47,7 +50,7 @@ const TRANSITIONS = {
     'Waiting for Payment':        ['Payment Accepted', 'Cancelled'],
     'Payment Accepted':           ['Waiting for Design Approval', 'On Progress', 'Cancelled'],
     'Waiting for Design Approval': ['Design Accepted', 'Cancelled'],
-    'Design Accepted':            ['On Progress', 'Waiting for Payment', 'Cancelled'],
+    'Design Accepted':            ['Waiting for Payment', 'Cancelled'],
     'On Progress':                ['Quality Checking', 'Cancelled'],
     'Quality Checking':           ['In Delivery', 'On Progress', 'Cancelled'], // QC reject → back to Operational
     'In Delivery':                ['Finished', 'Cancelled'],
@@ -63,9 +66,26 @@ const TRANSITIONS = {
   },
 };
 
+const POST_PAYMENT_STATUSES = ['Payment Accepted', 'On Progress', 'Quality Checking', 'In Delivery', 'Finished'];
+
 export function getAllowedNextStatuses(currentStatus, role) {
   const map = TRANSITIONS[role] || {};
   return map[currentStatus] || [];
+}
+
+/**
+ * Reject an `expectedStatus` value that is not part of the status vocabulary.
+ * Undefined/null mean "not supplied" and keep the legacy behaviour.
+ */
+function assertValidExpectedStatus(expectedStatus) {
+  if (expectedStatus === undefined || expectedStatus === null) return;
+  if (!isValidOrderStatus(expectedStatus)) {
+    const err = new Error(
+      `Nilai expectedStatus tidak valid: "${expectedStatus}". Gunakan salah satu status order yang dikenal.`
+    );
+    err.status = 400;
+    throw err;
+  }
 }
 
 // ── Email notification mapping ────────────────────────────────────────────────
@@ -187,8 +207,9 @@ async function generateOrderNumber(conn) {
   return `GALA-${yyyy}/${mm}/${dd}-${seq}`;
 }
 
-async function insertHistoryEntry(orderId, fromStatus, toStatus, actorId, cancellationReason) {
-  await query(
+async function insertHistoryEntry(orderId, fromStatus, toStatus, actorId, cancellationReason, conn = null) {
+  const execute = conn ? conn.execute.bind(conn) : query;
+  await execute(
     `INSERT INTO order_history (id, order_id, from_status, to_status, actor_id, cancellation_reason)
      VALUES (?, ?, ?, ?, ?, ?)`,
     [randomUUID(), orderId, fromStatus || null, toStatus, actorId || null, cancellationReason || null]
@@ -523,7 +544,6 @@ export async function getOrderById(id) {
     [id]
   );
   if (orders.length === 0) return null;
-
   const order = orders[0];
 
   // Run items, history, and approvals queries in parallel
@@ -555,6 +575,223 @@ export async function getOrderById(id) {
 }
 
 /**
+ * Payment state of the invoice attached to an order (FASE 2D D5).
+ * Returns null when the order has no invoice yet.
+ * @param {string} orderId
+ * @returns {Promise<{ payment_status: string, locked: number|boolean }|null>}
+ */
+export async function getInvoicePaymentState(orderId) {
+  const [rows] = await query(
+    'SELECT payment_status, locked FROM invoices WHERE order_id = ? ORDER BY created_at DESC LIMIT 1',
+    [orderId]
+  );
+  return rows[0] || null;
+}
+
+async function lockOrderForUpdate(conn, id) {
+  const [[order]] = await conn.execute('SELECT * FROM orders WHERE id = ? FOR UPDATE', [id]);
+  if (!order) {
+    const err = new Error('Pesanan tidak ditemukan.');
+    err.status = 404;
+    throw err;
+  }
+  return order;
+}
+
+/**
+ * Apply one status transition using the caller's active transaction.
+ *
+ * Lock order: the orders row is locked first, then invoices. Never open a second
+ * connection while this transaction holds the order lock, otherwise two
+ * concurrent Payment Accepted flows can deadlock on orders/invoices.
+ *
+ * @returns {{ order: object, previousStatus: string, newStatus: string, filesToDelete: string[], invoiceId: string|null }}
+ */
+async function applyStatusTransition(conn, {
+  id,
+  newStatus,
+  actorId,
+  actorRole,
+  actorName,
+  cancellationReason = null,
+  payment = null,
+  tracking = null,
+  lockedOrder = null,
+  expectedStatus = null,
+}) {
+  const order = lockedOrder || await lockOrderForUpdate(conn, id);
+  const previousStatus = order.status;
+
+  // Optimistic concurrency: the client tells us the status it was displaying.
+  // This runs under the row lock and BEFORE role/transition/lock/payment checks
+  // so a stale client always gets 409 (not a misleading 403).
+  if (
+    expectedStatus !== undefined &&
+    expectedStatus !== null &&
+    expectedStatus !== previousStatus
+  ) {
+    const err = new Error(STATUS_CHANGED_MESSAGE);
+    err.status = 409;
+    throw err;
+  }
+
+  const allowed = getAllowedNextStatuses(previousStatus, actorRole);
+  if (!allowed.includes(newStatus)) {
+    const err = new Error(
+      `Role '${actorRole}' tidak diizinkan mengubah status dari '${previousStatus}' ke '${newStatus}'.`
+    );
+    err.status = 403;
+    throw err;
+  }
+
+  const isQcRework =
+    ['qc', 'admin'].includes(actorRole) &&
+    previousStatus === 'Quality Checking' &&
+    newStatus === 'On Progress';
+
+  if (newStatus !== 'Cancelled' && !isQcRework) {
+    await assertNotLocked(id, newStatus, conn);
+  }
+
+  const crossesCashierStage =
+    newStatus === 'Payment Accepted' ||
+    POST_PAYMENT_STATUSES.includes(previousStatus) ||
+    POST_PAYMENT_STATUSES.includes(newStatus);
+  if (order.source === 'offline' && !order.payment_proof_path && newStatus !== 'Cancelled' && crossesCashierStage) {
+    const err = new Error('Order offline wajib mengunggah bukti bayar sebelum status melewati tahap pembayaran.');
+    err.status = 422;
+    throw err;
+  }
+
+  let paymentFields = null;
+  let invoiceId = null;
+  if (newStatus === 'Payment Accepted') {
+    const paymentStatus = payment?.paymentStatus;
+    const paymentMethod = payment?.paymentMethod;
+    const dpAmount = payment?.dpAmount;
+
+    if (!['paid', 'dp'].includes(paymentStatus)) {
+      const err = new Error(
+        'Transisi ke Payment Accepted wajib menyertakan data pembayaran (paymentStatus = paid|dp).'
+      );
+      err.status = 422;
+      throw err;
+    }
+    if (!paymentMethod || !String(paymentMethod).trim()) {
+      const err = new Error('Metode pembayaran wajib diisi.');
+      err.status = 422;
+      throw err;
+    }
+
+    let [[inv]] = await conn.execute('SELECT * FROM invoices WHERE order_id = ? FOR UPDATE', [id]);
+    if (!inv) {
+      await autoCreateInvoice(order, conn);
+      [[inv]] = await conn.execute('SELECT * FROM invoices WHERE order_id = ? FOR UPDATE', [id]);
+    }
+    if (!inv) {
+      const err = new Error('Invoice untuk order ini tidak ditemukan.');
+      err.status = 422;
+      throw err;
+    }
+
+    paymentFields = computeInvoicePayment({
+      invoice: inv,
+      newStatus: paymentStatus,
+      paymentMethod,
+      dpAmount,
+    });
+    invoiceId = inv.id;
+  }
+
+  const filesToDelete = [];
+  if (newStatus === 'Cancelled') {
+    const [invoiceRows] = await conn.execute(
+      'SELECT payment_status FROM invoices WHERE order_id = ? FOR UPDATE',
+      [id]
+    );
+    // D6: a cancelled order whose invoice is already paid/dp keeps BOTH the
+    // payment proof and every design file for financial/audit purposes.
+    const preserveFiles = invoiceRows.some(
+      (inv) => inv.payment_status === 'paid' || inv.payment_status === 'dp'
+    );
+
+    if (!preserveFiles) {
+      if (order.payment_proof_path) {
+        filesToDelete.push(order.payment_proof_path);
+      }
+
+      const [itemRows] = await conn.execute(
+        'SELECT design_file_path FROM order_items WHERE order_id = ? AND design_file_path IS NOT NULL',
+        [id]
+      );
+      for (const item of itemRows) {
+        if (item.design_file_path) filesToDelete.push(item.design_file_path);
+      }
+    }
+  }
+
+  if (isQcRework) {
+    // Audit QC rejection stays in order_history; the QC approval row is removed
+    // so a corrected order can pass Quality Checking again.
+    await conn.execute(
+      "DELETE FROM order_approvals WHERE order_id = ? AND stage = 'Quality Checking'",
+      [id]
+    );
+  }
+
+  const setClauses = ['status = ?'];
+  const updateParams = [newStatus];
+  if (newStatus === 'Cancelled') {
+    setClauses.push('cancellation_reason = ?');
+    updateParams.push(cancellationReason || null);
+  }
+  if (paymentFields) {
+    setClauses.push('payment_method = ?');
+    updateParams.push(paymentFields.payment_method);
+  }
+  if (tracking) {
+    setClauses.push('tracking_number = ?', 'courier_name = ?');
+    updateParams.push(tracking.trackingNumber, tracking.courierName || null);
+  }
+  updateParams.push(id, previousStatus);
+
+  const [result] = await conn.execute(
+    `UPDATE orders SET ${setClauses.join(', ')} WHERE id = ? AND status = ?`,
+    updateParams
+  );
+  if (result.affectedRows !== 1) {
+    const err = new Error(STATUS_CHANGED_MESSAGE);
+    err.status = 409;
+    throw err;
+  }
+
+  if (paymentFields) {
+    await conn.execute(
+      `UPDATE invoices
+       SET payment_status = ?, payment_method = ?, dp_amount = ?, locked = ?, paid_at = ?, dp_paid_at = ?
+       WHERE id = ?`,
+      [
+        paymentFields.payment_status,
+        paymentFields.payment_method,
+        paymentFields.dp_amount,
+        paymentFields.locked,
+        paymentFields.paid_at,
+        paymentFields.dp_paid_at,
+        invoiceId,
+      ]
+    );
+  }
+
+  await insertHistoryEntry(id, previousStatus, newStatus, actorId, cancellationReason, conn);
+
+  if (newStatus !== 'Cancelled' && APPROVAL_STAGE_FOR_STATUS[newStatus]) {
+    await recordApproval(id, newStatus, actorId, actorRole, actorName || actorRole, conn);
+  }
+
+  return { order, previousStatus, newStatus, filesToDelete, invoiceId };
+}
+
+/**
  * Advance an order to a new status, enforcing role-based transition rules.
  * Fitur 1: cek approval lock sebelum update — tolak 403 jika tahap sudah di-ACC.
  *
@@ -575,131 +812,48 @@ export async function getOrderById(id) {
  * @param {'paid'|'dp'} [payment.paymentStatus]
  * @param {string} [payment.paymentMethod]
  * @param {number|string} [payment.dpAmount]  Nominal DP, wajib jika paymentStatus='dp'
+ * @param {object} [options]
+ * @param {string} [options.expectedStatus]  Status yang dilihat klien; jika berbeda
+ *   dengan status di bawah lock, transisi ditolak 409 sebelum validasi role.
  */
-export async function updateOrderStatus(id, newStatus, actorId, actorRole, cancellationReason, actorName, payment = null) {
-  const order = await getOrderById(id);
-  if (!order) {
-    const err = new Error('Pesanan tidak ditemukan.');
-    err.status = 404;
-    throw err;
-  }
+export async function updateOrderStatus(id, newStatus, actorId, actorRole, cancellationReason, actorName, payment = null, options = {}) {
+  const { expectedStatus, out } = options || {};
+  assertValidExpectedStatus(expectedStatus);
 
-  const allowed = getAllowedNextStatuses(order.status, actorRole);
-  if (!allowed.includes(newStatus)) {
-    const err = new Error(
-      `Role '${actorRole}' tidak diizinkan mengubah status dari '${order.status}' ke '${newStatus}'.`
-    );
-    err.status = 403;
-    throw err;
-  }
-
-  // Fitur 1: cek apakah tahap ini sudah di-lock (sudah di-approve sebelumnya)
-  if (newStatus !== 'Cancelled') {
-    await assertNotLocked(id, newStatus);
-  }
-
-  // Order offline wajib punya bukti bayar SAAT melewati tahap Cashier — bukan
-  // sebelum semua tahap (CS menyetujui desain dulu tanpa bukti bayar).
-  // Bukti bayar wajib ada untuk: masuk ke 'Payment Accepted' (WfP→PA), atau
-  // transisi apa pun yang statusnya sudah berada di/di atas tahap Cashier.
-  const POST_PAYMENT_STATUSES = ['Payment Accepted', 'On Progress', 'Quality Checking', 'In Delivery', 'Finished'];
-  const crossesCashierStage =
-    newStatus === 'Payment Accepted' ||
-    POST_PAYMENT_STATUSES.includes(order.status) ||
-    POST_PAYMENT_STATUSES.includes(newStatus);
-  if (order.source === 'offline' && !order.payment_proof_path && newStatus !== 'Cancelled' && crossesCashierStage) {
-    const err = new Error('Order offline wajib mengunggah bukti bayar sebelum status melewati tahap pembayaran.');
-    err.status = 422;
-    throw err;
-  }
-
-  const prevStatus = order.status;
-
-  // ── Payment Accepted: gerbang wajib data pembayaran, ditulis dalam SATU transaksi ──
-  if (newStatus === 'Payment Accepted') {
-    const paymentStatus = payment?.paymentStatus;
-    const paymentMethod = payment?.paymentMethod;
-    const dpAmount      = payment?.dpAmount;
-
-    // Gerbang wajib: tanpa data pembayaran, transisi ini ditolak (bukan fallback 'paid').
-    if (!['paid', 'dp'].includes(paymentStatus)) {
-      const err = new Error(
-        'Transisi ke Payment Accepted wajib menyertakan data pembayaran (paymentStatus = paid|dp).'
-      );
-      err.status = 422;
-      throw err;
-    }
-    if (!paymentMethod || !String(paymentMethod).trim()) {
-      const err = new Error('Metode pembayaran wajib diisi.');
-      err.status = 422;
-      throw err;
-    }
-
-    // Pastikan invoice sudah ada (dijamin dibuat saat order dibuat; fallback safety).
-    let [[inv]] = await query('SELECT * FROM invoices WHERE order_id = ?', [id]);
-    if (!inv) {
-      await autoCreateInvoice(order);
-      [[inv]] = await query('SELECT * FROM invoices WHERE order_id = ?', [id]);
-    }
-    if (!inv) {
-      const err = new Error('Invoice untuk order ini tidak ditemukan.');
-      err.status = 422;
-      throw err;
-    }
-
-    // Pakai fungsi validasi yang sama dengan flow invoice (tidak duplikasi logika DP).
-    const fields = computeInvoicePayment({
-      invoice: inv,
-      newStatus: paymentStatus,
-      paymentMethod,
-      dpAmount,
+  const conn = await pool.getConnection();
+  let transition;
+  try {
+    await conn.beginTransaction();
+    transition = await applyStatusTransition(conn, {
+      id,
+      newStatus,
+      actorId,
+      actorRole,
+      actorName,
+      cancellationReason,
+      payment,
+      expectedStatus,
     });
+    await conn.commit();
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
 
-    const conn = await pool.getConnection();
-    try {
-      await conn.beginTransaction();
+  const { order, filesToDelete, invoiceId, previousStatus } = transition;
+  if (out && typeof out === 'object') {
+    out.previousStatus = previousStatus;
+  }
+  const updatedOrder = await getOrderById(id);
 
-      // 1. Update status order
-      await conn.execute('UPDATE orders SET status = ? WHERE id = ?', [newStatus, id]);
+  // File hanya dihapus setelah transaksi DB berhasil.
+  if (filesToDelete.length > 0) {
+    await Promise.all(filesToDelete.map((p) => StorageService.delete(p)));
+  }
 
-      // 2. Update orders.payment_method (dipakai agregasi analytics.service.js:184)
-      await conn.execute('UPDATE orders SET payment_method = ? WHERE id = ?', [fields.payment_method, id]);
-
-      // 3. Update invoice terkait (payment_status/locked/paid_at/dp_paid_at sesuai pilihan)
-      await conn.execute(
-        `UPDATE invoices
-         SET payment_status = ?, payment_method = ?, dp_amount = ?, locked = ?, paid_at = ?, dp_paid_at = ?
-         WHERE id = ?`,
-        [fields.payment_status, fields.payment_method, fields.dp_amount, fields.locked, fields.paid_at, fields.dp_paid_at, inv.id]
-      );
-
-      // 4. History entry
-      await conn.execute(
-        `INSERT INTO order_history (id, order_id, from_status, to_status, actor_id, cancellation_reason)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [randomUUID(), id, prevStatus, newStatus, actorId, null]
-      );
-
-      // 5. Approval record
-      if (APPROVAL_STAGE_FOR_STATUS[newStatus]) {
-        await conn.execute(
-          `INSERT IGNORE INTO order_approvals
-             (id, order_id, stage, approved_by, approved_role, approved_name)
-           VALUES (?, ?, ?, ?, ?, ?)`,
-          [randomUUID(), id, newStatus, actorId, actorRole, actorName || actorRole]
-        );
-      }
-
-      await conn.commit();
-    } catch (err) {
-      await conn.rollback();
-      throw err;
-    } finally {
-      conn.release();
-    }
-
-    const updatedOrder = await getOrderById(id);
-
+  if (newStatus === 'Payment Accepted' && invoiceId) {
     // ── Kirim email invoice PDF (paid maupun dp) — invoicePdf.js menampilkan baris
     //    DP/Sisa Pembayaran otomatis saat payment_status = 'dp'. ──
     const recipientEmail = order.customer_email || null;
@@ -715,7 +869,7 @@ export async function updateOrderStatus(id, newStatus, actorId, actorRole, cance
              LEFT JOIN users_customer u ON i.customer_id = u.id
              LEFT JOIN users_admin creator ON o.created_by_admin_id = creator.id
              WHERE i.id = ?`,
-            [inv.id]
+            [invoiceId]
           );
           if (!invRows.length) return;
           const [itemRows] = await query('SELECT * FROM order_items WHERE order_id = ?', [id]);
@@ -733,52 +887,7 @@ export async function updateOrderStatus(id, newStatus, actorId, actorRole, cance
         }
       })();
     }
-
-    // Fire-and-forget email notification — only for logged-in customers
-    if (order.customer_id) {
-      sendEmailIfEnabled(updatedOrder, newStatus, order.customer_id);
-    }
-
-    return updatedOrder;
   }
-
-  // ── Transisi lain (CS, Operational, QC, Cancelled) — alur lama tidak berubah ──
-  if (newStatus === 'Cancelled') {
-    await query('UPDATE orders SET status = ?, cancellation_reason = ? WHERE id = ?', [newStatus, cancellationReason || null, id]);
-  } else {
-    await query('UPDATE orders SET status = ? WHERE id = ?', [newStatus, id]);
-  }
-  await insertHistoryEntry(id, prevStatus, newStatus, actorId, cancellationReason);
-
-  // Fitur 1: simpan approval record untuk stage ini
-  if (newStatus !== 'Cancelled' && APPROVAL_STAGE_FOR_STATUS[newStatus]) {
-    await recordApproval(id, newStatus, actorId, actorRole, actorName || actorRole);
-  }
-
-  // Delete uploaded files when an order is cancelled (fix C6a)
-  if (newStatus === 'Cancelled') {
-    const filesToDelete = [];
-
-    if (order.payment_proof_path) {
-      filesToDelete.push(order.payment_proof_path);
-    }
-
-    // Collect design file paths from order items
-    const [itemRows] = await query(
-      'SELECT design_file_path FROM order_items WHERE order_id = ? AND design_file_path IS NOT NULL',
-      [id]
-    );
-    for (const item of itemRows) {
-      if (item.design_file_path) {
-        filesToDelete.push(item.design_file_path);
-      }
-    }
-
-    // Delete all collected files (StorageService.delete silently ignores missing files)
-    await Promise.all(filesToDelete.map((p) => StorageService.delete(p)));
-  }
-
-  const updatedOrder = await getOrderById(id);
 
   // Fire-and-forget email notification — only for logged-in customers
   if (order.customer_id) {
@@ -880,26 +989,50 @@ export async function updateStaffOrder(id, { customer, items, subtotal, discount
  * Set tracking number and courier; auto-advance to "In Delivery" if applicable.
  * Fitur 3: hanya berlaku untuk delivery — kalau pickup, update lokasi & jadwal.
  */
-export async function setTrackingNumber(id, trackingNumber, courierName, actorId) {
-  const order = await getOrderById(id);
-  if (!order) {
-    const err = new Error('Pesanan tidak ditemukan.');
-    err.status = 404;
+export async function setTrackingNumber(id, trackingNumber, courierName, actorId, actorRole = 'admin', actorName = null, options = {}) {
+  const { out } = options || {};
+  const conn = await pool.getConnection();
+  let transition = null;
+  let previousStatus;
+  try {
+    await conn.beginTransaction();
+
+    const order = await lockOrderForUpdate(conn, id);
+    previousStatus = order.status;
+    if (order.status === 'Quality Checking') {
+      transition = await applyStatusTransition(conn, {
+        id,
+        newStatus: 'In Delivery',
+        actorId,
+        actorRole,
+        actorName,
+        lockedOrder: order,
+        tracking: { trackingNumber, courierName },
+      });
+    } else {
+      await conn.execute(
+        'UPDATE orders SET tracking_number = ?, courier_name = ? WHERE id = ?',
+        [trackingNumber, courierName || null, id]
+      );
+    }
+
+    await conn.commit();
+  } catch (err) {
+    await conn.rollback();
     throw err;
+  } finally {
+    conn.release();
   }
 
-  await query(
-    'UPDATE orders SET tracking_number = ?, courier_name = ? WHERE id = ?',
-    [trackingNumber, courierName || null, id]
-  );
-
-  // Auto-advance to "In Delivery" if currently "Quality Checking"
-  if (order.status === 'Quality Checking') {
-    await query('UPDATE orders SET status = ? WHERE id = ?', ['In Delivery', id]);
-    await insertHistoryEntry(id, 'Quality Checking', 'In Delivery', actorId);
+  const updatedOrder = await getOrderById(id);
+  if (out && typeof out === 'object') {
+    out.previousStatus = previousStatus;
+  }
+  if (transition?.order.customer_id) {
+    sendEmailIfEnabled(updatedOrder, 'In Delivery', transition.order.customer_id);
   }
 
-  return getOrderById(id);
+  return updatedOrder;
 }
 
 /**
@@ -981,11 +1114,18 @@ export async function attachDesignFile(itemId, filePath) {
  * @param {string} role
  * @returns {{ allowed: boolean, status?: number, message?: string }}
  */
+const CASHIER_DELETABLE_STATUSES = new Set(['Waiting for Payment']);
+const CS_CUSTOM_DELETABLE_STATUSES = new Set([
+  'Waiting for Design Approval',
+  'Design Accepted',
+  'Waiting for Payment',
+]);
+
 export function getOrderDeletePermission(order, role) {
   if (role === 'admin') return { allowed: true };
 
   if (role === 'cashier') {
-    if (order.status === 'Waiting for Payment') return { allowed: true };
+    if (CASHIER_DELETABLE_STATUSES.has(order.status)) return { allowed: true };
     return {
       allowed: false,
       status: 403,
@@ -995,11 +1135,10 @@ export function getOrderDeletePermission(order, role) {
 
   if (role === 'cs') {
     if (order.order_type !== 'custom') {
-      return { allowed: false, status: 400, message: 'Hanya pesanan custom yang bisa dihapus.' };
+      return { allowed: false, status: 403, message: 'CS hanya bisa menghapus pesanan custom.' };
     }
-    const blockedStatuses = ['Payment Accepted', 'Waiting for Design Approval', 'On Progress', 'Ready to Ship', 'Shipped', 'Completed'];
-    if (blockedStatuses.includes(order.status)) {
-      return { allowed: false, status: 400, message: 'Pesanan yang sudah diproses tidak bisa dihapus.' };
+    if (!CS_CUSTOM_DELETABLE_STATUSES.has(order.status)) {
+      return { allowed: false, status: 403, message: 'Pesanan yang sudah diproses tidak bisa dihapus.' };
     }
     return { allowed: true };
   }
@@ -1014,27 +1153,47 @@ export function getOrderDeletePermission(order, role) {
  *
  * @param {string} id  Order UUID
  * @param {{ id?: string, role?: string, name?: string }} [actor]
+ * @param {object} [options]
+ * @param {string} [options.expectedStatus]  Status yang dilihat klien; jika berbeda
+ *   dengan status di bawah lock, penghapusan ditolak 409 sebelum validasi role.
  * @returns {object} The deleted order row
  */
-export async function deleteOrder(id, actor = {}) {
-  const [[order]] = await query('SELECT * FROM orders WHERE id = ?', [id]);
-  if (!order) {
-    const err = new Error('Pesanan tidak ditemukan.');
-    err.status = 404;
-    throw err;
-  }
-
-  const permission = getOrderDeletePermission(order, actor.role);
-  if (!permission.allowed) {
-    const err = new Error(permission.message);
-    err.status = permission.status || 403;
-    throw err;
-  }
+export async function deleteOrder(id, actor = {}, options = {}) {
+  const { expectedStatus } = options || {};
+  assertValidExpectedStatus(expectedStatus);
 
   const conn = await pool.getConnection();
-  let filesToDelete = [];
+  let order;
+  const filesToDelete = [];
   try {
     await conn.beginTransaction();
+
+    const [[lockedOrder]] = await conn.execute('SELECT * FROM orders WHERE id = ? FOR UPDATE', [id]);
+    if (!lockedOrder) {
+      const err = new Error('Pesanan tidak ditemukan.');
+      err.status = 404;
+      throw err;
+    }
+
+    // Optimistic concurrency: compare under the lock BEFORE the role rules so
+    // a stale delete always gets 409 instead of a misleading 403.
+    if (
+      expectedStatus !== undefined &&
+      expectedStatus !== null &&
+      expectedStatus !== lockedOrder.status
+    ) {
+      const err = new Error(STATUS_CHANGED_MESSAGE);
+      err.status = 409;
+      throw err;
+    }
+
+    const permission = getOrderDeletePermission(lockedOrder, actor.role);
+    if (!permission.allowed) {
+      const err = new Error(permission.message);
+      err.status = permission.status || 403;
+      throw err;
+    }
+    order = lockedOrder;
 
     // Kumpulkan file upload terkait supaya tidak jadi orphan setelah order dihapus.
     if (order.payment_proof_path) filesToDelete.push(order.payment_proof_path);
@@ -1071,19 +1230,18 @@ export async function deleteOrder(id, actor = {}) {
  * Tidak throw — semua error dicatch di caller.
  * @param {object} order  Hasil dari getOrderById()
  */
-async function autoCreateInvoice(order) {
+async function autoCreateInvoice(order, conn = null) {
+  const execute = conn ? conn.execute.bind(conn) : query;
+
   // Cek apakah sudah ada invoice untuk order ini
-  const [[existing]] = await query('SELECT id FROM invoices WHERE order_id = ?', [order.id]);
+  const [[existing]] = await execute('SELECT id FROM invoices WHERE order_id = ?', [order.id]);
   if (existing) return; // Sudah ada, skip
 
-  const conn = await pool.getConnection();
-  try {
-    await conn.beginTransaction();
-
+  const insertInvoice = async (tx) => {
     // Generate invoice number
-    const [[row]] = await conn.execute('SELECT last_seq FROM invoice_sequence WHERE id = 1 FOR UPDATE');
+    const [[row]] = await tx.execute('SELECT last_seq FROM invoice_sequence WHERE id = 1 FOR UPDATE');
     const newSeq = row.last_seq + 1;
-    await conn.execute('UPDATE invoice_sequence SET last_seq = ? WHERE id = 1', [newSeq]);
+    await tx.execute('UPDATE invoice_sequence SET last_seq = ? WHERE id = 1', [newSeq]);
     const seq = String(newSeq).padStart(6, '0');
     const now = new Date();
     const yyyy = now.getFullYear();
@@ -1096,7 +1254,7 @@ async function autoCreateInvoice(order) {
     const taxAmount = 0;
     const total = subtotal - discountAmount + taxAmount;
 
-    await conn.execute(
+    await tx.execute(
       `INSERT INTO invoices
          (id, invoice_number, order_id, customer_id, subtotal, discount_amount, tax_amount, total, payment_status, payment_method, notes, created_by)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -1115,12 +1273,22 @@ async function autoCreateInvoice(order) {
         null, // auto-generated — no creator
       ]
     );
+  };
 
-    await conn.commit();
+  if (conn) {
+    await insertInvoice(conn);
+    return;
+  }
+
+  const ownConn = await pool.getConnection();
+  try {
+    await ownConn.beginTransaction();
+    await insertInvoice(ownConn);
+    await ownConn.commit();
   } catch (err) {
-    await conn.rollback();
+    await ownConn.rollback();
     throw err;
   } finally {
-    conn.release();
+    ownConn.release();
   }
 }

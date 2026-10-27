@@ -2,7 +2,8 @@
  * auth.routes.js — Authentication routes.
  *
  * Rate limits:
- *   - General auth:      100 req/min  (login, register, refresh)
+ *   - Login/admin-login:  10 req/15min (IP + email, prevent brute-force)
+ *   - General auth:      100 req/min  (register, refresh)
  *   - Forgot password:     5 req/15min (prevent email spam)
  *   - Resend verification: 3 req/min   (prevent spam)
  *   - Reset password:     10 req/15min (prevent brute-force)
@@ -27,6 +28,19 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { ok: false, message: 'Terlalu banyak permintaan. Coba lagi nanti.' },
+});
+
+// Tight limiter for login attempts, keyed by IP + email (lowercase)
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    return `${req.ip}:${email}`;
+  },
+  message: { ok: false, message: 'Terlalu banyak percobaan. Coba lagi nanti.' },
 });
 
 // Tight limiter for forgot-password (prevent email bombing)
@@ -76,7 +90,7 @@ router.post(
 
 router.post(
   '/login',
-  authLimiter,
+  loginLimiter,
   [
     body('email').isEmail().normalizeEmail().withMessage('Email tidak valid.'),
     body('password').notEmpty().withMessage('Password wajib diisi.'),
@@ -86,7 +100,7 @@ router.post(
 
 router.post(
   '/admin-login',
-  authLimiter,
+  loginLimiter,
   [
     body('email').isEmail().normalizeEmail().withMessage('Email tidak valid.'),
     body('password').notEmpty().withMessage('Password wajib diisi.'),

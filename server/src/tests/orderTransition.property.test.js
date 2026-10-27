@@ -9,9 +9,26 @@
 
 // Feature: backend-integration, Property 3: Order status transition
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import fc from 'fast-check';
-import { getAllowedNextStatuses } from '../services/orders.service.js';
+
+vi.hoisted(() => {
+  Object.assign(process.env, {
+    DB_HOST: '127.0.0.1',
+    DB_NAME: 'gala_test',
+    DB_USER: 'root',
+    DB_PASSWORD: '',
+    JWT_ACCESS_SECRET: 'test-access',
+    JWT_REFRESH_SECRET: 'test-refresh',
+  });
+});
+
+vi.mock('../db/connection.js', () => ({
+  query: vi.fn(),
+  pool: { getConnection: vi.fn() },
+}));
+
+const { getAllowedNextStatuses } = await import('../services/orders.service.js');
 
 const ALL_STATUSES = [
   'Waiting for Payment',
@@ -31,26 +48,25 @@ const ALL_ROLES = ['customer', 'admin', 'owner', 'cashier', 'cs', 'operational',
 const ALLOWED = {
   cashier:     {
     'Waiting for Payment': ['Payment Accepted', 'Cancelled'],
-    'Payment Accepted':    ['Cancelled'],
+    'Payment Accepted':    [],
   },
   cs:          {
     'Waiting for Design Approval': ['Design Accepted'],
     'Design Accepted':             ['Waiting for Payment'],
   },
   operational: {
-    'Design Accepted': ['On Progress'],
     'Payment Accepted': ['On Progress'],
   },
   qc:          {
     'On Progress':      ['Quality Checking'],
-    'Quality Checking': ['In Delivery'],
+    'Quality Checking': ['In Delivery', 'On Progress'],
     'In Delivery':      ['Finished'],
   },
   admin: {
     'Waiting for Payment':         ['Payment Accepted', 'Cancelled'],
-    'Payment Accepted':            ['Waiting for Design Approval', 'Cancelled'],
+    'Payment Accepted':            ['Waiting for Design Approval', 'On Progress', 'Cancelled'],
     'Waiting for Design Approval': ['Design Accepted', 'Cancelled'],
-    'Design Accepted':             ['On Progress', 'Waiting for Payment', 'Cancelled'],
+    'Design Accepted':             ['Waiting for Payment', 'Cancelled'],
     'On Progress':                 ['Quality Checking', 'Cancelled'],
     'Quality Checking':            ['In Delivery', 'On Progress', 'Cancelled'],
     'In Delivery':                 ['Finished', 'Cancelled'],
@@ -109,6 +125,12 @@ describe('Property 3: Order status transition', () => {
       ),
       { numRuns: 100 }
     );
+  });
+
+  it('D2: operational and admin cannot move Design Accepted to On Progress', () => {
+    expect(getAllowedNextStatuses('Design Accepted', 'operational')).not.toContain('On Progress');
+    expect(getAllowedNextStatuses('Design Accepted', 'admin')).not.toContain('On Progress');
+    expect(getAllowedNextStatuses('Payment Accepted', 'operational')).toContain('On Progress');
   });
 
   it('customer role has no allowed transitions (100 iterations)', () => {

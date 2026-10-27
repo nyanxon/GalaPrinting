@@ -9,6 +9,7 @@ import { config } from '../config/env.js';
 import { verifyAccessToken } from '../utils/jwt.js';
 import { query } from '../db/connection.js';
 import { STAFF_ROLES } from '../config/roles.js';
+import { canCustomerAccessConversation } from '../utils/conversationAccess.js';
 
 let io = null;
 
@@ -80,9 +81,16 @@ export function initSocket(httpServer) {
       } catch { /* non-fatal */ }
 
       // Allow customer to join their conversation room on demand
-      socket.on('join:conversation', ({ conversationId }) => {
-        if (conversationId) {
+      socket.on('join:conversation', async ({ conversationId } = {}) => {
+        try {
+          const allowed = await canCustomerAccessConversation(userId, conversationId);
+          if (!allowed) {
+            socket.emit('conversation:error', { message: 'Akses ditolak.' });
+            return;
+          }
           socket.join(`conversation:${conversationId}`);
+        } catch {
+          socket.emit('conversation:error', { message: 'Akses ditolak.' });
         }
       });
     } else if (STAFF_ROLES.includes(role)) {

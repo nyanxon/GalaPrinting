@@ -34,13 +34,14 @@ async function generateInvoiceNumber(conn) {
  * @param {string} createdBy  Cashier user_id
  * @param {object} opts       { discount_amount?, tax_amount?, payment_method?, notes? }
  */
-export async function createInvoice(orderId, createdBy, opts = {}) {
-  const conn = await pool.getConnection();
+export async function createInvoice(orderId, createdBy, opts = {}, conn = null) {
+  const ownConn = !conn;
+  const tx = conn || await pool.getConnection();
   try {
-    await conn.beginTransaction();
+    if (ownConn) await tx.beginTransaction();
 
     // Ambil order untuk dapat subtotal, customer_id
-    const [[order]] = await conn.execute('SELECT * FROM orders WHERE id = ?', [orderId]);
+    const [[order]] = await tx.execute('SELECT * FROM orders WHERE id = ?', [orderId]);
     if (!order) {
       const err = new Error('Order tidak ditemukan.');
       err.status = 404;
@@ -48,14 +49,14 @@ export async function createInvoice(orderId, createdBy, opts = {}) {
     }
 
     // Cek apakah sudah ada invoice untuk order ini
-    const [[existingInv]] = await conn.execute('SELECT id FROM invoices WHERE order_id = ?', [orderId]);
+    const [[existingInv]] = await tx.execute('SELECT id FROM invoices WHERE order_id = ?', [orderId]);
     if (existingInv) {
       const err = new Error('Invoice untuk order ini sudah dibuat.');
       err.status = 422;
       throw err;
     }
 
-    const invoiceNumber = await generateInvoiceNumber(conn);
+    const invoiceNumber = await generateInvoiceNumber(tx);
     const id = randomUUID();
 
     const subtotal = Number(order.subtotal || 0);
@@ -63,7 +64,7 @@ export async function createInvoice(orderId, createdBy, opts = {}) {
     const taxAmount = Number(opts.tax_amount ?? order.tax_amount ?? 0);
     const total = subtotal - discountAmount + taxAmount;
 
-    await conn.execute(
+    await tx.execute(
       `INSERT INTO invoices
          (id, invoice_number, order_id, customer_id, subtotal, discount_amount, tax_amount, total, payment_status, payment_method, notes, created_by)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -83,13 +84,13 @@ export async function createInvoice(orderId, createdBy, opts = {}) {
       ]
     );
 
-    await conn.commit();
-    return getInvoiceById(id);
+    if (ownConn) await tx.commit();
+    return getInvoiceById(id, conn ? tx : null);
   } catch (err) {
-    await conn.rollback();
+    if (ownConn) await tx.rollback();
     throw err;
   } finally {
-    conn.release();
+    if (ownConn) tx.release();
   }
 }
 
@@ -97,8 +98,9 @@ export async function createInvoice(orderId, createdBy, opts = {}) {
  * Ambil invoice by ID + join order & customer.
  * @param {string} id
  */
-export async function getInvoiceById(id) {
-  const [rows] = await query(
+export async function getInvoiceById(id, conn = null) {
+  const execute = conn ? conn.execute.bind(conn) : query;
+  const [rows] = await execute(
     `SELECT
        i.*,
        o.order_number,
@@ -119,7 +121,7 @@ export async function getInvoiceById(id) {
   if (rows.length === 0) return null;
 
   // Ambil item dari order terkait
-  const [items] = await query('SELECT * FROM order_items WHERE order_id = ?', [rows[0].order_id]);
+  const [items] = await execute('SELECT * FROM order_items WHERE order_id = ?', [rows[0].order_id]);
   return { ...rows[0], items };
 }
 
@@ -127,8 +129,9 @@ export async function getInvoiceById(id) {
  * Ambil invoice berdasarkan order_id.
  * @param {string} orderId
  */
-export async function getInvoiceByOrderId(orderId) {
-  const [rows] = await query(
+export async function getInvoiceByOrderId(orderId, conn = null) {
+  const execute = conn ? conn.execute.bind(conn) : query;
+  const [rows] = await execute(
     `SELECT
        i.*,
        o.order_number,
@@ -148,7 +151,7 @@ export async function getInvoiceByOrderId(orderId) {
   );
   if (rows.length === 0) return null;
 
-  const [items] = await query('SELECT * FROM order_items WHERE order_id = ?', [rows[0].order_id]);
+  const [items] = await execute('SELECT * FROM order_items WHERE order_id = ?', [rows[0].order_id]);
   return { ...rows[0], items };
 }
 
@@ -156,7 +159,8 @@ export async function getInvoiceByOrderId(orderId) {
  * List semua invoice dengan pagination + filter payment_status.
  * @param {{ page?, limit?, payment_status? }}
  */
-export async function listInvoices({ page = 1, limit = 20, payment_status } = {}) {
+export async function listInvoices({ page = 1, limit = 20, payment_status } = {}, conn = null) {
+  const execute = conn ? conn.execute.bind(conn) : query;
   const { pageNum, limitNum, offset } = parsePagination(page, limit, 2000, 20);
 
   let whereClause = '';
@@ -166,12 +170,12 @@ export async function listInvoices({ page = 1, limit = 20, payment_status } = {}
     params.push(payment_status);
   }
 
-  const [[{ total }]] = await query(
+  const [[{ total }]] = await execute(
     `SELECT COUNT(*) AS total FROM invoices i ${whereClause}`,
     params
   );
 
-  const [items] = await query(
+  const [items] = await execute(
     `SELECT
        i.id,
        i.invoice_number,
@@ -271,8 +275,9 @@ export function computeInvoicePayment({ invoice, newStatus, paymentMethod, dpAmo
  *                            (harus > 0 dan < total). Nilai DP dipertahankan
  *                            sebagai histori walau status berubah ke status lain.
  */
-export async function updateInvoicePaymentStatus(id, newStatus, paymentMethod, dpAmount) {
-  const invoice = await getInvoiceById(id);
+export async function updateInvoicePaymentStatus(id, newStatus, paymentMethod, dpAmount, conn = null) {
+  const execute = conn ? conn.execute.bind(conn) : query;
+  const invoice = await getInvoiceById(id, conn);
   if (!invoice) {
     const err = new Error('Invoice tidak ditemukan.');
     err.status = 404;
@@ -299,14 +304,14 @@ export async function updateInvoicePaymentStatus(id, newStatus, paymentMethod, d
 
   const fields = computeInvoicePayment({ invoice, newStatus, paymentMethod, dpAmount });
 
-  await query(
+  await execute(
     `UPDATE invoices
      SET payment_status = ?, payment_method = ?, dp_amount = ?, locked = ?, paid_at = ?, dp_paid_at = ?
      WHERE id = ?`,
     [fields.payment_status, fields.payment_method, fields.dp_amount, fields.locked, fields.paid_at, fields.dp_paid_at, id]
   );
 
-  return getInvoiceById(id);
+  return getInvoiceById(id, conn);
 }
 
 /**
@@ -314,8 +319,9 @@ export async function updateInvoicePaymentStatus(id, newStatus, paymentMethod, d
  * @param {string} id
  * @param {object} fields  { notes?, discount_amount?, tax_amount?, payment_method? }
  */
-export async function updateInvoice(id, fields) {
-  const invoice = await getInvoiceById(id);
+export async function updateInvoice(id, fields, conn = null) {
+  const execute = conn ? conn.execute.bind(conn) : query;
+  const invoice = await getInvoiceById(id, conn);
   if (!invoice) {
     const err = new Error('Invoice tidak ditemukan.');
     err.status = 404;
@@ -363,6 +369,6 @@ export async function updateInvoice(id, fields) {
   }
 
   params.push(id);
-  await query(`UPDATE invoices SET ${updates.join(', ')} WHERE id = ?`, params);
-  return getInvoiceById(id);
+  await execute(`UPDATE invoices SET ${updates.join(', ')} WHERE id = ?`, params);
+  return getInvoiceById(id, conn);
 }

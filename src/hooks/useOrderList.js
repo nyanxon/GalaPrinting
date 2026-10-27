@@ -24,14 +24,12 @@ import {
   updateAdminNote,
   getAllowedNextStatuses,
 } from '../services/orders.js';
+import { STANDARD_STEPS, STATUS_CONFLICT_MESSAGE } from '../services/orderStatusConfig.js';
 import { openInvoicePdf } from '../services/api/invoiceService.js';
 import { showToast } from '../core/toastEmitter.js';
 import { track } from '../utils/activityTracker.js';
 
-const STATUS_ORDER = [
-  'Waiting for Design Approval', 'Design Accepted', 'Waiting for Payment',
-  'Payment Accepted', 'On Progress', 'Quality Checking', 'In Delivery', 'Finished',
-];
+const STATUS_ORDER = STANDARD_STEPS;
 
 /**
  * Determine "state" of an order from a role's perspective:
@@ -104,6 +102,7 @@ export default function useOrderList({
   // Cancel dialog (Admin / Cashier)
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [cancelTargetOrderId, setCancelTargetOrderId] = useState(null);
+  const [cancelTargetStatus, setCancelTargetStatus] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelReasonErr, setCancelReasonErr] = useState('');
 
@@ -167,7 +166,7 @@ export default function useOrderList({
 
   // ── Advance handler ──────────────────────────────────────────────────────
 
-  const handleAdvance = useCallback(async (orderId, nextStatus) => {
+  const handleAdvance = useCallback(async (orderId, nextStatus, expectedStatus) => {
     if (enableInvoice && nextStatus === 'Payment Accepted') {
       setInvoiceMap((prev) => { const n = { ...prev }; delete n[orderId]; return n; });
       pendingAutoPrintRef.current.add(orderId);
@@ -178,13 +177,22 @@ export default function useOrderList({
       const order = await getOrderById(orderId);
       fromStatus = order?.status ?? null;
     } catch { /* keep null */ }
-    const res = await updateOrderStatus(orderId, nextStatus, actorRole);
+    const res = await updateOrderStatus(
+      orderId,
+      nextStatus,
+      actorRole,
+      undefined,
+      undefined,
+      { expectedStatus }
+    );
     if (res.ok) {
       track('Ubah Status Order', {
         targetType: 'order', targetId: orderId,
         metadata: { from: fromStatus, to: nextStatus, role: actorRole },
       });
       showToast(`Status → "${nextStatus}".`, 'success');
+    } else if (res.status === 409) {
+      showToast(STATUS_CONFLICT_MESSAGE, 'error');
     } else {
       showToast(res.message || 'Gagal mengubah status.', 'error');
     }
@@ -193,8 +201,11 @@ export default function useOrderList({
 
   // ── Cancel dialog ────────────────────────────────────────────────────────
 
-  const handleOpenCancel = useCallback((orderId) => {
+  const handleOpenCancel = useCallback((orderId, expectedStatus = null) => {
     setCancelTargetOrderId(orderId);
+    // Capture the status visible in the row at click time. Re-reading here
+    // would defeat optimistic concurrency (a silent update could be adopted).
+    setCancelTargetStatus(expectedStatus ?? null);
     setCancelReason('');
     setCancelReasonErr('');
     setCancelDialogOpen(true);
@@ -207,7 +218,14 @@ export default function useOrderList({
       const order = await getOrderById(cancelTargetOrderId);
       fromStatus = order?.status ?? null;
     } catch { /* keep null */ }
-    const res = await updateOrderStatus(cancelTargetOrderId, 'Cancelled', actorRole, cancelReason.trim());
+    const res = await updateOrderStatus(
+      cancelTargetOrderId,
+      'Cancelled',
+      actorRole,
+      cancelReason.trim(),
+      undefined,
+      { expectedStatus: cancelTargetStatus ?? undefined }
+    );
     if (res.ok) {
       track('Batalkan Order', {
         targetType: 'order', targetId: cancelTargetOrderId,
@@ -216,17 +234,28 @@ export default function useOrderList({
       showToast('Pesanan dibatalkan.', 'success');
       setCancelDialogOpen(false);
       setCancelTargetOrderId(null);
+      setCancelTargetStatus(null);
       setCancelReason('');
       setCancelReasonErr('');
+      fetchRef.current?.();
+    } else if (res.status === 409) {
+      // Another actor changed the order first — close the stale dialog and reload.
+      setCancelDialogOpen(false);
+      setCancelTargetOrderId(null);
+      setCancelTargetStatus(null);
+      setCancelReason('');
+      setCancelReasonErr('');
+      showToast(STATUS_CONFLICT_MESSAGE, 'error');
       fetchRef.current?.();
     } else {
       setCancelReasonErr(res.message || 'Gagal membatalkan pesanan.');
     }
-  }, [cancelReason, cancelTargetOrderId, actorRole]);
+  }, [cancelReason, cancelTargetOrderId, cancelTargetStatus, actorRole]);
 
   const handleCancelClose = useCallback(() => {
     setCancelDialogOpen(false);
     setCancelTargetOrderId(null);
+    setCancelTargetStatus(null);
     setCancelReason('');
     setCancelReasonErr('');
   }, []);

@@ -22,7 +22,6 @@ const TRANSITIONS = {
     'Design Accepted':             ['Waiting for Payment'],
   },
   operational: {
-    'Design Accepted':  ['On Progress'],
     'Payment Accepted': ['On Progress'],
   },
   qc:          {
@@ -34,7 +33,7 @@ const TRANSITIONS = {
     'Waiting for Payment':         ['Payment Accepted', 'Cancelled'],
     'Payment Accepted':            ['Waiting for Design Approval', 'Cancelled'],
     'Waiting for Design Approval': ['Design Accepted', 'Cancelled'],
-    'Design Accepted':             ['On Progress', 'Cancelled'],
+    'Design Accepted':             ['Cancelled'],
     'On Progress':                 ['Quality Checking', 'Cancelled'],
     'Quality Checking':            ['In Delivery', 'Cancelled'],
     'In Delivery':                 ['Finished'],

@@ -72,7 +72,7 @@ describe('Property 2: Profile update round-trip', () => {
         fc.record({
           name: fc.string({ minLength: 1, maxLength: 120 }).map((s) => s.trim()).filter((s) => s.length > 0),
           phone: fc.stringMatching(/^[0-9]{8,15}$/),
-          dob: fc.option(fc.date({ min: new Date('1900-01-01'), max: new Date('2010-12-31') })
+          dob: fc.option(fc.date({ min: new Date('1900-01-01'), max: new Date('2010-12-31'), noInvalidDate: true })
             .map((d) => d.toISOString().slice(0, 10)), { nil: null }),
           gender: fc.option(fc.constantFrom('L', 'P'), { nil: null }),
         }),

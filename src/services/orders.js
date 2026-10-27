@@ -14,6 +14,29 @@
 import { readJson, writeJson } from "../core/storage.js";
 import { normalizePagination } from "../utils/validate.js";
 import { USE_BACKEND, api, resolveApiUrl } from "../core/httpClient.js";
+import {
+  ORDER_STATUSES,
+  STANDARD_TIMELINE,
+  CUSTOM_TIMELINE,
+  ALLOWED_TRANSITIONS,
+  CUSTOM_TRANSITIONS,
+  STATUS_CONFIG,
+  getAllowedNextStatuses,
+  canDeleteOrder,
+  canCancelStatus,
+} from "./orderStatusConfig.js";
+
+// Re-exported for backward compatibility. The shared module is the single
+// source of truth for statuses, timelines, and role transitions.
+export {
+  ORDER_STATUSES,
+  STANDARD_TIMELINE,
+  CUSTOM_TIMELINE,
+  ALLOWED_TRANSITIONS,
+  CUSTOM_TRANSITIONS,
+  STATUS_CONFIG,
+  getAllowedNextStatuses,
+};
 
 const KEY = "gala.orders";
 
@@ -52,99 +75,6 @@ function generateOrderNumber() {
   const dd   = String(now.getDate()).padStart(2, "0");
   return `GALA-${yyyy}/${mm}/${dd}-${seq}`;
 }
-
-/* ── Status transitions ──────────────────────────────────── */
-
-/**
- * All orders (standard, custom, offline) follow the same flow:
- *   Waiting for Design Approval → Design Accepted → Waiting for Payment
- *   → Payment Accepted → On Progress → Quality Checking → In Delivery → Finished
- *
- * Role sequence: CS → Cashier → Operational → QC
- */
-export const ORDER_STATUSES = [
-  "Waiting for Design Approval",
-  "Design Accepted",
-  "Waiting for Payment",
-  "Payment Accepted",
-  "On Progress",
-  "Quality Checking",
-  "In Delivery",
-  "Finished",
-  "Cancelled",
-];
-
-/** Timeline steps for all orders */
-export const STANDARD_TIMELINE = [
-  "Waiting for Design Approval",
-  "Design Accepted",
-  "Waiting for Payment",
-  "Payment Accepted",
-  "On Progress",
-  "Quality Checking",
-  "In Delivery",
-  "Finished",
-  "Cancelled",
-];
-
-/** Timeline steps for custom orders (same as standard — kept for backward compat) */
-export const CUSTOM_TIMELINE = [
-  "Waiting for Design Approval",
-  "Design Accepted",
-  "Waiting for Payment",
-  "Payment Accepted",
-  "On Progress",
-  "Quality Checking",
-  "In Delivery",
-  "Finished",
-  "Cancelled",
-];
-
-/** Which roles can advance an order from a given status */
-export const ALLOWED_TRANSITIONS = {
-  "Waiting for Design Approval":{ next: ["Design Accepted"],              roles: ["cs", "admin"] },
-  "Design Accepted":            { next: ["Waiting for Payment"],          roles: ["cs", "admin"] },
-  "Waiting for Payment":        { next: ["Payment Accepted"],             roles: ["cashier", "admin"] },
-  "Payment Accepted":           { next: ["On Progress"],                  roles: ["operational", "admin"] },
-  "On Progress":                { next: ["Quality Checking"],             roles: ["qc", "admin"] },
-  "Quality Checking":           { next: ["In Delivery", "On Progress"],   roles: ["qc", "admin"] }, // QC reject → back to Operational
-  "In Delivery":                { next: ["Finished"],                     roles: ["qc", "admin", "courier_api"] },
-  "Finished":                   { next: [],                               roles: [] },
-};
-
-/** Transitions for custom orders (same as standard — kept for backward compat) */
-export const CUSTOM_TRANSITIONS = {
-  "Waiting for Design Approval":{ next: ["Design Accepted"],              roles: ["cs", "admin"] },
-  "Design Accepted":            { next: ["Waiting for Payment"],          roles: ["cs", "admin"] },
-  "Waiting for Payment":        { next: ["Payment Accepted"],             roles: ["cashier", "admin"] },
-  "Payment Accepted":           { next: ["On Progress"],                  roles: ["operational", "admin"] },
-  "On Progress":                { next: ["Quality Checking"],             roles: ["qc", "admin"] },
-  "Quality Checking":           { next: ["In Delivery", "On Progress"],   roles: ["qc", "admin"] }, // QC reject → back to Operational
-  "In Delivery":                { next: ["Finished"],                     roles: ["qc", "admin", "courier_api"] },
-  "Finished":                   { next: [],                               roles: [] },
-};
-
-/** Get allowed next statuses for a given current status + actor role + order type */
-export function getAllowedNextStatuses(currentStatus, actorRole, orderType = "standard") {
-  const transitions = orderType === "custom" ? CUSTOM_TRANSITIONS : ALLOWED_TRANSITIONS;
-  const transition  = transitions[currentStatus];
-  if (!transition) return [];
-  if (actorRole === "admin" || actorRole === "owner") return transition.next;
-  return transition.roles.includes(actorRole) ? transition.next : [];
-}
-
-/** Status display config (icon + badge color class) */
-export const STATUS_CONFIG = {
-  'Waiting for Payment':         { icon: '💳', badge: 'status--waiting-payment',  label: 'Menunggu Pembayaran',       color: '#92400e', bg: '#fef3c7' },
-  'Payment Accepted':            { icon: '✅', badge: 'status--payment-accepted', label: 'Pembayaran Diterima',       color: '#166534', bg: '#dcfce7' },
-  'Waiting for Design Approval': { icon: '🎨', badge: 'status--waiting-design',   label: 'Menunggu Konfirmasi Desain', color: '#5b21b6', bg: '#ede9fe' },
-  'Design Accepted':             { icon: '👍', badge: 'status--design-accepted',  label: 'Desain Disetujui',          color: '#1e40af', bg: '#dbeafe' },
-  'On Progress':                 { icon: '⚙️', badge: 'status--on-progress',      label: 'Sedang Diproses',           color: '#9a3412', bg: '#ffedd5' },
-  'Quality Checking':            { icon: '🔍', badge: 'status--qc',               label: 'Quality Check',             color: '#0369a1', bg: '#e0f2fe' },
-  'In Delivery':                 { icon: '🚚', badge: 'status--in-delivery',      label: 'Dalam Pengiriman',          color: '#15803d', bg: '#f0fdf4' },
-  'Finished':                    { icon: '🎉', badge: 'status--finished',         label: 'Selesai',                   color: '#166534', bg: '#dcfce7' },
-  'Cancelled':                   { icon: '❌', badge: 'status--cancelled',        label: 'Dibatalkan',                color: '#991b1b', bg: '#fee2e2' },
-};
 
 /* ══════════════════════════════════════════════════════════
    BACKEND RESPONSE MAPPERS
@@ -410,22 +340,29 @@ export function createCustomOrder({ customerId, customerName, customerPhone, cus
 /**
  * Delete an order by ID (admin/cashier/cs — rules enforced by backend).
  * @param {string} orderId
+ * @param {string} [actorRole="admin"] role used by the localStorage fallback
+ * @param {{ expectedStatus?: string }} [opts] optimistic-concurrency guard;
+ *   when supplied and different from the server's current status, the API
+ *   responds 409 so the caller can show a conflict toast and refetch.
  */
-export function deleteOrder(orderId) {
+export function deleteOrder(orderId, actorRole = "admin", opts = {}) {
   if (USE_BACKEND) {
-    return api.delete(`/api/orders/${orderId}`).then((res) => res.data);
+    const config = {};
+    if (opts?.expectedStatus !== undefined) {
+      config.data = { expectedStatus: opts.expectedStatus };
+    }
+    return api.delete(`/api/orders/${orderId}`, config).then((res) => res.data);
   }
-  // Local fallback
-  const key = 'gala_orders';
-  const orders = JSON.parse(localStorage.getItem(key) || '[]');
+  // Local fallback — mirror the backend D3 delete matrix.
+  const orders = load();
   const idx = orders.findIndex((o) => o.id === orderId);
   if (idx === -1) throw new Error('Pesanan tidak ditemukan.');
   const order = orders[idx];
-  if (order.orderType !== 'custom') throw new Error('Hanya pesanan custom yang bisa dihapus.');
-  const paidStatuses = ['Payment Accepted', 'Waiting for Design Approval', 'On Progress', 'Ready to Ship', 'Shipped', 'Completed'];
-  if (paidStatuses.includes(order.status)) throw new Error('Pesanan yang sudah diproses tidak bisa dihapus.');
+  if (!canDeleteOrder(order, actorRole)) {
+    throw new Error('Pesanan ini tidak bisa dihapus.');
+  }
   orders.splice(idx, 1);
-  localStorage.setItem(key, JSON.stringify(orders));
+  save(orders);
   return { ok: true, data: order };
 }
 
@@ -726,8 +663,11 @@ function listOrdersPaginatedLocal(opts = {}) {
  * @param {{ paymentMethod?: string, paymentStatus?: 'paid'|'dp', dpAmount?: number|string }} [payment]
  *   Data pembayaran — WAJIB untuk transisi ke 'Payment Accepted' (ditulis backend ke invoices
  *   + orders.payment_method dalam satu transaksi dengan kenaikan status).
+ * @param {{ expectedStatus?: string }} [opts] optimistic-concurrency guard;
+ *   kirim status yang sedang ditampilkan klien agar backend dapat membalas 409
+ *   bila order sudah diubah aktor lain.
  */
-export function updateOrderStatus(orderId, newStatus, actorRole = "admin", cancellationReason, payment) {
+export function updateOrderStatus(orderId, newStatus, actorRole = "admin", cancellationReason, payment, opts = {}) {
   if (USE_BACKEND) {
     const body = {
       newStatus,
@@ -736,11 +676,14 @@ export function updateOrderStatus(orderId, newStatus, actorRole = "admin", cance
       paymentStatus: payment?.paymentStatus || null,
       dpAmount: payment?.dpAmount != null ? payment.dpAmount : null,
     };
+    if (opts?.expectedStatus !== undefined) {
+      body.expectedStatus = opts.expectedStatus;
+    }
     return api.patch(`/api/orders/${orderId}/status`, body)
       .then((res) => ({ ok: true, order: mapOrder(res.data.data) }))
       .catch((err) => {
         const message = err.response?.data?.message ?? "Gagal memperbarui status order.";
-        return { ok: false, message };
+        return { ok: false, message, status: err.response?.status };
       });
   }
   return updateOrderStatusLocal(orderId, newStatus, actorRole, cancellationReason);
@@ -756,7 +699,8 @@ function updateOrderStatusLocal(orderId, newStatus, actorRole = "admin", cancell
   if (!order) return { ok: false, message: "Order tidak ditemukan." };
 
   const allowed = getAllowedNextStatuses(order.status, actorRole, order.orderType || "standard");
-  if (!allowed.includes(newStatus)) {
+  const isCancellation = newStatus === "Cancelled" && canCancelStatus(order.status, actorRole);
+  if (!allowed.includes(newStatus) && !isCancellation) {
     return {
       ok: false,
       message: `Transisi dari "${order.status}" ke "${newStatus}" tidak diizinkan untuk role "${actorRole}".`,
@@ -810,7 +754,7 @@ export function setTrackingNumber(orderId, trackingNumber, courierName = "", act
       .then((res) => ({ ok: true, order: mapOrder(res.data.data) }))
       .catch((err) => {
         const message = err.response?.data?.message ?? "Gagal menyimpan nomor resi.";
-        return { ok: false, message };
+        return { ok: false, message, status: err.response?.status };
       });
   }
   return setTrackingNumberLocal(orderId, trackingNumber, courierName, actorRole);
@@ -857,9 +801,10 @@ function setTrackingNumberLocal(orderId, trackingNumber, courierName = "", actor
  * Used as a manual fallback until real courier webhook is integrated.
  * @param {string} orderId
  * @param {string} [actorRole]
+ * @param {{ expectedStatus?: string }} [opts]
  */
-export function markOrderDelivered(orderId, actorRole = "qc") {
-  return updateOrderStatus(orderId, "Finished", actorRole);
+export function markOrderDelivered(orderId, actorRole = "qc", opts = {}) {
+  return updateOrderStatus(orderId, "Finished", actorRole, undefined, undefined, opts);
 }
 
 /**

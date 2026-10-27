@@ -6,6 +6,8 @@
 import * as svc from '../services/invoice.service.js';
 import { generateInvoicePdf } from '../utils/invoicePdf.js';
 import { sendInvoiceEmail } from '../services/email.service.js';
+import { assertCanAccessOrder, OrderAccessError } from '../utils/orderAccess.js';
+import * as orderSvc from '../services/orders.service.js';
 
 /** GET /api/invoices */
 export async function listInvoices(req, res, next) {
@@ -49,8 +51,13 @@ export async function getInvoice(req, res, next) {
     if (!invoice) {
       return res.status(404).json({ ok: false, message: 'Invoice tidak ditemukan.' });
     }
+    const order = await orderSvc.getOrderById(invoice.order_id);
+    assertCanAccessOrder(req.user, order);
     return res.json({ ok: true, data: invoice });
   } catch (err) {
+    if (err instanceof OrderAccessError) {
+      return res.status(err.status).json({ ok: false, message: err.message });
+    }
     next(err);
   }
 }
@@ -58,12 +65,17 @@ export async function getInvoice(req, res, next) {
 /** GET /api/orders/:orderId/invoice */
 export async function getInvoiceByOrder(req, res, next) {
   try {
+    const order = await orderSvc.getOrderById(req.params.orderId);
+    assertCanAccessOrder(req.user, order);
     const invoice = await svc.getInvoiceByOrderId(req.params.orderId);
     if (!invoice) {
       return res.status(404).json({ ok: false, message: 'Invoice untuk order ini belum dibuat.' });
     }
     return res.json({ ok: true, data: invoice });
   } catch (err) {
+    if (err instanceof OrderAccessError) {
+      return res.status(err.status).json({ ok: false, message: err.message });
+    }
     next(err);
   }
 }

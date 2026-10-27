@@ -175,10 +175,12 @@ export default function SubAdminOrdersSection({ extraColumn = null }) {
                   actorRole,
                   order.orderType || 'standard'
                 );
-                const isQcDeliveryStatus =
-                  actorRole === 'qc' &&
-                  (order.status === 'Quality Checking' || order.status === 'In Delivery');
-                const showAdvanceBtn = allowed.length > 0 && !isQcDeliveryStatus;
+                const qcExtraHandled =
+                  actorRole === 'qc' && order.status === 'Quality Checking' ? ['In Delivery']
+                  : actorRole === 'qc' && order.status === 'In Delivery' ? ['Finished']
+                  : [];
+                const advanceTargets = allowed.filter((s) => !qcExtraHandled.includes(s));
+                const showAdvanceBtn = advanceTargets.length > 0;
                 const orderState = getOrderStateForRole(order);
                 const stateInfo = STATE_LABEL[orderState] || STATE_LABEL.terminal;
 
@@ -269,9 +271,9 @@ export default function SubAdminOrdersSection({ extraColumn = null }) {
                           <button
                             className="adm-btn adm-btn--primary"
                             type="button"
-                            onClick={() => handleAdvance(order.id, allowed[0])}
+                            onClick={() => handleAdvance(order.id, advanceTargets[0], order.status)}
                           >
-                            {cfg.icon} → {allowed[0]}
+                            {cfg.icon} → {advanceTargets[0]}
                           </button>
                         )}
                         <button

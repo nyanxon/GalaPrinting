@@ -14,6 +14,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { listAllOrders, getAllowedNextStatuses, STATUS_CONFIG, attachPaymentProof, getOrderById, updateOrderStatus, deleteOrder } from '../../../../services/orders.js';
+import { canCancelOrder, STATUS_CONFLICT_MESSAGE } from '../../../../services/orderStatusConfig.js';
 import { formatCurrency } from '../../../../utils/format.js';
 import { resolveApiUrl } from '../../../../core/httpClient.js';
 import { getInvoiceByOrderId, openInvoicePdf } from '../../../../services/api/invoiceService.js';
@@ -41,7 +42,7 @@ function getProofUrl(proof) {
   return null;
 }
 
-function CashierProofCell({ order, onCancel, onUpload, uploading }) {
+function CashierProofCell({ order, actorRole, onCancel, onUpload, uploading }) {
   const proof    = order.paymentProof;
   const proofUrl = getProofUrl(proof);
   const isOffline = order.source === 'offline';
@@ -61,7 +62,7 @@ function CashierProofCell({ order, onCancel, onUpload, uploading }) {
           <span className="adm-date">Belum ada bukti</span>
         )}
 
-        {order.status !== 'Cancelled' && order.status !== 'Finished' && order.status !== 'Payment Accepted' && (
+        {canCancelOrder(order, actorRole) && (
           <button
             type="button"
             className="adm-btn"
@@ -69,7 +70,7 @@ function CashierProofCell({ order, onCancel, onUpload, uploading }) {
               background: 'var(--color-danger-dark)', color: '#fff', border: 'none',
               fontSize: '12px', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer',
             }}
-            onClick={() => onCancel(order.id)}
+            onClick={() => onCancel(order.id, order.status)}
           >
             ❌ Batalkan
           </button>
@@ -234,7 +235,7 @@ export default function CashierOrdersSection() {
       setPaymentModal({ orderId, nextStatus, order });
       return;
     }
-    hookAdvance(orderId, nextStatus);
+    hookAdvance(orderId, nextStatus, order?.status);
   }, [hookAdvance]);
 
   // Submit modal pembayaran → naikkan status ke Payment Accepted + simpan data
@@ -266,7 +267,8 @@ export default function CashierOrdersSection() {
           paymentMethod: paymentData.paymentMethod,
           paymentStatus: paymentData.paymentStatus,
           dpAmount: paymentData.dpAmount,
-        }
+        },
+        { expectedStatus: order?.status ?? fromStatus ?? undefined }
       );
 
       if (res.ok) {
@@ -280,6 +282,10 @@ export default function CashierOrdersSection() {
           },
         });
         showToast(`Status → "${nextStatus}".`, 'success');
+        setPaymentModal(null);
+      } else if (res.status === 409) {
+        showToast(STATUS_CONFLICT_MESSAGE, 'error');
+        pendingAutoPrintRef.current.delete(orderId);
         setPaymentModal(null);
       } else {
         showToast(res.message || 'Gagal mengubah status.', 'error');
@@ -300,7 +306,7 @@ export default function CashierOrdersSection() {
     const target = deleteTarget;
     setDeleting(true);
     try {
-      const res = await deleteOrder(target.id);
+      const res = await deleteOrder(target.id, actorRole, { expectedStatus: target.status });
       if (res?.ok === false) {
         showToast(res.message || 'Gagal menghapus pesanan.', 'error');
         return;
@@ -314,7 +320,13 @@ export default function CashierOrdersSection() {
       setDeleteTarget(null);
       fetchOrdersRef.current?.();
     } catch (err) {
-      showToast(err?.response?.data?.message || err.message || 'Gagal menghapus pesanan.', 'error');
+      if (err?.response?.status === 409) {
+        showToast(STATUS_CONFLICT_MESSAGE, 'error');
+        setDeleteTarget(null);
+        fetchOrdersRef.current?.();
+      } else {
+        showToast(err?.response?.data?.message || err.message || 'Gagal menghapus pesanan.', 'error');
+      }
     } finally {
       setDeleting(false);
     }
@@ -588,6 +600,7 @@ export default function CashierOrdersSection() {
                     <td>
                       <CashierProofCell
                         order={order}
+                        actorRole={actorRole}
                         onCancel={handleOpenCancel}
                         onUpload={handleProofUpload}
                         uploading={proofUploading === order.id}

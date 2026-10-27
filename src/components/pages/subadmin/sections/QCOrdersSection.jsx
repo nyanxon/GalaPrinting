@@ -14,11 +14,16 @@
 import { useState } from 'react';
 import SubAdminOrdersSection from './SubAdminOrdersSection.jsx';
 import { setTrackingNumber, updateOrderStatus } from '../../../../services/orders.js';
+import { STATUS_CONFLICT_MESSAGE } from '../../../../services/orderStatusConfig.js';
 import { setOrderDeliveryMethod, setOrderPickupInfo } from '../../../../services/api/invoiceService.js';
 import { showToast } from '../../../../core/toastEmitter.js';
 import { track } from '../../../../utils/activityTracker.js';
 
 const COURIERS = ['JNE', 'J&T Express', 'SiCepat', 'AnterAja', 'Pos Indonesia', 'Ninja Xpress'];
+
+function isConflict(err) {
+  return err?.response?.status === 409;
+}
 
 /**
  * Kolom pengiriman untuk QC.
@@ -57,11 +62,19 @@ function QCDeliveryCell({ order, onRefresh }) {
             });
             showToast(`Dikirim via ${courierName}. Resi: ${trackingNumber.trim()}`, 'success');
             onRefresh();
+          } else if (res.status === 409) {
+            showToast(STATUS_CONFLICT_MESSAGE, 'error');
+            onRefresh();
           } else {
             showToast(res.message || 'Gagal menyimpan resi.', 'error');
           }
-        } catch {
-          showToast('Gagal menyimpan data pengiriman.', 'error');
+        } catch (err) {
+          if (isConflict(err)) {
+            showToast(STATUS_CONFLICT_MESSAGE, 'error');
+            onRefresh();
+          } else {
+            showToast('Gagal menyimpan data pengiriman.', 'error');
+          }
         } finally {
           setSaving(false);
         }
@@ -75,7 +88,14 @@ function QCDeliveryCell({ order, onRefresh }) {
             pickup_ready_at: pickupReadyAt ? new Date(pickupReadyAt).toISOString() : null,
           });
           // Advance ke In Delivery via updateOrderStatus
-          const res = await updateOrderStatus(order.id, 'In Delivery', 'qc');
+          const res = await updateOrderStatus(
+            order.id,
+            'In Delivery',
+            'qc',
+            undefined,
+            undefined,
+            { expectedStatus: order.status }
+          );
           if (res.ok) {
             track('Ubah Status Order', {
               targetType: 'order', targetId: order.id,
@@ -83,11 +103,19 @@ function QCDeliveryCell({ order, onRefresh }) {
             });
             showToast('Jadwal pickup disimpan. Status → In Delivery.', 'success');
             onRefresh();
+          } else if (res.status === 409) {
+            showToast(STATUS_CONFLICT_MESSAGE, 'error');
+            onRefresh();
           } else {
             showToast(res.message || 'Gagal update status.', 'error');
           }
         } catch (err) {
-          showToast(err?.message || 'Gagal menyimpan pickup info.', 'error');
+          if (isConflict(err)) {
+            showToast(STATUS_CONFLICT_MESSAGE, 'error');
+            onRefresh();
+          } else {
+            showToast(err?.message || 'Gagal menyimpan pickup info.', 'error');
+          }
         } finally {
           setSaving(false);
         }
@@ -177,13 +205,23 @@ function QCDeliveryCell({ order, onRefresh }) {
     const isPickupOrder = order.deliveryMethod === 'pickup_factory' || order.deliveryMethod === 'pickup_store';
 
     async function handleFinished() {
-      const res = await updateOrderStatus(order.id, 'Finished', 'qc');
+      const res = await updateOrderStatus(
+        order.id,
+        'Finished',
+        'qc',
+        undefined,
+        undefined,
+        { expectedStatus: order.status }
+      );
       if (res.ok) {
         track('Ubah Status Order', {
           targetType: 'order', targetId: order.id,
           metadata: { from: order.status ?? null, to: 'Finished', role: 'qc' },
         });
         showToast('Pesanan selesai.', 'success');
+        onRefresh();
+      } else if (res.status === 409) {
+        showToast(STATUS_CONFLICT_MESSAGE, 'error');
         onRefresh();
       } else {
         showToast(res.message || 'Gagal.', 'error');

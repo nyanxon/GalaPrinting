@@ -28,8 +28,9 @@ export const APPROVAL_STAGE_FOR_STATUS = {
  * @param {string} stage  Nama stage, e.g. "Payment Accepted"
  * @returns {Promise<object|null>} Row approval atau null jika belum di-approve
  */
-export async function getApproval(orderId, stage) {
-  const [rows] = await query(
+export async function getApproval(orderId, stage, conn = null) {
+  const runner = conn || { execute: query };
+  const [rows] = await runner.execute(
     `SELECT oa.*, u.name AS approver_name_live
      FROM order_approvals oa
      LEFT JOIN users_admin u ON u.id = oa.approved_by
@@ -67,10 +68,11 @@ export async function getApprovalsByOrderId(orderId) {
  * @param {string} actorName  Nama admin saat approve
  * @returns {Promise<object>} Baris approval yang baru dibuat
  */
-export async function recordApproval(orderId, stage, actorId, actorRole, actorName) {
+export async function recordApproval(orderId, stage, actorId, actorRole, actorName, conn = null) {
   const id = randomUUID();
+  const execute = conn ? conn.execute.bind(conn) : query;
   try {
-    await query(
+    await execute(
       `INSERT IGNORE INTO order_approvals
          (id, order_id, stage, approved_by, approved_role, approved_name)
        VALUES (?, ?, ?, ?, ?, ?)`,
@@ -80,7 +82,7 @@ export async function recordApproval(orderId, stage, actorId, actorRole, actorNa
     // INSERT IGNORE menangani duplikat, throw hanya jika error lain
     if (!err.message?.includes('Duplicate')) throw err;
   }
-  return getApproval(orderId, stage);
+  return getApproval(orderId, stage, conn);
 }
 
 /**
@@ -89,11 +91,11 @@ export async function recordApproval(orderId, stage, actorId, actorRole, actorNa
  * @param {string} orderId
  * @param {string} newStatus  Status yang ingin di-set
  */
-export async function assertNotLocked(orderId, newStatus) {
+export async function assertNotLocked(orderId, newStatus, conn = null) {
   const stage = APPROVAL_STAGE_FOR_STATUS[newStatus];
   if (!stage) return; // Status ini tidak masuk skema approval, lewati
 
-  const existing = await getApproval(orderId, stage);
+  const existing = await getApproval(orderId, stage, conn);
   if (existing) {
     const approvedAt = new Date(existing.approved_at).toLocaleString('id-ID');
     const err = new Error(

@@ -10,6 +10,7 @@
 import { useState, useEffect } from 'react';
 import { listCustomers } from '../../../../services/auth.js';
 import { createCustomOrder, deleteOrder } from '../../../../services/orders.js';
+import { STATUS_CONFLICT_MESSAGE } from '../../../../services/orderStatusConfig.js';
 import { formatCurrency } from '../../../../utils/format.js';
 import { showToast } from '../../../../core/toastEmitter.js';
 
@@ -142,12 +143,17 @@ export default function CSCustomOrderSection() {
     if (!successOrder?.id) return;
     setDeleting(true);
     try {
-      await deleteOrder(successOrder.id);
+      await deleteOrder(successOrder.id, 'cs', { expectedStatus: successOrder.status });
       showToast('Custom order berhasil dihapus.', 'success');
       setSuccessOrder(null);
       setDeleteConfirm(false);
     } catch (err) {
-      showToast(err?.response?.data?.message || err.message || 'Gagal menghapus pesanan.', 'error');
+      if (err?.response?.status === 409) {
+        showToast(STATUS_CONFLICT_MESSAGE, 'error');
+        setDeleteConfirm(false);
+      } else {
+        showToast(err?.response?.data?.message || err.message || 'Gagal menghapus pesanan.', 'error');
+      }
     } finally {
       setDeleting(false);
     }

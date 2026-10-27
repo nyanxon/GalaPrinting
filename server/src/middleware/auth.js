@@ -53,18 +53,24 @@ export function authenticate(req, res, next) {
   }
 
   const originalUrl = req.originalUrl.split('?')[0];
-  if (MUST_CHANGE_PASSWORD_EXCEPTIONS.includes(originalUrl)) {
-    return next();
-  }
+  const isException = MUST_CHANGE_PASSWORD_EXCEPTIONS.includes(originalUrl);
 
   query(
     'SELECT must_change_password FROM users_admin WHERE id = ? AND deleted_at IS NULL',
     [req.user.id]
   )
     .then(([rows]) => {
-      if (rows.length === 0 || rows[0].must_change_password === 0) {
+      if (rows.length === 0) {
+        return res.status(401).json({
+          ok: false,
+          message: 'Token tidak valid atau sudah kedaluwarsa.',
+        });
+      }
+
+      if (isException || rows[0].must_change_password === 0) {
         return next();
       }
+
       return res.status(403).json({
         ok: false,
         message: 'Anda harus mengubah password terlebih dahulu.',
@@ -72,8 +78,9 @@ export function authenticate(req, res, next) {
       });
     })
     .catch(() => {
-      // If the query fails, don't block the request — let the route
-      // handler deal with it. This is a safety net, not a hard gate.
-      next();
+      return res.status(503).json({
+        ok: false,
+        message: 'Layanan autentikasi sedang tidak tersedia. Coba lagi nanti.',
+      });
     });
 }

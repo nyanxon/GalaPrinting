@@ -52,26 +52,7 @@ export function createApp() {
 
   // ── Diagnostic endpoint (no auth, no DB) — remove after debugging ────────
   app.get('/diag', (_req, res) => {
-    res.json({
-      ok: true,
-      node: process.version,
-      env: process.env.NODE_ENV,
-      port: process.env.PORT,
-      cwd: process.cwd(),
-      uptime: process.uptime(),
-      ts: new Date().toISOString(),
-    });
-  });
-
-  // ── Read startup-diag.log ─────────────────────────────────────────────────
-  app.get('/diag/log', (_req, res) => {
-    try {
-      const logPath = new URL('../../startup-diag.log', import.meta.url).pathname;
-      const content = fs.existsSync(logPath) ? fs.readFileSync(logPath, 'utf8') : '(no log file)';
-      res.type('text/plain').send(content);
-    } catch (err) {
-      res.type('text/plain').send('Error reading log: ' + err.message);
-    }
+    res.json({ ok: true });
   });
 
   // ── Security headers ──────────────────────────────────────────────────────
@@ -228,7 +209,7 @@ export function createApp() {
   if (finalDistPath && fs.existsSync(path.join(finalDistPath, 'index.html'))) {
     app.get('*', (req, res) => {
       // Don't intercept API routes
-      if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+      if (req.path.startsWith('/api') || req.path.startsWith('/uploads') || req.path.startsWith('/diag')) {
         return res.status(404).json({ ok: false, message: 'Endpoint tidak ditemukan.' });
       }
       res.set('Cache-Control', 'no-cache');
